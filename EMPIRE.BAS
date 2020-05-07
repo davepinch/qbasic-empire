@@ -27,12 +27,40 @@
   DECLARE SUB SelectAlert ()
   DECLARE SUB Setup ()
   DECLARE SUB ViewPage ()
+  DECLARE SUB WaitForKeyPress ()
 
   DECLARE FUNCTION CalcDistance (first AS INTEGER, second AS INTEGER)
   DECLARE FUNCTION Menu ()
+  DECLARE FUNCTION GetKey$ ()
 
-  CONST true = -1
-  CONST false = NOT true
+  ' =================================================================
+  ' ASCII Character Constants
+  ' =================================================================
+  CONST ASCII.ControlD = 4
+  CONST ASCII.ControlE = 5
+  CONST ASCII.ControlO = 15
+  CONST ASCII.ControlS = 19
+  CONST ASCII.ControlX = 24
+  CONST ASCII.Backspace = 8
+  CONST ASCII.Return = 13
+  CONST ASCII.Escape = 27
+  CONST ASCII.Space = 32
+
+  ' =================================================================
+  ' ScanCode Constants
+  ' =================================================================
+  CONST ScanCode.Home = 71
+  CONST ScanCode.Up = 72
+  CONST ScanCode.Left = 75
+  CONST ScanCode.Right = 77
+  CONST ScanCode.End = 79
+  CONST ScanCode.Down = 80
+
+  ' =================================================================
+  ' Boolean Constants
+  ' =================================================================
+  CONST True = -1
+  CONST False = NOT True
 
   TYPE ASTEROIDTYPE
     control AS INTEGER
@@ -529,32 +557,53 @@ SUB DoWindow (id AS INTEGER)
     DO
       IF fields(id) = 0 THEN EXIT SUB
       GOSUB DrawField
+      '
+      ' TODO: Remove this Scan() and pressed global reference.
+      ' It cannot be removed now because other code is dependent
+      ' on the pressed variable getting set. That will be fixed
+      ' when the windowing system is addressed.
+      '
       Scan
       SELECT CASE pressed
-        CASE CHR$(0) + CHR$(71)
+       
+        ' Home
+        CASE CHR$(0) + CHR$(ScanCode.Home)
           COLOR 0, 7: GOSUB DrawField: COLOR 7, 0
           current = 1
-        CASE CHR$(0) + CHR$(72), CHR$(8)
+
+        ' Up
+        CASE CHR$(0) + CHR$(ScanCode.Up), CHR$(ASCII.Backspace)
           COLOR 0, 7: GOSUB DrawField: COLOR 7, 0
           current = current - 1: IF current = 0 THEN current = fields(id)
-        CASE CHR$(0) + CHR$(75), CHR$(0) + CHR$(77)
+       
+        ' Left or Right
+        CASE CHR$(0) + CHR$(ScanCode.Left), CHR$(0) + CHR$(ScanCode.Right)
           IF arrowexit THEN PCOPY display, 0: EXIT SUB
-        CASE CHR$(0) + CHR$(79)
+       
+        ' End
+        CASE CHR$(0) + CHR$(ScanCode.End)
           COLOR 0, 7: GOSUB DrawField: COLOR 7, 0
           current = fields(id)
-        CASE CHR$(0) + CHR$(80), CHR$(32)
+
+        ' Down
+        CASE CHR$(0) + CHR$(ScanCode.Down), CHR$(ASCII.Space)
           COLOR 0, 7: GOSUB DrawField: COLOR 7, 0
           current = current + 1: IF current > fields(id) THEN current = 1
-        CASE CHR$(4), CHR$(5), CHR$(19), CHR$(24)
+       
+        CASE CHR$(ASCII.ControlD), CHR$(ASCII.ControlE), CHR$(19), CHR$(24)
           MoveWindow id
           EXIT DO
-        CASE CHR$(13), CHR$(27)
+
+        CASE CHR$(ASCII.Return), CHR$(ASCII.Escape)
           PCOPY display, 0
           EXIT SUB
+       
         CASE "N"
           IF fieldtype(id, current) = 3 THEN fieldtext(id, current) = " No  "
+       
         CASE "Y"
           IF fieldtype(id, current) = 3 THEN fieldtext(id, current) = " Yes "
+       
         CASE ELSE
           IF fieldtype(id, current) = 2 THEN
             IF ASC(pressed) >= 48 AND ASC(pressed) <= 57 THEN
@@ -562,6 +611,7 @@ SUB DoWindow (id AS INTEGER)
               fieldtext(id, current) = RIGHT$(fieldtext(id, current), LEN(fieldtext(id, current)) - 1)
             END IF
           END IF
+     
       END SELECT
     LOOP
   LOOP
@@ -660,30 +710,65 @@ SUB FindDistance
   DIM ast2 AS INTEGER
 
   DO
+   
+    ' Get the two asteroids for which to calculate distance
     DoWindow 22
-    IF pressed = CHR$(27) THEN EXIT DO
-    ast1 = VAL(fieldtext(22, 1)): ast2 = VAL(fieldtext(22, 2))
+
+    '
+    ' TODO: remove this pressed global reference
+    '
+    IF pressed = CHR$(ASCII.Escape) THEN EXIT DO
+   
+    ast1 = VAL(fieldtext(22, 1))
+    ast2 = VAL(fieldtext(22, 2))
+   
+    ' Ensure the first asteroid exists
     IF ast1 < 1 OR ast1 > asteroids THEN
       DoWindow 23
-      Scan
+      WaitForKeyPress
+   
+    ' Ensure the second asteroid exists
     ELSEIF ast2 < 1 OR ast2 > asteroids THEN
       DoWindow 24
-      Scan
+      WaitForKeyPress
+   
+    ' Ensure the same asteroid is not specified
     ELSEIF ast1 = ast2 THEN
       DoWindow 25
-      Scan
+      WaitForKeyPress
+  
     ELSE
       DoWindow 26
       LOCATE place1(26) + 1, place2(26) + 28
       COLOR 0, 7: IF CalcDistance(ast1, ast2) > 9 THEN PRINT " ";
       PRINT USING "##."; CalcDistance(ast1, ast2);
-      COLOR 7, 0: Scan: PCOPY display, 0
+      COLOR 7, 0: WaitForKeyPress: PCOPY display, 0
       EXIT DO
     END IF
+   
     PCOPY display, 0
   LOOP
  
 END SUB
+
+' ===================================================================
+' GetKey$
+' -------------------------------------------------------------------
+' Waits for a key to be pressed and returns the string representing
+' the character or the keystroke. This function is the same as INKEY$
+' except it does not return until a key is actually pressed.
+' ===================================================================
+FUNCTION GetKey$
+
+  DIM k AS STRING
+
+  DO
+    k = INKEY$
+  LOOP UNTIL LEN(k)
+
+  GetKey$ = k
+
+END FUNCTION
 
 SUB GetWindows
 
@@ -777,12 +862,22 @@ SUB MakeAtlas
 
   DO
     SELECT CASE current
+     
       CASE 1
+        '
+        ' Hide the window in order to see the grid
+        '
         LOCATE 25, 2: COLOR 0, 7
-        PRINT " Press any key to restore the window..."; : Scan
+        PRINT " Press any key to restore the window...";
+        WaitForKeyPress
         LOCATE 25, 2: PRINT STRING$(77, 32); : COLOR 7, 0
+     
       CASE 2
+        '
+        ' Finished
+        '
         EXIT SUB
+     
       CASE ELSE
         IF current = 3 OR current = 4 THEN
           cluster1 = INT(RND * 5) + 1
@@ -818,11 +913,16 @@ SUB MakeAtlas
           IF x <= players THEN COLOR 0, 7
           PRINT USING "##"; x; : COLOR 7, 0
           asteroid(x).local1 = r1: asteroid(x).local2 = r2
-          IF pressed = CHR$(27) THEN EXIT FOR
+          IF pressed = CHR$(ASCII.Escape) THEN EXIT FOR
         NEXT
         PCOPY 2, 0: SCREEN , , 0, 0
     END SELECT
+
+    '
+    ' Show the atlas editor menu
+    '
     setcurrent = current: DoWindow 9
+   
     SELECT CASE current
       CASE 3, 4, 6
         SCREEN , , 2, 2
@@ -857,25 +957,39 @@ GetOrbital:
   RETURN
 
 GetManual:
-  r1 = asteroid(x).local1: r2 = asteroid(x).local2
+ 
+  r1 = asteroid(x).local1
+  r2 = asteroid(x).local2
+ 
   DO
     LOCATE r1 * 2 + 1, r2 * 3 - 1
     IF x <= players THEN COLOR 21, 7 ELSE COLOR 21, 0
-    PRINT USING "##"; x; : COLOR 7, 0: Scan
+    PRINT USING "##"; x; : COLOR 7, 0
+   
+    '
+    ' TODO: remove this Scan() reference
+    '
+    Scan
+   
     LOCATE r1 * 2 + 1, r2 * 3 - 1: PRINT "  ";
     SELECT CASE pressed
-      CASE CHR$(13), CHR$(27)
+     
+      CASE CHR$(ASCII.Return), CHR$(ASCII.Escape)
         EXIT DO
-      CASE "E", CHR$(5), CHR$(0) + CHR$(72)
+     
+      CASE "E", CHR$(ASCII.ControlE), CHR$(0) + CHR$(ScanCode.Up)
         temp1 = r1 - 1: temp2 = r2
         IF temp1 < 1 THEN temp1 = 1
-      CASE "D", CHR$(4), CHR$(0) + CHR$(77)
+     
+      CASE "D", CHR$(ASCII.ControlD), CHR$(0) + CHR$(ScanCode.Right)
         temp1 = r1: temp2 = r2 + 1
         IF temp2 > 26 THEN temp2 = 26
-      CASE "S", CHR$(19), CHR$(0) + CHR$(75)
+     
+      CASE "S", CHR$(ASCII.ControlS), CHR$(0) + CHR$(ScanCode.Left)
         temp1 = r1: temp2 = r2 - 1
         IF temp2 < 1 THEN temp2 = 1
-      CASE "X", CHR$(19), CHR$(0) + CHR$(80)
+     
+      CASE "X", CHR$(ASCII.ControlX), CHR$(0) + CHR$(ScanCode.Down)
         temp1 = r1 + 1: temp2 = r2
         IF temp1 > 11 THEN temp1 = 11
     END SELECT
@@ -894,6 +1008,7 @@ END SUB
 
 FUNCTION Menu
 
+  DIM keypress AS STRING
   DIM mode     AS INTEGER
   DIM position AS INTEGER
 
@@ -903,22 +1018,49 @@ FUNCTION Menu
     GOSUB DrawMenuText
     IF mode = 1 THEN
       arrowexit = 1: DoWindow position + 9: arrowexit = 0
+     
+      ' HACK: until Scan()/pressed is fully removed
+      '
+      keypress = pressed
     ELSE
-      Scan
+      keypress = GetKey$
     END IF
-    SELECT CASE pressed
-      CASE CHR$(0) + CHR$(75), CHR$(8), CHR$(19), "S"
-        COLOR 0, 7: GOSUB DrawMenuText: COLOR 7, 0
-        position = position - 1: IF position = 0 THEN position = 5
-      CASE CHR$(0) + CHR$(77), CHR$(4), CHR$(32), "D"
-        COLOR 0, 7: GOSUB DrawMenuText: COLOR 7, 0
-        position = position + 1: IF position = 6 THEN position = 1
-      CASE CHR$(0) + CHR$(80), CHR$(24), "X"
+    SELECT CASE keypress
+     
+      CASE CHR$(0) + CHR$(ScanCode.Left)
+        '
+        ' Move left
+        '
+        GOSUB NavigateLeft
+
+      CASE CHR$(ASCII.Backspace), CHR$(ASCII.ControlS), "S"
+        '
+        ' Move left
+        '
+        GOSUB NavigateLeft
+     
+      CASE CHR$(0) + CHR$(ScanCode.Right)
+        '
+        ' Move right
+        '
+        GOSUB NavigateRight
+
+      CASE CHR$(ASCII.ControlD), CHR$(ASCII.Space), "D"
+        '
+        ' Move right
+        '
+        GOSUB NavigateRight
+     
+      ' Move down (open menu)
+      CASE CHR$(0) + CHR$(ScanCode.Down), CHR$(ASCII.ControlX), "X"
         IF mode = 0 THEN mode = 1
-      CASE CHR$(13)
+     
+      CASE CHR$(ASCII.Return)
         IF mode = 1 THEN Menu = position: EXIT FUNCTION
-      CASE CHR$(27)
+     
+      CASE CHR$(ASCII.Escape)
         mode = 0
+
     END SELECT
   LOOP
 
@@ -929,27 +1071,63 @@ DrawMenuText:
   PRINT menutext(position)
   RETURN
 
+NavigateLeft:
+  '
+  ' Moves to the menu item to the left
+  '
+  COLOR 0, 7: GOSUB DrawMenuText: COLOR 7, 0
+  position = position - 1: IF position = 0 THEN position = 5
+  RETURN
+
+NavigateRight:
+  '
+  ' Moves to the menu item to the right
+  '
+  COLOR 0, 7: GOSUB DrawMenuText: COLOR 7, 0
+  position = position + 1: IF position = 6 THEN position = 1
+  RETURN
+
 END FUNCTION
 
 SUB MoveWindow (id AS INTEGER)
 
   DIM diff1     AS INTEGER
   DIM diff2     AS INTEGER
+  DIM keypress  AS STRING
   DIM newplace1 AS INTEGER
   DIM newplace2 AS INTEGER
   DIM x         AS INTEGER
 
-  newplace1 = place1(id): newplace2 = place2(id)
+  '
+  ' Get the current location of the window
+  '
+  newplace1 = place1(id)
+  newplace2 = place2(id)
 
   DO
     PCOPY display, 0: GOSUB DrawOutline
-    Scan
-    SELECT CASE pressed
-      CASE CHR$(4), "D", CHR$(0) + CHR$(77)
+
+    ' Get the next keyboard input...
+    keypress = GetKey$
+
+    SELECT CASE keypress
+
+      CASE CHR$(ASCII.ControlD), "D", CHR$(0) + CHR$(ScanCode.MoveRight)
+        '
+        ' Move right
+        '
         newplace2 = newplace2 + 1
-      CASE CHR$(5), "E", CHR$(0) + CHR$(72)
+     
+      CASE CHR$(ASCII.ControlE), "E", CHR$(0) + CHR$(ScanCode.Up)
+        '
+        ' Move Up
+        '
         newplace1 = newplace1 - 1
-      CASE CHR$(13)
+     
+      CASE CHR$(ASCII.Return)
+        '
+        ' Enter (final position selected)
+        '
         diff1 = newplace1 - place1(id): diff2 = newplace2 - place2(id)
         FOR x = 1 TO fields(id)
           fieldplace1(id, x) = fieldplace1(id, x) + diff1
@@ -957,16 +1135,36 @@ SUB MoveWindow (id AS INTEGER)
         NEXT
         place1(id) = newplace1: place2(id) = newplace2
         EXIT SUB
-      CASE CHR$(15), "O"
+     
+      CASE CHR$(ASCII.ControlO), "O"
+        '
+        ' Change outline
+        '
         IF outline = 0 THEN outline = 1 ELSE outline = 0
-      CASE CHR$(19), "S", CHR$(0) + CHR$(75)
+     
+      CASE CHR$(ASCII.ControlS), CHR$(0) + CHR$(ScanCode.Left)
+        '
+        ' Move Left
+        '
         newplace2 = newplace2 - 1
-      CASE CHR$(24), "X", CHR$(0) + CHR$(80)
+     
+      CASE CHR$(ASCII.ControlX), CHR$(0) + CHR$(ScanCode.Down)
+        '
+        ' Move Down
+        '
         newplace1 = newplace1 + 1
-      CASE CHR$(27)
-        newplace1 = place1(id): newplace2 = place2(id)
+     
+      CASE CHR$(ASCII.Escape)
+        '
+        ' Escape (restore original location)
+        '
+        newplace1 = place1(id)
+        newplace2 = place2(id)
+   
     END SELECT
+
     GOSUB CheckPlace
+ 
   LOOP
 
 REM *** Subroutines ***
@@ -1018,26 +1216,50 @@ END SUB
 SUB NewGame
 
   DO
+   
     DoWindow 2
     players = VAL(fieldtext(2, 1)): IF players = 0 THEN players = 3
     asteroids = VAL(fieldtext(2, 2)): IF asteroids = 0 THEN asteroids = 15
+   
     IF players > 10 THEN
+     
+      ' Too many players
       DoWindow 3
-      Scan
+      WaitForKeyPress
+   
     ELSEIF asteroids < players THEN
+
+      ' Not enough asteroids
       DoWindow 4
+      ' TODO: remove Scan/pressed reference
       Scan
-      IF pressed = "/" OR pressed = "?" THEN PCOPY 1, 0: DoWindow 8: Scan
+      IF pressed = "/" OR pressed = "?" THEN
+        PCOPY 1, 0
+        DoWindow 8
+        WaitForKeyPress
+      END IF
+
     ELSEIF asteroids > 19 THEN
+    
+      ' Too many asteroids
       DoWindow 5
-      Scan
+      WaitForKeyPress
+
     ELSEIF players = 1 AND asteroids = 1 THEN
+     
       DoWindow 6
+      ' TODO: remove Scan/pressed reference
       Scan
-      IF pressed = "/" OR pressed = "?" THEN PCOPY 1, 0: DoWindow 7: Scan
+      IF pressed = "/" OR pressed = "?" THEN
+        PCOPY 1, 0
+        DoWindow 7
+        Scan
+      END IF
+   
     ELSE
       EXIT DO
     END IF
+   
     PCOPY 1, 0
   LOOP
 
@@ -1076,25 +1298,25 @@ SUB OrderAttack
 
   DO
     DoWindow 15
-    IF pressed = CHR$(27) THEN EXIT DO
+    IF pressed = CHR$(ASCII.Escape) THEN EXIT DO
     src = VAL(fieldtext(15, 1))
     trg = VAL(fieldtext(15, 2))
     num = VAL(fieldtext(15, 3))
     IF src < 1 OR src > asteroids THEN
       DoWindow 16
-      Scan
+      WaitForKeyPress
     ELSEIF asteroid(src).ruler <> turn THEN
       DoWindow 17
-      Scan
+      WaitForKeyPress
     ELSEIF trg < 1 OR trg > asteroids THEN
       DoWindow 18
-      Scan
+      WaitForKeyPress
     ELSEIF src = trg THEN
       DoWindow 19
-      Scan
+      WaitForKeyPress
     ELSEIF num < 1 OR num > asteroid(src).ships THEN
       DoWindow 20
-      Scan
+      WaitForKeyPress
     ELSE
       missions = missions + 1
       mission(missions).distance = CalcDistance(src, trg)
@@ -1239,7 +1461,7 @@ SUB Setup
 
   SCREEN 0, 0, 0, 0: WIDTH 80: COLOR 7, 0: KEY OFF: CLS : RANDOMIZE TIMER
  
-  border = 0: display = 1: outline = 1: arrowexit = false: shadow = true
+  border = 0: display = 1: outline = 1: arrowexit = False: shadow = True
 
   REM Define Bar
     FOR x = 1 TO 5: READ menutext(x): bar = bar + menutext(x): NEXT
@@ -1282,6 +1504,21 @@ SUB ViewPage
     PRINT USING "##"; x; : COLOR 7, 0
   NEXT
   PCOPY 2, 0: SCREEN , , 0, 0
+
+END SUB
+
+' ===================================================================
+' WaitForKeyPress
+' -------------------------------------------------------------------
+' Waits for any key to be pressed. The key is discarded from input.
+' ===================================================================
+SUB WaitForKeyPress
+
+  DIM k AS STRING
+
+  DO
+    k = INKEY$
+  LOOP UNTIL LEN(k)
 
 END SUB
 
