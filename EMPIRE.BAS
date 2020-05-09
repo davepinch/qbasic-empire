@@ -9,70 +9,46 @@
 ' To exit QBASIC, press Alt, F, X.
 
   DECLARE SUB BattleMode (id AS INTEGER)
-  DECLARE SUB DataPage ()
-  DECLARE SUB DataLine (x AS INTEGER)
   DECLARE SUB DoWindow (id AS INTEGER)
   DECLARE SUB DrawGrid ()
+  DECLARE SUB DrawMenu ()
+  DECLARE SUB DrawMenuItem (itemId AS INTEGER, selected AS INTEGER)
+  DECLARE SUB DrawStatus (status AS STRING)
+  DECLARE SUB DrawTable ()
+  DECLARE SUB DrawTableRow (x AS INTEGER)
+  DECLARE SUB DrawWindow (id AS INTEGER)
+  DECLARE SUB DrawWindowField (wid AS INTEGER, fid AS INTEGER)
+  DECLARE SUB DrawWindowOutline (wid AS INTEGER, atX AS INTEGER, atY AS INTEGER)
   DECLARE SUB FindDistance ()
-  DECLARE SUB GetWindows ()
   DECLARE SUB InitData ()
+  DECLARE SUB LoadMenu ()
+  DECLARE SUB LoadWindows ()
   DECLARE SUB MakeAtlas ()
   DECLARE SUB NextMonth ()
   DECLARE SUB MoveWindow (id AS INTEGER)
   DECLARE SUB NewGame ()
   DECLARE SUB OrderAttack ()
-  DECLARE SUB Page ()
   DECLARE SUB PlayGame ()
-  DECLARE SUB Scan ()
   DECLARE SUB SelectAlert ()
   DECLARE SUB Setup ()
   DECLARE SUB ViewPage ()
   DECLARE SUB WaitForKeyPress ()
 
   DECLARE FUNCTION CalcDistance (first AS INTEGER, second AS INTEGER)
-  DECLARE FUNCTION Menu ()
+  DECLARE FUNCTION DoMenu ()
   DECLARE FUNCTION GetKey$ ()
 
-  ' =================================================================
-  ' ASCII Character Constants
-  ' =================================================================
-  CONST ASCII.ControlD = 4
-  CONST ASCII.ControlE = 5
-  CONST ASCII.ControlO = 15
-  CONST ASCII.ControlS = 19
-  CONST ASCII.ControlX = 24
-  CONST ASCII.Backspace = 8
-  CONST ASCII.Return = 13
-  CONST ASCII.Escape = 27
-  CONST ASCII.Space = 32
-
-  ' =================================================================
-  ' ScanCode Constants
-  ' =================================================================
-  CONST ScanCode.Home = 71
-  CONST ScanCode.Up = 72
-  CONST ScanCode.Left = 75
-  CONST ScanCode.Right = 77
-  CONST ScanCode.End = 79
-  CONST ScanCode.Down = 80
-
-  ' =================================================================
-  ' Boolean Constants
-  ' =================================================================
-  CONST True = -1
-  CONST False = NOT True
-
   TYPE ASTEROIDTYPE
-    control AS INTEGER
-    detect  AS INTEGER
+    Control AS INTEGER
+    Detect  AS INTEGER
     local1  AS INTEGER
     local2  AS INTEGER
     mined   AS INTEGER
-    produce AS INTEGER
+    Produce AS INTEGER
     ruler   AS INTEGER
     ships   AS INTEGER
-    shield  AS INTEGER
-    supply  AS INTEGER
+    Shield  AS INTEGER
+    Supply  AS INTEGER
     tech    AS INTEGER
   END TYPE
 
@@ -86,42 +62,165 @@
     techlevel AS INTEGER
   END TYPE
 
+  ' =================================================================
+  ' ASCII Character Constants
+  ' =================================================================
+  CONST ASCII.Backspace = 8
+  CONST ASCII.Return = 13
+  CONST ASCII.Escape = 27
+  CONST ASCII.Space = 32
+
+  ' =================================================================
+  ' Boolean Constants
+  ' =================================================================
+  CONST True = -1
+  CONST False = NOT True
+
+  ' =================================================================
+  ' Control Character Constants
+  ' =================================================================
+  CONST Control.D = 4
+  CONST Control.E = 5
+  CONST Control.O = 15
+  CONST Control.S = 19
+  CONST Control.X = 24
+
+  ' =================================================================
+  ' Field Kinds
+  ' =================================================================
+  CONST FieldKind.None = 0
+  CONST FieldKind.Button = 1
+  CONST FieldKind.Integer = 2
+  CONST FieldKind.Boolean = 3
+
+  ' =================================================================
+  ' GridStyle constants
+  ' =================================================================
+  CONST GridStyle.Backcolor = 0
+  CONST GridStyle.Border = 2
+  CONST GridStyle.Forecolor = 1
+
+  ' =================================================================
+  ' Maximum UI elements
+  ' =================================================================
+  CONST MaxMenus = 5
+  CONST MaxFields = 10
+  CONST MaxWindows = 50
+
+  ' =================================================================
+  ' MenuStyle Constants
+  ' =================================================================
+  CONST MenuStyle.BackColor = 7
+  CONST MenuStyle.ForeColor = 0
+  CONST MenuStyle.SelectedBackColor = 0
+  CONST MenuStyle.SelectedForeColor = 15
+                                       
+  ' =================================================================
+  ' ScanCode Constants
+  ' =================================================================
+  CONST ScanCode.Home = 71
+  CONST ScanCode.Up = 72
+  CONST ScanCode.Left = 75
+  CONST ScanCode.Right = 77
+  CONST ScanCode.End = 79
+  CONST ScanCode.Down = 80
+
+  ' =================================================================
+  ' StatusStyle constants
+  ' =================================================================
+  CONST StatusStyle.Foreground = 15
+  CONST StatusStyle.Background = 0
+
+  ' =================================================================
+  ' TableStyle constants
+  ' =================================================================
+  CONST TableStyle.Backcolor = 0
+  CONST TableStyle.Border = 2
+  CONST TableStyle.Forecolor = 7
+
+  ' =================================================================
+  ' WinStyle constants
+  ' =================================================================
+  CONST WinStyle.Backcolor = 1
+  CONST WinStyle.Forecolor = 7
+  CONST WinStyle.Border = 1
+  CONST WinStyle.OutlineBackcolor = 2
+  CONST WinStyle.OutlineForecolor = 7
+  CONST WinStyle.SelectedBackcolor = 7
+  CONST WinStyle.SelectedForecolor = 0
+  CONST WinStyle.Shadow = 1
+  CONST WinStyle.ShadowChar = 176
+  CONST WinStyle.ShadowForecolor = 8
+  CONST WinStyle.ShadowBackcolor = 0
+
+  ' =================================================================
+  ' FieldType
+  ' =================================================================
+  TYPE FieldType
+    kind  AS INTEGER
+    posX  AS INTEGER
+    posY  AS INTEGER
+    sizeX AS INTEGER
+  END TYPE
+
+  ' =================================================================
+  ' MenuType
+  ' =================================================================
+  TYPE MenuType
+    posX AS INTEGER
+    text AS STRING * 10
+    wid  AS INTEGER
+  END TYPE
+
+  ' =================================================================
+  ' WindowType
+  ' =================================================================
+  TYPE WindowType
+    canceled AS INTEGER
+    fields   AS INTEGER
+    helpWid  AS INTEGER
+    posX     AS INTEGER
+    posY     AS INTEGER
+    selected AS INTEGER
+    sizeX    AS INTEGER
+    sizeY    AS INTEGER
+  END TYPE
+
+  '
+  ' Window definitions
+  '
+  DIM SHARED bar(1 TO MaxMenus) AS MenuType
+  DIM SHARED fld(1 TO MaxWindows, 1 TO MaxFields) AS FieldType
+  DIM SHARED win(1 TO MaxWindows) AS WindowType
+
   REM Window-definition variables.
-    DIM SHARED fieldplace1(1 TO 50, 1 TO 20) AS INTEGER
-    DIM SHARED fieldplace2(1 TO 50, 1 TO 20) AS INTEGER
-    DIM SHARED fields(1 TO 50)               AS INTEGER
-    DIM SHARED fieldtext(1 TO 50, 1 TO 20)   AS STRING
-    DIM SHARED fieldtype(1 TO 50, 1 TO 20)   AS INTEGER
-    DIM SHARED height(1 TO 50)               AS INTEGER
-    DIM SHARED length(1 TO 50)               AS INTEGER
-    DIM SHARED place1(1 TO 50)               AS INTEGER
-    DIM SHARED place2(1 TO 50)               AS INTEGER
+    DIM SHARED fieldtext(1 TO 50, 1 TO MaxFields)   AS STRING
     DIM SHARED text(1 TO 50, 1 TO 20)        AS STRING
 
   REM Global variables.
     DIM SHARED arrowexit         AS INTEGER
     DIM SHARED asteroid(1 TO 19) AS ASTEROIDTYPE
     DIM SHARED asteroids         AS INTEGER
-    DIM SHARED bar               AS STRING
-    DIM SHARED border            AS INTEGER
-    DIM SHARED current           AS INTEGER
     DIM SHARED display           AS INTEGER
     DIM SHARED empire.shown      AS INTEGER
-    DIM SHARED menutext(1 TO 5)  AS STRING
     DIM SHARED mission(1 TO 100) AS MISSIONTYPE
     DIM SHARED missions          AS INTEGER
-    DIM SHARED outline           AS INTEGER
     DIM SHARED players           AS INTEGER
     DIM SHARED pressed           AS STRING
-    DIM SHARED setcurrent        AS INTEGER
-    DIM SHARED shadow            AS INTEGER
     DIM SHARED turn              AS INTEGER
    
   Setup
   PlayGame
 
-  REM Menu bar
-    DATA " Atlas "," Game "," Mission "," Options "," Special "
+  ' =================================================================
+  ' Menu bar data
+  ' =================================================================
+  DATA 5
+  DATA " Atlas ", 10
+  DATA " Game ", 11
+  DATA " Mission ", 12
+  DATA " Options ", 13
+  DATA " Special ", 14
 
   REM Window 1
     DATA "Start"
@@ -134,12 +233,12 @@
     DATA "           @New Game@           "
     DATA "           @Old Game@           "
     DATA "                                "
-
+ 
   REM Window 2
     DATA "Start"
     DATA 10,11
     DATA "                    Initialization Mode                   "
-    DATA "Separate"
+    DATA "-"
     DATA " How many people are playing?  [Def=3]                ##  "
     DATA " How many asteroids should be in the game?  [Def=15]  ##  "
 
@@ -152,9 +251,10 @@
   REM Window 4
     DATA "Start"
     DATA 10,21
+    DATA "Help", 8
     DATA " Error: The number of asteroids cannot "
     DATA " be less than the number of players.   "
-    DATA "Separate"
+    DATA "-"
     DATA " Press ? for more information.         "
 
   REM Window 5
@@ -166,9 +266,10 @@
   REM Window 6
     DATA "Start"
     DATA 10,19
+    DATA "Help", 7
     DATA " Error: It is impossible to play the game "
     DATA " with only one player and one asteroid.   "
-    DATA "Separate"
+    DATA "-"
     DATA " Press ? for more information.            "
 
   REM Window 7
@@ -195,13 +296,13 @@
     DATA 3,3
     DATA "@Look Behind Window  @"
     DATA "@Next Step...        @"
-    DATA "Separate"
+    DATA "-"
     DATA "@Cluster Together    @"
     DATA "@Orbital Belt        @"
     DATA "@Plot Manually       @"
     DATA "@Random Setting      @"
     DATA "@Replot Player's Only@"
-  
+
   REM Window 10
     DATA "Start"
     DATA 2,2
@@ -322,7 +423,7 @@
     DATA " Do you wish to alert the others with "
     DATA " a bell after a player has made his   "
     DATA " turn?  This minimizes cheating.      "
-    DATA "Separate"
+    DATA "-"
     DATA "                 & &                  "
    
   REM Window 28
@@ -350,14 +451,14 @@
     DATA " player has attempted to turn off    "
     DATA " the Alert Next Player option.  Is   "
     DATA " this person trying to cheat?        "
-    DATA "Separate"
+    DATA "-"
     DATA "                & &                  "
 
   REM Window 30
     DATA "Start"
     DATA 10,25
     DATA "   The Galactic Empire   "
-    DATA "Separate"
+    DATA "-"
     DATA " (C) 1992 David J. Pinch "
   
   REM Window 31
@@ -390,21 +491,24 @@ SUB BattleMode (id AS INTEGER)
 
   DoWindow 28
  
-  COLOR 0, 7: LOCATE place1(28) + 4, place2(28) + 24
+  COLOR 0, 7: LOCATE win(28).posY + 4, win(28).posX + 24
   PRINT CHR$(mission(id).ruler + 64); "."
-  LOCATE place1(28) + 5, place2(28) + 10: PRINT mission(id).ships
-  LOCATE place1(28) + 6, place2(28) + 15: PRINT mission(id).techlevel
-  LOCATE place1(28) + 8, place2(28) + 18
+  LOCATE win(28).posY + 5, win(28).posX + 10: PRINT mission(id).ships
+  LOCATE win(28).posY + 6, win(28).posX + 15: PRINT mission(id).techlevel
+  LOCATE win(28).posY + 8, win(28).posX + 18
   IF asteroid(trg).ruler = 0 THEN
     PRINT "independent."
   ELSE
     PRINT "ruler "; CHR$(asteroid(trg).ruler + 64); "."
   END IF
-  LOCATE place1(28) + 9, place2(28) + 11
-  PRINT asteroid(trg).shield
-  LOCATE place1(28) + 10, place2(28) + 10
+ 
+  LOCATE win(28).posY + 9, win(28).posX + 11
+  PRINT asteroid(trg).Shield
+ 
+  LOCATE win(28).posY + 10, win(28).posX + 10
   PRINT asteroid(trg).ships
-  LOCATE place1(28) + 11, place2(28) + 15
+ 
+  LOCATE win(28).posY + 11, win(28).posX + 15
   PRINT asteroid(trg).tech
   COLOR 7, 0
 
@@ -421,14 +525,14 @@ SUB BattleMode (id AS INTEGER)
  
   DO
     round = round + 1
-    LOCATE place1(31) + 2, place2(31) + 15
+    LOCATE win(31).posY + 2, win(31).posX + 15
     COLOR 0, 7: PRINT round: COLOR 7, 0
     attacked = 0: defended = 0
     start1 = mission(id).ships: start2 = asteroid(trg).ships
     DO
       IF turn = 0 AND attacked <= start1 THEN 'Attacker fires
         shot = INT(RND * 3 - 1 + 2 ^ (mission(id).techlevel / 10))
-        shot = shot - shot * (asteroid(trg).shield) / 100
+        shot = shot - shot * (asteroid(trg).Shield) / 100
         asteroid(id).ships = asteroid(id).ships - shot
         IF asteroid(id).ships < 1 THEN asteroid(id).ships = 0
         attacked = attacked + 1
@@ -443,16 +547,7 @@ SUB BattleMode (id AS INTEGER)
     LOOP UNTIL attacked = start1 AND defended = start2
   LOOP UNTIL mission(id).ships = 0 OR asteroid(id).ships = 0
 
-      
-      
-   
-   
-   
-  
-
-   
-   
- 
+  ' LAST
   END
 
 END SUB
@@ -469,18 +564,569 @@ FUNCTION CalcDistance (first AS INTEGER, second AS INTEGER)
 
 END FUNCTION
 
-SUB DataLine (x AS INTEGER)
+' ===================================================================
+' DoMenu
+' -------------------------------------------------------------------
+' Returns the selected menu from the top-level menu bar.
+' ===================================================================
+FUNCTION DoMenu
+
+  CONST MenusClosed = 0
+  CONST MenusOpen = 1
+
+  DIM keypress  AS STRING
+  DIM mode      AS INTEGER
+  DIM selection AS INTEGER
+
+  PCOPY display, 0: selection = 1
+   
+  DO
+   
+    '
+    ' Draw the selected menu item
+    '
+    DrawMenuItem selection, 1
+
+    IF mode = MenusOpen THEN
+      '
+      ' The menu is open (a window is displayed)
+      '
+      arrowexit = 1
+      DoWindow bar(selection).wid
+      arrowexit = 0
+     
+      IF win(bar(selection).wid).canceled THEN
+       
+        mode = MenusClosed
+     
+      ELSE
+
+        SELECT CASE pressed
+          CASE CHR$(ASCII.Return)
+            DoMenu = bar(selection).wid
+            EXIT FUNCTION
+          CASE CHR$(0) + CHR$(ScanCode.Left)
+            GOSUB NavigateLeft
+          CASE CHR$(0) + CHR$(ScanCode.Right)
+            GOSUB NavigateRight
+        END SELECT
+
+      END IF
+
+    ELSE
+      '
+      ' The menu is closed
+      '
+      keypress = GetKey$
+   
+      SELECT CASE keypress
+    
+        CASE CHR$(0) + CHR$(ScanCode.Left)
+          '
+          ' Move left
+          '
+          GOSUB NavigateLeft
+
+        CASE CHR$(0) + CHR$(ScanCode.Right)
+          '
+          ' Move right
+          '
+          GOSUB NavigateRight
+
+        CASE CHR$(ASCII.Return)
+          '
+          ' Enter (open menu)
+          '
+          mode = MenusOpen
+       
+        CASE CHR$(0) + CHR$(ScanCode.Down)
+          '   
+          ' Down (open menu)
+          '
+          mode = MenusOpen
+
+      END SELECT
+
+    END IF
+   
+  LOOP
+
+REM *** Subroutines ***
+
+NavigateLeft:
+  '
+  ' Moves to the menu item to the left
+  '
+  DrawMenuItem selection, 0
+  selection = selection - 1: IF selection = 0 THEN selection = 5
+  RETURN
+
+NavigateRight:
+  '
+  ' Moves to the menu item to the right
+  '
+  DrawMenuItem selection, 0
+  selection = selection + 1: IF selection = 6 THEN selection = 1
+  RETURN
+
+END FUNCTION
+
+SUB DoWindow (wid AS INTEGER)
+
+  DIM oldSelected AS INTEGER
+
+  DO
+   
+    SCREEN , , 0, display: COLOR 0, 7
+    DrawWindow wid
+    SCREEN , , 0, 0: COLOR 7, 0
+   
+    '
+    ' Set focus to a field
+    '
+    IF win(wid).selected = 0 AND win(wid).fields > 0 THEN
+      win(wid).selected = 1
+    END IF
+
+    DO
+
+      '
+      ' Draw the selected field (if any)
+      '
+      oldSelected = win(wid).selected
+      IF oldSelected <> 0 THEN
+        DrawWindowField wid, oldSelected
+      END IF
+
+      '
+      ' TODO: Remove this Scan() and pressed global reference.
+      ' It cannot be removed now because other code is dependent
+      ' on the pressed variable getting set. That will be fixed
+      ' when the windowing system is addressed.
+      '
+      pressed = GetKey$
+      SELECT CASE pressed
+     
+        CASE CHR$(0) + CHR$(ScanCode.Down), CHR$(ASCII.Space)
+          '
+          ' Down
+          '
+          IF win(wid).fields > 0 THEN
+            IF win(wid).selected = win(wid).fields THEN
+              win(wid).selected = 1
+            ELSE
+              win(wid).selected = win(wid).selected + 1
+            END IF
+          END IF
+
+        CASE CHR$(0) + CHR$(ScanCode.Up), CHR$(ASCII.Backspace)
+          '
+          ' Up
+          '
+          IF win(wid).fields > 0 THEN
+            IF win(wid).selected = 1 THEN
+              win(wid).selected = win(wid).fields
+            ELSE
+              win(wid).selected = win(wid).selected - 1
+            END IF
+          END IF
+
+        CASE CHR$(0) + CHR$(ScanCode.Home)
+          '
+          ' Home (first field)
+          '
+          IF win(wid).fields > 0 THEN
+            win(wid).selected = 1
+          END IF
+
+        CASE CHR$(0) + CHR$(ScanCode.End)
+          '
+          ' End (last field)
+          '
+          IF win(wid).fields > 0 THEN
+            win(wid).selected = win(wid).fields
+          END IF
+
+        CASE "/", "?"
+          '
+          ' Help
+          '
+          IF win(wid).helpWid <> 0 THEN
+            DoWindow win(wid).helpWid
+            DrawWindow wid
+          END IF
+
+        ' Left or Right
+        CASE CHR$(0) + CHR$(ScanCode.Left), CHR$(0) + CHR$(ScanCode.Right)
+          IF arrowexit THEN
+            win(wid).canceled = False
+            PCOPY display, 0
+            EXIT SUB
+          END IF
+       
+        CASE CHR$(Control.D), CHR$(Control.E), CHR$(19), CHR$(24)
+          MoveWindow wid
+          EXIT DO
+
+        CASE CHR$(ASCII.Return)
+          win(wid).canceled = False
+          PCOPY display, 0
+          EXIT SUB
+       
+        CASE CHR$(ASCII.Escape)
+          win(wid).canceled = True
+          PCOPY display, 0
+          EXIT SUB
+
+        CASE "N"
+          IF win(wid).selected > 0 THEN
+            IF fld(wid, win(wid).selected).kind = FieldKind.Boolean THEN
+              fieldtext(wid, win(wid).selected) = " No  "
+            END IF
+          END IF
+
+        CASE "Y"
+          IF win(wid).selected > 0 THEN
+            IF fld(wid, win(wid).selected).kind = FieldKind.Boolean THEN
+              fieldtext(wid, win(wid).selected) = " Yes "
+            END IF
+          END IF
+
+        CASE ELSE
+          IF win(wid).selected > 0 THEN
+            IF fld(wid, win(wid).selected).kind = FieldKind.Integer THEN
+              IF ASC(pressed) >= 48 AND ASC(pressed) <= 57 THEN
+                fieldtext(wid, win(wid).selected) = fieldtext(wid, win(wid).selected) + pressed
+                fieldtext(wid, win(wid).selected) = RIGHT$(fieldtext(wid, win(wid).selected), LEN(fieldtext(wid, win(wid).selected)) - 1)
+              END IF
+            END IF
+          END IF
+
+      END SELECT
+   
+      '
+      ' Change selected field
+      '
+      IF oldSelected <> win(wid).selected THEN
+        DrawWindowField wid, oldSelected
+        DrawWindowField wid, win(wid).selected
+      END IF
+
+    LOOP
+  LOOP
+
+END SUB
+
+SUB DrawGrid
+
+  DIM cellDivide  AS STRING * 1
+  DIM cellLeft    AS STRING * 1
+  DIM cellRight   AS STRING * 1
+  DIM lowerDivide AS STRING * 1
+  DIM lowerFlat   AS STRING * 1
+  DIM lowerLeft   AS STRING * 1
+  DIM lowerRight  AS STRING * 1
+  DIM divideCross AS STRING * 1
+  DIM divideFlat  AS STRING * 1
+  DIM divideLeft  AS STRING * 1
+  DIM divideRight AS STRING * 1
+  DIM upperDivide AS STRING * 1
+  DIM upperFlat   AS STRING * 1
+  DIM upperLeft   AS STRING * 1
+  DIM upperRight  AS STRING * 1
+
+  '
+  ' Initialize grid characters based on border style
+  '
+  SELECT CASE GridStyle.Border
+   
+    CASE 1
+      cellDivide = CHR$(179)
+      cellLeft = CHR$(179)
+      cellRight = CHR$(179)
+      divideCross = CHR$(197)
+      divideFlat = CHR$(196)
+      divideLeft = CHR$(195)
+      divideRight = CHR$(180)
+      lowerDivide = CHR$(193)
+      lowerFlat = CHR$(196)
+      lowerLeft = CHR$(192)
+      lowerRight = CHR$(217)
+      upperDivide = CHR$(194)
+      upperFlat = CHR$(196)
+      upperLeft = CHR$(218)
+      upperRight = CHR$(191)
+
+    CASE 2
+      cellDivide = CHR$(179)
+      cellLeft = CHR$(186)
+      cellRight = CHR$(186)
+      divideCross = CHR$(197)
+      divideFlat = CHR$(196)
+      divideLeft = CHR$(199)
+      divideRight = CHR$(182)
+      lowerDivide = CHR$(207)
+      lowerFlat = CHR$(205)
+      lowerLeft = CHR$(200)
+      lowerRight = CHR$(188)
+      upperDivide = CHR$(209)
+      upperFlat = CHR$(205)
+      upperLeft = CHR$(201)
+      upperRight = CHR$(187)
+
+  END SELECT
+
+  '
+  ' Set grid colors
+  '
+  COLOR GridStyle.Forecolor, GridStyle.Backcolor
+
+  '
+  ' Upper left corner
+  '
+  LOCATE 2, 1
+  PRINT upperLeft;
+
+  '
+  ' Upper center border
+  '
+  FOR x = 1 TO 25
+    PRINT upperFlat; upperFlat; upperDivide;
+  NEXT
+  
+  '
+  ' Upper right corner
+  '
+  PRINT upperFlat; upperFlat; upperRight
+
+  FOR row = 1 TO 10
+
+    '
+    ' Left side of cell row
+    '
+    PRINT cellLeft;
+
+    '
+    ' Cells
+    '
+    FOR x = 1 TO 25
+      PRINT "  "; cellDivide;
+    NEXT
+
+    '
+    ' Right side of cell row
+    '
+    PRINT "  "; cellRight
+
+    '
+    ' Left side of divider row
+    '
+    PRINT divideLeft;
+
+    '
+    ' Inner divider
+    '
+    FOR x = 1 TO 25
+      PRINT divideFlat; divideFlat; divideCross;
+    NEXT
+
+    '
+    ' Right side of divider row
+    '
+    PRINT divideFlat; divideFlat; divideRight
+
+  NEXT
+
+  '
+  ' Last cell row
+  '
+  PRINT cellLeft;
+  FOR x = 1 TO 25
+    PRINT "  "; cellDivide;
+  NEXT
+  PRINT "  "; cellRight
+
+  '
+  ' Bottom right corner
+  '
+  PRINT lowerLeft;
+  FOR x = 1 TO 25
+    PRINT lowerFlat; lowerFlat; lowerDivide;
+  NEXT
+  PRINT lowerFlat; lowerFlat; lowerRight;
+
+END SUB
+
+' ===================================================================
+' DrawMenu
+' ===================================================================
+SUB DrawMenu
+
+  '
+  ' Clear the menu space on the top row of the screen
+  '
+  VIEW PRINT 1 TO 1
+  COLOR MenuStyle.ForeColor, MenuStyle.BackColor
+  CLS
+  VIEW PRINT
+
+  '
+  ' Draw each menu item
+  '
+  DIM i AS INTEGER
+  FOR i = LBOUND(bar) TO UBOUND(bar)
+    DrawMenuItem i, 0
+  NEXT
+
+END SUB
+
+' ===================================================================
+' DrawMenuItem
+' ===================================================================
+SUB DrawMenuItem (itemId AS INTEGER, selected AS INTEGER)
+
+  '
+  ' Move to the screen location of the item
+  '
+  LOCATE 1, bar(itemId).posX
+
+  '
+  ' Set the color depending on whether this item is selected
+  '
+  IF selected THEN
+    COLOR MenuStyle.SelectedForeColor, MenuStyle.SelectedBackColor
+  ELSE
+    COLOR MenuStyle.ForeColor, MenuStyle.BackColor
+  END IF
+
+  PRINT bar(itemId).text;
+
+END SUB
+
+' ===================================================================
+' DrawStatus
+' ===================================================================
+SUB DrawStatus (status AS STRING)
+
+  '
+  ' Set a viewport and clear the last row of the screen
+  '
+  VIEW PRINT 25 TO 25
+  COLOR StatusStyle.Foreground, StatusStyle.Background
+  CLS
+ 
+  '
+  ' Print the updated status and reset the viewport
+  '
+  PRINT status;
+  VIEW PRINT
+
+END SUB
+
+' ===================================================================
+' DrawTable
+' ===================================================================
+SUB DrawTable
+
+  DIM divideLine AS STRING * 1
+  DIM divideLeft AS STRING * 1
+  DIM divideRight AS STRING * 1
+  DIM lowerLeft AS STRING * 1
+  DIM lowerRight AS STRING * 1
+  DIM upperLeft AS STRING * 1
+  DIM upperRight AS STRING * 1
+  DIM horizontal AS STRING * 1
+  DIM vertical AS STRING * 1
+
+  '
+  ' Select the border characters based on the border style
+  '
+  SELECT CASE TableStyle.Border
+    CASE 1
+      divideLeft = CHR$(195)
+      divideLine = CHR$(196)
+      divideRight = CHR$(180)
+      lowerLeft = CHR$(192)
+      lowerRight = CHR$(217)
+      upperLeft = CHR$(218)
+      upperRight = CHR$(191)
+      horizontal = CHR$(196)
+      vertical = CHR$(179)
+    CASE 2
+      divideLeft = CHR$(199)
+      divideLine = CHR$(196)
+      divideRight = CHR$(182)
+      lowerLeft = CHR$(200)
+      lowerRight = CHR$(188)
+      upperLeft = CHR$(201)
+      upperRight = CHR$(187)
+      horizontal = CHR$(205)
+      vertical = CHR$(186)
+  END SELECT
+
+  '
+  ' Draw the top border of the table
+  '
+  LOCATE 2, 1
+  COLOR TableStyle.Forecolor, TableStyle.Backcolor
+  PRINT upperLeft; STRING$(77, horizontal); upperRight
+
+  '
+  ' Draw the header names
+  '
+  PRINT vertical;
+  PRINT " Id  Ruler  Tech  Mined  Supply  Detect  Control  Shield  Produce  Available ";
+  PRINT vertical
+
+  '
+  ' Draw the heading separator
+  '
+  PRINT divideLeft; STRING$(77, divideLine); divideRight
+
+  '
+  ' Draw each row of data
+  '
+  DIM x AS INTEGER
+  FOR x = 3 TO 23
+   
+    LOCATE x, 1: PRINT vertical
+    LOCATE x, 79: PRINT vertical;
+
+  NEXT
+
+  '
+  ' Draw the bottom border
+  '
+  LOCATE 24, 1
+  PRINT lowerLeft; STRING$(77, horizontal); lowerRight;
+
+  ' Draw asteroids
+  FOR x = 1 TO asteroids
+    DrawTableRow x
+  NEXT
+
+END SUB
+
+' ===================================================================
+' DrawTableRow
+' ===================================================================
+SUB DrawTableRow (x AS INTEGER)
+
+  IF x > asteroids THEN
+    EXIT SUB
+  END IF
 
   LOCATE x + 4, 3: PRINT USING "##"; x;
+
   IF asteroid(x).ruler > 0 THEN
     LOCATE , 9: PRINT CHR$(64 + x);
     LOCATE , 15: PRINT USING "##"; asteroid(x).tech;
     LOCATE , 21: PRINT USING "###"; asteroid(x).mined;
-    LOCATE , 28: PRINT USING "####"; asteroid(x).supply;
-    LOCATE , 37: PRINT USING "##"; asteroid(x).detect;
-    LOCATE , 45: PRINT USING "###"; asteroid(x).control;
-    LOCATE , 54: PRINT USING "###"; asteroid(x).shield;
-    LOCATE , 62: PRINT USING "###"; asteroid(x).produce;
+    LOCATE , 28: PRINT USING "####"; asteroid(x).Supply;
+    LOCATE , 37: PRINT USING "##"; asteroid(x).Detect;
+    LOCATE , 45: PRINT USING "###"; asteroid(x).Control;
+    LOCATE , 54: PRINT USING "###"; asteroid(x).Shield;
+    LOCATE , 62: PRINT USING "###"; asteroid(x).Produce;
     LOCATE , 72: PRINT USING "####"; asteroid(x).ships;
   ELSE
     LOCATE , 6: PRINT "[data not available]";
@@ -488,219 +1134,193 @@ SUB DataLine (x AS INTEGER)
 
 END SUB
 
-SUB DataPage
+' ===================================================================
+' DrawWindow
+' ===================================================================
+SUB DrawWindow (wid AS INTEGER)
 
-  DIM x AS INTEGER
+  DIM i AS INTEGER
 
-  PCOPY 1, 3: SCREEN , , 3, 3: display = 3
+  '
+  ' Set the display color of the window
+  '
+  COLOR WinStyle.Forecolor, WinStyle.Backcolor
 
-  LOCATE 3, 2: PRINT " Id  Ruler  Tech  Mined  ";
-  PRINT "Supply  Detect  Control  Shield  Produce  Available";
+  '
+  ' Draw the top border
+  '
+  LOCATE win(wid).posY, win(wid).posX
+  SELECT CASE WinStyle.Border
+    CASE 1
+      PRINT CHR$(218); STRING$(win(wid).sizeX, 196); CHR$(191)
+    CASE 2
+      PRINT CHR$(201); STRING$(win(wid).sizeX, 205); CHR$(187)
+  END SELECT
 
-  LOCATE 4, 1
-  IF border = 1 THEN
-    PRINT CHR$(204); STRING$(77, 205); CHR$(185)
-  ELSE
-    PRINT CHR$(195); STRING$(77, 196); CHR$(180)
-  END IF
+  '
+  ' Draw each row of the window
+  '
+  FOR r = 1 TO win(wid).sizeY
+   
+    LOCATE win(wid).posY + r, win(wid).posX
+   
+    SELECT CASE WinStyle.Border
+      CASE 1
+        PRINT CHR$(179); text(wid, r); CHR$(179);
+      CASE 2
+        PRINT CHR$(186); text(wid, r); CHR$(186);
+    END SELECT
 
-  FOR x = 1 TO asteroids
-    DataLine x
+    SELECT CASE WinStyle.Shadow
+      CASE 1
+        COLOR WinStyle.ShadowForecolor, WinStyle.ShadowBackcolor
+        PRINT CHR$(WinStyle.ShadowChar)
+        COLOR WinStyle.Forecolor, WinStyle.Backcolor
+    END SELECT
+
+  NEXT
+    
+  '
+  ' Draw the lower border
+  '
+  LOCATE win(wid).posY + win(wid).sizeY + 1, win(wid).posX
+  SELECT CASE WinStyle.Border
+    CASE 1
+      PRINT CHR$(192); STRING$(win(wid).sizeX, 196); CHR$(217);
+    CASE 2
+      PRINT CHR$(200); STRING$(win(wid).sizeX, 205); CHR$(188);
+  END SELECT
+ 
+  '
+  ' Draw the shadow (including the shadow of the lower border)
+  '
+  SELECT CASE WinStyle.Shadow
+    CASE 1
+      COLOR WinStyle.ShadowForecolor, WinStyle.ShadowBackcolor
+      PRINT CHR$(WinStyle.ShadowChar);
+      LOCATE win(wid).posY + win(wid).sizeY + 2, win(wid).posX + 1
+      PRINT STRING$(win(wid).sizeX + 2, WinStyle.ShadowChar);
+      COLOR WinStyle.Forecolor, WinStyle.Backcolor
+  END SELECT
+
+  '
+  ' Draw fields
+  '
+  FOR i = 1 TO win(wid).fields
+    DrawWindowField wid, i
   NEXT
 
-  PCOPY 3, 0: SCREEN , , 0, 0
-
 END SUB
 
-SUB DoWindow (id AS INTEGER)
+' ===================================================================
+' DrawWindowField
+' ===================================================================
+SUB DrawWindowField (wid AS INTEGER, fid AS INTEGER)
 
-  DIM format AS STRING
-  DIM x      AS INTEGER
+  DIM backcolor AS INTEGER
+  DIM forecolor AS INTEGER
+
+  '
+  ' Set the color depending on whether the field is selected
+  '
+  IF win(wid).selected = fid THEN
+    backcolor = WinStyle.SelectedBackcolor
+    forecolor = WinStyle.SelectedForecolor
+  ELSE
+    backcolor = WinStyle.Backcolor
+    forecolor = WinStyle.Forecolor
+  END IF
+  COLOR forecolor, backcolor
+
+  '
+  ' Get the kind of field
+  '
+  SELECT CASE fld(wid, fid).kind
+   
+    CASE FieldKind.Button, FieldKind.Boolean
+      '
+      ' Button and Boolean (text)
+      '
+      LOCATE fld(wid, fid).posY, fld(wid, fid).posX
+      PRINT fieldtext(wid, fid);
+   
+    CASE FieldKind.Integer
+      '
+      ' Integer Input
+      '
+      DIM format AS STRING
+      format = " " + STRING$(LEN(fieldtext(wid, fid)), "#") + " "
+      LOCATE fld(wid, fid).posY, fld(wid, fid).posX - 1
+      PRINT USING format; VAL(fieldtext(wid, fid));
  
-  DO
-    REM Draw the window
-      SCREEN , , 0, display: COLOR 0, 7
-      LOCATE place1(id), place2(id)
-      IF border = 1 THEN
-        PRINT CHR$(201); STRING$(length(id), 205); CHR$(187)
-      ELSE
-        PRINT CHR$(218); STRING$(length(id), 196); CHR$(191)
-      END IF
-      FOR x = 1 TO height(id)
-        LOCATE place1(id) + x, place2(id)
-        IF border = 1 THEN
-          PRINT CHR$(186); text(id, x); CHR$(186);
-        ELSE
-          PRINT CHR$(179); text(id, x); CHR$(179);
-        END IF
-        IF shadow THEN PRINT CHR$(177)
-      NEXT
-      LOCATE place1(id) + height(id) + 1, place2(id)
-      IF border = 1 THEN
-        PRINT CHR$(200); STRING$(length(id), 205); CHR$(188);
-      ELSE
-        PRINT CHR$(192); STRING$(length(id), 196); CHR$(217);
-      END IF
-      IF shadow THEN
-        PRINT CHR$(177);
-        LOCATE place1(id) + height(id) + 2, place2(id) + 1
-        PRINT STRING$(length(id) + 2, 177);
-      END IF
-      FOR current = 1 TO fields(id)
-        IF fieldtype(id, current) = 2 THEN GOSUB DrawField
-      NEXT
-      SCREEN , , 0, 0: COLOR 7, 0
-   
-    IF setcurrent = 0 THEN current = 1 ELSE current = setcurrent
-    setcurrent = 0
-   
-    DO
-      IF fields(id) = 0 THEN EXIT SUB
-      GOSUB DrawField
-      '
-      ' TODO: Remove this Scan() and pressed global reference.
-      ' It cannot be removed now because other code is dependent
-      ' on the pressed variable getting set. That will be fixed
-      ' when the windowing system is addressed.
-      '
-      Scan
-      SELECT CASE pressed
-       
-        ' Home
-        CASE CHR$(0) + CHR$(ScanCode.Home)
-          COLOR 0, 7: GOSUB DrawField: COLOR 7, 0
-          current = 1
-
-        ' Up
-        CASE CHR$(0) + CHR$(ScanCode.Up), CHR$(ASCII.Backspace)
-          COLOR 0, 7: GOSUB DrawField: COLOR 7, 0
-          current = current - 1: IF current = 0 THEN current = fields(id)
-       
-        ' Left or Right
-        CASE CHR$(0) + CHR$(ScanCode.Left), CHR$(0) + CHR$(ScanCode.Right)
-          IF arrowexit THEN PCOPY display, 0: EXIT SUB
-       
-        ' End
-        CASE CHR$(0) + CHR$(ScanCode.End)
-          COLOR 0, 7: GOSUB DrawField: COLOR 7, 0
-          current = fields(id)
-
-        ' Down
-        CASE CHR$(0) + CHR$(ScanCode.Down), CHR$(ASCII.Space)
-          COLOR 0, 7: GOSUB DrawField: COLOR 7, 0
-          current = current + 1: IF current > fields(id) THEN current = 1
-       
-        CASE CHR$(ASCII.ControlD), CHR$(ASCII.ControlE), CHR$(19), CHR$(24)
-          MoveWindow id
-          EXIT DO
-
-        CASE CHR$(ASCII.Return), CHR$(ASCII.Escape)
-          PCOPY display, 0
-          EXIT SUB
-       
-        CASE "N"
-          IF fieldtype(id, current) = 3 THEN fieldtext(id, current) = " No  "
-       
-        CASE "Y"
-          IF fieldtype(id, current) = 3 THEN fieldtext(id, current) = " Yes "
-       
-        CASE ELSE
-          IF fieldtype(id, current) = 2 THEN
-            IF ASC(pressed) >= 48 AND ASC(pressed) <= 57 THEN
-              fieldtext(id, current) = fieldtext(id, current) + pressed
-              fieldtext(id, current) = RIGHT$(fieldtext(id, current), LEN(fieldtext(id, current)) - 1)
-            END IF
-          END IF
-     
-      END SELECT
-    LOOP
-  LOOP
-
-REM **** Subroutines ****
-
-DrawField:
-  SELECT CASE fieldtype(id, current)
-    CASE 1, 3
-      LOCATE fieldplace1(id, current), fieldplace2(id, current)
-       PRINT fieldtext(id, current);
-    CASE 2
-      format = " " + STRING$(LEN(fieldtext(id, current)), "#") + " "
-      LOCATE fieldplace1(id, current), fieldplace2(id, current) - 1
-      PRINT USING format; VAL(fieldtext(id, current));
   END SELECT
-  RETURN
 
 END SUB
 
-SUB DrawGrid
+' ===================================================================
+' DrawWindowOutline
+' ===================================================================
+SUB DrawWindowOutline (wid AS INTEGER, atX AS INTEGER, atY AS INTEGER)
 
-  DIM block AS STRING
-  DIM grid  AS STRING
-  DIM x     AS INTEGER
+  '
+  ' Set the color of the outline
+  '
+  COLOR WinStyle.OutlineForecolor, WinStyle.OutlineBackcolor
 
-  REM Top of grid
-    IF border = 1 THEN block = CHR$(204) ELSE block = CHR$(195)
-    FOR x = 1 TO 25
-      IF border = 1 THEN
-        block = block + STRING$(2, 205) + CHR$(209)
-      ELSE
-        block = block + STRING$(2, 196) + CHR$(194)
-      END IF
-    NEXT
-    IF border = 1 THEN
-      block = block + STRING$(2, 205) + CHR$(185) + CHR$(13)
-    ELSE
-      block = block + STRING$(2, 196) + CHR$(180) + CHR$(13)
-    END IF
-    grid = block
-  
-  REM Middle of grid
-    IF border = 1 THEN block = CHR$(186) ELSE block = CHR$(179)
-    FOR x = 1 TO 25
-      block = block + "  " + CHR$(179)
-    NEXT
-    IF border = 1 THEN
-      block = block + "  " + CHR$(186) + CHR$(13) + CHR$(199)
-    ELSE
-      block = block + "  " + CHR$(179) + CHR$(13) + CHR$(195)
-    END IF
-    FOR x = 1 TO 25
-      block = block + STRING$(2, 196) + CHR$(197)
-    NEXT
-    IF border = 1 THEN
-      block = block + STRING$(2, 196) + CHR$(182) + CHR$(13)
-    ELSE
-      block = block + STRING$(2, 196) + CHR$(180) + CHR$(13)
-    END IF
-    FOR x = 1 TO 10
-      grid = grid + block
-    NEXT
- 
-  REM Bottom of grid
-    IF border = 1 THEN block = CHR$(186) ELSE block = CHR$(179)
-    FOR x = 1 TO 25
-      block = block + "  " + CHR$(179)
-    NEXT
-    IF border = 1 THEN
-      block = block + "  " + CHR$(186) + CHR$(13) + CHR$(204)
-    ELSE
-      block = block + "  " + CHR$(179) + CHR$(13) + CHR$(195)
-    END IF
-    FOR x = 1 TO 25
-      IF border = 1 THEN
-        block = block + STRING$(2, 205) + CHR$(207)
-      ELSE
-        block = block + STRING$(2, 196) + CHR$(193)
-      END IF
-    NEXT
-    IF border = 1 THEN
-      block = block + STRING$(2, 205) + CHR$(185)
-    ELSE
-      block = block + STRING$(2, 196) + CHR$(180)
-    END IF
-    grid = grid + block
+  '
+  ' Draw upper-left corner
+  '
+  LOCATE atY, atX
+  SELECT CASE WinStyle.Border
+    CASE 1
+      PRINT CHR$(218); CHR$(196);
+    CASE 2
+      PRINT CHR$(201); CHR$(205);
+  END SELECT
+  LOCATE atY + 1, atX
+  SELECT CASE WinStyle.Border
+    CASE 1
+      PRINT CHR$(179);
+    CASE 2
+      PRINT CHR$(186);
+  END SELECT
 
-  LOCATE 2, 1: PRINT grid;
+  '
+  ' Draw lower-left corner
+  '
+  LOCATE atY + win(wid).sizeY, atX
+  IF WinStyle.Border = 2 THEN PRINT CHR$(186);  ELSE PRINT CHR$(179);
+  LOCATE atY + win(wid).sizeY + 1, atX
+  SELECT CASE WinStyle.Border
+    CASE 1
+      PRINT CHR$(192); CHR$(196);
+    CASE 2
+      PRINT CHR$(200); CHR$(205);
+  END SELECT
+
+  '
+  ' Draw upper-right corner
+  '
+  LOCATE atY, atX + win(wid).sizeX
+  IF WinStyle.Border = 2 THEN
+    PRINT CHR$(205); CHR$(187);
+  ELSE
+    PRINT CHR$(196); CHR$(191);
+  END IF
+  LOCATE atY + 1, atX + win(wid).sizeX + 1
+  IF WinStyle.Border = 2 THEN PRINT CHR$(186);  ELSE PRINT CHR$(179);
+
+  '
+  ' Draw lower-right corner
+  '
+  LOCATE atY + win(wid).sizeY, atX + win(wid).sizeX + 1
+  IF WinStyle.Border = 2 THEN PRINT CHR$(186);  ELSE PRINT CHR$(179);
+  LOCATE atY + win(wid).sizeY + 1, atX + win(wid).sizeX
+  IF WinStyle.Border = 2 THEN
+    PRINT CHR$(205); CHR$(188);
+  ELSE
+    PRINT CHR$(196); CHR$(217);
+  END IF
 
 END SUB
 
@@ -713,11 +1333,9 @@ SUB FindDistance
    
     ' Get the two asteroids for which to calculate distance
     DoWindow 22
-
-    '
-    ' TODO: remove this pressed global reference
-    '
-    IF pressed = CHR$(ASCII.Escape) THEN EXIT DO
+    IF win(22).canceled THEN
+      EXIT DO
+    END IF
    
     ast1 = VAL(fieldtext(22, 1))
     ast2 = VAL(fieldtext(22, 2))
@@ -725,21 +1343,18 @@ SUB FindDistance
     ' Ensure the first asteroid exists
     IF ast1 < 1 OR ast1 > asteroids THEN
       DoWindow 23
-      WaitForKeyPress
    
     ' Ensure the second asteroid exists
     ELSEIF ast2 < 1 OR ast2 > asteroids THEN
       DoWindow 24
-      WaitForKeyPress
    
     ' Ensure the same asteroid is not specified
     ELSEIF ast1 = ast2 THEN
       DoWindow 25
-      WaitForKeyPress
   
     ELSE
       DoWindow 26
-      LOCATE place1(26) + 1, place2(26) + 28
+      LOCATE win(26).posY + 1, win(26).posX + 28
       COLOR 0, 7: IF CalcDistance(ast1, ast2) > 9 THEN PRINT " ";
       PRINT USING "##."; CalcDistance(ast1, ast2);
       COLOR 7, 0: WaitForKeyPress: PCOPY display, 0
@@ -770,44 +1385,141 @@ FUNCTION GetKey$
 
 END FUNCTION
 
-SUB GetWindows
+SUB InitData
+
+  DIM x AS INTEGER
+
+  FOR x = 1 TO asteroids
+    asteroid(x).Control = INT(RND * 10)
+    asteroid(x).Detect = INT(RND * 10)
+    asteroid(x).mined = INT(RND * 50) + 50
+    IF x <= players THEN asteroid(x).ruler = x ELSE asteroid(x).ruler = 0
+    asteroid(x).Produce = 50
+    asteroid(x).tech = 10
+    asteroid(x).Shield = 0
+    asteroid(x).ships = 200
+    asteroid(x).Supply = 0
+  NEXT
+
+END SUB
+
+' ===================================================================
+' LoadMenu
+' -------------------------------------------------------------------
+' Loads the menu bar. This subroutine should only be called once.
+' ===================================================================
+SUB LoadMenu
+
+  DIM count AS INTEGER
+  DIM i     AS INTEGER
+  DIM posX  AS INTEGER
+
+  '
+  ' Read the number of menu items in the bar
+  '
+  READ count
+
+  '
+  ' Load each menu definition
+  '
+  posX = 2
+  FOR i = 1 TO count
+   
+    '
+    ' Load the menu text and window ID
+    '
+    READ bar(i).text
+    READ bar(i).wid
+    
+    '
+    ' Calculate the horizontal position of this menu item
+    '
+    bar(i).posX = posX
+    posX = posX + LEN(bar(i).text)
+
+  NEXT
+
+END SUB
+
+' ===================================================================
+' LoadWindows
+' -------------------------------------------------------------------
+' Loads Window definitions. This should only be called once.
+' ===================================================================
+SUB LoadWindows
 
   DIM block   AS STRING
   DIM char    AS STRING
   DIM ending  AS INTEGER
+  DIM fid     AS INTEGER
   DIM start   AS INTEGER
-  DIM x       AS INTEGER
+  DIM wid     AS INTEGER
 
   DO
     READ block
     SELECT CASE block
-      CASE "End of windows"
-        EXIT SUB
-      CASE "Separate"
-        height(x) = height(x) + 1
-        text(x, height(x)) = STRING$(length(x), 196)
+     
       CASE "Start"
-        x = x + 1
-        READ place1(x), place2(x)
+        '
+        ' Start a new window definition
+        '
+        wid = wid + 1
+        READ win(wid).posY, win(wid).posX
+     
+      CASE "Help"
+        '
+        ' Set Help Window
+        '
+        READ win(wid).helpWid
+
+      CASE "-"
+        '
+        ' Append separator
+        '
+        win(wid).sizeY = win(wid).sizeY + 1
+        text(wid, win(wid).sizeY) = STRING$(win(wid).sizeX, 196)
+
+      CASE "End of windows"
+        '
+        ' End of window data
+        '
+        EXIT SUB
+     
       CASE ELSE
-        height(x) = height(x) + 1
-        text(x, height(x)) = block
-        IF length(x) = 0 THEN length(x) = LEN(block)
-        IF INSTR(text(x, height(x)), "@") THEN
+        '
+        ' Add a line of content to the window definition
+        '
+        win(wid).sizeY = win(wid).sizeY + 1
+        text(wid, win(wid).sizeY) = block
+       
+        IF win(wid).sizeX = 0 THEN win(wid).sizeX = LEN(block)
+       
+        IF INSTR(text(wid, win(wid).sizeY), "@") THEN
+          '
+          ' Parse a button field
+          '
           char = "@"
           GOSUB ProcessData
-          fieldtype(x, fields(x)) = 1
-          fieldtext(x, fields(x)) = MID$(text(x, height(x)), start, ending)
-        ELSEIF INSTR(text(x, height(x)), "#") THEN
+          fld(wid, win(wid).fields).kind = FieldKind.Button
+          fieldtext(wid, win(wid).fields) = MID$(text(wid, win(wid).sizeY), start, ending)
+       
+        ELSEIF INSTR(text(wid, win(wid).sizeY), "#") THEN
+          '
+          ' Parse a numeric input field
+          '
           char = "#"
           GOSUB ProcessData
-          fieldtype(x, fields(x)) = 2
-          fieldtext(x, fields(x)) = STRING$(ending, 32)
-        ELSEIF INSTR(text(x, height(x)), "&") THEN
+          fld(wid, win(wid).fields).kind = FieldKind.Integer
+          fieldtext(wid, win(wid).fields) = STRING$(ending, 32)
+       
+        ELSEIF INSTR(text(wid, win(wid).sizeY), "&") THEN
+          '
+          ' Parse a boolean input field
+          '
           char = "&"
           GOSUB ProcessData
-          fieldtype(x, fields(x)) = 3
-          fieldtext(x, fields(x)) = " Yes "
+          fld(wid, win(wid).fields).kind = FieldKind.Boolean
+          fieldtext(wid, win(wid).fields) = " Yes "
         END IF
     END SELECT
   LOOP
@@ -815,33 +1527,21 @@ SUB GetWindows
 REM **** Subroutines ****
 
 ProcessData:
-  start = INSTR(text(x, height(x)), char)
-  MID$(text(x, height(x)), start, 1) = " "
-  ending = INSTR(text(x, height(x)), char)
-  MID$(text(x, height(x)), ending, 1) = " "
+ 
+  ' Get the index of the start of the field and replace with a space
+  start = INSTR(text(wid, win(wid).sizeY), char)
+  MID$(text(wid, win(wid).sizeY), start, 1) = " "
+ 
+  ' Get the index of the end of the field and replace with a space
+  ending = INSTR(text(wid, win(wid).sizeY), char)
+  MID$(text(wid, win(wid).sizeY), ending, 1) = " "
   ending = ending - start + 1
-  fields(x) = fields(x) + 1
-  fieldplace1(x, fields(x)) = place1(x) + height(x)
-  fieldplace2(x, fields(x)) = place2(x) + start
+ 
+  ' Add field data
+  win(wid).fields = win(wid).fields + 1
+  fld(wid, win(wid).fields).posY = win(wid).posY + win(wid).sizeY
+  fld(wid, win(wid).fields).posX = win(wid).posX + start
   RETURN
-
-END SUB
-
-SUB InitData
-
-  DIM x AS INTEGER
-
-  FOR x = 1 TO asteroids
-    asteroid(x).control = INT(RND * 10)
-    asteroid(x).detect = INT(RND * 10)
-    asteroid(x).mined = INT(RND * 50) + 50
-    IF x <= players THEN asteroid(x).ruler = x ELSE asteroid(x).ruler = 0
-    asteroid(x).produce = 50
-    asteroid(x).tech = 10
-    asteroid(x).shield = 0
-    asteroid(x).ships = 200
-    asteroid(x).supply = 0
-  NEXT
 
 END SUB
 
@@ -850,27 +1550,28 @@ SUB MakeAtlas
   DIM band     AS INTEGER
   DIM cluster1 AS INTEGER
   DIM cluster2 AS INTEGER
-  DIM last     AS INTEGER
+  DIM keypress AS STRING
+  DIM LAST     AS INTEGER
   DIM r1       AS INTEGER
   DIM r2       AS INTEGER
+  DIM selected AS INTEGER
   DIM temp1    AS INTEGER
   DIM temp2    AS INTEGER
   DIM x        AS INTEGER
 
   DrawGrid
-  PCOPY 0, 2: display = 2: current = 3: last = 3
+  PCOPY 0, 2: display = 2: selected = 3: LAST = 3
 
   DO
-    SELECT CASE current
+    SELECT CASE selected
      
       CASE 1
         '
         ' Hide the window in order to see the grid
         '
-        LOCATE 25, 2: COLOR 0, 7
-        PRINT " Press any key to restore the window...";
+        DrawStatus "Press any key to restore the window..."
         WaitForKeyPress
-        LOCATE 25, 2: PRINT STRING$(77, 32); : COLOR 7, 0
+        DrawStatus ""
      
       CASE 2
         '
@@ -879,14 +1580,14 @@ SUB MakeAtlas
         EXIT SUB
      
       CASE ELSE
-        IF current = 3 OR current = 4 THEN
+        IF selected = 3 OR selected = 4 THEN
           cluster1 = INT(RND * 5) + 1
           cluster2 = INT(RND * 20) + 1
           band = INT(RND * 9) + 2
         END IF
         FOR x = 1 TO asteroids
           SCREEN , , 2, 2
-          SELECT CASE current
+          SELECT CASE selected
             CASE 3
               GOSUB GetCluster
             CASE 4
@@ -897,7 +1598,7 @@ SUB MakeAtlas
               GOSUB GetRandom
             CASE 7
               IF x <= players THEN
-                SELECT CASE last
+                SELECT CASE LAST
                   CASE 3
                     GOSUB GetCluster
                   CASE 4
@@ -913,7 +1614,7 @@ SUB MakeAtlas
           IF x <= players THEN COLOR 0, 7
           PRINT USING "##"; x; : COLOR 7, 0
           asteroid(x).local1 = r1: asteroid(x).local2 = r2
-          IF pressed = CHR$(ASCII.Escape) THEN EXIT FOR
+          IF keypress = CHR$(ASCII.Escape) THEN EXIT FOR
         NEXT
         PCOPY 2, 0: SCREEN , , 0, 0
     END SELECT
@@ -921,16 +1622,18 @@ SUB MakeAtlas
     '
     ' Show the atlas editor menu
     '
-    setcurrent = current: DoWindow 9
-   
-    SELECT CASE current
+    win(9).selected = selected
+    DoWindow 9
+    selected = win(9).selected
+
+    SELECT CASE selected
       CASE 3, 4, 6
         SCREEN , , 2, 2
         FOR x = 1 TO asteroids
           LOCATE asteroid(x).local1 * 2 + 1, asteroid(x).local2 * 3 - 1
           PRINT "  ";
         NEXT
-        last = current
+        LAST = selected
       CASE 7
         SCREEN , , 2, 2
         FOR x = 1 TO players
@@ -966,30 +1669,27 @@ GetManual:
     IF x <= players THEN COLOR 21, 7 ELSE COLOR 21, 0
     PRINT USING "##"; x; : COLOR 7, 0
    
-    '
-    ' TODO: remove this Scan() reference
-    '
-    Scan
+    keypress = GetKey$
    
     LOCATE r1 * 2 + 1, r2 * 3 - 1: PRINT "  ";
-    SELECT CASE pressed
+    SELECT CASE keypress
      
       CASE CHR$(ASCII.Return), CHR$(ASCII.Escape)
         EXIT DO
      
-      CASE "E", CHR$(ASCII.ControlE), CHR$(0) + CHR$(ScanCode.Up)
+      CASE "E", CHR$(Control.E), CHR$(0) + CHR$(ScanCode.Up)
         temp1 = r1 - 1: temp2 = r2
         IF temp1 < 1 THEN temp1 = 1
      
-      CASE "D", CHR$(ASCII.ControlD), CHR$(0) + CHR$(ScanCode.Right)
+      CASE "D", CHR$(Control.D), CHR$(0) + CHR$(ScanCode.Right)
         temp1 = r1: temp2 = r2 + 1
         IF temp2 > 26 THEN temp2 = 26
      
-      CASE "S", CHR$(ASCII.ControlS), CHR$(0) + CHR$(ScanCode.Left)
+      CASE "S", CHR$(Control.S), CHR$(0) + CHR$(ScanCode.Left)
         temp1 = r1: temp2 = r2 - 1
         IF temp2 < 1 THEN temp2 = 1
      
-      CASE "X", CHR$(ASCII.ControlX), CHR$(0) + CHR$(ScanCode.Down)
+      CASE "X", CHR$(Control.X), CHR$(0) + CHR$(ScanCode.Down)
         temp1 = r1 + 1: temp2 = r2
         IF temp1 > 11 THEN temp1 = 11
     END SELECT
@@ -1006,160 +1706,81 @@ GetRandom:
 
 END SUB
 
-FUNCTION Menu
-
-  DIM keypress AS STRING
-  DIM mode     AS INTEGER
-  DIM position AS INTEGER
-
-  PCOPY display, 0: position = 1
-   
-  DO
-    GOSUB DrawMenuText
-    IF mode = 1 THEN
-      arrowexit = 1: DoWindow position + 9: arrowexit = 0
-     
-      ' HACK: until Scan()/pressed is fully removed
-      '
-      keypress = pressed
-    ELSE
-      keypress = GetKey$
-    END IF
-    SELECT CASE keypress
-     
-      CASE CHR$(0) + CHR$(ScanCode.Left)
-        '
-        ' Move left
-        '
-        GOSUB NavigateLeft
-
-      CASE CHR$(ASCII.Backspace), CHR$(ASCII.ControlS), "S"
-        '
-        ' Move left
-        '
-        GOSUB NavigateLeft
-     
-      CASE CHR$(0) + CHR$(ScanCode.Right)
-        '
-        ' Move right
-        '
-        GOSUB NavigateRight
-
-      CASE CHR$(ASCII.ControlD), CHR$(ASCII.Space), "D"
-        '
-        ' Move right
-        '
-        GOSUB NavigateRight
-     
-      ' Move down (open menu)
-      CASE CHR$(0) + CHR$(ScanCode.Down), CHR$(ASCII.ControlX), "X"
-        IF mode = 0 THEN mode = 1
-     
-      CASE CHR$(ASCII.Return)
-        IF mode = 1 THEN Menu = position: EXIT FUNCTION
-     
-      CASE CHR$(ASCII.Escape)
-        mode = 0
-
-    END SELECT
-  LOOP
-
-REM *** Subroutines ***
-
-DrawMenuText:
-  LOCATE 1, INSTR(bar, menutext(position)) + 1
-  PRINT menutext(position)
-  RETURN
-
-NavigateLeft:
-  '
-  ' Moves to the menu item to the left
-  '
-  COLOR 0, 7: GOSUB DrawMenuText: COLOR 7, 0
-  position = position - 1: IF position = 0 THEN position = 5
-  RETURN
-
-NavigateRight:
-  '
-  ' Moves to the menu item to the right
-  '
-  COLOR 0, 7: GOSUB DrawMenuText: COLOR 7, 0
-  position = position + 1: IF position = 6 THEN position = 1
-  RETURN
-
-END FUNCTION
-
-SUB MoveWindow (id AS INTEGER)
+SUB MoveWindow (wid AS INTEGER)
 
   DIM diff1     AS INTEGER
   DIM diff2     AS INTEGER
   DIM keypress  AS STRING
-  DIM newplace1 AS INTEGER
-  DIM newplace2 AS INTEGER
+  DIM toX       AS INTEGER
+  DIM toY       AS INTEGER
   DIM x         AS INTEGER
 
   '
-  ' Get the current location of the window
+  ' Get the starting location of the window
   '
-  newplace1 = place1(id)
-  newplace2 = place2(id)
+  toX = win(wid).posX
+  toY = win(wid).posY
 
   DO
-    PCOPY display, 0: GOSUB DrawOutline
+    PCOPY display, 0
+    DrawWindowOutline wid, toX, toY
 
-    ' Get the next keyboard input...
     keypress = GetKey$
 
     SELECT CASE keypress
 
-      CASE CHR$(ASCII.ControlD), "D", CHR$(0) + CHR$(ScanCode.MoveRight)
+      CASE CHR$(Control.D), "D", CHR$(0) + CHR$(ScanCode.Right)
         '
         ' Move right
         '
-        newplace2 = newplace2 + 1
+        toX = toX + 1
      
-      CASE CHR$(ASCII.ControlE), "E", CHR$(0) + CHR$(ScanCode.Up)
+      CASE CHR$(Control.E), "E", CHR$(0) + CHR$(ScanCode.Up)
         '
         ' Move Up
         '
-        newplace1 = newplace1 - 1
+        toY = toY - 1
      
       CASE CHR$(ASCII.Return)
         '
         ' Enter (final position selected)
         '
-        diff1 = newplace1 - place1(id): diff2 = newplace2 - place2(id)
-        FOR x = 1 TO fields(id)
-          fieldplace1(id, x) = fieldplace1(id, x) + diff1
-          fieldplace2(id, x) = fieldplace2(id, x) + diff2
+        diff1 = toY - win(wid).posY
+        diff2 = toX - win(wid).posX
+       
+        FOR x = 1 TO win(wid).fields
+          fld(wid, x).posX = fld(wid, x).posX + diff2
+          fld(wid, x).posY = fld(wid, x).posY + diff1
         NEXT
-        place1(id) = newplace1: place2(id) = newplace2
+        win(wid).posX = toX
+        win(wid).posY = toY
         EXIT SUB
      
-      CASE CHR$(ASCII.ControlO), "O"
+      CASE CHR$(Control.O), "O"
         '
         ' Change outline
         '
-        IF outline = 0 THEN outline = 1 ELSE outline = 0
+        ' TODO: support?
+        'IF outline = 0 THEN outline = 1 ELSE outline = 0
      
-      CASE CHR$(ASCII.ControlS), CHR$(0) + CHR$(ScanCode.Left)
+      CASE CHR$(Control.S), CHR$(0) + CHR$(ScanCode.Left)
         '
         ' Move Left
         '
-        newplace2 = newplace2 - 1
+        toX = toX - 1
      
-      CASE CHR$(ASCII.ControlX), CHR$(0) + CHR$(ScanCode.Down)
+      CASE CHR$(Control.X), CHR$(0) + CHR$(ScanCode.Down)
         '
         ' Move Down
         '
-        newplace1 = newplace1 + 1
+        toY = toY + 1
      
       CASE CHR$(ASCII.Escape)
         '
         ' Escape (restore original location)
         '
-        newplace1 = place1(id)
-        newplace2 = place2(id)
+        toX = win(wid).posX
+        toY = win(wid).posY
    
     END SELECT
 
@@ -1169,46 +1790,11 @@ SUB MoveWindow (id AS INTEGER)
 
 REM *** Subroutines ***
 
-DrawOutline:
-  LOCATE newplace1, newplace2
-   IF outline = 1 THEN
-     PRINT CHR$(201); CHR$(205);
-   ELSE
-     PRINT CHR$(218); CHR$(196);
-   END IF
-  LOCATE newplace1 + 1, newplace2
-   IF outline = 1 THEN PRINT CHR$(186);  ELSE PRINT CHR$(179);
-  LOCATE newplace1 + height(id), newplace2
-   IF outline = 1 THEN PRINT CHR$(186);  ELSE PRINT CHR$(179);
-  LOCATE newplace1 + height(id) + 1, newplace2
-   IF outline = 1 THEN
-     PRINT CHR$(200); CHR$(205);
-   ELSE
-     PRINT CHR$(192); CHR$(196);
-   END IF
-  LOCATE newplace1, newplace2 + length(id)
-   IF outline = 1 THEN
-     PRINT CHR$(205); CHR$(187);
-   ELSE
-     PRINT CHR$(196); CHR$(191);
-   END IF
-  LOCATE newplace1 + 1, newplace2 + length(id) + 1
-   IF outline = 1 THEN PRINT CHR$(186);  ELSE PRINT CHR$(179);
-  LOCATE newplace1 + height(id), newplace2 + length(id) + 1
-   IF outline = 1 THEN PRINT CHR$(186);  ELSE PRINT CHR$(179);
-  LOCATE newplace1 + height(id) + 1, newplace2 + length(id)
-   IF outline = 1 THEN
-     PRINT CHR$(205); CHR$(188);
-   ELSE
-     PRINT CHR$(196); CHR$(217);
-   END IF
-  RETURN
-
 CheckPlace:
-  IF newplace1 < 2 THEN newplace1 = 2
-  IF newplace1 > 23 - height(id) THEN newplace1 = 23 - height(id)
-  IF newplace2 < 1 THEN newplace2 = 1
-  IF newplace2 > 78 - length(id) THEN newplace2 = 78 - length(id)
+  IF toY < 2 THEN toY = 2
+  IF toY > 23 - win(wid).sizeY THEN toY = 23 - win(wid).sizeY
+  IF toX < 1 THEN toX = 1
+  IF toX > 78 - win(wid).sizeX THEN toX = 78 - win(wid).sizeX
   RETURN
 
 END SUB
@@ -1222,39 +1808,28 @@ SUB NewGame
     asteroids = VAL(fieldtext(2, 2)): IF asteroids = 0 THEN asteroids = 15
    
     IF players > 10 THEN
-     
+      '
       ' Too many players
+      '
       DoWindow 3
-      WaitForKeyPress
    
     ELSEIF asteroids < players THEN
-
+      '
       ' Not enough asteroids
+      '
       DoWindow 4
-      ' TODO: remove Scan/pressed reference
-      Scan
-      IF pressed = "/" OR pressed = "?" THEN
-        PCOPY 1, 0
-        DoWindow 8
-        WaitForKeyPress
-      END IF
 
     ELSEIF asteroids > 19 THEN
-    
+      '
       ' Too many asteroids
+      '
       DoWindow 5
-      WaitForKeyPress
 
     ELSEIF players = 1 AND asteroids = 1 THEN
-     
+      '
+      ' Can't have one player and one asteroid
+      '
       DoWindow 6
-      ' TODO: remove Scan/pressed reference
-      Scan
-      IF pressed = "/" OR pressed = "?" THEN
-        PCOPY 1, 0
-        DoWindow 7
-        Scan
-      END IF
    
     ELSE
       EXIT DO
@@ -1285,7 +1860,7 @@ SUB NextMonth
 
   REM Calculate ships produced for each asteroid
     FOR x = 1 TO asteroids
-      asteroid(x).ships = asteroid(x).ships + asteroid(x).produce
+      asteroid(x).ships = asteroid(x).ships + asteroid(x).Produce
     NEXT
 
 END SUB
@@ -1297,27 +1872,34 @@ SUB OrderAttack
   DIM trg AS INTEGER
 
   DO
+   
+    '
+    ' Get the source, target, and fleet size
+    '
     DoWindow 15
-    IF pressed = CHR$(ASCII.Escape) THEN EXIT DO
+    IF win(15).canceled THEN
+      EXIT DO
+    END IF
+
     src = VAL(fieldtext(15, 1))
     trg = VAL(fieldtext(15, 2))
     num = VAL(fieldtext(15, 3))
+   
     IF src < 1 OR src > asteroids THEN
       DoWindow 16
-      WaitForKeyPress
     ELSEIF asteroid(src).ruler <> turn THEN
       DoWindow 17
-      WaitForKeyPress
     ELSEIF trg < 1 OR trg > asteroids THEN
       DoWindow 18
-      WaitForKeyPress
     ELSEIF src = trg THEN
       DoWindow 19
-      WaitForKeyPress
     ELSEIF num < 1 OR num > asteroid(src).ships THEN
       DoWindow 20
-      WaitForKeyPress
     ELSE
+     
+      '
+      ' Initialize mission data
+      '
       missions = missions + 1
       mission(missions).distance = CalcDistance(src, trg)
       mission(missions).goal = 1
@@ -1326,15 +1908,26 @@ SUB OrderAttack
       mission(missions).source = src
       mission(missions).target = trg
       mission(missions).techlevel = asteroid(src).tech
+     
+      '
+      ' Deduct ships from the source asteroid
+      '
       asteroid(src).ships = asteroid(src).ships - num
-      SCREEN , , 3, 0: DataLine src
-      IF display = 3 THEN SCREEN , , 0, 0: DataLine src
+     
+      SCREEN , , 3, 0: DrawTableRow src
+      IF display = 3 THEN SCREEN , , 0, 0: DrawTableRow src
+     
+      ' BUG: total months is not being shown correctly
+      ' This was working in the original, but it may be easier
+      ' to accept the bug for now until the field system is
+      ' updated in the next set of refactoring.
+
       DoWindow 21
-      COLOR 0, 7: LOCATE place1(21) + 2, place2(21) + 16
+      COLOR 0, 7: LOCATE win(21).posY + 2, win(21).posX + 16
       IF mission(missions).distance > 9 THEN PRINT " ";
       PRINT USING "## month"; mission(missions).distance;
       IF mission(missions).distance > 1 THEN PRINT "s";
-      PRINT "."; : COLOR 7, 0: Scan: PCOPY display, 0
+      PRINT "."; : COLOR 7, 0: WaitForKeyPress: PCOPY display, 0
       EXIT DO
     END IF
     PCOPY display, 0
@@ -1346,86 +1939,75 @@ SUB OrderAttack
 
 END SUB
 
-SUB Page
-
-  DIM flat AS STRING
-  DIM side AS STRING
-  DIM x    AS INTEGER
-
-  IF border = 1 THEN
-    side = CHR$(186)
-    flat = CHR$(204) + STRING$(77, 205) + CHR$(185)
-  ELSE
-    side = CHR$(179)
-    flat = CHR$(195) + STRING$(77, 196) + CHR$(180)
-  END IF
-
-  LOCATE 1, 1: PRINT side; : COLOR 0, 7: PRINT bar; : COLOR 7, 0: PRINT side
-  LOCATE 2, 1: PRINT flat
-  FOR x = 3 TO 23
-    LOCATE x, 1: PRINT side: LOCATE x, 79: PRINT side
-  NEXT
-  LOCATE 24, 1: PRINT flat;
-  LOCATE 25, 1: PRINT side; : COLOR 0, 7: PRINT STRING$(77, 32);
-  COLOR 7, 0: PRINT side;
-
-END SUB
-
 SUB PlayGame
 
-  DIM position AS INTEGER
-  DIM x        AS INTEGER
-  
+  DIM wid AS INTEGER
+  DIM x   AS INTEGER
+
   SCREEN , , 0, 0: turn = 1
  
   DO
+   
     empire.shown = turn
+   
     DO
-      position = Menu
-      SELECT CASE position
-        CASE 1
+     
+      '
+      ' Wait for a command from the menu bar
+      '
+      wid = DoMenu
+     
+      SELECT CASE wid
+       
+        CASE 10
           ViewPage
-        CASE 2
-          SELECT CASE current
+
+        CASE 11
+          SELECT CASE win(11).selected
             CASE 1, 2, 3, 4, 5
               EXIT DO
             CASE 6
               END
           END SELECT
-        CASE 3
-          SELECT CASE current
+       
+        CASE 12
+          SELECT CASE win(12).selected
             CASE 2
               OrderAttack
           END SELECT
-        CASE 4
-          SELECT CASE current
+       
+        CASE 13
+          SELECT CASE win(13).selected
             CASE 1
               SelectAlert
           END SELECT
-        CASE 5
-          SELECT CASE current
+
+        CASE 14
+          SELECT CASE win(14).selected
             CASE 1
               DoWindow 30
-              Scan
               PCOPY 1, 0
             CASE 2
               FindDistance
           END SELECT
       END SELECT
+   
     LOOP
+   
     IF fieldtext(27, 1) = " Yes " THEN
       FOR x = 1 TO 5: SOUND 800, .8: SOUND 1200, .8: NEXT
     END IF
-    turn = turn + 1: IF turn > players THEN NextMonth: turn = 1
+
+    '
+    ' Next turn
+    '
+    turn = turn + 1
+    IF turn > players THEN
+      NextMonth
+      turn = 1
+    END IF
+
   LOOP
-
-END SUB
-
-SUB Scan
-
-  DO: pressed = INKEY$: LOOP UNTIL LEN(pressed)
-
-  pressed = UCASE$(pressed)
 
 END SUB
 
@@ -1433,7 +2015,7 @@ SUB SelectAlert
 
   DIM original AS STRING
   DIM x        AS INTEGER
-  DIM y        AS INTEGER
+  DIM Y        AS INTEGER
 
   original = fieldtext(27, 1)
 
@@ -1442,8 +2024,8 @@ SUB SelectAlert
   IF original = " Yes " AND fieldtext(27, 1) = " No  " THEN
     IF players > 1 THEN
       FOR x = 1 TO 3
-        FOR y = 300 TO 60 STEP -10
-          SOUND y, .2
+        FOR Y = 300 TO 60 STEP -10
+          SOUND Y, .2
         NEXT
       NEXT
       DoWindow 29
@@ -1461,25 +2043,43 @@ SUB Setup
 
   SCREEN 0, 0, 0, 0: WIDTH 80: COLOR 7, 0: KEY OFF: CLS : RANDOMIZE TIMER
  
-  border = 0: display = 1: outline = 1: arrowexit = False: shadow = True
+  display = 1: arrowexit = False
 
-  REM Define Bar
-    FOR x = 1 TO 5: READ menutext(x): bar = bar + menutext(x): NEXT
-    bar = " " + bar + STRING$(76 - LEN(bar), 32)
+  LoadMenu
+
+  DrawMenu
+  DrawStatus ""
+  PCOPY 0, 1
+
+  DrawStatus "Please wait..."
+  LoadWindows
+  DrawStatus ""
  
-  Page
-  PCOPY 0, 1: LOCATE 25, 3: COLOR 0, 7: PRINT "Please wait..."; : GetWindows
-  LOCATE 25, 2: PRINT STRING$(77, 32); : COLOR 7, 0: DoWindow 1
+  '
+  ' Starting window
+  '
+  DoWindow 1
+  IF win(1).canceled THEN
+    END
+  ELSEIF win(1).selected = 1 THEN
+    NewGame
+  END IF
 
-  IF current = 1 THEN NewGame
 
-  DataPage
+  ' HACK: Setup the table
+  PCOPY 1, 3: SCREEN , , 3, 3: display = 3
+  DrawTable
+  PCOPY 3, 0: SCREEN , , 0, 0
 
 END SUB
 
 SUB ViewPage
 
+  DIM current AS INTEGER
   DIM x AS INTEGER
+
+  ' HACK: get current view
+  current = win(10).selected
 
   IF current = 2 THEN
     PCOPY 3, 0: display = 3: EXIT SUB
