@@ -11,6 +11,7 @@
   DECLARE SUB BattleMode (id AS INTEGER)
   DECLARE SUB DoWindow (id AS INTEGER)
   DECLARE SUB DrawGrid ()
+  DECLARE SUB DrawGridCells ()
   DECLARE SUB DrawMenu ()
   DECLARE SUB DrawMenuItem (itemId AS INTEGER, selected AS INTEGER)
   DECLARE SUB DrawStatus (status AS STRING)
@@ -19,38 +20,34 @@
   DECLARE SUB DrawWindow (id AS INTEGER)
   DECLARE SUB DrawWindowField (wid AS INTEGER, fid AS INTEGER)
   DECLARE SUB DrawWindowOutline (wid AS INTEGER, atX AS INTEGER, atY AS INTEGER)
-  DECLARE SUB FindDistance ()
-  DECLARE SUB InitData ()
+  DECLARE SUB Execute (cid AS INTEGER)
+  DECLARE SUB ExecuteAbout ()
+  DECLARE SUB ExecuteDistance ()
+  DECLARE SUB ExecuteFilterPlayer ()
+  DECLARE SUB ExecuteFilterNone ()
+  DECLARE SUB ExecuteFilterPlayers ()
+  DECLARE SUB ExecuteNextMonth ()
+  DECLARE SUB ExecuteNextTurn ()
+  DECLARE SUB ExecuteOptionAlerts ()
+  DECLARE SUB ExecuteOrderAttack ()
+  DECLARE SUB ExecuteViewAtlas ()
+  DECLARE SUB ExecuteViewTable ()
   DECLARE SUB LoadMenu ()
   DECLARE SUB LoadWindows ()
   DECLARE SUB MakeAtlas ()
-  DECLARE SUB NextMonth ()
   DECLARE SUB MoveWindow (id AS INTEGER)
-  DECLARE SUB NewGame ()
-  DECLARE SUB OrderAttack ()
   DECLARE SUB PlayGame ()
-  DECLARE SUB SelectAlert ()
-  DECLARE SUB Setup ()
-  DECLARE SUB ViewPage ()
+  DECLARE SUB RefreshPages ()
+  DECLARE SUB SetupGame ()
+  DECLARE SUB SetupGame.New ()
   DECLARE SUB WaitForKeyPress ()
 
   DECLARE FUNCTION CalcDistance (first AS INTEGER, second AS INTEGER)
   DECLARE FUNCTION DoMenu ()
+  DECLARE FUNCTION GetCellScreenX% (cellX AS INTEGER)
+  DECLARE FUNCTION GetCellScreenY% (cellY AS INTEGER)
   DECLARE FUNCTION GetKey$ ()
-
-  TYPE ASTEROIDTYPE
-    Control AS INTEGER
-    Detect  AS INTEGER
-    local1  AS INTEGER
-    local2  AS INTEGER
-    mined   AS INTEGER
-    Produce AS INTEGER
-    ruler   AS INTEGER
-    ships   AS INTEGER
-    Shield  AS INTEGER
-    Supply  AS INTEGER
-    tech    AS INTEGER
-  END TYPE
+  DECLARE FUNCTION IsFiltered% (aid AS INTEGER)
 
   TYPE MISSIONTYPE
     distance  AS INTEGER
@@ -77,6 +74,22 @@
   CONST False = NOT True
 
   ' =================================================================
+  ' Command Constants
+  ' =================================================================
+  CONST Command.About = 1
+  CONST Command.Distance = 2
+  CONST Command.EndGame = 3
+  CONST Command.FilterNone = 4
+  CONST Command.FilterPlayer = 5
+  CONST Command.FilterPlayers = 6
+  CONST Command.NextMonth = 7
+  CONST Command.NextTurn = 8
+  CONST Command.OptionAlerts = 9
+  CONST Command.OrderAttack = 10
+  CONST Command.ViewAtlas = 11
+  CONST Command.ViewTable = 12
+
+  ' =================================================================
   ' Control Character Constants
   ' =================================================================
   CONST Control.D = 4
@@ -94,17 +107,29 @@
   CONST FieldKind.Boolean = 3
 
   ' =================================================================
+  ' Filter constants
+  ' =================================================================
+  CONST Filter.None = 0
+  CONST Filter.Player = 1
+  CONST Filter.Players = 2
+
+  ' =================================================================
   ' GridStyle constants
   ' =================================================================
   CONST GridStyle.Backcolor = 0
   CONST GridStyle.Border = 2
   CONST GridStyle.Forecolor = 1
-
+  CONST GridStyle.CellBackcolor = 0
+  CONST GridStyle.CellForecolor = 7
+  CONST GridStyle.FilterBackcolor = 7
+  CONST GridStyle.FilterForecolor = 15
+  
   ' =================================================================
   ' Maximum UI elements
   ' =================================================================
   CONST MaxMenus = 5
   CONST MaxFields = 10
+  CONST MaxPlayers = 3
   CONST MaxWindows = 50
 
   ' =================================================================
@@ -114,7 +139,7 @@
   CONST MenuStyle.ForeColor = 0
   CONST MenuStyle.SelectedBackColor = 0
   CONST MenuStyle.SelectedForeColor = 15
-                                       
+                                     
   ' =================================================================
   ' ScanCode Constants
   ' =================================================================
@@ -136,7 +161,19 @@
   ' =================================================================
   CONST TableStyle.Backcolor = 0
   CONST TableStyle.Border = 2
+  CONST TableStyle.FilterBackcolor = 7
+  CONST TableStyle.FilterForecolor = 15
+  CONST TableStyle.RowBackcolor = 0
+  CONST TableStyle.RowForecolor = 7
   CONST TableStyle.Forecolor = 7
+
+  ' =================================================================
+  ' VideoPage
+  ' =================================================================
+  CONST VideoPage.Display = 0
+  CONST VideoPage.Working = 1
+  CONST VideoPage.Atlas = 2
+  CONST VideoPage.Table = 3
 
   ' =================================================================
   ' WinStyle constants
@@ -152,6 +189,23 @@
   CONST WinStyle.ShadowChar = 176
   CONST WinStyle.ShadowForecolor = 8
   CONST WinStyle.ShadowBackcolor = 0
+
+  ' =================================================================
+  ' AsteroidType
+  ' =================================================================
+  TYPE AsteroidType
+    Control AS INTEGER
+    Detect  AS INTEGER
+    local1  AS INTEGER
+    local2  AS INTEGER
+    mined   AS INTEGER
+    Produce AS INTEGER
+    ruler   AS INTEGER
+    ships   AS INTEGER
+    Shield  AS INTEGER
+    Supply  AS INTEGER
+    tech    AS INTEGER
+  END TYPE
 
   ' =================================================================
   ' FieldType
@@ -170,6 +224,14 @@
     posX AS INTEGER
     text AS STRING * 10
     wid  AS INTEGER
+  END TYPE
+
+  ' =================================================================
+  ' PlayerType
+  ' =================================================================
+  TYPE PlayerType
+    viewFilter AS INTEGER
+    viewPage   AS INTEGER
   END TYPE
 
   ' =================================================================
@@ -199,24 +261,23 @@
 
   REM Global variables.
     DIM SHARED arrowexit         AS INTEGER
-    DIM SHARED asteroid(1 TO 19) AS ASTEROIDTYPE
+    DIM SHARED asteroid(1 TO 19) AS AsteroidType
     DIM SHARED asteroids         AS INTEGER
-    DIM SHARED display           AS INTEGER
-    DIM SHARED empire.shown      AS INTEGER
     DIM SHARED mission(1 TO 100) AS MISSIONTYPE
     DIM SHARED missions          AS INTEGER
+    DIM SHARED player(1 TO MaxPlayers) AS PlayerType
     DIM SHARED players           AS INTEGER
     DIM SHARED pressed           AS STRING
     DIM SHARED turn              AS INTEGER
    
-  Setup
+  SetupGame
   PlayGame
 
   ' =================================================================
   ' Menu bar data
   ' =================================================================
   DATA 5
-  DATA " Atlas ", 10
+  DATA " View ", 10
   DATA " Game ", 11
   DATA " Mission ", 12
   DATA " Options ", 13
@@ -306,17 +367,19 @@
   REM Window 10
     DATA "Start"
     DATA 2,2
-    DATA "@View all conquered@"
-    DATA "@View data page    @"
-    DATA "@View empire       @"
-    DATA "@View next empire  @"
+    DATA "@Show atlas        @"
+    DATA "@Show table        @"
+    DATA "-"
+    DATA "@Filter you        @"
+    DATA "@Filter players    @"
+    DATA "@Remove Filter     @"
 
   REM Window 11
     DATA "Start"
     DATA 2,9
     DATA "@Load a game       @"
-    DATA "@Next player's turn@"
-    DATA "@Reset the game    @"
+    DATA "@Next turn         @"
+    DATA "@Next month        @"
     DATA "@Save the game     @"
     DATA "@Shell to DOS      @"
     DATA "@Quit the game     @"
@@ -578,8 +641,8 @@ FUNCTION DoMenu
   DIM mode      AS INTEGER
   DIM selection AS INTEGER
 
-  PCOPY display, 0: selection = 1
-   
+  selection = 1
+
   DO
    
     '
@@ -640,7 +703,7 @@ FUNCTION DoMenu
           mode = MenusOpen
        
         CASE CHR$(0) + CHR$(ScanCode.Down)
-          '   
+          ' 
           ' Down (open menu)
           '
           mode = MenusOpen
@@ -677,9 +740,25 @@ SUB DoWindow (wid AS INTEGER)
 
   DO
    
-    SCREEN , , 0, display: COLOR 0, 7
+    '
+    ' Show the display page but write to the working page
+    '
+    SCREEN , , VideoPage.Working, VideoPage.Display
+
+    '
+    ' Copy the display page to the working page
+    '
+    PCOPY VideoPage.Display, VideoPage.Working
+
+    '
+    ' Draw the window onto the working page
+    '
     DrawWindow wid
-    SCREEN , , 0, 0: COLOR 7, 0
+   
+    '
+    ' Set the working page as the visual page
+    '
+    SCREEN , , VideoPage.Working, VideoPage.Working
    
     '
     ' Set focus to a field
@@ -691,18 +770,18 @@ SUB DoWindow (wid AS INTEGER)
     DO
 
       '
-      ' Draw the selected field (if any)
+      ' Get the current field that has focus
       '
       oldSelected = win(wid).selected
       IF oldSelected <> 0 THEN
+        '
+        ' If a field is selected, draw it now.
+        '
         DrawWindowField wid, oldSelected
       END IF
 
       '
-      ' TODO: Remove this Scan() and pressed global reference.
-      ' It cannot be removed now because other code is dependent
-      ' on the pressed variable getting set. That will be fixed
-      ' when the windowing system is addressed.
+      ' Wait for a keystroke
       '
       pressed = GetKey$
       SELECT CASE pressed
@@ -712,7 +791,7 @@ SUB DoWindow (wid AS INTEGER)
           ' Down
           '
           IF win(wid).fields > 0 THEN
-            IF win(wid).selected = win(wid).fields THEN
+            IF oldSelected = win(wid).fields THEN
               win(wid).selected = 1
             ELSE
               win(wid).selected = win(wid).selected + 1
@@ -724,7 +803,7 @@ SUB DoWindow (wid AS INTEGER)
           ' Up
           '
           IF win(wid).fields > 0 THEN
-            IF win(wid).selected = 1 THEN
+            IF oldSelected = 1 THEN
               win(wid).selected = win(wid).fields
             ELSE
               win(wid).selected = win(wid).selected - 1
@@ -753,29 +832,53 @@ SUB DoWindow (wid AS INTEGER)
           '
           IF win(wid).helpWid <> 0 THEN
             DoWindow win(wid).helpWid
-            DrawWindow wid
           END IF
 
-        ' Left or Right
         CASE CHR$(0) + CHR$(ScanCode.Left), CHR$(0) + CHR$(ScanCode.Right)
+          '
+          ' Left/right arrow (exit for menu windows)
+          '
           IF arrowexit THEN
+            ' HACK
             win(wid).canceled = False
-            PCOPY display, 0
+           
+            '
+            ' Restore the display page and exit
+            '
+            SCREEN , , VideoPage.Display, VideoPage.Display
             EXIT SUB
           END IF
        
         CASE CHR$(Control.D), CHR$(Control.E), CHR$(19), CHR$(24)
           MoveWindow wid
+          '
+          ' Exit the input loop to jump up to the window loop.
+          ' This will force a refresh of the window.
+          '
           EXIT DO
 
         CASE CHR$(ASCII.Return)
+          '
+          ' Return/Enter
+          '
           win(wid).canceled = False
-          PCOPY display, 0
+         
+          '
+          ' Restore the display page
+          '
+          SCREEN , , VideoPage.Display, VideoPage.Display
           EXIT SUB
        
         CASE CHR$(ASCII.Escape)
+          '
+          ' Escape (cancel)
+          '
           win(wid).canceled = True
-          PCOPY display, 0
+         
+          '
+          ' Restore the display page
+          '
+          SCREEN , , VideoPage.Display, VideoPage.Display
           EXIT SUB
 
         CASE "N"
@@ -805,11 +908,11 @@ SUB DoWindow (wid AS INTEGER)
       END SELECT
    
       '
-      ' Change selected field
+      ' Redraw the old field if selection changed.
+      ' The new field will be redrawn at the start of this DO loop.
       '
       IF oldSelected <> win(wid).selected THEN
         DrawWindowField wid, oldSelected
-        DrawWindowField wid, win(wid).selected
       END IF
 
     LOOP
@@ -817,6 +920,9 @@ SUB DoWindow (wid AS INTEGER)
 
 END SUB
 
+' ===================================================================
+' DrawGrid
+' ===================================================================
 SUB DrawGrid
 
   DIM cellDivide  AS STRING * 1
@@ -954,6 +1060,44 @@ SUB DrawGrid
     PRINT lowerFlat; lowerFlat; lowerDivide;
   NEXT
   PRINT lowerFlat; lowerFlat; lowerRight;
+
+  DrawGridCells
+
+END SUB
+
+' ===================================================================
+' DrawGridCells
+' ===================================================================
+SUB DrawGridCells
+
+  DIM aid AS INTEGER
+  DIM sx  AS INTEGER
+  DIM sy  AS INTEGER
+
+  '
+  ' Plot asteroids
+  '
+  FOR aid = 1 TO asteroids
+  
+    '
+    ' Get the screen coordinates of the cell for this asteroid
+    '
+    sx = GetCellScreenX(asteroid(aid).local2)
+    sy = GetCellScreenY(asteroid(aid).local1)
+
+    '
+    ' Plot the asteroid on the grid
+    '
+    LOCATE sy, sx
+    IF IsFiltered(aid) THEN
+      COLOR GridStyle.FilterForecolor, GridStyle.FilterBackcolor
+    ELSE
+      COLOR GridStyle.CellForecolor, GridStyle.CellBackcolor
+    END IF
+
+    PRINT USING "##"; aid;
+   
+  NEXT
 
 END SUB
 
@@ -1110,24 +1254,44 @@ END SUB
 ' ===================================================================
 ' DrawTableRow
 ' ===================================================================
-SUB DrawTableRow (x AS INTEGER)
+SUB DrawTableRow (aid AS INTEGER)
 
-  IF x > asteroids THEN
+  IF aid > asteroids THEN
     EXIT SUB
   END IF
 
-  LOCATE x + 4, 3: PRINT USING "##"; x;
+  '
+  ' Move to the first character of the row (inside border)
+  '
+  LOCATE aid + 4, 3
 
-  IF asteroid(x).ruler > 0 THEN
-    LOCATE , 9: PRINT CHR$(64 + x);
-    LOCATE , 15: PRINT USING "##"; asteroid(x).tech;
-    LOCATE , 21: PRINT USING "###"; asteroid(x).mined;
-    LOCATE , 28: PRINT USING "####"; asteroid(x).Supply;
-    LOCATE , 37: PRINT USING "##"; asteroid(x).Detect;
-    LOCATE , 45: PRINT USING "###"; asteroid(x).Control;
-    LOCATE , 54: PRINT USING "###"; asteroid(x).Shield;
-    LOCATE , 62: PRINT USING "###"; asteroid(x).Produce;
-    LOCATE , 72: PRINT USING "####"; asteroid(x).ships;
+  '
+  ' Determine whether this asteroid is being filtered
+  '
+  IF IsFiltered(aid) THEN
+    COLOR TableStyle.FilterForecolor, TableStyle.FilterBackcolor
+  ELSE
+    COLOR TableStyle.RowForecolor, TableStyle.RowBackcolor
+  END IF
+ 
+  '
+  ' Print the asteroid ID
+  '
+  PRINT USING "##"; aid;
+
+  '
+  ' Print visible data
+  '
+  IF asteroid(aid).ruler > 0 THEN
+    LOCATE , 9: PRINT CHR$(64 + aid);
+    LOCATE , 15: PRINT USING "##"; asteroid(aid).tech;
+    LOCATE , 21: PRINT USING "###"; asteroid(aid).mined;
+    LOCATE , 28: PRINT USING "####"; asteroid(aid).Supply;
+    LOCATE , 37: PRINT USING "##"; asteroid(aid).Detect;
+    LOCATE , 45: PRINT USING "###"; asteroid(aid).Control;
+    LOCATE , 54: PRINT USING "###"; asteroid(aid).Shield;
+    LOCATE , 62: PRINT USING "###"; asteroid(aid).Produce;
+    LOCATE , 72: PRINT USING "####"; asteroid(aid).ships;
   ELSE
     LOCATE , 6: PRINT "[data not available]";
   END IF
@@ -1136,10 +1300,29 @@ END SUB
 
 ' ===================================================================
 ' DrawWindow
+' -------------------------------------------------------------------
+' Draws the window to the active video page.
 ' ===================================================================
 SUB DrawWindow (wid AS INTEGER)
 
-  DIM i AS INTEGER
+  DIM i          AS INTEGER
+  DIM upperLeft  AS STRING * 1
+  DIM upperFlat  AS STRING * 1
+  DIM upperRight AS STRING * 1
+
+  '
+  ' Setup border characters
+  '
+  SELECT CASE WinStyle.Border
+    CASE 1
+      upperLeft = CHR$(218)
+      upperFlat = CHR$(196)
+      upperRight = CHR$(191)
+    CASE 2
+      upperLeft = CHR$(201)
+      upperFlat = CHR$(205)
+      upperRight = CHR$(187)
+  END SELECT
 
   '
   ' Set the display color of the window
@@ -1150,12 +1333,7 @@ SUB DrawWindow (wid AS INTEGER)
   ' Draw the top border
   '
   LOCATE win(wid).posY, win(wid).posX
-  SELECT CASE WinStyle.Border
-    CASE 1
-      PRINT CHR$(218); STRING$(win(wid).sizeX, 196); CHR$(191)
-    CASE 2
-      PRINT CHR$(201); STRING$(win(wid).sizeX, 205); CHR$(187)
-  END SELECT
+  PRINT upperLeft; STRING$(win(wid).sizeX, upperFlat); upperRight
 
   '
   ' Draw each row of the window
@@ -1324,14 +1502,67 @@ SUB DrawWindowOutline (wid AS INTEGER, atX AS INTEGER, atY AS INTEGER)
 
 END SUB
 
-SUB FindDistance
+SUB Execute (cid AS INTEGER)
+
+  SELECT CASE cid
+   
+    CASE Command.About
+      ExecuteAbout
+
+    CASE Command.Distance
+      ExecuteDistance
+      
+    CASE Command.FilterNone
+      ExecuteFilterNone
+
+    CASE Command.FilterPlayer
+      ExecuteFilterPlayer
+
+    CASE Command.FilterPlayers
+      ExecuteFilterPlayers
+
+    CASE Command.NextMonth
+      ExecuteNextMonth
+
+    CASE Command.NextTurn
+      ExecuteNextTurn
+
+    CASE Command.OptionAlerts
+      ExecuteOptionAlerts
+       
+    CASE Command.OrderAttack
+      ExecuteOrderAttack
+       
+    CASE Command.ViewAtlas
+      ExecuteViewAtlas
+     
+    CASE Command.ViewTable
+      ExecuteViewTable
+
+  END SELECT
+
+END SUB
+
+SUB ExecuteAbout
+  DoWindow 30
+END SUB
+
+' ===================================================================
+' ExecuteDistance
+' -------------------------------------------------------------------
+' Executes the command to calculate the distance between asteroids.
+' ===================================================================
+SUB ExecuteDistance
 
   DIM ast1 AS INTEGER
   DIM ast2 AS INTEGER
+  DIM dist AS INTEGER
 
   DO
    
+    '
     ' Get the two asteroids for which to calculate distance
+    '
     DoWindow 22
     IF win(22).canceled THEN
       EXIT DO
@@ -1353,18 +1584,228 @@ SUB FindDistance
       DoWindow 25
   
     ELSE
+    
+      dist = CalcDistance(ast1, ast2)
+
       DoWindow 26
       LOCATE win(26).posY + 1, win(26).posX + 28
-      COLOR 0, 7: IF CalcDistance(ast1, ast2) > 9 THEN PRINT " ";
-      PRINT USING "##."; CalcDistance(ast1, ast2);
-      COLOR 7, 0: WaitForKeyPress: PCOPY display, 0
+      COLOR 0, 7: IF dist > 9 THEN PRINT " ";
+      PRINT USING "##."; dist;
+      COLOR 7, 0
+     
+      WaitForKeyPress
       EXIT DO
     END IF
    
-    PCOPY display, 0
   LOOP
  
 END SUB
+
+SUB ExecuteFilterNone
+ 
+  '
+  ' Save the new filter
+  '
+  player(turn).viewFilter = Filter.None
+  RefreshPages
+
+END SUB
+
+SUB ExecuteFilterPlayer
+ 
+  '
+  ' Save the new filter
+  '
+  player(turn).viewFilter = Filter.Player
+  RefreshPages
+
+END SUB
+
+SUB ExecuteFilterPlayers
+
+  '
+  ' Save the new filter
+  '
+  player(turn).viewFilter = Filter.Players
+  RefreshPages
+
+END SUB
+
+SUB ExecuteNextMonth
+
+  DIM x AS INTEGER
+
+  REM Move each mission closer to their targets.
+    FOR x = 1 TO missions
+      mission(x).distance = mission(x).distance - 1
+      IF mission(x).distance = 0 THEN
+        SELECT CASE mission(x).goal
+          CASE 1
+            BattleMode (x)
+        END SELECT
+      END IF
+    NEXT
+
+  REM Calculate ships produced for each asteroid
+    FOR x = 1 TO asteroids
+      asteroid(x).ships = asteroid(x).ships + asteroid(x).Produce
+    NEXT
+
+  '
+  ' Reset to the first player
+  '
+  turn = 1
+
+END SUB
+
+' ===================================================================
+' ExecuteNextTurn
+' ===================================================================
+SUB ExecuteNextTurn
+
+  turn = turn + 1
+
+  IF turn > players THEN
+    ExecuteNextMonth
+    turn = 1
+  END IF
+
+  RefreshPages
+
+END SUB
+
+' ===================================================================
+' ExecuteOptionAlerts
+' -------------------------------------------------------------------
+' Executes the command to enable or disable alerts.
+' ===================================================================
+SUB ExecuteOptionAlerts
+
+  DIM original AS STRING
+  DIM x        AS INTEGER
+  DIM Y        AS INTEGER
+
+  original = fieldtext(27, 1)
+
+  DoWindow 27
+
+  IF original = " Yes " AND fieldtext(27, 1) = " No  " THEN
+    IF players > 1 THEN
+      FOR x = 1 TO 3
+        FOR Y = 300 TO 60 STEP -10
+          SOUND Y, .2
+        NEXT
+      NEXT
+      DoWindow 29
+      IF fieldtext(29, 1) = " Yes " THEN
+        fieldtext(27, 1) = " Yes "
+      END IF
+    END IF
+  END IF
+
+END SUB
+
+SUB ExecuteOrderAttack
+
+  DIM num AS INTEGER
+  DIM src AS INTEGER
+  DIM trg AS INTEGER
+
+  DO
+   
+    '
+    ' Get the source, target, and fleet size
+    '
+    DoWindow 15
+    IF win(15).canceled THEN
+      EXIT DO
+    END IF
+
+    src = VAL(fieldtext(15, 1))
+    trg = VAL(fieldtext(15, 2))
+    num = VAL(fieldtext(15, 3))
+   
+    IF src < 1 OR src > asteroids THEN
+      DoWindow 16
+    ELSEIF asteroid(src).ruler <> turn THEN
+      DoWindow 17
+    ELSEIF trg < 1 OR trg > asteroids THEN
+      DoWindow 18
+    ELSEIF src = trg THEN
+      DoWindow 19
+    ELSEIF num < 1 OR num > asteroid(src).ships THEN
+      DoWindow 20
+    ELSE
+     
+      '
+      ' Initialize mission data
+      '
+      missions = missions + 1
+      mission(missions).distance = CalcDistance(src, trg)
+      mission(missions).goal = 1
+      mission(missions).ruler = turn
+      mission(missions).ships = num
+      mission(missions).source = src
+      mission(missions).target = trg
+      mission(missions).techlevel = asteroid(src).tech
+     
+      '
+      ' Deduct ships from the source asteroid
+      '
+      asteroid(src).ships = asteroid(src).ships - num
+     
+      SCREEN , , 3, 0: DrawTableRow src
+      IF display = 3 THEN SCREEN , , 0, 0: DrawTableRow src
+     
+      ' BUG: total months is not being shown correctly
+      ' This was working in the original, but it may be easier
+      ' to accept the bug for now until the field system is
+      ' updated in the next set of refactoring.
+
+      DoWindow 21
+      COLOR 0, 7: LOCATE win(21).posY + 2, win(21).posX + 16
+      IF mission(missions).distance > 9 THEN PRINT " ";
+      PRINT USING "## month"; mission(missions).distance;
+      IF mission(missions).distance > 1 THEN PRINT "s";
+      PRINT "."; : COLOR 7, 0: WaitForKeyPress: PCOPY display, 0
+      EXIT DO
+    END IF
+    PCOPY display, 0
+  LOOP
+     
+  fieldtext(15, 1) = "  "
+  fieldtext(15, 2) = "  "
+  fieldtext(15, 3) = "    "
+
+END SUB
+
+' ===================================================================
+' ExecuteViewAtlas
+' ===================================================================
+SUB ExecuteViewAtlas
+
+  PCOPY VideoPage.Atlas, VideoPage.Display
+  player(turn).viewPage = VideoPage.Atlas
+
+END SUB
+
+' ===================================================================
+' ExecuteViewTable
+' ===================================================================
+SUB ExecuteViewTable
+ 
+  player(turn).viewPage = VideoPage.Table
+  PCOPY VideoPage.Table, VidePage.Display
+
+END SUB
+
+FUNCTION GetCellScreenX% (cellX AS INTEGER)
+  GetCellScreenX = cellX * 3 - 1
+END FUNCTION
+
+FUNCTION GetCellScreenY% (cellY AS INTEGER)
+  GetCellScreenY = cellY * 2 + 1
+END FUNCTION
 
 ' ===================================================================
 ' GetKey$
@@ -1385,23 +1826,42 @@ FUNCTION GetKey$
 
 END FUNCTION
 
-SUB InitData
+FUNCTION IsFiltered% (aid AS INTEGER)
 
-  DIM x AS INTEGER
+  DIM filtering AS INTEGER
+  LET filtering = player(turn).viewFilter
 
-  FOR x = 1 TO asteroids
-    asteroid(x).Control = INT(RND * 10)
-    asteroid(x).Detect = INT(RND * 10)
-    asteroid(x).mined = INT(RND * 50) + 50
-    IF x <= players THEN asteroid(x).ruler = x ELSE asteroid(x).ruler = 0
-    asteroid(x).Produce = 50
-    asteroid(x).tech = 10
-    asteroid(x).Shield = 0
-    asteroid(x).ships = 200
-    asteroid(x).Supply = 0
-  NEXT
+  IF aid < 1 OR aid > asteroids THEN
+    '
+    ' Invalid asteroid
+    '
+    IsFiltered = False
+ 
+  ELSEIF filtering = Filter.None THEN
+    '
+    ' No filter is applied
+    '
+    IsFiltered = False
 
-END SUB
+  ELSEIF filtering = Filter.Player THEN
+    '
+    ' Filter asteroids ruled by current player
+    '
+    IsFiltered = asteroid(aid).ruler = turn
+
+  ELSEIF filtering = Filter.Players THEN
+    '
+    ' Filter asteroids with a ruler
+    '
+    IsFiltered = asteroid(aid).ruler > 0
+
+  ELSE
+
+    IsFiltered = False
+
+  END IF
+
+END FUNCTION
 
 ' ===================================================================
 ' LoadMenu
@@ -1547,20 +2007,43 @@ END SUB
 
 SUB MakeAtlas
 
-  DIM band     AS INTEGER
-  DIM cluster1 AS INTEGER
-  DIM cluster2 AS INTEGER
-  DIM keypress AS STRING
-  DIM LAST     AS INTEGER
-  DIM r1       AS INTEGER
-  DIM r2       AS INTEGER
-  DIM selected AS INTEGER
-  DIM temp1    AS INTEGER
-  DIM temp2    AS INTEGER
-  DIM x        AS INTEGER
+  '
+  ' Plotting options
+  '
+  CONST PlotBanded = 1     ' Asteroids plotted in a narrow horizontal band
+  CONST PlotClustered = 2  ' Asteroids plotted close together in a cluster
+  CONST PlotRandom = 3     ' Asteroids plotted randomly
 
-  DrawGrid
-  PCOPY 0, 2: display = 2: selected = 3: LAST = 3
+  '
+  ' Grid dimensions
+  '
+  CONST GridSizeX = 26
+  CONST GridSizeY = 11
+
+  '
+  ' Define grid to hold temporary asteroid locations
+  '
+  DIM grid(1 TO GridSizeX, 1 TO GridSizeY) AS INTEGER
+ 
+  DIM i        AS INTEGER
+  DIM j        AS INTEGER
+  DIM lastPlot AS INTEGER
+  DIM mx       AS INTEGER
+  DIM my       AS INTEGER
+  DIM nx       AS INTEGER
+  DIM ny       AS INTEGER
+  DIM sx       AS INTEGER
+  DIM sy       AS INTEGER
+  DIM keypress AS STRING
+  DIM selected AS INTEGER
+
+  '
+  ' Draw the grid onto its master video page to copy to the display page
+  '
+  PCOPY VideoPage.Atlas, VideoPage.Display
+  SCREEN , , VideoPage.Display, VideoPage.Display
+
+  selected = 3
 
   DO
     SELECT CASE selected
@@ -1574,134 +2057,433 @@ SUB MakeAtlas
         DrawStatus ""
      
       CASE 2
-        '
-        ' Finished
-        '
+        GOSUB SaveLocations
         EXIT SUB
      
-      CASE ELSE
-        IF selected = 3 OR selected = 4 THEN
-          cluster1 = INT(RND * 5) + 1
-          cluster2 = INT(RND * 20) + 1
-          band = INT(RND * 9) + 2
-        END IF
-        FOR x = 1 TO asteroids
-          SCREEN , , 2, 2
-          SELECT CASE selected
-            CASE 3
-              GOSUB GetCluster
-            CASE 4
-              GOSUB GetOrbital
-            CASE 5
-              GOSUB GetManual
-            CASE 6
-              GOSUB GetRandom
-            CASE 7
-              IF x <= players THEN
-                SELECT CASE LAST
-                  CASE 3
-                    GOSUB GetCluster
-                  CASE 4
-                    GOSUB GetOrbital
-                  CASE 6
-                    GOSUB GetRandom
-                END SELECT
-              ELSE
-                r1 = asteroid(x).local1: r2 = asteroid(x).local2
-              END IF
-          END SELECT
-          LOCATE r1 * 2 + 1, r2 * 3 - 1
-          IF x <= players THEN COLOR 0, 7
-          PRINT USING "##"; x; : COLOR 7, 0
-          asteroid(x).local1 = r1: asteroid(x).local2 = r2
-          IF keypress = CHR$(ASCII.Escape) THEN EXIT FOR
-        NEXT
-        PCOPY 2, 0: SCREEN , , 0, 0
+      CASE 3:
+        GOSUB ReplotClustered
+
+      CASE 4:
+        GOSUB ReplotBanded
+
+      CASE 5:
+        GOSUB ReplotManual
+
+      CASE 6
+        GOSUB ReplotRandom
+    
+      CASE 7:
+        GOSUB ReplotPlayers
+
     END SELECT
 
     '
-    ' Show the atlas editor menu
+    ' Show the editor menu
     '
     win(9).selected = selected
     DoWindow 9
     selected = win(9).selected
 
-    SELECT CASE selected
-      CASE 3, 4, 6
-        SCREEN , , 2, 2
-        FOR x = 1 TO asteroids
-          LOCATE asteroid(x).local1 * 2 + 1, asteroid(x).local2 * 3 - 1
-          PRINT "  ";
-        NEXT
-        LAST = selected
-      CASE 7
-        SCREEN , , 2, 2
-        FOR x = 1 TO players
-          LOCATE asteroid(x).local1 * 2 + 1, asteroid(x).local2 * 3 - 1
-          PRINT "  ";
-        NEXT x
-    END SELECT
   LOOP
- 
-REM *** Subroutines ***
 
-GetCluster:
-  DO
-    r1 = INT(RND * 7) + cluster1
-    r2 = INT(RND * 7) + cluster2
-  LOOP UNTIL SCREEN(r1 * 2 + 1, r2 * 3) = 32
+  EXIT SUB
+
+REM *** SUBROUTINES ***
+
+CalcCoord:
+  '
+  ' Calculates the cursor coordinates of grid cell
+  '
+  ' Input:
+  '
+  '     nx = x coordinate of cell
+  '     ny = y coordinate of cell
+  '
+  ' Output:
+  '
+  '     sx = x coordinate of the cell on the screen
+  '     sy = y coordinate of the cell on the screen
+  '
+  sx = nx * 3 - 1
+  sy = ny * 2 + 1
   RETURN
 
-GetOrbital:
-  DO
-    r1 = band + INT(RND * 3) - 1
-    r2 = INT(RND * 26) + 1
-  LOOP UNTIL SCREEN(r1 * 2 + 1, r2 * 3) = 32
+FindCell:
+  '
+  ' Finds the grid coordinates of an asteroid
+  '
+  ' Input:
+  '
+  '     aid = The ID of the asteroid
+  '   
+  ' Output:
+  '  
+  '     nx = The grid x-coordinate of the asteroid.
+  '     ny = The grid y-coordinate of the asteroid.
+  '
+  FOR nx = 1 TO GridSizeX
+    FOR ny = 1 TO GridSizeY
+      IF grid(nx, ny) = aid THEN
+        RETURN
+      END IF
+    NEXT
+  NEXT
+
+  nx = 0
+  ny = 0
   RETURN
 
-GetManual:
+ClearCell:
+  '
+  ' Clears an asteroid from the grid.
+  '
+  ' Input:
+  '
+  '     nx = The x-coordinate of the cell.
+  '     ny = The y-coordinate of the cell.
+  '
+  ' Output:
+  '
+  '     sx = The x-coordinate of the screen location that was cleared.
+  '     sy = The y-coordinate of the screen location that was cleared.
+  '
+  IF grid(nx, ny) > 0 THEN
+    grid(nx, ny) = 0
+    GOSUB CalcCoord
+    LOCATE sy, sx
+    COLOR GridStyle.Forecolor, GridStyle.Backcolor
+    PRINT "  ";
+  END IF
+
+  RETURN
+
+ClearGrid:
+  '
+  ' Clears asteroids from the grid
+  '
+  ' Input:
+  '
+  '     None
+  '
+  ' Output:
+  '
+  '     nx, ny, cx, cy are zerod
+  '
+  FOR nx = 1 TO GridSizeX
+    FOR ny = 1 TO GridSizeY
+      IF grid(nx, ny) > 0 THEN
+        GOSUB ClearCell
+      END IF
+    NEXT
+  NEXT
+
+  nx = 0
+  ny = 0
+  sx = 0
+  sy = 0
+
+  RETURN
+
+Normalize:
+  '
+  ' Normalizes the nx,ny coordinates
+  '
+  ' Input:
+  '
+  '     nx = x-coordinate
+  '     ny = y-coordinate
+  '
+  ' Output:
+  '
+  '     nx = x-coordinate normalized to fit in grid
+  '     ny = y-coordinate normalized to fit in grid
+  '
+  IF nx < 1 THEN nx = nx + GridSizeX
+  IF ny < 1 THEN ny = ny + GridSizeY
+  IF nx > GridSizeX THEN nx = nx - GridSizeX
+  IF ny > GridSizeY THEN ny = ny - GridSizeY
+  RETURN
+
+SetCell:
+  '
+  ' Sets the value of a cell on the grid
+  '
+  ' Input:
+  '
+  '     aid = The ID of the asteroid
+  '     nx  = The new X position of the asteroid
+  '     ny  = The new Y position of the asteroid
+  '
+  ' Output:
+  '
+  '     sx = The screen x-coordinate of the asteroid cell
+  '     sy = The screen y-coordinate of the asteroid cell
+  '
+  grid(nx, ny) = aid
+  GOSUB CalcCoord
+  LOCATE sy, sx
+  COLOR GridStyle.CellForecolor, GridStyle.CellBackcolor
+  PRINT USING "##"; aid;
+  RETURN
+
+NextBanded:
+  '
+  ' Finds a slot in the same orbital band
+  '
+  IF nx = 0 THEN
+    GOSUB NextRandom
+  ELSE
  
-  r1 = asteroid(x).local1
-  r2 = asteroid(x).local2
+    DO
+      '
+      ' Select random X coordinate, nearby Y coordinate
+      '
+      nx = INT(RND * GridSizeX) + 1
+      ny = INT(RND * 3) - 1 + ny
+      GOSUB Normalize
+
+    LOOP UNTIL grid(nx, ny) = 0
+               
+  END IF
+  RETURN
+
+NextClustered:
+  '
+  ' Finds a clustered slot
+  '
+  IF nx = 0 THEN
+    '
+    ' No asteroids have been plotted. Seed the initial asteroid.
+    '
+    GOSUB NextRandom
  
+  ELSE
+    '
+    ' Find slot near the last asteroid.
+    '
+    DO
+      '
+      ' Random spot within -2, -1, 0, +1, +2 from last spot
+      '
+      nx = INT(RND * 5) - 2 + nx
+      ny = INT(RND * 5) - 2 + ny
+      GOSUB Normalize
+
+    LOOP UNTIL grid(nx, ny) = 0
+
+  END IF
+  RETURN
+
+NextManual:
+  '
+  ' Returns the next manually-selected position.
+  '
+  ' Input:
+  '
+  '     nx = The x-coordinate of the asteroid to move.
+  '     ny = The y-coordinate of the asteroid to move.
+  '
+  ' Output:
+  '
+  '     nx = The new x-coordinate of the selected position.
+  '     ny = The new y-coordinate of the selected position.
+  '
   DO
-    LOCATE r1 * 2 + 1, r2 * 3 - 1
-    IF x <= players THEN COLOR 21, 7 ELSE COLOR 21, 0
-    PRINT USING "##"; x; : COLOR 7, 0
-   
+  
+    GOSUB CalcCoord
+  
+    '
+    ' Highlight the current location
+    '
+    LOCATE sy, sx
+    IF grid(nx, ny) <= players THEN COLOR 21, 7 ELSE COLOR 21, 0
+    PRINT USING "##"; aid;
+    COLOR 7, 0
+  
     keypress = GetKey$
-   
-    LOCATE r1 * 2 + 1, r2 * 3 - 1: PRINT "  ";
+  
+    '
+    ' Erase the cell location
+    '
+    LOCATE sy, sx
+    PRINT "  ";
+
     SELECT CASE keypress
      
       CASE CHR$(ASCII.Return), CHR$(ASCII.Escape)
         EXIT DO
-     
-      CASE "E", CHR$(Control.E), CHR$(0) + CHR$(ScanCode.Up)
-        temp1 = r1 - 1: temp2 = r2
-        IF temp1 < 1 THEN temp1 = 1
-     
-      CASE "D", CHR$(Control.D), CHR$(0) + CHR$(ScanCode.Right)
-        temp1 = r1: temp2 = r2 + 1
-        IF temp2 > 26 THEN temp2 = 26
-     
-      CASE "S", CHR$(Control.S), CHR$(0) + CHR$(ScanCode.Left)
-        temp1 = r1: temp2 = r2 - 1
-        IF temp2 < 1 THEN temp2 = 1
-     
-      CASE "X", CHR$(Control.X), CHR$(0) + CHR$(ScanCode.Down)
-        temp1 = r1 + 1: temp2 = r2
-        IF temp1 > 11 THEN temp1 = 11
+
+      CASE CHR$(0) + CHR$(ScanCode.Up)
+        '
+        ' Up
+        '
+        mx = nx
+        my = ny - 1
+        IF my < 1 THEN my = GridSizeY
+    
+      CASE CHR$(0) + CHR$(ScanCode.Right)
+        '
+        ' Right
+        '
+        mx = nx + 1
+        my = ny
+        IF mx > GridSizeX THEN mx = 1
+    
+      CASE CHR$(0) + CHR$(ScanCode.Left)
+        '
+        ' Left
+        '
+        mx = nx - 1
+        my = ny
+        IF mx < 1 THEN mx = GridSizeX
+    
+      CASE CHR$(0) + CHR$(ScanCode.Down)
+        '
+        ' Down
+        '
+        mx = nx
+        my = ny + 1
+        IF my > GridSizeY THEN my = 1
+   
     END SELECT
-    IF SCREEN(temp1 * 2 + 1, temp2 * 3) = 32 THEN r1 = temp1: r2 = temp2
+   
+    IF grid(mx, my) = 0 THEN
+      nx = mx
+      ny = my
+    END IF
+
   LOOP
   RETURN
 
-GetRandom:
+NextRandom:
+  '
+  ' Finds a random slot
+  '
   DO
-    r1 = INT(RND * 11) + 1
-    r2 = INT(RND * 26) + 1
-  LOOP UNTIL SCREEN(r1 * 2 + 1, r2 * 3) = 32
+    nx = INT(RND * GridSizeX) + 1
+    ny = INT(RND * GridSizeY) + 1
+  LOOP UNTIL grid(nx, ny) = 0
+  RETURN
+
+ReplotBanded:
+  '
+  ' Replots all asteroids in an orbital band
+  '
+  GOSUB ClearGrid
+  FOR aid = 1 TO asteroids
+    GOSUB NextBanded
+    GOSUB SetCell
+  NEXT
+  lastPlot = PlotBanded
+  RETURN
+
+ReplotClustered:
+  '
+  ' Replots all asteroids in a cluster
+  '
+  GOSUB ClearGrid
+  FOR aid = 1 TO asteroids
+    GOSUB NextClustered
+    GOSUB SetCell
+  NEXT
+  lastPlot = PlotClustered
+  RETURN
+
+ReplotManual:
+  '
+  ' Manually replots asteroids
+  '
+  FOR aid = 1 TO asteroids
+   
+    GOSUB FindCell
+    grid(nx, ny) = 0
+
+    GOSUB NextManual
+    GOSUB SetCell
+ 
+    IF keypress = CHR$(ASCII.Escape) THEN
+      EXIT FOR
+    END IF
+
+  NEXT
+  RETURN
+
+ReplotRandom:
+  '
+  ' Replots all asteroids randomly
+  '
+
+  GOSUB ClearGrid
+  FOR aid = 1 TO asteroids
+    GOSUB NextRandom
+    GOSUB SetCell
+  NEXT
+  lastPlot = PlotRandom
+  RETURN
+
+ReplotPlayers:
+  '
+  ' Replots player asteroids using same mode as last time
+  '
+  FOR i = 1 TO GridSizeX
+    FOR j = 1 TO GridSizeY
+     
+      aid = grid(i, j)
+    
+      IF aid = 0 THEN
+        ' Do nothing (note: QBASIC does not support shortcircuit eval).
+      ELSEIF asteroid(aid).ruler = 0 THEN
+        ' Do nothing
+      ELSE
+        '
+        ' This asteroid is owned by a player. Replot it.
+        '
+        nx = i
+        ny = j
+        GOSUB ClearCell
+
+        SELECT CASE lastPlot
+          CASE PlotBanded
+            GOSUB NextBanded
+          
+          CASE PlotClustered
+            GOSUB NextClustered
+
+          CASE PlotRandom
+            GOSUB NextRandom
+
+        END SELECT
+
+        GOSUB SetCell
+
+      END IF
+
+    NEXT
+  NEXT
+  RETURN
+
+SaveLocations:
+  '
+  ' Commits the grid locations to the asteroids
+  '
+  FOR i = 1 TO GridSizeX
+    FOR j = 1 TO GridSizeY
+          
+      '
+      ' Get the ID of the asteroid at this grid location
+      '
+      aid = grid(i, j)
+          
+      '
+      ' If an asteroid is found, commit its new position.
+      '
+      IF aid > 0 THEN
+        asteroid(aid).local1 = j
+        asteroid(aid).local2 = i
+      END IF
+
+    NEXT
+  NEXT
   RETURN
 
 END SUB
@@ -1722,9 +2504,21 @@ SUB MoveWindow (wid AS INTEGER)
   toY = win(wid).posY
 
   DO
-    PCOPY display, 0
-    DrawWindowOutline wid, toX, toY
+   
+    '
+    ' Copy the display page to the working video page
+    '
+    PCOPY VideoPage.Display, VideoPage.Working
 
+    '
+    ' Manipulate the working video page
+    '
+    SCREEN , , VideoPage.Working, VideoPage.Working
+
+    '
+    ' Draw the outline and wait for a keyboard command
+    '
+    DrawWindowOutline wid, toX, toY
     keypress = GetKey$
 
     SELECT CASE keypress
@@ -1754,6 +2548,11 @@ SUB MoveWindow (wid AS INTEGER)
         NEXT
         win(wid).posX = toX
         win(wid).posY = toY
+
+        '
+        ' Restore the display page
+        '
+        SCREEN , , VideoPage.Display, VideoPage.Display
         EXIT SUB
      
       CASE CHR$(Control.O), "O"
@@ -1799,14 +2598,173 @@ CheckPlace:
 
 END SUB
 
-SUB NewGame
+SUB PlayGame
+
+  DIM cid AS INTEGER
+  DIM wid AS INTEGER
+
+  SCREEN , , 0, 0
+  ExecuteNextTurn
+ 
+  DO
+   
+    DO
+     
+      '
+      ' Wait for a command from the menu bar
+      '
+      wid = DoMenu
+     
+      '
+      ' Get the command ID for the selected menu item.
+      '
+      GOSUB TranslateCommand
+      Execute cid
+      IF cid = Command.EndGame THEN
+        EXIT SUB
+      END IF
+    LOOP
+   
+    IF fieldtext(27, 1) = " Yes " THEN
+      FOR x = 1 TO 5: SOUND 800, .8: SOUND 1200, .8: NEXT
+    END IF
+
+  LOOP
+
+' *** Subroutines ***
+
+TranslateCommand:
+  SELECT CASE wid
+    CASE 10:
+      SELECT CASE win(wid).selected
+        CASE 1:
+          cid = Command.ViewAtlas
+        CASE 2:
+          cid = Command.ViewTable
+        CASE 3:
+          cid = Command.FilterPlayer
+        CASE 4:
+          cid = Command.FilterPlayers
+        CASE 5:
+          cid = Command.FilterNone
+      END SELECT
+    CASE 11:
+      SELECT CASE win(wid).selected
+        CASE 2:
+          cid = Command.NextTurn
+        CASE 3:
+          cid = Command.NextMonth
+        CASE 6:
+          cid = Command.EndGame
+      END SELECT
+    CASE 12:
+      SELECT CASE win(wid).selected
+        CASE 2:
+          cid = Command.OrderAttack
+      END SELECT
+    CASE 13:
+      SELECT CASE win(wid).selected
+        CASE 1:
+          cid = Command.OptionAlerts
+      END SELECT
+    CASE 14:
+      SELECT CASE win(wid).selected
+        CASE 1:
+          cid = Command.About
+        CASE 2:
+          cid = Command.Distance
+      END SELECT
+  END SELECT
+  RETURN
+
+END SUB
+
+SUB RefreshPages
+
+  '
+  ' Refresh the atlas
+  '
+  SCREEN , , VideoPage.Atlas, VideoPage.Display
+  DrawGrid
+
+  '
+  ' Refresh the table
+  '
+  SCREEN , , VideoPage.Table, VideoPage.Display
+  DrawTable
+
+  '
+  ' Copy the current view page
+  '
+  IF player(turn).viewPage > 0 THEN
+    PCOPY player(turn).viewPage, VideoPage.Display
+  END IF
+
+  SCREEN , , VideoPage.Display, VideoPage.Display
+
+END SUB
+
+SUB SetupGame
+
+  SCREEN 0, 0, 0, 0: WIDTH 80: COLOR 7, 0: KEY OFF: CLS : RANDOMIZE TIMER
+ 
+  '
+  ' Load menus and windows
+  '
+  DrawStatus "Please wait..."
+  LoadMenu
+  LoadWindows
+ 
+  '
+  ' Draw master screens
+  '
+  SCREEN , , VideoPage.Table, VideoPage.Display
+  DrawTable
+  DrawMenu
+  DrawStatus ""
+
+  SCREEN , , VideoPage.Atlas, VideoPage.Display
+  DrawGrid
+  DrawMenu
+  DrawStatus ""
+
+  SCREEN , , VideoPage.Display, VideoPage.Display
+  DrawStatus ""
+
+  '
+  ' Show starting window #1
+  '
+  DoWindow 1
+  IF win(1).canceled THEN
+    END
+  ELSE
+    SetupGame.New
+  END IF
+
+END SUB
+
+' =========================================================
+' SetupGameNew
+' ---------------------------------------------------------
+' Sets up a new game.
+' =========================================================
+SUB SetupGame.New
+
+  DIM aid AS INTEGER
+  DIM pid AS INTEGER
 
   DO
    
+    '
+    ' Prompt for the number of players and asteroids
+    '
     DoWindow 2
     players = VAL(fieldtext(2, 1)): IF players = 0 THEN players = 3
     asteroids = VAL(fieldtext(2, 2)): IF asteroids = 0 THEN asteroids = 15
    
+    '
+    ' Validate initial game options
+    '
     IF players > 10 THEN
       '
       ' Too many players
@@ -1835,275 +2793,36 @@ SUB NewGame
       EXIT DO
     END IF
    
-    PCOPY 1, 0
   LOOP
+
+  '
+  ' Initialize players
+  '
+  FOR pid = 1 TO players
+    player(pid).viewFilter = Filter.None
+    player(pid).viewPage = VideoPage.Table
+  NEXT
+
+  '
+  ' Initialize asteroid data
+  '
+  FOR aid = 1 TO asteroids
+    asteroid(aid).Control = INT(RND * 10)
+    asteroid(aid).Detect = INT(RND * 10)
+    asteroid(aid).mined = INT(RND * 50) + 50
+    IF aid <= players THEN
+      asteroid(aid).ruler = aid
+    ELSE
+      asteroid(aid).ruler = 0
+    END IF
+    asteroid(aid).Produce = 50
+    asteroid(aid).tech = 10
+    asteroid(aid).Shield = 0
+    asteroid(aid).ships = 200
+    asteroid(aid).Supply = 0
+  NEXT
 
   MakeAtlas
-  InitData
-
-END SUB
-
-SUB NextMonth
-
-  DIM x AS INTEGER
-
-  REM Move each mission closer to their targets.
-    FOR x = 1 TO missions
-      mission(x).distance = mission(x).distance - 1
-      IF mission(x).distance = 0 THEN
-        SELECT CASE mission(x).goal
-          CASE 1
-            BattleMode (x)
-        END SELECT
-      END IF
-    NEXT
-
-  REM Calculate ships produced for each asteroid
-    FOR x = 1 TO asteroids
-      asteroid(x).ships = asteroid(x).ships + asteroid(x).Produce
-    NEXT
-
-END SUB
-
-SUB OrderAttack
-
-  DIM num AS INTEGER
-  DIM src AS INTEGER
-  DIM trg AS INTEGER
-
-  DO
-   
-    '
-    ' Get the source, target, and fleet size
-    '
-    DoWindow 15
-    IF win(15).canceled THEN
-      EXIT DO
-    END IF
-
-    src = VAL(fieldtext(15, 1))
-    trg = VAL(fieldtext(15, 2))
-    num = VAL(fieldtext(15, 3))
-   
-    IF src < 1 OR src > asteroids THEN
-      DoWindow 16
-    ELSEIF asteroid(src).ruler <> turn THEN
-      DoWindow 17
-    ELSEIF trg < 1 OR trg > asteroids THEN
-      DoWindow 18
-    ELSEIF src = trg THEN
-      DoWindow 19
-    ELSEIF num < 1 OR num > asteroid(src).ships THEN
-      DoWindow 20
-    ELSE
-     
-      '
-      ' Initialize mission data
-      '
-      missions = missions + 1
-      mission(missions).distance = CalcDistance(src, trg)
-      mission(missions).goal = 1
-      mission(missions).ruler = turn
-      mission(missions).ships = num
-      mission(missions).source = src
-      mission(missions).target = trg
-      mission(missions).techlevel = asteroid(src).tech
-     
-      '
-      ' Deduct ships from the source asteroid
-      '
-      asteroid(src).ships = asteroid(src).ships - num
-     
-      SCREEN , , 3, 0: DrawTableRow src
-      IF display = 3 THEN SCREEN , , 0, 0: DrawTableRow src
-     
-      ' BUG: total months is not being shown correctly
-      ' This was working in the original, but it may be easier
-      ' to accept the bug for now until the field system is
-      ' updated in the next set of refactoring.
-
-      DoWindow 21
-      COLOR 0, 7: LOCATE win(21).posY + 2, win(21).posX + 16
-      IF mission(missions).distance > 9 THEN PRINT " ";
-      PRINT USING "## month"; mission(missions).distance;
-      IF mission(missions).distance > 1 THEN PRINT "s";
-      PRINT "."; : COLOR 7, 0: WaitForKeyPress: PCOPY display, 0
-      EXIT DO
-    END IF
-    PCOPY display, 0
-  LOOP
-     
-  fieldtext(15, 1) = "  "
-  fieldtext(15, 2) = "  "
-  fieldtext(15, 3) = "    "
-
-END SUB
-
-SUB PlayGame
-
-  DIM wid AS INTEGER
-  DIM x   AS INTEGER
-
-  SCREEN , , 0, 0: turn = 1
- 
-  DO
-   
-    empire.shown = turn
-   
-    DO
-     
-      '
-      ' Wait for a command from the menu bar
-      '
-      wid = DoMenu
-     
-      SELECT CASE wid
-       
-        CASE 10
-          ViewPage
-
-        CASE 11
-          SELECT CASE win(11).selected
-            CASE 1, 2, 3, 4, 5
-              EXIT DO
-            CASE 6
-              END
-          END SELECT
-       
-        CASE 12
-          SELECT CASE win(12).selected
-            CASE 2
-              OrderAttack
-          END SELECT
-       
-        CASE 13
-          SELECT CASE win(13).selected
-            CASE 1
-              SelectAlert
-          END SELECT
-
-        CASE 14
-          SELECT CASE win(14).selected
-            CASE 1
-              DoWindow 30
-              PCOPY 1, 0
-            CASE 2
-              FindDistance
-          END SELECT
-      END SELECT
-   
-    LOOP
-   
-    IF fieldtext(27, 1) = " Yes " THEN
-      FOR x = 1 TO 5: SOUND 800, .8: SOUND 1200, .8: NEXT
-    END IF
-
-    '
-    ' Next turn
-    '
-    turn = turn + 1
-    IF turn > players THEN
-      NextMonth
-      turn = 1
-    END IF
-
-  LOOP
-
-END SUB
-
-SUB SelectAlert
-
-  DIM original AS STRING
-  DIM x        AS INTEGER
-  DIM Y        AS INTEGER
-
-  original = fieldtext(27, 1)
-
-  DoWindow 27
-
-  IF original = " Yes " AND fieldtext(27, 1) = " No  " THEN
-    IF players > 1 THEN
-      FOR x = 1 TO 3
-        FOR Y = 300 TO 60 STEP -10
-          SOUND Y, .2
-        NEXT
-      NEXT
-      DoWindow 29
-      IF fieldtext(29, 1) = " Yes " THEN
-        fieldtext(27, 1) = " Yes "
-      END IF
-    END IF
-  END IF
-
-END SUB
-
-SUB Setup
-
-  DIM x AS INTEGER
-
-  SCREEN 0, 0, 0, 0: WIDTH 80: COLOR 7, 0: KEY OFF: CLS : RANDOMIZE TIMER
- 
-  display = 1: arrowexit = False
-
-  LoadMenu
-
-  DrawMenu
-  DrawStatus ""
-  PCOPY 0, 1
-
-  DrawStatus "Please wait..."
-  LoadWindows
-  DrawStatus ""
- 
-  '
-  ' Starting window
-  '
-  DoWindow 1
-  IF win(1).canceled THEN
-    END
-  ELSEIF win(1).selected = 1 THEN
-    NewGame
-  END IF
-
-
-  ' HACK: Setup the table
-  PCOPY 1, 3: SCREEN , , 3, 3: display = 3
-  DrawTable
-  PCOPY 3, 0: SCREEN , , 0, 0
-
-END SUB
-
-SUB ViewPage
-
-  DIM current AS INTEGER
-  DIM x AS INTEGER
-
-  ' HACK: get current view
-  current = win(10).selected
-
-  IF current = 2 THEN
-    PCOPY 3, 0: display = 3: EXIT SUB
-  ELSEIF current = 3 THEN
-    empire.shown = turn
-  ELSEIF current = 4 THEN
-    empire.shown = empire.shown + 1
-    IF empire.shown > players THEN empire.shown = 1
-  END IF
-
-  SCREEN , , 2, 2: display = 2
-  FOR x = 1 TO asteroids
-    LOCATE asteroid(x).local1 * 2 + 1, asteroid(x).local2 * 3 - 1
-    SELECT CASE current
-      CASE 1
-        IF asteroid(x).ruler > 0 THEN COLOR 0, 7
-      CASE 3
-        IF asteroid(x).ruler = turn THEN COLOR 0, 7
-      CASE 4
-        IF asteroid(x).ruler = empire.shown THEN COLOR 0, 7
-    END SELECT
-    PRINT USING "##"; x; : COLOR 7, 0
-  NEXT
-  PCOPY 2, 0: SCREEN , , 0, 0
 
 END SUB
 
