@@ -513,7 +513,7 @@ REM Window 15
   DATA "+$", " Enter the source asteroid:"
   DATA "+$", " Enter the target asteroid:"
   DATA "+$", " Enter the number of ships:"
-  DATA "#", 32, 1, 2, 0                     
+  DATA "#", 32, 1, 2, 0                    
   DATA "#", 32, 2, 2, 0
   DATA "#", 30, 3, 4, 0
 
@@ -618,7 +618,7 @@ REM Window 29
 
 REM Window 30
   DATA "Start"
-  DATA 10,25
+  DATA 5, 1
   DATA "+$", "   The Galactic Empire   "
   DATA "+-"
   DATA "+$", " (C) 1992 David J. Pinch "
@@ -1176,7 +1176,7 @@ SUB DrawText (text AS STRING)
 
       '
       ' Read the color values
-      '  
+      ' 
       backcolor = VAL("&H" + MID$(text, nextAt + 2, 1))
       forecolor = VAL("&H" + MID$(text, nextAt + 3, 1))
       COLOR forecolor, backcolor
@@ -1259,7 +1259,17 @@ SUB ExecuteAbout
   '
   ' Displays a window showing information about the game.
   '
+ 
+  SCREEN , , VideoPage.Working, VideoPage.Display
+  CLS
+  DrawFileAt "ABOUT.PCB", 1, 2
+  PCOPY VideoPage.Working, VideoPage.Display
+  SCREEN , , VideoPage.Display, VideoPage.Display
+
   WinShow 30
+
+  RefreshPages
+
 END SUB
 
 SUB ExecuteDistance
