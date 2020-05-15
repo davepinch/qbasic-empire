@@ -158,12 +158,14 @@ DECLARE SUB WinShow (wid AS INTEGER)
 ' Declarations
 '
 DECLARE SUB BattleMode (id AS INTEGER)
+DECLARE SUB DrawFile (filename AS STRING)
 DECLARE SUB DrawGrid ()
 DECLARE SUB DrawGridCells ()
 DECLARE SUB DrawMenu ()
 DECLARE SUB DrawMenuItem (itemId AS INTEGER, selected AS INTEGER)
 DECLARE SUB DrawTable ()
 DECLARE SUB DrawTableRow (x AS INTEGER)
+DECLARE SUB DrawText (text AS STRING)
 DECLARE SUB LoadMenu ()
 DECLARE SUB PlayGame ()
 DECLARE SUB RefreshPages ()
@@ -326,7 +328,7 @@ CONST WinStyle.OutlineBackcolor = 2
 CONST WinStyle.OutlineForecolor = 7
 CONST WinStyle.SelectedBackcolor = 7
 CONST WinStyle.SelectedForecolor = 0
-CONST WinStyle.Shadow = 1
+CONST WinStyle.Shadow = 0
 CONST WinStyle.ShadowChar = 176
 CONST WinStyle.ShadowForecolor = 8
 CONST WinStyle.ShadowBackcolor = 0
@@ -378,11 +380,10 @@ DATA " Special ", 14
 
 REM Window 1
   DATA "Start"
-  DATA 8,25
-  DATA "$", 0, 2, " Welcome to the Galactic Empire "
-  DATA "$", 0, 3, "Please select an option."
-  DATA "@", 12, 5, 10, "<command>", " New Game "
-  DATA "@", 12, 6, 10, "<command>", " Old Game "
+  DATA 10,22
+  DATA "$", 0, 1, " Select an option to get started: "
+  DATA "@", 12, 3, 10, "<command>", " New Game "
+  DATA "@", 12, 4, 10, "<command>", " Old Game "
 
 REM Window 2
   DATA "Start"
@@ -509,7 +510,7 @@ REM Window 15
   DATA "+$", " Enter the source asteroid:"
   DATA "+$", " Enter the target asteroid:"
   DATA "+$", " Enter the number of ships:"
-  DATA "#", 32, 1, 2, 0                         
+  DATA "#", 32, 1, 2, 0                      
   DATA "#", 32, 2, 2, 0
   DATA "#", 30, 3, 4, 0
 
@@ -864,6 +865,24 @@ NavigateRight:
 
 END FUNCTION
 
+SUB DrawFile (filename AS STRING)
+  '
+  ' Draws a PCB file containing embedded color codes
+  '
+
+  DIM text AS STRING
+
+  OPEN filename FOR INPUT ACCESS READ AS #1
+
+  DO WHILE NOT EOF(1)
+    LINE INPUT #1, text
+    DrawText text + CHR$(ASCII.Return)
+  LOOP
+
+  CLOSE #1
+
+END SUB
+
 SUB DrawGrid
 
   DIM cellDivide  AS STRING * 1
@@ -1203,6 +1222,70 @@ SUB DrawTableRow (aid AS INTEGER)
   ELSE
     LOCATE , 6: PRINT "[data not available]";
   END IF
+
+END SUB
+
+SUB DrawText (text AS STRING)
+
+  ' A PCBoard color code has the following format:
+  '
+  '   @X##
+  '   ||||
+  '   |||+-- Background attribute
+  '   ||+--- Foreground attribute
+  '   |+---- + character
+  '   +----- @ character
+
+  DIM backcolor AS INTEGER
+  DIM forecolor AS INTEGER
+  DIM nextAt    AS INTEGER
+  DIM startAt   AS INTEGER
+ 
+  LET startAt = 1
+
+  DO
+ 
+    '
+    ' Get the index of the next code
+    '
+    nextAt = INSTR(startAt, text, "@X")
+
+    IF nextAt = 0 THEN
+      '
+      ' No further codes found; print remaining characters
+      '
+      IF startAt <= LEN(text) THEN
+        PRINT RIGHT$(text, LEN(text) - startAt + 1);
+      END IF
+      EXIT DO
+
+    ELSEIF nextAt > LEN(text) - 3 THEN
+      '
+      ' Code found, but not enough space for 4 characters
+      '
+      PRINT RIGHT$(text, LEN(text) - startAt + 1);
+      EXIT DO
+
+    ELSE
+      '
+      ' Code found; print characters up to the character code.
+      '
+      PRINT MID$(text, startAt, nextAt - startAt);
+
+      '
+      ' Read the color values
+      '   
+      backcolor = VAL("&H" + MID$(text, nextAt + 2, 1))
+      forecolor = VAL("&H" + MID$(text, nextAt + 3, 1))
+      COLOR forecolor, backcolor
+
+      '
+      ' Continue with the next character in the text
+      '
+      startAt = nextAt + 4
+    END IF
+
+  LOOP
 
 END SUB
 
@@ -1681,7 +1764,7 @@ SUB SetupGame
   StatusUpdate "Please wait..."
   LoadMenu
   WinLoad
- 
+
   '
   ' Draw master screens
   '
@@ -1695,6 +1778,12 @@ SUB SetupGame
   DrawMenu
   StatusClear
 
+  '
+  ' Draw title screen
+  '
+  SCREEN , , VideoPage.Working, VideoPage.Display
+  DrawFile "TITLE.PCB"
+  PCOPY VideoPage.Working, VideoPage.Display
   SCREEN , , VideoPage.Display, VideoPage.Display
   StatusClear
 
