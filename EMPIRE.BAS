@@ -159,6 +159,7 @@ DECLARE SUB WinShow (wid AS INTEGER)
 '
 DECLARE SUB BattleMode (id AS INTEGER)
 DECLARE SUB DrawFile (filename AS STRING)
+DECLARE SUB DrawFileAt (filename AS STRING, posX AS INTEGER, posY AS INTEGER)
 DECLARE SUB DrawGrid ()
 DECLARE SUB DrawGridCells ()
 DECLARE SUB DrawMenu ()
@@ -242,6 +243,8 @@ CONST Filter.Players = 2
 CONST GridStyle.Backcolor = 0
 CONST GridStyle.Border = 2
 CONST GridStyle.Forecolor = 1
+CONST GridStyle.CellCountX = 15
+CONST GridStyle.CellCountY = 11
 CONST GridStyle.CellBackcolor = 0
 CONST GridStyle.CellForecolor = 7
 CONST GridStyle.FilterBackcolor = 7
@@ -510,7 +513,7 @@ REM Window 15
   DATA "+$", " Enter the source asteroid:"
   DATA "+$", " Enter the target asteroid:"
   DATA "+$", " Enter the number of ships:"
-  DATA "#", 32, 1, 2, 0                      
+  DATA "#", 32, 1, 2, 0                     
   DATA "#", 32, 2, 2, 0
   DATA "#", 30, 3, 4, 0
 
@@ -883,146 +886,45 @@ SUB DrawFile (filename AS STRING)
 
 END SUB
 
-SUB DrawGrid
-
-  DIM cellDivide  AS STRING * 1
-  DIM cellLeft    AS STRING * 1
-  DIM cellRight   AS STRING * 1
-  DIM lowerDivide AS STRING * 1
-  DIM lowerFlat   AS STRING * 1
-  DIM lowerLeft   AS STRING * 1
-  DIM lowerRight  AS STRING * 1
-  DIM divideCross AS STRING * 1
-  DIM divideFlat  AS STRING * 1
-  DIM divideLeft  AS STRING * 1
-  DIM divideRight AS STRING * 1
-  DIM upperDivide AS STRING * 1
-  DIM upperFlat   AS STRING * 1
-  DIM upperLeft   AS STRING * 1
-  DIM upperRight  AS STRING * 1
+SUB DrawFileAt (filename AS STRING, posX AS INTEGER, posY AS INTEGER)
 
   '
-  ' Initialize grid characters based on border style
+  ' Draws a PCB file containing embedded color codes
   '
-  SELECT CASE GridStyle.Border
+
+  DIM lines AS INTEGER
+  DIM text AS STRING
+
+  OPEN filename FOR INPUT ACCESS READ AS #1
+
+  DO WHILE NOT EOF(1)
    
-    CASE 1
-      cellDivide = CHR$(179)
-      cellLeft = CHR$(179)
-      cellRight = CHR$(179)
-      divideCross = CHR$(197)
-      divideFlat = CHR$(196)
-      divideLeft = CHR$(195)
-      divideRight = CHR$(180)
-      lowerDivide = CHR$(193)
-      lowerFlat = CHR$(196)
-      lowerLeft = CHR$(192)
-      lowerRight = CHR$(217)
-      upperDivide = CHR$(194)
-      upperFlat = CHR$(196)
-      upperLeft = CHR$(218)
-      upperRight = CHR$(191)
-
-    CASE 2
-      cellDivide = CHR$(179)
-      cellLeft = CHR$(186)
-      cellRight = CHR$(186)
-      divideCross = CHR$(197)
-      divideFlat = CHR$(196)
-      divideLeft = CHR$(199)
-      divideRight = CHR$(182)
-      lowerDivide = CHR$(207)
-      lowerFlat = CHR$(205)
-      lowerLeft = CHR$(200)
-      lowerRight = CHR$(188)
-      upperDivide = CHR$(209)
-      upperFlat = CHR$(205)
-      upperLeft = CHR$(201)
-      upperRight = CHR$(187)
-
-  END SELECT
-
-  '
-  ' Set grid colors
-  '
-  COLOR GridStyle.Forecolor, GridStyle.Backcolor
-
-  '
-  ' Upper left corner
-  '
-  LOCATE 2, 1
-  PRINT upperLeft;
-
-  '
-  ' Upper center border
-  '
-  FOR x = 1 TO 25
-    PRINT upperFlat; upperFlat; upperDivide;
-  NEXT
-  
-  '
-  ' Upper right corner
-  '
-  PRINT upperFlat; upperFlat; upperRight
-
-  FOR row = 1 TO 10
+    '
+    ' Read the next line from the file
+    '
+    LINE INPUT #1, text
 
     '
-    ' Left side of cell row
+    ' Position the cursor
     '
-    PRINT cellLeft;
+    LOCATE posY + lines, posX
 
     '
-    ' Cells
+    ' Draw the text while expanding color codes
     '
-    FOR x = 1 TO 25
-      PRINT "  "; cellDivide;
-    NEXT
+    DrawText text
+ 
+    lines = lines + 1
 
-    '
-    ' Right side of cell row
-    '
-    PRINT "  "; cellRight
+  LOOP
 
-    '
-    ' Left side of divider row
-    '
-    PRINT divideLeft;
+  CLOSE #1
 
-    '
-    ' Inner divider
-    '
-    FOR x = 1 TO 25
-      PRINT divideFlat; divideFlat; divideCross;
-    NEXT
+END SUB
 
-    '
-    ' Right side of divider row
-    '
-    PRINT divideFlat; divideFlat; divideRight
-
-  NEXT
-
-  '
-  ' Last cell row
-  '
-  PRINT cellLeft;
-  FOR x = 1 TO 25
-    PRINT "  "; cellDivide;
-  NEXT
-  PRINT "  "; cellRight
-
-  '
-  ' Bottom right corner
-  '
-  PRINT lowerLeft;
-  FOR x = 1 TO 25
-    PRINT lowerFlat; lowerFlat; lowerDivide;
-  NEXT
-  PRINT lowerFlat; lowerFlat; lowerRight;
-
+SUB DrawGrid
+  DrawFileAt "GRID.PCB", 1, 2
   DrawGridCells
-
 END SUB
 
 SUB DrawGridCells
@@ -1274,7 +1176,7 @@ SUB DrawText (text AS STRING)
 
       '
       ' Read the color values
-      '   
+      '  
       backcolor = VAL("&H" + MID$(text, nextAt + 2, 1))
       forecolor = VAL("&H" + MID$(text, nextAt + 3, 1))
       COLOR forecolor, backcolor
@@ -1598,7 +1500,7 @@ SUB ExecuteViewTable
 END SUB
 
 FUNCTION GetCellScreenX% (cellX AS INTEGER)
-  GetCellScreenX = cellX * 3 - 1
+  GetCellScreenX = cellX * 5 - 2
 END FUNCTION
 
 FUNCTION GetCellScreenY% (cellY AS INTEGER)
@@ -1809,15 +1711,9 @@ SUB SetupGame.Atlas
   CONST PlotRandom = 3     ' Asteroids plotted randomly
 
   '
-  ' Grid dimensions
-  '
-  CONST GridSizeX = 26
-  CONST GridSizeY = 11
-
-  '
   ' Define grid to hold temporary asteroid locations
   '
-  DIM grid(1 TO GridSizeX, 1 TO GridSizeY) AS INTEGER
+  DIM grid(1 TO GridStyle.CellCountX, 1 TO GridStyle.CellCountY) AS INTEGER
  
   DIM i        AS INTEGER
   DIM j        AS INTEGER
@@ -1900,7 +1796,7 @@ CalcCoord:
   '     sx = x coordinate of the cell on the screen
   '     sy = y coordinate of the cell on the screen
   '
-  sx = nx * 3 - 1
+  sx = nx * 5 - 2
   sy = ny * 2 + 1
   RETURN
 
@@ -1917,8 +1813,8 @@ FindCell:
   '     nx = The grid x-coordinate of the asteroid.
   '     ny = The grid y-coordinate of the asteroid.
   '
-  FOR nx = 1 TO GridSizeX
-    FOR ny = 1 TO GridSizeY
+  FOR nx = 1 TO GridStyle.CellCountX
+    FOR ny = 1 TO GridStyle.CellCountY
       IF grid(nx, ny) = aid THEN
         RETURN
       END IF
@@ -1965,8 +1861,8 @@ ClearGrid:
   '
   '     nx, ny, cx, cy are zerod
   '
-  FOR nx = 1 TO GridSizeX
-    FOR ny = 1 TO GridSizeY
+  FOR nx = 1 TO GridStyle.CellCountX
+    FOR ny = 1 TO GridStyle.CellCountY
       IF grid(nx, ny) > 0 THEN
         GOSUB ClearCell
       END IF
@@ -1994,10 +1890,10 @@ Normalize:
   '     nx = x-coordinate normalized to fit in grid
   '     ny = y-coordinate normalized to fit in grid
   '
-  IF nx < 1 THEN nx = nx + GridSizeX
-  IF ny < 1 THEN ny = ny + GridSizeY
-  IF nx > GridSizeX THEN nx = nx - GridSizeX
-  IF ny > GridSizeY THEN ny = ny - GridSizeY
+  IF nx < 1 THEN nx = nx + GridStyle.CellCountX
+  IF ny < 1 THEN ny = ny + GridStyle.CellCountY
+  IF nx > GridStyle.CellCountX THEN nx = nx - GridStyle.CellCountX
+  IF ny > GridStyle.CellCountY THEN ny = ny - GridStyle.CellCountY
   RETURN
 
 SetCell:
@@ -2034,7 +1930,7 @@ NextBanded:
       '
       ' Select random X coordinate, nearby Y coordinate
       '
-      nx = INT(RND * GridSizeX) + 1
+      nx = INT(RND * GridStyle.CellCountX) + 1
       ny = INT(RND * 3) - 1 + ny
       GOSUB Normalize
 
@@ -2115,7 +2011,7 @@ NextManual:
         '
         mx = nx
         my = ny - 1
-        IF my < 1 THEN my = GridSizeY
+        IF my < 1 THEN my = GridStyle.CellCountY
     
       CASE CHR$(0) + CHR$(ScanCode.Right)
         '
@@ -2123,7 +2019,7 @@ NextManual:
         '
         mx = nx + 1
         my = ny
-        IF mx > GridSizeX THEN mx = 1
+        IF mx > GridStyle.CellCountX THEN mx = 1
     
       CASE CHR$(0) + CHR$(ScanCode.Left)
         '
@@ -2131,7 +2027,7 @@ NextManual:
         '
         mx = nx - 1
         my = ny
-        IF mx < 1 THEN mx = GridSizeX
+        IF mx < 1 THEN mx = GridStyle.CellCountX
     
       CASE CHR$(0) + CHR$(ScanCode.Down)
         '
@@ -2139,7 +2035,7 @@ NextManual:
         '
         mx = nx
         my = ny + 1
-        IF my > GridSizeY THEN my = 1
+        IF my > GridStyle.CellCountY THEN my = 1
    
     END SELECT
    
@@ -2156,8 +2052,8 @@ NextRandom:
   ' Finds a random slot
   '
   DO
-    nx = INT(RND * GridSizeX) + 1
-    ny = INT(RND * GridSizeY) + 1
+    nx = INT(RND * GridStyle.CellCountX) + 1
+    ny = INT(RND * GridStyle.CellCountY) + 1
   LOOP UNTIL grid(nx, ny) = 0
   RETURN
 
@@ -2221,8 +2117,8 @@ ReplotPlayers:
   '
   ' Replots player asteroids using same mode as last time
   '
-  FOR i = 1 TO GridSizeX
-    FOR j = 1 TO GridSizeY
+  FOR i = 1 TO GridStyle.CellCountX
+    FOR j = 1 TO GridStyle.CellCountY
      
       aid = grid(i, j)
     
@@ -2262,8 +2158,8 @@ SaveLocations:
   '
   ' Commits the grid locations to the asteroids
   '
-  FOR i = 1 TO GridSizeX
-    FOR j = 1 TO GridSizeY
+  FOR i = 1 TO GridStyle.CellCountX
+    FOR j = 1 TO GridStyle.CellCountY
           
       '
       ' Get the ID of the asteroid at this grid location
