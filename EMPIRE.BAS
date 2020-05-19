@@ -26,6 +26,19 @@ TYPE AsteroidType
 END TYPE
 
 '
+' AtlasItemType
+'
+' Contains information about an item in the atlas 2-dimensional grid.
+'
+TYPE AtlasItemType
+  active AS INTEGER
+  cx     AS INTEGER
+  cy     AS INTEGER
+  value  AS INTEGER
+  label  AS STRING * 4
+END TYPE
+
+'
 ' FieldType
 '
 ' Contains information about an input field in a window.
@@ -83,6 +96,37 @@ TYPE WindowType
 END TYPE
 
 '
+' Atlas* declarations
+'
+DECLARE SUB AtlasAddBand (fromValue AS INTEGER, toValue AS INTEGER)
+DECLARE SUB AtlasAddCluster (fromValue AS INTEGER, toValue AS INTEGER)
+DECLARE SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER)
+DECLARE SUB AtlasAddRandom (fromValue AS INTEGER, toValue AS INTEGER)
+DECLARE SUB AtlasDisplayOff ()
+DECLARE SUB AtlasDisplayOn ()
+DECLARE SUB AtlasDraw ()
+DECLARE SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
+DECLARE SUB AtlasDrawGrid ()
+DECLARE SUB AtlasDrawItems ()
+DECLARE SUB AtlasDrawSelect (cx AS INTEGER, cy AS INTEGER, valid AS INTEGER)
+DECLARE SUB AtlasDrawUnselect (cx AS INTEGER, cy AS INTEGER)
+DECLARE SUB AtlasInit ()
+DECLARE SUB AtlasMoveItem (idx AS INTEGER, nx AS INTEGER, ny AS INTEGER)
+DECLARE SUB AtlasNextBanded (outcx AS INTEGER, outcy AS INTEGER)
+DECLARE SUB AtlasNextClustered (outcx AS INTEGER, outcy AS INTEGER)
+DECLARE SUB AtlasNextManual (outcx AS INTEGER, outcy AS INTEGER)
+DECLARE SUB AtlasNextRandom (outcx AS INTEGER, outcy AS INTEGER)
+DECLARE SUB AtlasPlotBanded ()
+DECLARE SUB AtlasPlotClustered ()
+DECLARE SUB AtlasPlotManual ()
+DECLARE SUB AtlasPlotRandom ()
+DECLARE SUB AtlasPrompt (outcx AS INTEGER, outcy AS INTEGER, promptFor AS INTEGER)
+DECLARE FUNCTION AtlasNextIndex% ()
+DECLARE FUNCTION AtlasCellFiltered% (cx AS INTEGER, cy AS INTEGER)
+DECLARE FUNCTION AtlasGetScreenX% (cx AS INTEGER)
+DECLARE FUNCTION AtlasGetScreenY% (cy AS INTEGER)
+
+'
 ' Execute* subroutines
 '
 ' Each subroutine executes a different menu command. Review the comments
@@ -91,8 +135,8 @@ END TYPE
 DECLARE SUB Execute (cid AS INTEGER)
 DECLARE SUB ExecuteAbout ()
 DECLARE SUB ExecuteDistance ()
-DECLARE SUB ExecuteFilterPlayer ()
 DECLARE SUB ExecuteFilterNone ()
+DECLARE SUB ExecuteFilterSelf ()
 DECLARE SUB ExecuteFilterPlayers ()
 DECLARE SUB ExecuteNextMonth ()
 DECLARE SUB ExecuteNextTurn ()
@@ -100,6 +144,14 @@ DECLARE SUB ExecuteOptionAlerts ()
 DECLARE SUB ExecuteOrderAttack ()
 DECLARE SUB ExecuteViewAtlas ()
 DECLARE SUB ExecuteViewTable ()
+
+'
+' Menu* subroutines
+'
+DECLARE SUB MenuLoad ()
+DECLARE SUB MenuDraw ()
+DECLARE SUB MenuDrawItem (itemId AS INTEGER, selected AS INTEGER)
+DECLARE FUNCTION MenuShow ()
 
 '
 ' SetupGame.* subroutines
@@ -115,10 +167,19 @@ DECLARE SUB SetupGame.New ()
 '
 ' These subroutines change the status bar on the bottom of the page.
 '
-DECLARE SUB StatusDebug (text AS STRING)
-DECLARE SUB StatusLevel (text AS STRING, level AS INTEGER)
-DECLARE SUB StatusUpdate (text AS STRING)
 DECLARE SUB StatusClear ()
+DECLARE SUB StatusDebug (text AS STRING)
+DECLARE SUB StatusUpdate (text AS STRING)
+DECLARE SUB StatusUpdateLevel (text AS STRING, level AS INTEGER)
+
+'
+' UI subroutines
+'
+DECLARE SUB UI.Redraw ()
+DECLARE SUB UI.Refresh ()
+DECLARE SUB UI.Run ()
+DECLARE SUB UI.SetFilter (filter AS INTEGER, refreshUI AS INTEGER)
+DECLARE SUB UI.SetPage (page AS INTEGER)
 
 '
 ' Win* declarations
@@ -138,7 +199,6 @@ DECLARE FUNCTION WinDefineLabel% (wid%, posX%, posY%, text$)
 DECLARE FUNCTION WinDefineInteger% (wid%, posX%, posY%, sizeX%, text$)
 DECLARE FUNCTION WinIsSelectable% (wid%, fid%)
 DECLARE FUNCTION WinParseCommand% (text$)
-
 DECLARE SUB WinDraw (id AS INTEGER)
 DECLARE SUB WinDrawField (wid AS INTEGER, fid AS INTEGER)
 DECLARE SUB WinDrawOutline (wid AS INTEGER, atX AS INTEGER, atY AS INTEGER)
@@ -159,23 +219,16 @@ DECLARE SUB WinShow (wid AS INTEGER)
 '
 DECLARE SUB BattleMode (id AS INTEGER)
 DECLARE SUB DrawFile (filename AS STRING)
-DECLARE SUB DrawFileAt (filename AS STRING, posX AS INTEGER, posY AS INTEGER)
-DECLARE SUB DrawGrid ()
-DECLARE SUB DrawGridCells ()
-DECLARE SUB DrawMenu ()
-DECLARE SUB DrawMenuItem (itemId AS INTEGER, selected AS INTEGER)
+DECLARE SUB DrawFileAt (filename AS STRING, offsetX AS INTEGER, offsetY AS INTEGER)
 DECLARE SUB DrawTable ()
 DECLARE SUB DrawTableRow (x AS INTEGER)
+DECLARE SUB DrawTableRows ()
 DECLARE SUB DrawText (text AS STRING)
-DECLARE SUB LoadMenu ()
+DECLARE SUB PaintBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
 DECLARE SUB PlayGame ()
-DECLARE SUB RefreshPages ()
 DECLARE SUB WaitForKeyPress ()
 
 DECLARE FUNCTION CalcDistance (first AS INTEGER, second AS INTEGER)
-DECLARE FUNCTION DoMenu ()
-DECLARE FUNCTION GetCellScreenX% (cellX AS INTEGER)
-DECLARE FUNCTION GetCellScreenY% (cellY AS INTEGER)
 DECLARE FUNCTION GetKey$ ()
 DECLARE FUNCTION IsFiltered% (aid AS INTEGER)
 
@@ -188,6 +241,28 @@ CONST ASCII.Escape = 27
 CONST ASCII.Space = 32
 
 '
+' AtlasSelect constants
+'
+CONST AtlasPromptFor.Cell = 0
+CONST AtlasPromptFor.Empty = 1
+CONST AtlasPromptFor.EmptyOrSelf = 2
+CONST AtlasPromptFor.Item = 3
+
+'
+' AtlasStyle constants
+'
+CONST AtlasStyle.CellBackcolor = 0
+CONST AtlasStyle.CellForecolor = 7
+CONST AtlasStyle.CellSizeX = 4
+CONST AtlasStyle.CellSizeY = 1
+CONST AtlasStyle.DrawFile = "GRID.PCB"
+CONST AtlasStyle.FilterBackcolor = 7
+CONST AtlasStyle.FilterForecolor = 15
+CONST AtlasStyle.GridSizeX = 15
+CONST AtlasStyle.GridSizeY = 11
+CONST AtlasStyle.SelectBackcolor = 4
+
+'
 ' Boolean constants
 '
 CONST True = -1
@@ -197,19 +272,22 @@ CONST False = NOT True
 ' Command.* constants
 '
 ' These constants assign a unique ID to each type of menu command.
+' To add a command, assign a unique value here and then update
+' the WinParseCommand function to translate a string to the value.
 '
 CONST Command.About = 1
 CONST Command.Distance = 2
 CONST Command.EndGame = 3
 CONST Command.FilterNone = 4
-CONST Command.FilterPlayer = 5
+CONST Command.FilterSelf = 5
 CONST Command.FilterPlayers = 6
 CONST Command.NextMonth = 7
 CONST Command.NextTurn = 8
-CONST Command.OptionAlerts = 9
-CONST Command.OrderAttack = 10
-CONST Command.ViewAtlas = 11
-CONST Command.ViewTable = 12
+CONST Command.NewGame = 9
+CONST Command.OptionAlerts = 10
+CONST Command.OrderAttack = 11
+CONST Command.ViewAtlas = 12
+CONST Command.ViewTable = 13
 
 '
 ' Control Character constants
@@ -229,26 +307,6 @@ CONST FieldKind.Button = 2
 CONST FieldKind.Integer = 3
 CONST FieldKind.Label = 4
 CONST FieldKind.Separator = 5
-
-'
-' Filter constants
-'
-CONST Filter.None = 0
-CONST Filter.Player = 1
-CONST Filter.Players = 2
-
-'
-' GridStyle constants
-'
-CONST GridStyle.Backcolor = 0
-CONST GridStyle.Border = 2
-CONST GridStyle.Forecolor = 1
-CONST GridStyle.CellCountX = 15
-CONST GridStyle.CellCountY = 11
-CONST GridStyle.CellBackcolor = 0
-CONST GridStyle.CellForecolor = 7
-CONST GridStyle.FilterBackcolor = 7
-CONST GridStyle.FilterForecolor = 15
 
 '
 ' Maximum UI elements
@@ -310,6 +368,21 @@ CONST TableStyle.RowForecolor = 7
 CONST TableStyle.Forecolor = 1
 
 '
+' UIFilter.* constants
+'
+CONST UIFilter.None = 0
+CONST UIFilter.Self = 1
+CONST UIFilter.Players = 2
+
+'
+' UIPage.* constants
+'
+CONST UIPage.None = 0
+CONST UIPage.Atlas = 1
+CONST UIPage.Table = 2
+CONST UIPage.About = 3
+
+'
 ' VideoPage.* constants
 '
 ' These constants define how each video page is used.
@@ -336,6 +409,20 @@ CONST WinStyle.ShadowChar = 176
 CONST WinStyle.ShadowForecolor = 8
 CONST WinStyle.ShadowBackcolor = 0
 
+
+'
+' Global atlas variables
+'
+DIM SHARED atlasActive AS INTEGER
+DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS INTEGER
+DIM SHARED atlasItem(1 TO 20) AS AtlasItemType
+
+'
+' Global UI variables
+'
+DIM SHARED uiCurrentFilter AS INTEGER
+DIM SHARED uiCurrentPage   AS INTEGER
+
 '
 ' Global window variables
 '
@@ -361,12 +448,10 @@ DIM SHARED turn                    AS INTEGER
 ' Main
 '
 SetupGame
-PlayGame
+UI.Run
 
 '
-' Menu bar data
-'
-' These are loaded by the LoadMenu subroutine.
+' Menu bar data (loaded by MenuLoad)
 '
 DATA 5
 DATA " View ", 10
@@ -385,7 +470,7 @@ REM Window 1
   DATA "Start"
   DATA 10,22
   DATA "$", 0, 1, " Select an option to get started: "
-  DATA "@", 12, 3, 10, "<command>", " New Game "
+  DATA "@", 12, 3, 10, "NewGame", " New Game "
   DATA "@", 12, 4, 10, "<command>", " Old Game "
 
 REM Window 2
@@ -452,11 +537,10 @@ REM Window 9
   DATA "+@", "<command>", "Look Behind Window"
   DATA "+@", "<command>", "Next Step..."
   DATA "+-"
-  DATA "+@", "<command>", "Cluster Together"
-  DATA "+@", "<command>", "Orbital Belt"
+  DATA "+@", "<command>", "Cluster together "
+  DATA "+@", "<command>", "Band together "
   DATA "+@", "<command>", "Plot Manually"
-  DATA "+@", "<command>", "Random Setting"
-  DATA "+@", "<command>", "Replot Player's Only"
+  DATA "+@", "<command>", "Randomly place"
 
 REM Window 10
   DATA "Start"
@@ -464,7 +548,7 @@ REM Window 10
   DATA "+@", "ViewAtlas", "Show atlas"
   DATA "+@", "ViewTable", "Show table"
   DATA "+-"
-  DATA "+@", "FilterPlayer", "Filter you"
+  DATA "+@", "FilterSelf", "Filter you"
   DATA "+@", "FilterPlayers", "Filter players"
   DATA "+@", "FilterNone", "Remove Filter"
 
@@ -513,7 +597,7 @@ REM Window 15
   DATA "+$", " Enter the source asteroid:"
   DATA "+$", " Enter the target asteroid:"
   DATA "+$", " Enter the number of ships:"
-  DATA "#", 32, 1, 2, 0                    
+  DATA "#", 32, 1, 2, 0          
   DATA "#", 32, 2, 2, 0
   DATA "#", 30, 3, 4, 0
 
@@ -636,6 +720,700 @@ REM Window 31
    
 DATA "End of windows"
 
+SUB AtlasAddBand (fromValue AS INTEGER, toValue AS INTEGER)
+  '
+  ' Adds a range of values organized into a horizontal orbital band.
+  '
+
+  DIM cx    AS INTEGER
+  DIM cy    AS INTEGER
+  DIM value AS INTEGER
+
+  '
+  ' Get random coordinates to seed the band
+  '
+  AtlasNextRandom cx, cy
+
+  FOR value = fromValue TO toValue
+
+    '
+    ' Find the next open cell in the same band
+    '
+    AtlasNextBanded cx, cy
+   
+    '
+    ' Save the item
+    '
+    AtlasAddItem cx, cy, value
+
+  NEXT
+
+END SUB
+
+SUB AtlasAddCluster (fromValue AS INTEGER, toValue AS INTEGER)
+  '
+  ' Adds a range of values organized into a cluster.
+  '
+
+  DIM cx    AS INTEGER
+  DIM cy    AS INTEGER
+  DIM value AS INTEGER
+
+  '
+  ' Get random coordinates to seed the band
+  '
+  AtlasNextRandom cx, cy
+
+  FOR value = fromValue TO toValue
+
+    '
+    ' Find an open slot near the current one
+    '
+    AtlasNextClustered cx, cy
+  
+    '
+    ' Save the cell
+    '
+    AtlasAddItem cx, cy, value
+
+  NEXT
+
+END SUB
+
+SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER)
+  '
+  ' Adds an item to the atlas at the specified position.
+  '
+  DIM idx AS INTEGER
+  
+  '
+  ' Get the index of the new item
+  '
+  idx = AtlasNextIndex%
+ 
+  '
+  ' Add the item to the item list
+  '
+  atlasItem(idx).active = -1
+  atlasItem(idx).cx = cx
+  atlasItem(idx).cy = cy
+  atlasItem(idx).value = value
+  atlasItem(idx).label = STR$(value)
+
+  '
+  ' Reference the item in the grid
+  '
+  atlasGrid(cx, cy) = idx
+ 
+  IF atlasActive THEN
+    AtlasDrawCell cx, cy
+  END IF
+
+END SUB
+
+SUB AtlasAddRandom (fromValue AS INTEGER, toValue AS INTEGER)
+  '
+  ' Adds a range of values placed randomly around the atlas.
+  '
+ 
+  DIM cx    AS INTEGER
+  DIM cy    AS INTEGER
+  DIM value AS INTEGER
+
+  FOR value = fromValue TO toValue
+
+    '
+    ' Find an open slot
+    '
+    AtlasNextRandom cx, cy
+   
+    '
+    ' Save the item
+    '
+    AtlasAddItem cx, cy, value
+
+  NEXT
+
+END SUB
+
+FUNCTION AtlasCellFiltered% (cx AS INTEGER, cy AS INTEGER)
+  '
+  ' Returns True if the specified atlas cell is filtered.
+  '
+ 
+  '
+  ' Get the index of the item referenced by the cell
+  '
+  DIM idx AS INTEGER
+  LET idx = atlasGrid(cx, cy)
+ 
+  IF idx = 0 THEN
+    '
+    ' This cell does not contain anything
+    '
+    AtlasCellFiltered% = False
+ 
+  ELSE
+    AtlasCellFiltered% = IsFiltered(atlasItem(idx).value)
+  END IF
+
+END FUNCTION
+
+SUB AtlasDisplayOff
+  '
+  ' Turns off active updates to the atlas.
+  '
+  atlasActive = 0
+END SUB
+
+SUB AtlasDisplayOn
+  '
+  ' Enables synchronizing the atlas display with its data.
+  '
+  atlasActive = True
+
+END SUB
+
+SUB AtlasDraw
+  '
+  ' Draws the atlas grid and items
+  '
+  ' Note: As a design rule, the draw subroutines should not modify
+  ' atlas data and should not call subroutines that modify data.
+  '
+  AtlasDrawGrid
+  AtlasDrawItems
+
+END SUB
+
+SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
+  '
+  ' Draws the specified atlas cell onto the active video page
+  '
+
+  DIM idx   AS INTEGER
+  DIM sx    AS INTEGER
+  DIM sy    AS INTEGER
+  DIM value AS INTEGER
+
+  '
+  ' Get the screen coordinates of the cell
+  '
+  sx = AtlasGetScreenX(cx)
+  sy = AtlasGetScreenY(cy)
+  LOCATE sy, sx
+ 
+  '
+  ' Set the color of the cell contents
+  '
+  IF AtlasCellFiltered(cx, cy) THEN
+    COLOR AtlasStyle.FilterForecolor, AtlasStyle.FilterBackcolor
+  ELSE
+    COLOR AtlasStyle.CellForecolor, AtlasStyle.CellBackcolor
+  END IF
+
+  '
+  ' Write the cell contents
+  '
+  idx = atlasGrid(cx, cy)
+  IF idx = 0 THEN
+    PRINT STRING$(AtlasStyle.CellSizeX, " ");
+  ELSE
+    PRINT atlasItem(idx).label;
+  END IF
+
+END SUB
+
+SUB AtlasDrawGrid
+  '
+  ' Draws the grid of the atlas onto the active video page
+  '
+  DrawFileAt "GRID.PCB", 1, 2
+
+END SUB
+
+SUB AtlasDrawItems
+  '
+  ' Draws the active items of the atlas.
+  '
+  DIM idx AS INTEGER
+  FOR idx = 1 TO UBOUND(atlasItem)
+ 
+    IF atlasItem(idx).active THEN
+      AtlasDrawCell atlasItem(idx).cx, atlasItem(idx).cy
+    END IF
+
+  NEXT
+
+END SUB
+
+SUB AtlasDrawSelect (cx AS INTEGER, cy AS INTEGER, valid AS INTEGER)
+  '
+  ' Draws the current selection indicator onto the grid
+  '
+
+  DIM col AS INTEGER
+  DIM sx1 AS INTEGER
+  DIM sy1 AS INTEGER
+
+  '
+  ' Get the upper-left screen coordinates of the outer cell
+  '
+  sx1 = AtlasGetScreenX(cx) - 1
+  sy1 = AtlasGetScreenY(cy) - 1
+
+  '
+  ' Determine the painting color
+  '
+  IF valid THEN
+    col = 2
+  ELSE
+    col = 4
+  END IF
+
+  PaintBackground sx1, sy1, sx1 + AtlasStyle.CellSizeX + 1, sy1 + 2, col
+
+END SUB
+
+SUB AtlasDrawUnselect (cx AS INTEGER, cy AS INTEGER)
+  '
+  ' Draws the cell to reflect no selection.
+  '
+
+  DIM sx1 AS INTEGER
+  DIM sy1 AS INTEGER
+
+  '
+  ' Get the upper-left screen coordinates of the outer cell
+  '
+  sx1 = AtlasGetScreenX(cx) - 1
+  sy1 = AtlasGetScreenY(cy) - 1
+
+  PaintBackground sx1, sy1, sx1 + AtlasStyle.CellSizeX + 1, sy1 + 2, 0
+
+
+END SUB
+
+FUNCTION AtlasGetScreenX% (cx AS INTEGER)
+  '
+  ' Returns the screen x-coordinates of the cell x-coordinate
+  '
+  AtlasGetScreenX% = (cx - 1) * 5 + 2
+
+END FUNCTION
+
+FUNCTION AtlasGetScreenY% (cy AS INTEGER)
+  '
+  ' Returns the screen y-coordinate of the cell y-coordinate
+  '
+  AtlasGetScreenY% = (cy - 1) * 2 + 3
+END FUNCTION
+
+SUB AtlasInit
+  '
+  ' Initializes the atlas data and video page.
+  '
+  
+  '
+  ' Mark all items as inactive.
+  '
+  DIM idx AS INTEGER
+  FOR idx = 1 TO UBOUND(atlasItem)
+    atlasItem(idx).active = 0
+  NEXT
+
+  ' For performance, a copy of the empty grid is stored
+  ' on a background video page so it can be redrawn quickly.
+  '
+  SCREEN , , VideoPage.Atlas, VideoPage.Display
+  AtlasDrawGrid
+  SCREEN , , VideoPage.Display, VideoPage.Display
+
+END SUB
+
+SUB AtlasMoveItem (idx AS INTEGER, nx AS INTEGER, ny AS INTEGER)
+  '
+  ' Moves the item with at the specified index.
+  '
+ 
+  DIM cx AS INTEGER
+  DIM cy AS INTEGER
+
+  '
+  ' Get the current x and y coordinates
+  '
+  cx = atlasItem(idx).cx
+  cy = atlasItem(idx).cy
+
+  '
+  ' Dereference the item from the grid
+  '
+  IF cx > 0 AND cy > 0 THEN
+    atlasGrid(cx, cy) = 0
+    IF atlasActive THEN
+      AtlasDrawCell cx, cy
+    END IF
+  END IF
+
+  '
+  ' Update the item location
+  '
+  atlasItem(idx).cx = nx
+  atlasItem(idx).cy = ny
+
+  '
+  ' Reference the item in the grid
+  '
+  atlasGrid(nx, ny) = idx
+  IF atlasActive THEN
+    AtlasDrawCell nx, ny
+  END IF
+
+END SUB
+
+SUB AtlasNextBanded (outcx AS INTEGER, outcy AS INTEGER)
+  '
+  ' Updates outcx and outcy with a slot in the same orbital band
+  '
+ 
+  IF outcx = 0 OR outcy = 0 THEN
+    AtlasNextRandom outcx, outcy
+  ELSE
+
+    DO
+      '
+      ' Select random x-coordinate
+      '
+      outcx = INT(RND * AtlasStyle.GridSizeX) + 1
+
+      '
+      ' Select random y-coordinate near the same row (+/- 1).
+      '
+      outcy = INT(RND * 3) - 1 + outcy
+      IF outcy < 1 THEN outcy = outcy + 1
+      IF outcy > AtlasStyle.GridSizeY THEN outcy = outcy - 1
+
+    LOOP UNTIL atlasGrid(outcx, outcy) = 0
+              
+  END IF
+
+END SUB
+
+SUB AtlasNextClustered (outcx AS INTEGER, outcy AS INTEGER)
+
+  DIM rx AS INTEGER
+  DIM ry AS INTEGER
+
+  '
+  ' Finds a clustered slot
+  '
+  IF outcx = 0 OR outcy = 0 THEN
+   
+    AtlasNextRandom outcx, outcy
+
+  ELSE
+    '
+    ' Find slot near the last coordinates
+    '
+    DO
+      '
+      ' Random spot within -2, -1, 0, +1, +2 from last spot
+      '
+      
+      rx = INT(RND * 5) - 2 + outcx
+      ry = INT(RND * 5) - 2 + outcy
+    
+      '
+      ' Reflect back into the grid if out of bounds
+      '
+      IF rx < 1 THEN rx = rx + 2
+      IF ry < 1 THEN ry = ry + 2
+      IF rx > AtlasStyle.GridSizeX THEN rx = rx - 2
+      IF ry > AtlasStyle.GridSizeY THEN ry = ry - 2
+
+    LOOP UNTIL atlasGrid(rx, ry) = 0
+
+    outcx = rx
+    outcy = ry
+
+  END IF
+
+END SUB
+
+FUNCTION AtlasNextIndex%
+  '
+  ' Returns the next open index to hold a new item
+  '
+ 
+  STATIC idx AS INTEGER
+
+  DIM try AS INTEGER
+  LET try = idx
+
+  DO
+    '
+    ' Try the next index
+    '
+    try = try + 1
+    IF try > UBOUND(atlasItem) THEN
+      try = 1
+    END IF
+
+    IF NOT atlasItem(try).active THEN
+      idx = try
+      AtlasNextIndex = idx
+      EXIT FUNCTION
+    END IF
+
+    IF try = idx THEN
+      AtlasNextIndex = 0
+      EXIT FUNCTION
+    END IF
+
+  LOOP
+
+  AtlasNextIndex% = 0
+
+END FUNCTION
+
+SUB AtlasNextManual (outcx AS INTEGER, outcy AS INTEGER)
+  '
+  ' Returns the next manually-selected position.
+  '
+ 
+  AtlasPrompt outcx, outcy, AtlasPromptFor.EmptyOrSelf
+
+END SUB
+
+SUB AtlasNextRandom (outcx AS INTEGER, outcy AS INTEGER)
+
+  DO
+    outcx = INT(RND * AtlasStyle.GridSizeX) + 1
+    outcy = INT(RND * AtlasStyle.GridSizeY) + 1
+  LOOP UNTIL atlasGrid(outcx, outcy) = 0
+
+END SUB
+
+SUB AtlasPlotBanded
+
+  DIM cx  AS INTEGER
+  DIM cy  AS INTEGER
+  DIM idx AS INTEGER
+
+  '
+  ' Get the initial random spot to start the banding
+  '
+  AtlasNextRandom cx, cy
+
+  FOR idx = 1 TO UBOUND(atlasItem)
+   
+    IF atlasItem(idx).active THEN
+      '
+      ' Get the new position near the same row as the prior location
+      '
+      AtlasNextBanded cx, cy
+
+      '
+      ' Move the item to the new location
+      '
+      AtlasMoveItem idx, cx, cy
+    END IF
+
+  NEXT
+
+END SUB
+
+SUB AtlasPlotClustered
+
+  DIM cx  AS INTEGER
+  DIM cy  AS INTEGER
+  DIM idx AS INTEGER
+
+  '
+  ' Get the initial random spot to start the banding
+  '
+  AtlasNextRandom cx, cy
+
+  FOR idx = 1 TO UBOUND(atlasItem)
+  
+    IF atlasItem(idx).active THEN
+      '
+      ' Get the new position near the same row as the prior location
+      '
+      AtlasNextClustered cx, cy
+
+      '
+      ' Move the item to the new location
+      '
+      AtlasMoveItem idx, cx, cy
+   
+    END IF
+
+  NEXT
+
+END SUB
+
+SUB AtlasPlotManual
+
+  DIM idx AS INTEGER
+  DIM cx  AS INTEGER
+  DIM cy  AS INTEGER
+
+  FOR idx = 1 TO UBOUND(atlasItem)
+ 
+    IF atlasItem(idx).active THEN
+  
+      '
+      ' Get the current position of the item
+      '
+      cx = atlasItem(idx).cx
+      cy = atlasItem(idx).cy
+
+      '
+      ' Manually get the new location of the item
+      '
+      AtlasNextManual cx, cy
+      IF cx = 0 THEN
+        '
+        ' Selection was canceled, so exit
+        '
+        EXIT FOR
+      ELSE
+
+        '
+        ' Move the selected item
+        '
+        AtlasMoveItem idx, cx, cy
+
+      END IF
+
+    END IF
+
+  NEXT
+
+END SUB
+
+SUB AtlasPlotRandom
+
+  DIM cx  AS INTEGER
+  DIM cy  AS INTEGER
+  DIM idx AS INTEGER
+
+  FOR idx = 1 TO UBOUND(atlasItem)
+  
+    IF atlasItem(idx).active THEN
+      '
+      ' Get the new position near the same row as the prior location
+      '
+      AtlasNextRandom cx, cy
+
+      '
+      ' Move the item to the new location
+      '
+      AtlasMoveItem idx, cx, cy
+   
+    END IF
+
+  NEXT
+  
+END SUB
+
+SUB AtlasPrompt (outcx AS INTEGER, outcy AS INTEGER, promptFor AS INTEGER)
+  '
+  ' Prompts the user to select a call and either returns the
+  ' selected coordinates or (0,0) if canceled.
+  '
+
+  DIM keypress AS STRING
+  DIM mx       AS INTEGER
+  DIM my       AS INTEGER
+  DIM valid    AS INTEGER
+
+  mx = outcx
+  my = outcy
+
+  DO
+ 
+    '
+    ' Determine whether the current cell is valid
+    '
+    SELECT CASE promptFor
+     
+      CASE AtlasPromptFor.Any
+        valid = True
+     
+      CASE AtlasPromptFor.Empty
+        valid = atlasGrid(mx, my) = 0
+     
+      CASE AtlasPromptFor.EmptyOrSelf
+        IF atlasGrid(mx, my) = 0 THEN
+          valid = True
+        ELSEIF (mx = outcx) AND (my = outcy) THEN
+          valid = True
+        ELSE
+          valid = False
+        END IF
+
+      CASE AtlasPromptFor.Item
+        valid = atlasGrid(mx, my) <> 0
+   
+    END SELECT
+
+    '
+    ' Highlight the current selection and wait for a key to be pressed
+    '
+    AtlasDrawSelect mx, my, valid
+    keypress = GetKey$
+    AtlasDrawUnselect mx, my
+
+    SELECT CASE keypress
+  
+      CASE CHR$(ASCII.Escape)
+        outcx = 0
+        outcy = 0
+        EXIT SUB
+
+      CASE CHR$(ASCII.Return)
+        IF valid THEN
+          outcx = mx
+          outcy = my
+          EXIT SUB
+        END IF
+
+      CASE CHR$(0) + CHR$(ScanCode.Up)
+        '
+        ' Up
+        '
+        my = my - 1
+        IF my = 0 THEN my = AtlasStyle.GridSizeY
+ 
+      CASE CHR$(0) + CHR$(ScanCode.Right)
+        '
+        ' Right
+        '
+        mx = mx + 1
+        IF mx > AtlasStyle.GridSizeX THEN mx = 1
+ 
+      CASE CHR$(0) + CHR$(ScanCode.Left)
+        '
+        ' Left
+        '
+        mx = mx - 1
+        IF mx = 0 THEN mx = AtlasStyle.GridSizeX
+ 
+      CASE CHR$(0) + CHR$(ScanCode.Down)
+        '
+        ' Down
+        '
+        my = my + 1
+        IF my > AtlasStyle.GridSizeY THEN my = 1
+
+    END SELECT
+
+  LOOP
+
+END SUB
+
 SUB BattleMode (id AS INTEGER)
   '
   ' Executes a battle (not finished)
@@ -753,121 +1531,6 @@ FUNCTION CalcDistance (first AS INTEGER, second AS INTEGER)
 
 END FUNCTION
 
-FUNCTION DoMenu
-  '
-  ' Returns the command ID of an item selected from the menu.
-  '
-  CONST MenusClosed = 0
-  CONST MenusOpen = 1
-
-  DIM keypress  AS STRING
-  DIM mode      AS INTEGER
- 
-  STATIC selection AS INTEGER
-
-  IF selection = 0 THEN
-    selection = 1
-  END IF
-
-  DO
-   
-    '
-    ' Draw the selected menu item
-    '
-    DrawMenuItem selection, 1
-
-    IF mode = MenusOpen THEN
-      '
-      ' The menu is open (a window is displayed)
-      '
-      arrowexit = 1
-      WinShow bar(selection).wid
-      arrowexit = 0
-     
-      IF win(bar(selection).wid).canceled THEN
-       
-        mode = MenusClosed
-     
-      ELSE
-
-        SELECT CASE pressed
-          CASE CHR$(ASCII.Return)
-           
-            DIM wid AS INTEGER
-            DIM fid AS INTEGER
-
-            wid = bar(selection).wid
-            fid = win(wid).selected
-            
-            DoMenu = fld(wid, fid).cid
-            EXIT FUNCTION
-
-          CASE CHR$(0) + CHR$(ScanCode.Left)
-            GOSUB NavigateLeft
-          CASE CHR$(0) + CHR$(ScanCode.Right)
-            GOSUB NavigateRight
-        END SELECT
-
-      END IF
-
-    ELSE
-      '
-      ' The menu is closed
-      '
-      keypress = GetKey$
-   
-      SELECT CASE keypress
-    
-        CASE CHR$(0) + CHR$(ScanCode.Left)
-          '
-          ' Move left
-          '
-          GOSUB NavigateLeft
-
-        CASE CHR$(0) + CHR$(ScanCode.Right)
-          '
-          ' Move right
-          '
-          GOSUB NavigateRight
-
-        CASE CHR$(ASCII.Return)
-          '
-          ' Enter (open menu)
-          '
-          mode = MenusOpen
-       
-        CASE CHR$(0) + CHR$(ScanCode.Down)
-          '
-          ' Down (open menu)
-          '
-          mode = MenusOpen
-
-      END SELECT
-
-    END IF
-   
-  LOOP
-
-REM *** Subroutines ***
-
-NavigateLeft:
-  '
-  ' Moves to the menu item to the left
-  '
-  DrawMenuItem selection, 0
-  selection = selection - 1: IF selection = 0 THEN selection = 5
-  RETURN
-
-NavigateRight:
-  '
-  ' Moves to the menu item to the right
-  '
-  DrawMenuItem selection, 0
-  selection = selection + 1: IF selection = 6 THEN selection = 1
-  RETURN
-
-END FUNCTION
-
 SUB DrawFile (filename AS STRING)
   '
   ' Draws a PCB file containing embedded color codes
@@ -886,7 +1549,7 @@ SUB DrawFile (filename AS STRING)
 
 END SUB
 
-SUB DrawFileAt (filename AS STRING, posX AS INTEGER, posY AS INTEGER)
+SUB DrawFileAt (filename AS STRING, sx AS INTEGER, sy AS INTEGER)
 
   '
   ' Draws a PCB file containing embedded color codes
@@ -907,96 +1570,17 @@ SUB DrawFileAt (filename AS STRING, posX AS INTEGER, posY AS INTEGER)
     '
     ' Position the cursor
     '
-    LOCATE posY + lines, posX
+    LOCATE sy + lines, sx
+    lines = lines + 1
 
     '
     ' Draw the text while expanding color codes
     '
     DrawText text
  
-    lines = lines + 1
-
   LOOP
 
   CLOSE #1
-
-END SUB
-
-SUB DrawGrid
-  DrawFileAt "GRID.PCB", 1, 2
-  DrawGridCells
-END SUB
-
-SUB DrawGridCells
-
-  DIM aid AS INTEGER
-  DIM sx  AS INTEGER
-  DIM sy  AS INTEGER
-
-  '
-  ' Plot asteroids
-  '
-  FOR aid = 1 TO asteroids
-  
-    '
-    ' Get the screen coordinates of the cell for this asteroid
-    '
-    sx = GetCellScreenX(asteroid(aid).local2)
-    sy = GetCellScreenY(asteroid(aid).local1)
-
-    '
-    ' Plot the asteroid on the grid
-    '
-    LOCATE sy, sx
-    IF IsFiltered(aid) THEN
-      COLOR GridStyle.FilterForecolor, GridStyle.FilterBackcolor
-    ELSE
-      COLOR GridStyle.CellForecolor, GridStyle.CellBackcolor
-    END IF
-
-    PRINT USING "##"; aid;
-   
-  NEXT
-
-END SUB
-
-SUB DrawMenu
-
-  '
-  ' Clear the menu space on the top row of the screen
-  '
-  VIEW PRINT 1 TO 1
-  COLOR MenuStyle.ForeColor, MenuStyle.BackColor
-  CLS
-  VIEW PRINT
-
-  '
-  ' Draw each menu item
-  '
-  DIM i AS INTEGER
-  FOR i = LBOUND(bar) TO UBOUND(bar)
-    DrawMenuItem i, 0
-  NEXT
-
-END SUB
-
-SUB DrawMenuItem (itemId AS INTEGER, selected AS INTEGER)
-
-  '
-  ' Move to the screen location of the item
-  '
-  LOCATE 1, bar(itemId).posX
-
-  '
-  ' Set the color depending on whether this item is selected
-  '
-  IF selected THEN
-    COLOR MenuStyle.SelectedForeColor, MenuStyle.SelectedBackColor
-  ELSE
-    COLOR MenuStyle.ForeColor, MenuStyle.BackColor
-  END IF
-
-  PRINT bar(itemId).text;
 
 END SUB
 
@@ -1076,10 +1660,7 @@ SUB DrawTable
   LOCATE 24, 1
   PRINT lowerLeft; STRING$(77, horizontal); lowerRight;
 
-  ' Draw asteroids
-  FOR x = 1 TO asteroids
-    DrawTableRow x
-  NEXT
+  DrawTableRows
 
 END SUB
 
@@ -1124,6 +1705,17 @@ SUB DrawTableRow (aid AS INTEGER)
   ELSE
     LOCATE , 6: PRINT "[data not available]";
   END IF
+
+END SUB
+
+SUB DrawTableRows
+  '
+  ' Draws the rows of the table
+  '
+  DIM aid AS INTEGER
+  FOR aid = 1 TO asteroids
+    DrawTableRow aid
+  NEXT
 
 END SUB
 
@@ -1176,7 +1768,7 @@ SUB DrawText (text AS STRING)
 
       '
       ' Read the color values
-      ' 
+      '
       backcolor = VAL("&H" + MID$(text, nextAt + 2, 1))
       forecolor = VAL("&H" + MID$(text, nextAt + 3, 1))
       COLOR forecolor, backcolor
@@ -1224,8 +1816,8 @@ SUB Execute (cid AS INTEGER)
     CASE Command.FilterNone
       ExecuteFilterNone
 
-    CASE Command.FilterPlayer
-      ExecuteFilterPlayer
+    CASE Command.FilterSelf
+      ExecuteFilterSelf
 
     CASE Command.FilterPlayers
       ExecuteFilterPlayers
@@ -1268,7 +1860,7 @@ SUB ExecuteAbout
 
   WinShow 30
 
-  RefreshPages
+  UI.Redraw
 
 END SUB
 
@@ -1326,27 +1918,26 @@ SUB ExecuteFilterNone
   '
   ' Removes the current filter (no asteroids filtered)
   '
-  player(turn).viewFilter = Filter.None
-  RefreshPages
-
-END SUB
-
-SUB ExecuteFilterPlayer
-  '
-  ' Filters asteroids to the current player
-  '
- 
-  player(turn).viewFilter = Filter.Player
-  RefreshPages
+  player(turn).viewFilter = UIFilter.None
+  UI.SetFilter UIFilter.None, True
 
 END SUB
 
 SUB ExecuteFilterPlayers
   '
-  ' Filters asteroids to those controlled by a player
+  ' Filters asteroids to those controlled by any player
   '
-  player(turn).viewFilter = Filter.Players
-  RefreshPages
+  player(turn).viewFilter = UIFilter.Players
+  UI.SetFilter UIFilter.Players, True
+
+END SUB
+
+SUB ExecuteFilterSelf
+  '
+  ' Filters asteroids to the current player
+  '
+  player(turn).viewFilter = UIFilter.Self
+  UI.SetFilter UIFilter.Self, True
 
 END SUB
 
@@ -1395,7 +1986,11 @@ SUB ExecuteNextTurn
     turn = 1
   END IF
 
-  RefreshPages
+  '
+  ' Set player preferences
+  '
+  UI.SetFilter player(turn).viewFilter, False
+  UI.SetPage player(turn).viewPage
 
 END SUB
 
@@ -1403,7 +1998,7 @@ SUB ExecuteOptionAlerts
 
   DIM original AS STRING
   DIM x        AS INTEGER
-  DIM y        AS INTEGER
+  DIM Y        AS INTEGER
 
   original = txt(27, 1)
 
@@ -1412,8 +2007,8 @@ SUB ExecuteOptionAlerts
   IF original = " Yes " AND txt(27, 1) = " No  " THEN
     IF players > 1 THEN
       FOR x = 1 TO 3
-        FOR y = 300 TO 60 STEP -10
-          SOUND y, .2
+        FOR Y = 300 TO 60 STEP -10
+          SOUND Y, .2
         NEXT
       NEXT
       WinShow 29
@@ -1493,9 +2088,8 @@ SUB ExecuteViewAtlas
   '
   ' Displays the atlas
   '
- 
-  PCOPY VideoPage.Atlas, VideoPage.Display
-  player(turn).viewPage = VideoPage.Atlas
+  player(turn).viewPage = UIPage.Atlas
+  UI.SetPage UIPage.Atlas
 
 END SUB
 
@@ -1503,19 +2097,10 @@ SUB ExecuteViewTable
   '
   ' Displays the data table
   '
- 
-  player(turn).viewPage = VideoPage.Table
-  PCOPY VideoPage.Table, VidePage.Display
+  player(turn).viewPage = UIPage.Table
+  UI.SetPage UIPage.Table
 
 END SUB
-
-FUNCTION GetCellScreenX% (cellX AS INTEGER)
-  GetCellScreenX = cellX * 5 - 2
-END FUNCTION
-
-FUNCTION GetCellScreenY% (cellY AS INTEGER)
-  GetCellScreenY = cellY * 2 + 1
-END FUNCTION
 
 FUNCTION GetKey$
   '
@@ -1537,27 +2122,42 @@ END FUNCTION
 FUNCTION IsFiltered% (aid AS INTEGER)
 
   DIM filtering AS INTEGER
-  LET filtering = player(turn).viewFilter
 
   IF aid < 1 OR aid > asteroids THEN
     '
     ' Invalid asteroid
     '
-    IsFiltered = False
+    IsFiltered% = False
  
-  ELSEIF filtering = Filter.None THEN
+  ELSEIF turn < LBOUND(player, 1) THEN
+    '
+    ' Turn out of range (too low)
+    '
+    IsFiltered% = False
+
+  ELSEIF turn > UBOUND(player, 1) THEN
+    '
+    ' Turn out of range (too high)
+    '
+    IsFiltered% = False
+
+  ELSE
+    filtering = player(turn).viewFilter
+  END IF
+
+  IF filtering = UIFilter.None THEN
     '
     ' No filter is applied
     '
     IsFiltered = False
 
-  ELSEIF filtering = Filter.Player THEN
+  ELSEIF filtering = UIFilter.Self THEN
     '
     ' Filter asteroids ruled by current player
     '
     IsFiltered = asteroid(aid).ruler = turn
 
-  ELSEIF filtering = Filter.Players THEN
+  ELSEIF filtering = UIFilter.Players THEN
     '
     ' Filter asteroids with a ruler
     '
@@ -1571,7 +2171,47 @@ FUNCTION IsFiltered% (aid AS INTEGER)
 
 END FUNCTION
 
-SUB LoadMenu
+SUB MenuDraw
+
+  '
+  ' Clear the menu space on the top row of the screen
+  '
+  VIEW PRINT 1 TO 1
+  COLOR MenuStyle.ForeColor, MenuStyle.BackColor
+  CLS 2
+  VIEW PRINT
+
+  '
+  ' Draw each menu item
+  '
+  DIM i AS INTEGER
+  FOR i = LBOUND(bar) TO UBOUND(bar)
+    MenuDrawItem i, 0
+  NEXT
+
+END SUB
+
+SUB MenuDrawItem (itemId AS INTEGER, selected AS INTEGER)
+
+  '
+  ' Move to the screen location of the item
+  '
+  LOCATE 1, bar(itemId).posX
+
+  '
+  ' Set the color depending on whether this item is selected
+  '
+  IF selected THEN
+    COLOR MenuStyle.SelectedForeColor, MenuStyle.SelectedBackColor
+  ELSE
+    COLOR MenuStyle.ForeColor, MenuStyle.BackColor
+  END IF
+
+  PRINT bar(itemId).text;
+
+END SUB
+
+SUB MenuLoad
   '
   ' Loads the menu bar. This subroutine should only be called once.
   '
@@ -1607,62 +2247,148 @@ SUB LoadMenu
 
 END SUB
 
-SUB PlayGame
+FUNCTION MenuShow
+  '
+  ' Returns the command ID of an item selected from the menu.
+  '
+  CONST MenusClosed = 0
+  CONST MenusOpen = 1
 
-  DIM cid AS INTEGER
-  DIM wid AS INTEGER
-
-  SCREEN , , 0, 0
-  ExecuteNextTurn
+  DIM keypress  AS STRING
+  DIM mode      AS INTEGER
  
-  DO
-   
-    DO
-     
-      '
-      ' Wait for a command from the menu bar
-      '
-      cid = DoMenu
-     
-      '
-      ' Get the command ID for the selected menu item.
-      '
-      Execute cid
-      IF cid = Command.EndGame THEN
-        EXIT SUB
-      END IF
-    LOOP
-   
-    IF txt(27, 1) = " Yes " THEN
-      FOR x = 1 TO 5: SOUND 800, .8: SOUND 1200, .8: NEXT
-    END IF
+  STATIC selection AS INTEGER
 
-  LOOP
-
-END SUB
-
-SUB RefreshPages
-
-  '
-  ' Refresh the atlas
-  '
-  SCREEN , , VideoPage.Atlas, VideoPage.Display
-  DrawGrid
-
-  '
-  ' Refresh the table
-  '
-  SCREEN , , VideoPage.Table, VideoPage.Display
-  DrawTable
-
-  '
-  ' Copy the current view page
-  '
-  IF player(turn).viewPage > 0 THEN
-    PCOPY player(turn).viewPage, VideoPage.Display
+  IF selection = 0 THEN
+    selection = 1
   END IF
 
-  SCREEN , , VideoPage.Display, VideoPage.Display
+  MenuDraw
+
+  DO
+   
+    '
+    ' Draw the selected menu item
+    '
+    MenuDrawItem selection, 1
+
+    IF mode = MenusOpen THEN
+      '
+      ' The menu is open (a window is displayed)
+      '
+      arrowexit = 1
+      WinShow bar(selection).wid
+      arrowexit = 0
+     
+      IF win(bar(selection).wid).canceled THEN
+       
+        mode = MenusClosed
+     
+      ELSE
+
+        SELECT CASE pressed
+          CASE CHR$(ASCII.Return)
+           
+            DIM wid AS INTEGER
+            DIM fid AS INTEGER
+
+            wid = bar(selection).wid
+            fid = win(wid).selected
+            
+            MenuShow = fld(wid, fid).cid
+            EXIT FUNCTION
+
+          CASE CHR$(0) + CHR$(ScanCode.Left)
+            GOSUB NavigateLeft
+          CASE CHR$(0) + CHR$(ScanCode.Right)
+            GOSUB NavigateRight
+        END SELECT
+
+      END IF
+
+    ELSE
+      '
+      ' The menu is closed
+      '
+      keypress = GetKey$
+   
+      SELECT CASE keypress
+    
+        CASE CHR$(0) + CHR$(ScanCode.Left)
+          '
+          ' Move left
+          '
+          GOSUB NavigateLeft
+
+        CASE CHR$(0) + CHR$(ScanCode.Right)
+          '
+          ' Move right
+          '
+          GOSUB NavigateRight
+
+        CASE CHR$(ASCII.Return)
+          '
+          ' Enter (open menu)
+          '
+          mode = MenusOpen
+       
+        CASE CHR$(0) + CHR$(ScanCode.Down)
+          '
+          ' Down (open menu)
+          '
+          mode = MenusOpen
+
+      END SELECT
+
+    END IF
+   
+  LOOP
+
+REM *** Subroutines ***
+
+NavigateLeft:
+  '
+  ' Moves to the menu item to the left
+  '
+  MenuDrawItem selection, 0
+  selection = selection - 1: IF selection = 0 THEN selection = 5
+  RETURN
+
+NavigateRight:
+  '
+  ' Moves to the menu item to the right
+  '
+  MenuDrawItem selection, 0
+  selection = selection + 1: IF selection = 6 THEN selection = 1
+  RETURN
+
+END FUNCTION
+
+SUB PaintBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
+  
+   DIM at% ' Attribute
+   DIM ch% ' Character
+   DIM sx% ' Screen x-coordinate
+   DIM sy% ' Screen y-coordinate
+
+   FOR sy% = sy1% TO sy2%
+
+     '
+     ' Move the cursor to the start of the row
+     '
+     LOCATE sy%, sx1%
+
+     FOR sx% = sx1% TO sx2%
+    
+       ch% = SCREEN(sy%, sx%)
+       at% = SCREEN(sy%, sx%, 1) AND &HF
+
+       COLOR at%, backcolor%
+       PRINT CHR$(ch%);
+
+     NEXT
+  
+   NEXT
 
 END SUB
 
@@ -1674,7 +2400,7 @@ SUB SetupGame
   ' Load menus and windows
   '
   StatusUpdate "Please wait..."
-  LoadMenu
+  MenuLoad
   WinLoad
 
   '
@@ -1682,13 +2408,12 @@ SUB SetupGame
   '
   SCREEN , , VideoPage.Table, VideoPage.Display
   DrawTable
-  DrawMenu
   StatusClear
 
-  SCREEN , , VideoPage.Atlas, VideoPage.Display
-  DrawGrid
-  DrawMenu
-  StatusClear
+  '
+  ' Initialize the atlas
+  '
+  AtlasInit
 
   '
   ' Draw title screen
@@ -1703,10 +2428,11 @@ SUB SetupGame
   ' Show starting window #1
   '
   WinShow 1
-  IF win(1).canceled THEN
-    END
-  ELSE
+ 
+  IF fld(1, win(1).selected).cid = Command.NewGame THEN
     SetupGame.New
+  ELSE
+    END
   END IF
 
 END SUB
@@ -1720,11 +2446,7 @@ SUB SetupGame.Atlas
   CONST PlotClustered = 2  ' Asteroids plotted close together in a cluster
   CONST PlotRandom = 3     ' Asteroids plotted randomly
 
-  '
-  ' Define grid to hold temporary asteroid locations
-  '
-  DIM grid(1 TO GridStyle.CellCountX, 1 TO GridStyle.CellCountY) AS INTEGER
- 
+  DIM aid      AS INTEGER
   DIM i        AS INTEGER
   DIM j        AS INTEGER
   DIM lastPlot AS INTEGER
@@ -1737,16 +2459,15 @@ SUB SetupGame.Atlas
   DIM keypress AS STRING
 
   '
-  ' Draw the grid onto its master video page to copy to the display page
+  ' Initialize and display the atlas.
   '
-  PCOPY VideoPage.Atlas, VideoPage.Display
-  SCREEN , , VideoPage.Display, VideoPage.Display
+  UI.SetPage UIPage.Atlas
+  AtlasAddRandom 1, asteroids
 
   '
-  ' Initially select the button to accept the generated atlas
+  ' Set focus on the option to exit the atlas editor
   '
   WinSelect 9, 2
-  GOSUB ReplotClustered
 
   DO
    
@@ -1766,436 +2487,33 @@ SUB SetupGame.Atlas
         StatusClear
      
       CASE 2
-        GOSUB SaveLocations
+        '
+        ' Exit the atlas maker
+        '
         EXIT SUB
      
       CASE 4:
-        GOSUB ReplotClustered
+        AtlasPlotClustered
 
       CASE 5:
-        GOSUB ReplotBanded
+        AtlasPlotBanded
 
       CASE 6:
-        GOSUB ReplotManual
+        AtlasPlotManual
 
       CASE 7:
-        GOSUB ReplotRandom
+        AtlasPlotRandom
     
-      CASE 8:
-        GOSUB ReplotPlayers
-
     END SELECT
 
   LOOP
-
-  EXIT SUB
-
-REM *** SUBROUTINES ***
-
-CalcCoord:
-  '
-  ' Calculates the cursor coordinates of grid cell
-  '
-  ' Input:
-  '
-  '     nx = x coordinate of cell
-  '     ny = y coordinate of cell
-  '
-  ' Output:
-  '
-  '     sx = x coordinate of the cell on the screen
-  '     sy = y coordinate of the cell on the screen
-  '
-  sx = nx * 5 - 2
-  sy = ny * 2 + 1
-  RETURN
-
-FindCell:
-  '
-  ' Finds the grid coordinates of an asteroid
-  '
-  ' Input:
-  '
-  '     aid = The ID of the asteroid
-  '
-  ' Output:
-  '
-  '     nx = The grid x-coordinate of the asteroid.
-  '     ny = The grid y-coordinate of the asteroid.
-  '
-  FOR nx = 1 TO GridStyle.CellCountX
-    FOR ny = 1 TO GridStyle.CellCountY
-      IF grid(nx, ny) = aid THEN
-        RETURN
-      END IF
-    NEXT
-  NEXT
-
-  nx = 0
-  ny = 0
-  RETURN
-
-ClearCell:
-  '
-  ' Clears an asteroid from the grid.
-  '
-  ' Input:
-  '
-  '     nx = The x-coordinate of the cell.
-  '     ny = The y-coordinate of the cell.
-  '
-  ' Output:
-  '
-  '     sx = The x-coordinate of the screen location that was cleared.
-  '     sy = The y-coordinate of the screen location that was cleared.
-  '
-  IF grid(nx, ny) > 0 THEN
-    grid(nx, ny) = 0
-    GOSUB CalcCoord
-    LOCATE sy, sx
-    COLOR GridStyle.Forecolor, GridStyle.Backcolor
-    PRINT "  ";
-  END IF
-
-  RETURN
-
-ClearGrid:
-  '
-  ' Clears asteroids from the grid
-  '
-  ' Input:
-  '
-  '     None
-  '
-  ' Output:
-  '
-  '     nx, ny, cx, cy are zerod
-  '
-  FOR nx = 1 TO GridStyle.CellCountX
-    FOR ny = 1 TO GridStyle.CellCountY
-      IF grid(nx, ny) > 0 THEN
-        GOSUB ClearCell
-      END IF
-    NEXT
-  NEXT
-
-  nx = 0
-  ny = 0
-  sx = 0
-  sy = 0
-
-  RETURN
-
-Normalize:
-  '
-  ' Normalizes the nx,ny coordinates
-  '
-  ' Input:
-  '
-  '     nx = x-coordinate
-  '     ny = y-coordinate
-  '
-  ' Output:
-  '
-  '     nx = x-coordinate normalized to fit in grid
-  '     ny = y-coordinate normalized to fit in grid
-  '
-  IF nx < 1 THEN nx = nx + GridStyle.CellCountX
-  IF ny < 1 THEN ny = ny + GridStyle.CellCountY
-  IF nx > GridStyle.CellCountX THEN nx = nx - GridStyle.CellCountX
-  IF ny > GridStyle.CellCountY THEN ny = ny - GridStyle.CellCountY
-  RETURN
-
-SetCell:
-  '
-  ' Sets the value of a cell on the grid
-  '
-  ' Input:
-  '
-  '     aid = The ID of the asteroid
-  '     nx  = The new X position of the asteroid
-  '     ny  = The new Y position of the asteroid
-  '
-  ' Output:
-  '
-  '     sx = The screen x-coordinate of the asteroid cell
-  '     sy = The screen y-coordinate of the asteroid cell
-  '
-  grid(nx, ny) = aid
-  GOSUB CalcCoord
-  LOCATE sy, sx
-  COLOR GridStyle.CellForecolor, GridStyle.CellBackcolor
-  PRINT USING "##"; aid;
-  RETURN
-
-NextBanded:
-  '
-  ' Finds a slot in the same orbital band
-  '
-  IF nx = 0 THEN
-    GOSUB NextRandom
-  ELSE
- 
-    DO
-      '
-      ' Select random X coordinate, nearby Y coordinate
-      '
-      nx = INT(RND * GridStyle.CellCountX) + 1
-      ny = INT(RND * 3) - 1 + ny
-      GOSUB Normalize
-
-    LOOP UNTIL grid(nx, ny) = 0
-               
-  END IF
-  RETURN
-
-NextClustered:
-  '
-  ' Finds a clustered slot
-  '
-  IF nx = 0 THEN
-    '
-    ' No asteroids have been plotted. Seed the initial asteroid.
-    '
-    GOSUB NextRandom
- 
-  ELSE
-    '
-    ' Find slot near the last asteroid.
-    '
-    DO
-      '
-      ' Random spot within -2, -1, 0, +1, +2 from last spot
-      '
-      nx = INT(RND * 5) - 2 + nx
-      ny = INT(RND * 5) - 2 + ny
-      GOSUB Normalize
-
-    LOOP UNTIL grid(nx, ny) = 0
-
-  END IF
-  RETURN
-
-NextManual:
-  '
-  ' Returns the next manually-selected position.
-  '
-  ' Input:
-  '
-  '     nx = The x-coordinate of the asteroid to move.
-  '     ny = The y-coordinate of the asteroid to move.
-  '
-  ' Output:
-  '
-  '     nx = The new x-coordinate of the selected position.
-  '     ny = The new y-coordinate of the selected position.
-  '
-  DO
-  
-    GOSUB CalcCoord
-  
-    '
-    ' Highlight the current location
-    '
-    LOCATE sy, sx
-    IF grid(nx, ny) <= players THEN COLOR 21, 7 ELSE COLOR 21, 0
-    PRINT USING "##"; aid;
-    COLOR 7, 0
-  
-    keypress = GetKey$
-  
-    '
-    ' Erase the cell location
-    '
-    LOCATE sy, sx
-    PRINT "  ";
-
-    SELECT CASE keypress
-     
-      CASE CHR$(ASCII.Return), CHR$(ASCII.Escape)
-        EXIT DO
-
-      CASE CHR$(0) + CHR$(ScanCode.Up)
-        '
-        ' Up
-        '
-        mx = nx
-        my = ny - 1
-        IF my < 1 THEN my = GridStyle.CellCountY
-    
-      CASE CHR$(0) + CHR$(ScanCode.Right)
-        '
-        ' Right
-        '
-        mx = nx + 1
-        my = ny
-        IF mx > GridStyle.CellCountX THEN mx = 1
-    
-      CASE CHR$(0) + CHR$(ScanCode.Left)
-        '
-        ' Left
-        '
-        mx = nx - 1
-        my = ny
-        IF mx < 1 THEN mx = GridStyle.CellCountX
-    
-      CASE CHR$(0) + CHR$(ScanCode.Down)
-        '
-        ' Down
-        '
-        mx = nx
-        my = ny + 1
-        IF my > GridStyle.CellCountY THEN my = 1
-   
-    END SELECT
-   
-    IF grid(mx, my) = 0 THEN
-      nx = mx
-      ny = my
-    END IF
-
-  LOOP
-  RETURN
-
-NextRandom:
-  '
-  ' Finds a random slot
-  '
-  DO
-    nx = INT(RND * GridStyle.CellCountX) + 1
-    ny = INT(RND * GridStyle.CellCountY) + 1
-  LOOP UNTIL grid(nx, ny) = 0
-  RETURN
-
-ReplotBanded:
-  '
-  ' Replots all asteroids in an orbital band
-  '
-  GOSUB ClearGrid
-  FOR aid = 1 TO asteroids
-    GOSUB NextBanded
-    GOSUB SetCell
-  NEXT
-  lastPlot = PlotBanded
-  RETURN
-
-ReplotClustered:
-  '
-  ' Replots all asteroids in a cluster
-  '
-  GOSUB ClearGrid
-  FOR aid = 1 TO asteroids
-    GOSUB NextClustered
-    GOSUB SetCell
-  NEXT
-  lastPlot = PlotClustered
-  RETURN
-
-ReplotManual:
-  '
-  ' Manually replots asteroids
-  '
-  FOR aid = 1 TO asteroids
-   
-    GOSUB FindCell
-    grid(nx, ny) = 0
-
-    GOSUB NextManual
-    GOSUB SetCell
- 
-    IF keypress = CHR$(ASCII.Escape) THEN
-      EXIT FOR
-    END IF
-
-  NEXT
-  RETURN
-
-ReplotRandom:
-  '
-  ' Replots all asteroids randomly
-  '
-
-  GOSUB ClearGrid
-  FOR aid = 1 TO asteroids
-    GOSUB NextRandom
-    GOSUB SetCell
-  NEXT
-  lastPlot = PlotRandom
-  RETURN
-
-ReplotPlayers:
-  '
-  ' Replots player asteroids using same mode as last time
-  '
-  FOR i = 1 TO GridStyle.CellCountX
-    FOR j = 1 TO GridStyle.CellCountY
-     
-      aid = grid(i, j)
-    
-      IF aid = 0 THEN
-        ' Do nothing (note: QBASIC does not support shortcircuit eval).
-      ELSEIF asteroid(aid).ruler = 0 THEN
-        ' Do nothing
-      ELSE
-        '
-        ' This asteroid is owned by a player. Replot it.
-        '
-        nx = i
-        ny = j
-        GOSUB ClearCell
-
-        SELECT CASE lastPlot
-          CASE PlotBanded
-            GOSUB NextBanded
-          
-          CASE PlotClustered
-            GOSUB NextClustered
-
-          CASE PlotRandom
-            GOSUB NextRandom
-
-        END SELECT
-
-        GOSUB SetCell
-
-      END IF
-
-    NEXT
-  NEXT
-  RETURN
-
-SaveLocations:
-  '
-  ' Commits the grid locations to the asteroids
-  '
-  FOR i = 1 TO GridStyle.CellCountX
-    FOR j = 1 TO GridStyle.CellCountY
-          
-      '
-      ' Get the ID of the asteroid at this grid location
-      '
-      aid = grid(i, j)
-          
-      '
-      ' If an asteroid is found, commit its new position.
-      '
-      IF aid > 0 THEN
-        asteroid(aid).local1 = j
-        asteroid(aid).local2 = i
-      END IF
-
-    NEXT
-  NEXT
-  RETURN
 
 END SUB
 
-' =========================================================
-' SetupGameNew
-' ---------------------------------------------------------
-' Sets up a new game.
-' =========================================================
 SUB SetupGame.New
+  '
+  ' Initializes a new game
+  '
 
   DIM aid AS INTEGER
   DIM pid AS INTEGER
@@ -2247,8 +2565,9 @@ SUB SetupGame.New
   '
   FOR pid = 1 TO players
     player(pid).viewFilter = Filter.None
-    player(pid).viewPage = VideoPage.Table
+    player(pid).viewPage = UIPage.Atlas
   NEXT
+  turn = 1
 
   '
   ' Initialize asteroid data
@@ -2277,7 +2596,7 @@ SUB StatusClear
   '
   ' Clears the status bar
   '
-  StatusLevel "", StatusLevel.Normal
+  StatusUpdateLevel "", StatusLevel.Normal
 
 END SUB
 
@@ -2285,11 +2604,23 @@ SUB StatusDebug (text AS STRING)
   '
   ' Writes a debug message to the status bar
   '
-  StatusLevel text, StatusLevel.Debug
+  StatusUpdateLevel text, StatusLevel.Debug
+
+  ' TODO: set page to ensure debug message is visible to developer
+  ' who is on a breakpoint when the active page may not be the
+  ' same as the display page.
 
 END SUB
 
-SUB StatusLevel (text AS STRING, level AS INTEGER)
+SUB StatusUpdate (text AS STRING)
+  '
+  ' Writes text to the status bar
+  '
+  StatusUpdateLevel text, StatusLevel.Normal
+
+END SUB
+
+SUB StatusUpdateLevel (text AS STRING, level AS INTEGER)
 
   '
   ' Set the viewport to the last row of the screen
@@ -2315,11 +2646,117 @@ SUB StatusLevel (text AS STRING, level AS INTEGER)
   
 END SUB
 
-SUB StatusUpdate (text AS STRING)
+SUB UI.Redraw
   '
-  ' Writes text to the status bar
+  ' Redraws the UI.
   '
-  StatusLevel text, StatusLevel.Normal
+
+  '
+  ' Write to the buffer page (keeping visual display the same)
+  '
+  SCREEN , , VideoPage.Working, VideoPage.Display
+
+  SELECT CASE uiCurrentPage
+ 
+    CASE UIPage.None
+      StatusDebug "UI.Redraw() called without an active page"
+
+    CASE UIPage.Atlas
+      '
+      ' The player is viewing the atlas
+      '
+      PCOPY VideoPage.Atlas, VideoPage.Working
+      AtlasDrawItems
+      AtlasDisplayOn
+
+    CASE UIPage.Table
+      '
+      ' The player is viewing the data table
+      '
+      AtlasDisplayOff
+      PCOPY VideoPage.Table, VideoPage.Working
+      DrawTableRows
+
+  END SELECT
+
+  '
+  ' Restore the display page
+  '
+  SCREEN , , VideoPage.Working, VideoPage.Working
+  PCOPY VideoPage.Working, VideoPage.Display
+  SCREEN , , VideoPage.Display, VideoPage.Display
+
+END SUB
+
+SUB UI.Refresh
+  '
+  ' Refreshes data fields (rather than entire UI)
+  '
+  SELECT CASE uiCurrentPage
+  
+    CASE UIPage.Atlas
+      '
+      ' The player is viewing the atlas
+      '
+      AtlasDrawItems
+
+    CASE UIPage.Table
+      '
+      ' The player is viewing the data table
+      '
+      DrawTableRows
+
+  END SELECT
+
+END SUB
+
+SUB UI.Run
+  '
+  ' Runs the user interface
+  '
+ 
+  DIM cid AS INTEGER
+
+  DO
+    
+    '
+    ' Wait for a command from the menu bar
+    '
+    cid = MenuShow
+    
+    '
+    ' Get the command ID for the selected menu item.
+    '
+    Execute cid
+    IF cid = Command.EndGame THEN
+      EXIT SUB
+    END IF
+
+  LOOP
+
+END SUB
+
+SUB UI.SetFilter (filter AS INTEGER, refreshUI AS INTEGER)
+  '
+  ' Applies a filter to emphasize items and optionally refreshes the screen.
+  '
+
+  uiCurrentFilter = filter
+
+  IF refreshUI THEN
+    UI.Refresh
+  END IF
+
+END SUB
+
+SUB UI.SetPage (page AS INTEGER)
+  '
+  ' Sets the current page shown in the UI
+  '
+ 
+  uiCurrentPage = page
+ 
+  UI.Redraw
 
 END SUB
 
@@ -3036,8 +3473,8 @@ FUNCTION WinParseCommand% (text$)
     CASE "FILTERNONE":
       cid = Command.FilterNone
 
-    CASE "FILTERPLAYER":
-      cid = Command.FilterPlayer
+    CASE "FILTERSELF":
+      cid = Command.FilterSelf
 
     CASE "FILTERPLAYERS":
       cid = Command.FilterPlayers
@@ -3047,6 +3484,9 @@ FUNCTION WinParseCommand% (text$)
 
     CASE "NEXTTURN":
       cid = Command.NextTurn
+
+    CASE "NEWGAME":
+      cid = Command.NewGame
 
     CASE "OPTIONALERTS":
       cid = Command.OptionAlerts
