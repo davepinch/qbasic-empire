@@ -178,7 +178,7 @@ DECLARE SUB StatusUpdateLevel (text AS STRING, level AS INTEGER)
 DECLARE SUB UI.Redraw ()
 DECLARE SUB UI.Refresh ()
 DECLARE SUB UI.Run ()
-DECLARE SUB UI.SetFilter (filter AS INTEGER, refreshUI AS INTEGER)
+DECLARE SUB UI.SetFilter (Filter AS INTEGER, refreshUI AS INTEGER)
 DECLARE SUB UI.SetPage (page AS INTEGER)
 
 '
@@ -286,8 +286,12 @@ CONST Command.NextTurn = 8
 CONST Command.NewGame = 9
 CONST Command.OptionAlerts = 10
 CONST Command.OrderAttack = 11
-CONST Command.ViewAtlas = 12
-CONST Command.ViewTable = 13
+CONST Command.ReplotBand = 12
+CONST Command.ReplotCluster = 13
+CONST Command.ReplotManual = 14
+CONST Command.ReplotRandom = 15
+CONST Command.ViewAtlas = 16
+CONST Command.ViewTable = 17
 
 '
 ' Control Character constants
@@ -537,10 +541,10 @@ REM Window 9
   DATA "+@", "<command>", "Look Behind Window"
   DATA "+@", "<command>", "Next Step..."
   DATA "+-"
-  DATA "+@", "<command>", "Cluster together "
-  DATA "+@", "<command>", "Band together "
-  DATA "+@", "<command>", "Plot Manually"
-  DATA "+@", "<command>", "Randomly place"
+  DATA "+@", "ReplotCluster", "Cluster together "
+  DATA "+@", "ReplotBand", "Band together "
+  DATA "+@", "ReplotManual", "Plot Manually"
+  DATA "+@", "ReplotRandom", "Randomly place"
 
 REM Window 10
   DATA "Start"
@@ -551,6 +555,11 @@ REM Window 10
   DATA "+@", "FilterSelf", "Filter you"
   DATA "+@", "FilterPlayers", "Filter players"
   DATA "+@", "FilterNone", "Remove Filter"
+  DATA "+-"
+  DATA "+@", "ReplotBand", "Replot banded"
+  DATA "+@", "ReplotCluster", "Replot clustered"
+  DATA "+@", "ReplotManual", "Replot manually"
+  DATA "+@", "ReplotRandom", "Replot randomly"
 
 REM Window 11
   DATA "Start"
@@ -597,7 +606,7 @@ REM Window 15
   DATA "+$", " Enter the source asteroid:"
   DATA "+$", " Enter the target asteroid:"
   DATA "+$", " Enter the number of ships:"
-  DATA "#", 32, 1, 2, 0          
+  DATA "#", 32, 1, 2, 0         
   DATA "#", 32, 2, 2, 0
   DATA "#", 30, 3, 4, 0
 
@@ -991,6 +1000,8 @@ SUB AtlasDrawUnselect (cx AS INTEGER, cy AS INTEGER)
 
   PaintBackground sx1, sy1, sx1 + AtlasStyle.CellSizeX + 1, sy1 + 2, 0
 
+  ' HACK: filtering conflicts with selection (e.g., different background)
+  AtlasDrawCell cx, cy
 
 END SUB
 
@@ -1833,7 +1844,19 @@ SUB Execute (cid AS INTEGER)
        
     CASE Command.OrderAttack
       ExecuteOrderAttack
-       
+      
+    CASE Command.ReplotBand
+      AtlasPlotBanded
+
+    CASE Command.ReplotCluster
+      AtlasPlotClustered
+
+    CASE Command.ReplotManual
+      AtlasPlotManual
+
+    CASE Command.ReplotRandom
+      AtlasPlotRandom
+
     CASE Command.ViewAtlas
       ExecuteViewAtlas
      
@@ -2736,12 +2759,12 @@ SUB UI.Run
 
 END SUB
 
-SUB UI.SetFilter (filter AS INTEGER, refreshUI AS INTEGER)
+SUB UI.SetFilter (Filter AS INTEGER, refreshUI AS INTEGER)
   '
   ' Applies a filter to emphasize items and optionally refreshes the screen.
   '
 
-  uiCurrentFilter = filter
+  uiCurrentFilter = Filter
 
   IF refreshUI THEN
     UI.Refresh
@@ -3493,6 +3516,18 @@ FUNCTION WinParseCommand% (text$)
 
     CASE "ORDERATTACK":
       cid = Command.OrderAttack
+
+    CASE "REPLOTBAND":
+      cid = Command.ReplotBand
+
+    CASE "REPLOTCLUSTER":
+      cid = Command.ReplotCluster
+
+    CASE "REPLOTMANUAL":
+      cid = Command.ReplotManual
+
+    CASE "REPLOTRANDOM":
+      cid = Command.ReplotRandom
 
     CASE "VIEWATLAS":
       cid = Command.ViewAtlas
