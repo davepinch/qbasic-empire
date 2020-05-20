@@ -212,8 +212,8 @@ DECLARE FUNCTION WinDefineInteger% (wid%, posX%, posY%, sizeX%, text$)
 DECLARE FUNCTION WinIsSelectable% (wid%, fid%)
 DECLARE FUNCTION WinParseCommand% (text$)
 DECLARE SUB WinDraw (wid%)
-DECLARE SUB WinDrawField (wid AS INTEGER, fid AS INTEGER)
-DECLARE SUB WinDrawOutline (wid AS INTEGER, atX AS INTEGER, atY AS INTEGER)
+DECLARE SUB WinDrawField (wid%, fid%)
+DECLARE SUB WinDrawOutline (wid%, sx%, sy%)
 DECLARE SUB WinKey (wid%, fid%, keypress$)
 DECLARE SUB WinKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB WinKeyInteger (wid%, fid%, keypress$)
@@ -224,7 +224,7 @@ DECLARE SUB WinSelect (wid%, fid%)
 DECLARE SUB WinSelectPrevious (wid%)
 DECLARE SUB WinSelectFirst (wid%)
 DECLARE SUB WinSelectLast (wid%)
-DECLARE SUB WinShow (wid AS INTEGER)
+DECLARE SUB WinShow (wid%)
 
 '
 ' Declarations
@@ -3188,7 +3188,7 @@ SUB WinDraw (wid%)
 
 END SUB
 
-SUB WinDrawField (wid AS INTEGER, fid AS INTEGER)
+SUB WinDrawField (wid%, fid%)
 
   DIM backcolor AS INTEGER
   DIM forecolor AS INTEGER
@@ -3201,31 +3201,31 @@ SUB WinDrawField (wid AS INTEGER, fid AS INTEGER)
   '
   ' Adjust the field size (if zero, then fill width of window)
   '
-  sizeX = fld(wid, fid).sizeX
+  sizeX = fld(wid%, fid%).sizeX
   IF sizeX = 0 THEN
-    sizeX = win(wid).sizeX
+    sizeX = win(wid%).sizeX
   END IF
  
   '
   ' Adjust the position of the field (if zero, center)
   '
-  posX = fld(wid, fid).posX
-  posY = fld(wid, fid).posY
+  posX = fld(wid%, fid%).posX
+  posY = fld(wid%, fid%).posY
   IF posX = 0 THEN
-    posX = INT((win(wid).sizeX - sizeX) / 2) + 1
+    posX = INT((win(wid%).sizeX - sizeX) / 2) + 1
   END IF
 
   '
   ' Calculate the screen coordinates of the field
   '
-  sx = posX + win(wid).posX
-  sy = posY + win(wid).posY
+  sx = posX + win(wid%).posX
+  sy = posY + win(wid%).posY
   LOCATE sy, sx
 
   '
   ' Set the color depending on whether the field is selected
   '
-  IF win(wid).selected = fid THEN
+  IF win(wid%).selected = fid% THEN
     backcolor = WinStyle.SelectedBackcolor
     forecolor = WinStyle.SelectedForecolor
   ELSE
@@ -3237,38 +3237,38 @@ SUB WinDrawField (wid AS INTEGER, fid AS INTEGER)
   '
   ' Get the kind of field
   '
-  SELECT CASE fld(wid, fid).kind
+  SELECT CASE fld(wid%, fid%).kind
    
     CASE FieldKind.Button, FieldKind.Boolean, FieldKind.Label
       '
       ' Button and Boolean (text)
       '
-      PRINT txt(wid, fid);
+      PRINT txt(wid%, fid%);
      
       '
       ' Pad remaining spaces
       '
-      PRINT STRING$(sizeX - LEN(txt(wid, fid)), ASCII.Space);
+      PRINT STRING$(sizeX - LEN(txt(wid%, fid%)), ASCII.Space);
 
     CASE FieldKind.Separator
       '
       ' Separator
       '
-      PRINT STRING$(win(wid).sizeX, 196);
+      PRINT STRING$(win(wid%).sizeX, 196);
 
     CASE FieldKind.Integer
       '
       ' Integer Input
       '
       DIM format AS STRING
-      format = STRING$(fld(wid, fid).sizeX, "#")
-      PRINT USING format; VAL(txt(wid, fid));
+      format = STRING$(fld(wid%, fid%).sizeX, "#")
+      PRINT USING format; VAL(txt(wid%, fid%));
  
   END SELECT
 
 END SUB
 
-SUB WinDrawOutline (wid AS INTEGER, atX AS INTEGER, atY AS INTEGER)
+SUB WinDrawOutline (wid%, sx%, sy%)
 
   '
   ' Set the color of the outline
@@ -3278,14 +3278,14 @@ SUB WinDrawOutline (wid AS INTEGER, atX AS INTEGER, atY AS INTEGER)
   '
   ' Draw upper-left corner
   '
-  LOCATE atY, atX
+  LOCATE sy%, sx%
   SELECT CASE WinStyle.Border
     CASE 1
       PRINT CHR$(218); CHR$(196);
     CASE 2
       PRINT CHR$(201); CHR$(205);
   END SELECT
-  LOCATE atY + 1, atX
+  LOCATE sy% + 1, sx%
   SELECT CASE WinStyle.Border
     CASE 1
       PRINT CHR$(179);
@@ -3296,9 +3296,9 @@ SUB WinDrawOutline (wid AS INTEGER, atX AS INTEGER, atY AS INTEGER)
   '
   ' Draw lower-left corner
   '
-  LOCATE atY + win(wid).sizeY, atX
+  LOCATE sy% + win(wid%).sizeY, sx%
   IF WinStyle.Border = 2 THEN PRINT CHR$(186);  ELSE PRINT CHR$(179);
-  LOCATE atY + win(wid).sizeY + 1, atX
+  LOCATE sy% + win(wid%).sizeY + 1, sx%
   SELECT CASE WinStyle.Border
     CASE 1
       PRINT CHR$(192); CHR$(196);
@@ -3309,21 +3309,21 @@ SUB WinDrawOutline (wid AS INTEGER, atX AS INTEGER, atY AS INTEGER)
   '
   ' Draw upper-right corner
   '
-  LOCATE atY, atX + win(wid).sizeX
+  LOCATE sy%, sx% + win(wid%).sizeX
   IF WinStyle.Border = 2 THEN
     PRINT CHR$(205); CHR$(187);
   ELSE
     PRINT CHR$(196); CHR$(191);
   END IF
-  LOCATE atY + 1, atX + win(wid).sizeX + 1
+  LOCATE sy% + 1, sx% + win(wid%).sizeX + 1
   IF WinStyle.Border = 2 THEN PRINT CHR$(186);  ELSE PRINT CHR$(179);
 
   '
   ' Draw lower-right corner
   '
-  LOCATE atY + win(wid).sizeY, atX + win(wid).sizeX + 1
+  LOCATE sy% + win(wid%).sizeY, sx% + win(wid%).sizeX + 1
   IF WinStyle.Border = 2 THEN PRINT CHR$(186);  ELSE PRINT CHR$(179);
-  LOCATE atY + win(wid).sizeY + 1, atX + win(wid).sizeX
+  LOCATE sy% + win(wid%).sizeY + 1, sx% + win(wid%).sizeX
   IF WinStyle.Border = 2 THEN
     PRINT CHR$(205); CHR$(188);
   ELSE
@@ -3855,7 +3855,7 @@ SUB WinSelectPrevious (wid%)
 
 END SUB
 
-SUB WinShow (wid AS INTEGER)
+SUB WinShow (wid%)
   '
   ' Displays and runs the specified window
   '
@@ -3877,7 +3877,7 @@ SUB WinShow (wid AS INTEGER)
     '
     ' Draw the window onto the working page
     '
-    WinDraw wid
+    WinDraw wid%
    
     '
     ' Set the working page as the visual page
@@ -3887,8 +3887,8 @@ SUB WinShow (wid AS INTEGER)
     '
     ' Set focus to a field
     '
-    IF win(wid).selected = 0 THEN
-      WinSelectFirst wid
+    IF win(wid%).selected = 0 THEN
+      WinSelectFirst wid%
     END IF
 
     DO
@@ -3896,12 +3896,12 @@ SUB WinShow (wid AS INTEGER)
       '
       ' Get the current field that has focus
       '
-      oldSelected = win(wid).selected
+      oldSelected = win(wid%).selected
       IF oldSelected <> 0 THEN
         '
         ' If a field is selected, draw it now.
         '
-        WinDrawField wid, oldSelected
+        WinDrawField wid%, oldSelected
       END IF
 
       '
@@ -3914,7 +3914,7 @@ SUB WinShow (wid AS INTEGER)
           '
           ' Return/Enter
           '
-          win(wid).canceled = False
+          win(wid%).canceled = False
         
           '
           ' Restore the display page
@@ -3926,32 +3926,32 @@ SUB WinShow (wid AS INTEGER)
           '
           ' Down
           '
-          WinSelectNext wid
+          WinSelectNext wid%
 
         CASE CHR$(0) + CHR$(ScanCode.Up)
           '
           ' Up
           '
-          WinSelectPrevious wid
+          WinSelectPrevious wid%
 
         CASE CHR$(0) + CHR$(ScanCode.Home)
           '
           ' Home (first field)
           '
-          WinSelectFirst wid
+          WinSelectFirst wid%
 
         CASE CHR$(0) + CHR$(ScanCode.End)
           '
           ' End (last field)
           '
-          WinSelectLast wid
+          WinSelectLast wid%
 
         CASE "/", "?"
           '
           ' Help
           '
-          IF win(wid).helpWid <> 0 THEN
-            WinShow win(wid).helpWid
+          IF win(wid%).helpWid <> 0 THEN
+            WinShow win(wid%).helpWid
           END IF
 
         CASE CHR$(0) + CHR$(ScanCode.Left), CHR$(0) + CHR$(ScanCode.Right)
@@ -3960,7 +3960,7 @@ SUB WinShow (wid AS INTEGER)
           '
           IF arrowexit THEN
             ' HACK
-            win(wid).canceled = False
+            win(wid%).canceled = False
            
             '
             ' Restore the display page and exit
@@ -3973,16 +3973,16 @@ SUB WinShow (wid AS INTEGER)
           '
           ' Escape (cancel)
           '
-          win(wid).canceled = True
+          win(wid%).canceled = True
          
           '
           ' Restore the display page
           '
           SCREEN , , VideoPage.Display, VideoPage.Display
-                  EXIT SUB
+          EXIT SUB
 
         CASE CHR$(Control.D), CHR$(Control.E), CHR$(19), CHR$(24)
-          WinMove wid
+          WinMove wid%
           '
           ' Exit the input loop to jump up to the window loop.
           ' This will force a refresh of the window.
@@ -3990,7 +3990,7 @@ SUB WinShow (wid AS INTEGER)
           EXIT DO
 
         CASE ELSE
-          WinKey wid, win(wid).selected, pressed
+          WinKey wid%, win(wid%).selected, pressed
 
       END SELECT
    
@@ -3998,8 +3998,8 @@ SUB WinShow (wid AS INTEGER)
       ' Redraw the old field if selection changed.
       ' The new field will be redrawn at the start of this DO loop.
       '
-      IF oldSelected <> win(wid).selected THEN
-        WinDrawField wid, oldSelected
+      IF oldSelected <> win(wid%).selected THEN
+        WinDrawField wid%, oldSelected
       END IF
 
     LOOP
