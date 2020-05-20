@@ -77,14 +77,6 @@ TYPE MissionType
   techlevel AS INTEGER
 END TYPE
 
-TYPE PlayerType
-  '
-  ' Information about a player of the game.
-  '
-  viewFilter AS INTEGER
-  viewPage   AS INTEGER
-END TYPE
-
 TYPE WindowType
   '
   ' A window on the screen for showing information or collecting input.
@@ -141,9 +133,7 @@ DECLARE SUB Execute (cid AS INTEGER)
 DECLARE SUB ExecuteAbout ()
 DECLARE SUB ExecuteFilterNone ()
 DECLARE SUB ExecuteFilterSelf ()
-DECLARE SUB ExecuteFilterPlayers ()
 DECLARE SUB ExecuteNextMonth ()
-DECLARE SUB ExecuteNextTurn ()
 DECLARE SUB ExecuteOptionAlerts ()
 DECLARE SUB ExecuteOrderAttack ()
 DECLARE SUB ExecuteViewAtlas ()
@@ -288,9 +278,7 @@ CONST Command.About = 1
 CONST Command.EndGame = 2
 CONST Command.FilterNone = 3
 CONST Command.FilterSelf = 4
-CONST Command.FilterPlayers = 5
 CONST Command.NextMonth = 6
-CONST Command.NextTurn = 7
 CONST Command.NewGame = 8
 CONST Command.OptionAlerts = 9
 CONST Command.OrderAttack = 10
@@ -325,7 +313,6 @@ CONST FieldKind.Separator = 5
 '
 CONST MaxMenus = 5
 CONST MaxFields = 15
-CONST MaxPlayers = 5
 CONST MaxWindows = 50
 
 '
@@ -386,7 +373,6 @@ CONST TableStyle.Forecolor = 1
 '
 CONST UIFilter.None = 0
 CONST UIFilter.Self = 1
-CONST UIFilter.Players = 2
 
 '
 ' UIPage.* constants
@@ -459,10 +445,7 @@ DIM SHARED asteroid(1 TO 19)       AS AsteroidType
 DIM SHARED asteroids               AS INTEGER
 DIM SHARED mission(1 TO 100)       AS MissionType
 DIM SHARED missions                AS INTEGER
-DIM SHARED player(1 TO MaxPlayers) AS PlayerType
-DIM SHARED players                 AS INTEGER
 DIM SHARED pressed                 AS STRING
-DIM SHARED turn                    AS INTEGER
 
 '
 ' Main
@@ -498,17 +481,17 @@ REM Window 2
   DATA 10,11
   DATA "$", 0, 1, "Initialization Mode"
   DATA "+-"
-  DATA "+$", "How many people are playing?  [Def=3]"
   DATA "+$", "How many asteroids should be in the game?  [Def=15]"
-  DATA "#", 56, 3, 2, 3
-  DATA "#", 56, 4, 2, 15
+  DATA "#", 56, 3, 2, 15
 
 REM Window 3
+  REM -- NOT USED --
   DATA "Start"
   DATA 11,24
   DATA "+$", " Error: Too many players. "
 
 REM Window 4
+  REM -- NOT USED --
   DATA "Start"
   DATA 10,21
   DATA "Help", 8
@@ -524,6 +507,7 @@ REM Window 5
   DATA "+$", " allowed is nineteen.                   "
 
 REM Window 6
+  REM --- NOT USED --
   DATA "Start"
   DATA 10,19
   DATA "Help", 7
@@ -533,6 +517,7 @@ REM Window 6
   DATA "+$", " Press ? for more information.            "
 
 REM Window 7
+  REM -- NOT USED --
   DATA "Start"
   DATA 9,10
   DATA "+$", " When you start out the game, asteroids are automatically "
@@ -543,6 +528,7 @@ REM Window 7
   DATA "+$", " number of asteroids.                                     "
 
 REM Window 8
+  REM -- NOT USED --
   DATA "Start"
   DATA 10,10
   DATA "+$", " When you start out the game, asteroids are automatically "
@@ -569,7 +555,6 @@ REM Window 10
   DATA "+@", "ViewTable", "Show table"
   DATA "+-"
   DATA "+@", "FilterSelf", "Filter you"
-  DATA "+@", "FilterPlayers", "Filter players"
   DATA "+@", "FilterNone", "Remove Filter"
   DATA "+-"
   DATA "+@", "ReplotBand", "Replot banded"
@@ -581,7 +566,6 @@ REM Window 11
   DATA "Start"
   DATA 2,9
   DATA "+@", "<command>", "Load a game"
-  DATA "+@", "NextTurn", "Next turn"
   DATA "+@", "NextMonth", "Next month"
   DATA "+@", "<command>", "Save the game"
   DATA "+@", "EndGame", "Quit the game"
@@ -600,7 +584,7 @@ REM Window 12
 REM Window 13
   DATA "Start"
   DATA 2,24
-  DATA "+@", "OptionAlerts", "Alerting the next player"
+  DATA "+@", "OptionAlerts", "Alerts"
   DATA "+@", "<command>", "Border"
   DATA "+@", "<command>", "Command entry"
   DATA "+@", "<command>", "Confirming actions"
@@ -611,7 +595,6 @@ REM Window 14
   DATA "Start"
   DATA 2,33
   DATA "+@", "About", "About..."
-  DATA "+@", "<command>", "Find current winner"
   DATA "+@", "<command>", "Move ahead in time"
   DATA "+@", "<command>", "Search for value"
 
@@ -686,9 +669,7 @@ REM Window 26
 REM Window 27
   DATA "Start"
   DATA 9,19
-  DATA "+$", " Do you wish to alert the others with "
-  DATA "+$", " a bell after a player has made his   "
-  DATA "+$", " turn?  This minimizes cheating.      "
+  DATA "+$", " Do you wish to sound alert? "
   DATA "+-"
   DATA "+&", "Yes"
 
@@ -709,6 +690,7 @@ REM Window 28
   DATA "+$", " Press any key to begin...              "
 
 REM Window 29
+  REM -- NOT USED --
   DATA "Start"
   DATA 9,19
   DATA "+$", " WARNING TO ALL PLAYERS: The current "
@@ -1514,6 +1496,11 @@ SUB BattleMode (id AS INTEGER)
   DIM trg      AS INTEGER
   DIM x        AS INTEGER
 
+  ' HACK with removal of multi-player support
+  ' Not that this ever worked anyway
+  DIM turn AS INTEGER
+  LET turn = 1
+
   trg = mission(id).target
 
   WinShow 28
@@ -1888,14 +1875,8 @@ SUB Execute (cid AS INTEGER)
     CASE Command.FilterSelf
       ExecuteFilterSelf
 
-    CASE Command.FilterPlayers
-      ExecuteFilterPlayers
-
     CASE Command.NextMonth
       ExecuteNextMonth
-
-    CASE Command.NextTurn
-      ExecuteNextTurn
 
     CASE Command.OptionAlerts
       ExecuteOptionAlerts
@@ -1949,32 +1930,21 @@ SUB ExecuteFilterNone
   '
   ' Removes the current filter (no asteroids filtered)
   '
-  player(turn).viewFilter = UIFilter.None
   UI.SetFilter UIFilter.None, True
-
-END SUB
-
-SUB ExecuteFilterPlayers
-  '
-  ' Filters asteroids to those controlled by any player
-  '
-  player(turn).viewFilter = UIFilter.Players
-  UI.SetFilter UIFilter.Players, True
 
 END SUB
 
 SUB ExecuteFilterSelf
   '
-  ' Filters asteroids to the current player
+  ' Filters data to the player
   '
-  player(turn).viewFilter = UIFilter.Self
   UI.SetFilter UIFilter.Self, True
 
 END SUB
 
 SUB ExecuteNextMonth
   '
-  ' Changes to the next month sets the turn to the first player
+  ' Changes to the next month
   '
 
   DIM x AS INTEGER
@@ -1999,55 +1969,17 @@ SUB ExecuteNextMonth
     asteroid(x).ships = asteroid(x).ships + asteroid(x).produce
   NEXT
 
-  '
-  ' Reset to the first player
-  '
-  turn = 1
-
-END SUB
-
-SUB ExecuteNextTurn
-  '
-  ' Moves to the next turn
-  '
-  turn = turn + 1
-
-  IF turn > players THEN
-    ExecuteNextMonth
-    turn = 1
-  END IF
-
-  '
-  ' Set player preferences
-  '
-  UI.SetFilter player(turn).viewFilter, False
-  UI.SetPage player(turn).viewPage
-
 END SUB
 
 SUB ExecuteOptionAlerts
 
-  DIM original AS STRING
-  DIM x        AS INTEGER
-  DIM Y        AS INTEGER
-
-  original = txt(27, 1)
-
   WinShow 27
 
-  IF original = " Yes " AND txt(27, 1) = " No  " THEN
-    IF players > 1 THEN
-      FOR x = 1 TO 3
-        FOR Y = 300 TO 60 STEP -10
-          SOUND Y, .2
-        NEXT
-      NEXT
-      WinShow 29
-      IF txt(29, 1) = " Yes " THEN
-        txt(27, 1) = " Yes "
-      END IF
-    END IF
-  END IF
+  'FOR x = 1 TO 3
+  '  FOR Y = 300 TO 60 STEP -10
+  '    SOUND Y, .2
+  '  NEXT
+  'NEXT
 
 END SUB
 
@@ -2119,7 +2051,6 @@ SUB ExecuteViewAtlas
   '
   ' Displays the atlas
   '
-  player(turn).viewPage = UIPage.Atlas
   UI.SetPage UIPage.Atlas
 
 END SUB
@@ -2128,7 +2059,6 @@ SUB ExecuteViewTable
   '
   ' Displays the data table
   '
-  player(turn).viewPage = UIPage.Table
   UI.SetPage UIPage.Table
 
 END SUB
@@ -2238,20 +2168,6 @@ FUNCTION IsFiltered% (aid AS INTEGER)
     '
     IsFiltered% = False
  
-  ELSEIF turn < LBOUND(player, 1) THEN
-    '
-    ' Turn out of range (too low)
-    '
-    IsFiltered% = False
-
-  ELSEIF turn > UBOUND(player, 1) THEN
-    '
-    ' Turn out of range (too high)
-    '
-    IsFiltered% = False
-
-  ELSE
-    filtering = player(turn).viewFilter
   END IF
 
   IF filtering = UIFilter.None THEN
@@ -2262,15 +2178,9 @@ FUNCTION IsFiltered% (aid AS INTEGER)
 
   ELSEIF filtering = UIFilter.Self THEN
     '
-    ' Filter asteroids ruled by current player
+    ' Filter asteroids ruled by player
     '
-    IsFiltered = asteroid(aid).ruler = turn
-
-  ELSEIF filtering = UIFilter.Players THEN
-    '
-    ' Filter asteroids with a ruler
-    '
-    IsFiltered = asteroid(aid).ruler > 0
+    IsFiltered = asteroid(aid).ruler = 1 ' HACK
 
   ELSE
 
@@ -2639,53 +2549,25 @@ SUB SetupGame.New
   DO
    
     '
-    ' Prompt for the number of players and asteroids
+    ' Prompt for the number of asteroids
     '
     WinShow 2
-    players = VAL(txt(2, 5)): IF players = 0 THEN players = 3
-    asteroids = VAL(txt(2, 6)): IF asteroids = 0 THEN asteroids = 15
+    asteroids = VAL(txt(2, 4)): IF asteroids = 0 THEN asteroids = 15
    
     '
     ' Validate initial game options
     '
-    IF players > MaxPlayers THEN
-      '
-      ' Too many players
-      '
-      WinShow 3
-   
-    ELSEIF asteroids < players THEN
-      '
-      ' Not enough asteroids
-      '
-      WinShow 4
-
-    ELSEIF asteroids > 19 THEN
+    IF asteroids > 19 THEN
       '
       ' Too many asteroids
       '
       WinShow 5
 
-    ELSEIF players = 1 AND asteroids = 1 THEN
-      '
-      ' Can't have one player and one asteroid
-      '
-      WinShow 6
-   
     ELSE
       EXIT DO
     END IF
    
   LOOP
-
-  '
-  ' Initialize players
-  '
-  FOR pid = 1 TO players
-    player(pid).viewFilter = Filter.None
-    player(pid).viewPage = UIPage.Atlas
-  NEXT
-  turn = 1
 
   '
   ' Initialize asteroid data
@@ -2707,11 +2589,7 @@ SUB SetupGame.New
     asteroid(aid).Control = INT(RND * 10)
     asteroid(aid).detect = INT(RND * 10)
     asteroid(aid).mined = INT(RND * 50) + 50
-    IF aid <= players THEN
-      asteroid(aid).ruler = aid
-    ELSE
-      asteroid(aid).ruler = 0
-    END IF
+    asteroid(aid).ruler = aid ' HACK with removal of multi-player support
     asteroid(aid).produce = 50
     asteroid(aid).tech = 10
     asteroid(aid).shield = 0
@@ -2793,17 +2671,11 @@ SUB UI.Redraw
       StatusDebug "UI.Redraw() called without an active page"
 
     CASE UIPage.Atlas
-      '
-      ' The player is viewing the atlas
-      '
       PCOPY VideoPage.Atlas, VideoPage.Working
       AtlasDrawItems
       AtlasDisplayOn
 
     CASE UIPage.Table
-      '
-      ' The player is viewing the data table
-      '
       AtlasDisplayOff
       PCOPY VideoPage.Table, VideoPage.Working
       DrawTableRows
@@ -2823,18 +2695,13 @@ SUB UI.Refresh
   '
   ' Refreshes data fields (rather than entire UI)
   '
+
   SELECT CASE uiCurrentPage
   
     CASE UIPage.Atlas
-      '
-      ' The player is viewing the atlas
-      '
       AtlasDrawItems
 
     CASE UIPage.Table
-      '
-      ' The player is viewing the data table
-      '
       DrawTableRows
 
   END SELECT
@@ -3630,14 +3497,8 @@ FUNCTION WinParseCommand% (text$)
     CASE "FILTERSELF":
       cid = Command.FilterSelf
 
-    CASE "FILTERPLAYERS":
-      cid = Command.FilterPlayers
-
     CASE "NEXTMONTH":
       cid = Command.NextMonth
-
-    CASE "NEXTTURN":
-      cid = Command.NextTurn
 
     CASE "NEWGAME":
       cid = Command.NewGame
