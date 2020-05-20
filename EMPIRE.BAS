@@ -211,7 +211,7 @@ DECLARE FUNCTION WinDefineLabel% (wid%, posX%, posY%, text$)
 DECLARE FUNCTION WinDefineInteger% (wid%, posX%, posY%, sizeX%, text$)
 DECLARE FUNCTION WinIsSelectable% (wid%, fid%)
 DECLARE FUNCTION WinParseCommand% (text$)
-DECLARE SUB WinDraw (id AS INTEGER)
+DECLARE SUB WinDraw (wid%)
 DECLARE SUB WinDrawField (wid AS INTEGER, fid AS INTEGER)
 DECLARE SUB WinDrawOutline (wid AS INTEGER, atX AS INTEGER, atY AS INTEGER)
 DECLARE SUB WinKey (wid%, fid%, keypress$)
@@ -3092,7 +3092,7 @@ FUNCTION WinDefineLabel% (wid%, posX%, posY%, text$)
 
 END FUNCTION
 
-SUB WinDraw (wid AS INTEGER)
+SUB WinDraw (wid%)
   '
   ' Draws the window to the active video page.
   '
@@ -3139,17 +3139,17 @@ SUB WinDraw (wid AS INTEGER)
   '
   ' Draw the top border
   '
-  LOCATE win(wid).posY, win(wid).posX
-  PRINT upperLeft; STRING$(win(wid).sizeX, upperFlat); upperRight
+  LOCATE win(wid%).posY, win(wid%).posX
+  PRINT upperLeft; STRING$(win(wid%).sizeX, upperFlat); upperRight
 
   '
   ' Draw each row of the window
   '
-  FOR r = 1 TO win(wid).sizeY
+  FOR r = 1 TO win(wid%).sizeY
    
-    LOCATE win(wid).posY + r, win(wid).posX
+    LOCATE win(wid%).posY + r, win(wid%).posX
     PRINT sideLeft;
-    PRINT STRING$(win(wid).sizeX, CHR$(ASCII.Space));
+    PRINT STRING$(win(wid%).sizeX, CHR$(ASCII.Space));
     PRINT sideRight;
 
     SELECT CASE WinStyle.Shadow
@@ -3164,8 +3164,8 @@ SUB WinDraw (wid AS INTEGER)
   '
   ' Draw the lower border
   '
-  LOCATE win(wid).posY + win(wid).sizeY + 1, win(wid).posX
-  PRINT lowerLeft; STRING$(win(wid).sizeX, lowerFlat); lowerRight;
+  LOCATE win(wid%).posY + win(wid%).sizeY + 1, win(wid%).posX
+  PRINT lowerLeft; STRING$(win(wid%).sizeX, lowerFlat); lowerRight;
  
   '
   ' Draw the shadow (including the shadow of the lower border)
@@ -3174,16 +3174,16 @@ SUB WinDraw (wid AS INTEGER)
     CASE 1
       COLOR WinStyle.ShadowForecolor, WinStyle.ShadowBackcolor
       PRINT CHR$(WinStyle.ShadowChar);
-      LOCATE win(wid).posY + win(wid).sizeY + 2, win(wid).posX + 1
-      PRINT STRING$(win(wid).sizeX + 2, WinStyle.ShadowChar);
+      LOCATE win(wid%).posY + win(wid%).sizeY + 2, win(wid%).posX + 1
+      PRINT STRING$(win(wid%).sizeX + 2, WinStyle.ShadowChar);
       COLOR WinStyle.Forecolor, WinStyle.Backcolor
   END SELECT
 
   '
   ' Draw fields
   '
-  FOR i = 1 TO win(wid).fields
-    WinDrawField wid, i
+  FOR i = 1 TO win(wid%).fields
+    WinDrawField wid%, i
   NEXT
 
 END SUB
