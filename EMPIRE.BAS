@@ -8,42 +8,37 @@
 ' To begin, press Shift + F5.
 ' To exit QBASIC, press Alt, F, X.
 
-'
-' AsteroidType
-'
 TYPE AsteroidType
-  Control AS INTEGER
-  detect  AS INTEGER
-  local1  AS INTEGER
-  local2  AS INTEGER
-  mined   AS INTEGER
-  produce AS INTEGER ' Ships produced per month
-  ruler   AS INTEGER ' The player who rules the asteroid
-  ships   AS INTEGER ' Number of ships docked at the asteroid
-  shield  AS INTEGER
-  supply  AS INTEGER
-  tech    AS INTEGER
+  '
+  ' A place that can be visited.
+  '
+  habitat  AS INTEGER
+  Control  AS INTEGER
+  detect   AS INTEGER
+  mined    AS INTEGER
+  produce  AS INTEGER ' Ships produced per month
+  ruler    AS INTEGER ' The player who rules the asteroid
+  ships    AS INTEGER ' Number of ships docked at the asteroid
+  shield   AS INTEGER
+  supply   AS INTEGER
+  tech     AS INTEGER
 END TYPE
 
-'
-' AtlasItemType
-'
-' Contains information about an item in the atlas 2-dimensional grid.
-'
 TYPE AtlasItemType
+  '
+  ' An item shown on the atlas.
+  '
   active AS INTEGER
   cx     AS INTEGER
   cy     AS INTEGER
   value  AS INTEGER
-  label  AS STRING * 4
+  label  AS STRING * 20 ' 4 cells + color codes
 END TYPE
 
-'
-' FieldType
-'
-' Contains information about an input field in a window.
-'
 TYPE FieldType
+  '
+  ' Information about an input field in a window.
+  '
   kind  AS INTEGER
   cid   AS INTEGER
   posX  AS INTEGER
@@ -51,19 +46,28 @@ TYPE FieldType
   sizeX AS INTEGER
 END TYPE
 
-'
-' MenuType
-'
+TYPE HabitatType
+  '
+  ' A type of habitat such as an electromagnetic storm.
+  '
+  backdrop AS STRING * 12
+  label    AS STRING * 20
+  title    AS STRING * 20
+END TYPE
+
 TYPE MenuType
+  '
+  ' A menu item on the top of the screen.
+  '
   posX AS INTEGER
   text AS STRING * 10
   wid  AS INTEGER
 END TYPE
 
-'
-' MissionType
-'
 TYPE MissionType
+  '
+  ' A mission to attack another asteroid.
+  '
   distance  AS INTEGER
   goal      AS INTEGER
   ruler     AS INTEGER
@@ -73,18 +77,18 @@ TYPE MissionType
   techlevel AS INTEGER
 END TYPE
 
-'
-' PlayerType
-'
 TYPE PlayerType
+  '
+  ' Information about a player of the game.
+  '
   viewFilter AS INTEGER
   viewPage   AS INTEGER
 END TYPE
 
-'
-' WindowType
-'
 TYPE WindowType
+  '
+  ' A window on the screen for showing information or collecting input.
+  '
   canceled AS INTEGER
   fields   AS INTEGER
   helpWid  AS INTEGER
@@ -100,7 +104,7 @@ END TYPE
 '
 DECLARE SUB AtlasAddBand (fromValue AS INTEGER, toValue AS INTEGER)
 DECLARE SUB AtlasAddCluster (fromValue AS INTEGER, toValue AS INTEGER)
-DECLARE SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER)
+DECLARE SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, label AS STRING)
 DECLARE SUB AtlasAddRandom (fromValue AS INTEGER, toValue AS INTEGER)
 DECLARE SUB AtlasDisplayOff ()
 DECLARE SUB AtlasDisplayOn ()
@@ -120,11 +124,12 @@ DECLARE SUB AtlasPlotBanded ()
 DECLARE SUB AtlasPlotClustered ()
 DECLARE SUB AtlasPlotManual ()
 DECLARE SUB AtlasPlotRandom ()
-DECLARE SUB AtlasPrompt (outcx AS INTEGER, outcy AS INTEGER, promptFor AS INTEGER)
 DECLARE FUNCTION AtlasNextIndex% ()
 DECLARE FUNCTION AtlasCellFiltered% (cx AS INTEGER, cy AS INTEGER)
 DECLARE FUNCTION AtlasGetScreenX% (cx AS INTEGER)
 DECLARE FUNCTION AtlasGetScreenY% (cy AS INTEGER)
+DECLARE FUNCTION AtlasGetValue% (cx AS INTEGER, cy AS INTEGER, default AS INTEGER)
+DECLARE FUNCTION AtlasPrompt (outcx AS INTEGER, outcy AS INTEGER, promptFor AS INTEGER)
 
 '
 ' Execute* subroutines
@@ -134,7 +139,6 @@ DECLARE FUNCTION AtlasGetScreenY% (cy AS INTEGER)
 '
 DECLARE SUB Execute (cid AS INTEGER)
 DECLARE SUB ExecuteAbout ()
-DECLARE SUB ExecuteDistance ()
 DECLARE SUB ExecuteFilterNone ()
 DECLARE SUB ExecuteFilterSelf ()
 DECLARE SUB ExecuteFilterPlayers ()
@@ -146,8 +150,15 @@ DECLARE SUB ExecuteViewAtlas ()
 DECLARE SUB ExecuteViewTable ()
 
 '
+' Habitat*
+'
+DECLARE SUB HabitatShow (hid AS INTEGER)
+DECLARE SUB HabitatLoad ()
+
+'
 ' Menu* subroutines
 '
+DECLARE SUB MenuHide ()
 DECLARE SUB MenuLoad ()
 DECLARE SUB MenuDraw ()
 DECLARE SUB MenuDrawItem (itemId AS INTEGER, selected AS INTEGER)
@@ -180,6 +191,7 @@ DECLARE SUB UI.Refresh ()
 DECLARE SUB UI.Run ()
 DECLARE SUB UI.SetFilter (Filter AS INTEGER, refreshUI AS INTEGER)
 DECLARE SUB UI.SetPage (page AS INTEGER)
+DECLARE FUNCTION UI.RunAtlas% ()
 
 '
 ' Win* declarations
@@ -225,10 +237,7 @@ DECLARE SUB DrawTableRow (x AS INTEGER)
 DECLARE SUB DrawTableRows ()
 DECLARE SUB DrawText (text AS STRING)
 DECLARE SUB PaintBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
-DECLARE SUB PlayGame ()
 DECLARE SUB WaitForKeyPress ()
-
-DECLARE FUNCTION CalcDistance (first AS INTEGER, second AS INTEGER)
 DECLARE FUNCTION GetKey$ ()
 DECLARE FUNCTION IsFiltered% (aid AS INTEGER)
 
@@ -276,22 +285,21 @@ CONST False = NOT True
 ' the WinParseCommand function to translate a string to the value.
 '
 CONST Command.About = 1
-CONST Command.Distance = 2
-CONST Command.EndGame = 3
-CONST Command.FilterNone = 4
-CONST Command.FilterSelf = 5
-CONST Command.FilterPlayers = 6
-CONST Command.NextMonth = 7
-CONST Command.NextTurn = 8
-CONST Command.NewGame = 9
-CONST Command.OptionAlerts = 10
-CONST Command.OrderAttack = 11
-CONST Command.ReplotBand = 12
-CONST Command.ReplotCluster = 13
-CONST Command.ReplotManual = 14
-CONST Command.ReplotRandom = 15
-CONST Command.ViewAtlas = 16
-CONST Command.ViewTable = 17
+CONST Command.EndGame = 2
+CONST Command.FilterNone = 3
+CONST Command.FilterSelf = 4
+CONST Command.FilterPlayers = 5
+CONST Command.NextMonth = 6
+CONST Command.NextTurn = 7
+CONST Command.NewGame = 8
+CONST Command.OptionAlerts = 9
+CONST Command.OrderAttack = 10
+CONST Command.ReplotBand = 11
+CONST Command.ReplotCluster = 12
+CONST Command.ReplotManual = 13
+CONST Command.ReplotRandom = 14
+CONST Command.ViewAtlas = 15
+CONST Command.ViewTable = 16
 
 '
 ' Control Character constants
@@ -333,10 +341,12 @@ CONST MenuStyle.SelectedForeColor = 15
 '
 CONST ScanCode.Home = 71
 CONST ScanCode.Up = 72
+CONST ScanCode.PageUp = 73
 CONST ScanCode.Left = 75
 CONST ScanCode.Right = 77
 CONST ScanCode.End = 79
 CONST ScanCode.Down = 80
+CONST ScanCode.PageDown = 81
 
 '
 ' StatusLevel constants
@@ -420,6 +430,12 @@ CONST WinStyle.ShadowBackcolor = 0
 DIM SHARED atlasActive AS INTEGER
 DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS INTEGER
 DIM SHARED atlasItem(1 TO 20) AS AtlasItemType
+
+'
+' Global habitat variables
+'
+DIM SHARED habitat(1 TO 20) AS HabitatType
+DIM SHARED habitats AS INTEGER
 
 '
 ' Global UI variables
@@ -595,7 +611,6 @@ REM Window 14
   DATA "Start"
   DATA 2,33
   DATA "+@", "About", "About..."
-  DATA "+@", "Distance", "Calculate distance"
   DATA "+@", "<command>", "Find current winner"
   DATA "+@", "<command>", "Move ahead in time"
   DATA "+@", "<command>", "Search for value"
@@ -606,7 +621,7 @@ REM Window 15
   DATA "+$", " Enter the source asteroid:"
   DATA "+$", " Enter the target asteroid:"
   DATA "+$", " Enter the number of ships:"
-  DATA "#", 32, 1, 2, 0         
+  DATA "#", 32, 1, 2, 0
   DATA "#", 32, 2, 2, 0
   DATA "#", 30, 3, 4, 0
 
@@ -646,33 +661,27 @@ REM Window 21
 REM Window 22
   DATA "Start"
   DATA 3,33
-  DATA "#", 30, 1, 2, 0
-  DATA "#", 30, 2, 2, 0
-  DATA "$", 1, 1, " Enter the first asteroid:"
-  DATA "$", 1, 2, " Enter the second asteroid:"
+  DATA "+$", "No longer used (formerly distance dialog)"
 
 REM Window 23
   DATA "Start"
   DATA 3,28
-  DATA "+$", " Error: The first asteroid does not exist. "
+  DATA "+$", " No longer used (formery distance error)"
 
 REM Window 24
   DATA "Start"
   DATA 3,28
-  DATA "+$", " Error: The second asteroid does not exist. "
+  DATA "+$", " No longer used (formerly distance error)"
 
 REM Window 25
   DATA "Start"
   DATA 3,34
-  DATA "+$", " Error: The same asteroid has "
-  DATA "+$", " been specified both times.   "
+  DATA "+$", " No longer used (formerly distance error)"
    
 REM Window 26
   DATA "Start"
   DATA 3,34
-  ' HACK: create a field at index 1 to hold the distance value
-  DATA "$", 10, 1, "   "
-  DATA "$", 1, 1, "Distance:"
+  DATA "+$", "No longer used (formerly distance display)"
 
 REM Window 27
   DATA "Start"
@@ -729,6 +738,39 @@ REM Window 31
    
 DATA "End of windows"
 
+DATA "Habitats"
+DATA   "Habitat"
+DATA     "Backdrop", "HAB-CAVE.PCB"
+DATA     "Label", "@X01°±²±"
+DATA     "Title", "Cave"
+DATA   "End"
+DATA   "Habitat"
+DATA     "Backdrop", "HAB-DNEB.PCB"
+DATA     "Label", "@X08Ä@X0FÄ@X07Ä@X08Ä"
+DATA     "Title", "Dark Nebula"
+DATA   "End"
+DATA   "Habitat"
+DATA     "Backdrop", "HAB-STRM.PCB"
+DATA     "Label", "@X04°±²±"
+DATA     "Title", "Electromagenic"
+DATA   "End"
+DATA   "Habitat"
+DATA     "Backdrop", "HAB-FRGE.PCB"
+DATA     "Label", "@X04ùÄ@X4EÅ@X04Ä"
+DATA     "Title", "Forge"
+DATA   "End"       
+DATA   "Habitat"
+DATA     "Backdrop", "HAB-TOWR.PCB"
+DATA     "Label", "@X07ÛÜ@X08ÜÛ"
+DATA     "Title", "Tower"
+DATA   "End"
+DATA   "Habitat"
+DATA     "Backdrop", "HAB-RED.PCB"
+DATA     "Label", "@X06ùù@X0Eí@X06ù"
+DATA     "Title", "Red Ocean"
+DATA   "End"
+DATA "End"
+
 SUB AtlasAddBand (fromValue AS INTEGER, toValue AS INTEGER)
   '
   ' Adds a range of values organized into a horizontal orbital band.
@@ -753,7 +795,7 @@ SUB AtlasAddBand (fromValue AS INTEGER, toValue AS INTEGER)
     '
     ' Save the item
     '
-    AtlasAddItem cx, cy, value
+    AtlasAddItem cx, cy, value, STR$(value)
 
   NEXT
 
@@ -783,13 +825,13 @@ SUB AtlasAddCluster (fromValue AS INTEGER, toValue AS INTEGER)
     '
     ' Save the cell
     '
-    AtlasAddItem cx, cy, value
+    AtlasAddItem cx, cy, value, STR$(value)
 
   NEXT
 
 END SUB
 
-SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER)
+SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, label AS STRING)
   '
   ' Adds an item to the atlas at the specified position.
   '
@@ -807,7 +849,7 @@ SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER)
   atlasItem(idx).cx = cx
   atlasItem(idx).cy = cy
   atlasItem(idx).value = value
-  atlasItem(idx).label = STR$(value)
+  atlasItem(idx).label = label
 
   '
   ' Reference the item in the grid
@@ -839,7 +881,7 @@ SUB AtlasAddRandom (fromValue AS INTEGER, toValue AS INTEGER)
     '
     ' Save the item
     '
-    AtlasAddItem cx, cy, value
+    AtlasAddItem cx, cy, value, STR$(value)
 
   NEXT
 
@@ -928,7 +970,8 @@ SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
   IF idx = 0 THEN
     PRINT STRING$(AtlasStyle.CellSizeX, " ");
   ELSE
-    PRINT atlasItem(idx).label;
+    'PRINT atlasitem(idx).label;
+    DrawText RTRIM$(atlasItem(idx).label)
   END IF
 
 END SUB
@@ -1018,6 +1061,23 @@ FUNCTION AtlasGetScreenY% (cy AS INTEGER)
   ' Returns the screen y-coordinate of the cell y-coordinate
   '
   AtlasGetScreenY% = (cy - 1) * 2 + 3
+END FUNCTION
+
+FUNCTION AtlasGetValue% (cx AS INTEGER, cy AS INTEGER, default AS INTEGER)
+  '
+  ' Return the item value of the selected cell, or the default if
+  ' no item is currently referenced by the cell.
+  '
+
+  DIM idx AS INTEGER
+  LET idx = atlasGrid(cx, cy)
+
+  IF idx = 0 THEN
+    AtlasGetValue% = default
+  ELSE
+    AtlasGetValue% = atlasItem(idx).value
+  END IF
+
 END FUNCTION
 
 SUB AtlasInit
@@ -1192,7 +1252,10 @@ SUB AtlasNextManual (outcx AS INTEGER, outcy AS INTEGER)
   ' Returns the next manually-selected position.
   '
  
-  AtlasPrompt outcx, outcy, AtlasPromptFor.EmptyOrSelf
+  IF NOT AtlasPrompt(outcx, outcy, AtlasPromptFor.EmptyOrSelf) THEN
+    outcx = 0
+    outcy = 0
+  END IF
 
 END SUB
 
@@ -1329,9 +1392,9 @@ SUB AtlasPlotRandom
   
 END SUB
 
-SUB AtlasPrompt (outcx AS INTEGER, outcy AS INTEGER, promptFor AS INTEGER)
+FUNCTION AtlasPrompt (outcx AS INTEGER, outcy AS INTEGER, promptFor AS INTEGER)
   '
-  ' Prompts the user to select a call and either returns the
+  ' Prompts the user to select a cell and either returns the
   ' selected coordinates or (0,0) if canceled.
   '
 
@@ -1380,15 +1443,15 @@ SUB AtlasPrompt (outcx AS INTEGER, outcy AS INTEGER, promptFor AS INTEGER)
     SELECT CASE keypress
   
       CASE CHR$(ASCII.Escape)
-        outcx = 0
-        outcy = 0
-        EXIT SUB
+        AtlasPrompt = False
+        EXIT FUNCTION
 
       CASE CHR$(ASCII.Return)
         IF valid THEN
           outcx = mx
           outcy = my
-          EXIT SUB
+          AtlasPrompt = True
+          EXIT FUNCTION
         END IF
 
       CASE CHR$(0) + CHR$(ScanCode.Up)
@@ -1398,32 +1461,44 @@ SUB AtlasPrompt (outcx AS INTEGER, outcy AS INTEGER, promptFor AS INTEGER)
         my = my - 1
         IF my = 0 THEN my = AtlasStyle.GridSizeY
  
-      CASE CHR$(0) + CHR$(ScanCode.Right)
-        '
-        ' Right
-        '
-        mx = mx + 1
-        IF mx > AtlasStyle.GridSizeX THEN mx = 1
- 
-      CASE CHR$(0) + CHR$(ScanCode.Left)
-        '
-        ' Left
-        '
-        mx = mx - 1
-        IF mx = 0 THEN mx = AtlasStyle.GridSizeX
- 
       CASE CHR$(0) + CHR$(ScanCode.Down)
         '
         ' Down
         '
         my = my + 1
         IF my > AtlasStyle.GridSizeY THEN my = 1
+     
+      CASE CHR$(0) + CHR$(ScanCode.Left)
+        '
+        ' Left
+        '
+        mx = mx - 1
+        IF mx = 0 THEN mx = AtlasStyle.GridSizeX
+     
+      CASE CHR$(0) + CHR$(ScanCode.Right)
+        '
+        ' Right
+        '
+        mx = mx + 1
+        IF mx > AtlasStyle.GridSizeX THEN mx = 1
+
+      CASE CHR$(0) + CHR$(ScanCode.Home)
+        mx = 1
+
+      CASE CHR$(0) + CHR$(ScanCode.End)
+        mx = AtlasStyle.GridSizeX
+
+      CASE CHR$(0) + CHR$(ScanCode.PageUp)
+        my = 1
+
+      CASE CHR$(0) + CHR$(ScanCode.PageDown)
+        my = AtlasStyle.GridSizeY
 
     END SELECT
 
   LOOP
 
-END SUB
+END FUNCTION
 
 SUB BattleMode (id AS INTEGER)
   '
@@ -1527,20 +1602,6 @@ SUB BattleMode (id AS INTEGER)
   END
 
 END SUB
-
-FUNCTION CalcDistance (first AS INTEGER, second AS INTEGER)
-  '
-  ' Calculates the distance between two asteroids
-  '
-  DIM dist AS INTEGER
-
-  dist = (asteroid(first).local1 - asteroid(second).local1) ^ 2
-  dist = dist + (asteroid(first).local2 - asteroid(second).local2) ^ 2
-  dist = INT(SQR(dist))
-
-  CalcDistance = dist
-
-END FUNCTION
 
 SUB DrawFile (filename AS STRING)
   '
@@ -1821,9 +1882,6 @@ SUB Execute (cid AS INTEGER)
     CASE Command.About
       ExecuteAbout
 
-    CASE Command.Distance
-      ExecuteDistance
-      
     CASE Command.FilterNone
       ExecuteFilterNone
 
@@ -1885,56 +1943,6 @@ SUB ExecuteAbout
 
   UI.Redraw
 
-END SUB
-
-SUB ExecuteDistance
-  '
-  ' Displays a dialog box for calculating distances between asteroids.
-  '
- 
-  CONST DistanceWid = 22
-
-  DIM ast1 AS INTEGER
-  DIM ast2 AS INTEGER
-  DIM dist AS INTEGER
-
-  DO
-   
-    '
-    ' Get the two asteroids for which to calculate distance
-    '
-    WinShow DistanceWid
-    IF win(DistanceWid).canceled THEN
-      EXIT DO
-    END IF
-   
-    ast1 = VAL(txt(DistanceWid, 1))
-    ast2 = VAL(txt(DistanceWid, 2))
-   
-    ' Ensure the first asteroid exists
-    IF ast1 < 1 OR ast1 > asteroids THEN
-      WinShow 23
-   
-    ' Ensure the second asteroid exists
-    ELSEIF ast2 < 1 OR ast2 > asteroids THEN
-      WinShow 24
-   
-    ' Ensure the same asteroid is not specified
-    ELSEIF ast1 = ast2 THEN
-      WinShow 25
-  
-    ELSE
-    
-      dist = CalcDistance(ast1, ast2)
-
-      txt(26, 1) = STR$(dist)
-      WinShow 26
-      EXIT DO
-   
-    END IF
-   
-  LOOP
- 
 END SUB
 
 SUB ExecuteFilterNone
@@ -2086,7 +2094,7 @@ SUB ExecuteOrderAttack
   ' Initialize mission data
   '
   missions = missions + 1
-  mission(missions).distance = CalcDistance(src, trg)
+  mission(missions).distance = 2 'HACK for now, CalcDistance(src, trg)
   mission(missions).goal = 1
   mission(missions).ruler = turn
   mission(missions).ships = num
@@ -2141,6 +2149,84 @@ FUNCTION GetKey$
   GetKey$ = k
 
 END FUNCTION
+
+SUB HabitatLoad
+  '
+  ' Loads habitat information from DATA
+  '
+ 
+  DIM block AS STRING
+
+  '
+  ' Verify this is the start of a data block
+  '
+  READ block
+  IF block <> "Habitats" THEN
+    StatusDebug "HabitatLoad: data started with " + block
+    EXIT SUB
+  END IF
+
+  DO
+ 
+    '
+    ' The next block can be "End" (end of data) or "Habitat" (new habitat)
+    '
+    READ block
+    IF block = "End" THEN
+      EXIT SUB
+    END IF
+    IF block <> "Habitat" THEN
+      StatusDebug "HabitatLoad: block started with " + block
+      EXIT SUB
+    END IF
+
+    habitats = habitats + 1
+    
+    DO
+   
+      READ block
+
+      SELECT CASE block
+       
+        CASE "End"
+          EXIT DO
+       
+        CASE "Backdrop"
+          READ block
+          habitat(habitats).backdrop = block
+
+        CASE "Label"
+          READ block
+          habitat(habitats).label = block
+
+        CASE "Title"
+          READ block
+          habitat(habitats).title = block
+
+        CASE ELSE
+          StatusDebug "HabitatLoad: unrecognized " + block
+
+      END SELECT
+
+    LOOP
+
+  LOOP
+
+END SUB
+
+SUB HabitatShow (hid AS INTEGER)
+  '
+  ' Shows a habitat screen
+  '
+
+  SCREEN , , VideoPage.Working, VideoPage.Display
+  CLS
+  DrawFileAt habitat(hid).backdrop, 1, 2
+  PCOPY VideoPage.Working, VideoPage.Display
+  SCREEN , , VideoPage.Display, VideoPage.Display
+  WaitForKeyPress
+
+END SUB
 
 FUNCTION IsFiltered% (aid AS INTEGER)
 
@@ -2234,6 +2320,17 @@ SUB MenuDrawItem (itemId AS INTEGER, selected AS INTEGER)
 
 END SUB
 
+SUB MenuHide
+  '
+  ' Hides the menu bar on the top of the screen.
+  '
+  VIEW PRINT 1 TO 1
+  COLOR 7, 0
+  CLS 2
+  VIEW PRINT
+
+END SUB
+
 SUB MenuLoad
   '
   ' Loads the menu bar. This subroutine should only be called once.
@@ -2274,14 +2371,17 @@ FUNCTION MenuShow
   '
   ' Returns the command ID of an item selected from the menu.
   '
+ 
   CONST MenusClosed = 0
   CONST MenusOpen = 1
 
-  DIM keypress  AS STRING
-  DIM mode      AS INTEGER
+  DIM keypress AS STRING
+  DIM mode     AS INTEGER
  
+  '
+  ' Keep track of the current menu item
+  '
   STATIC selection AS INTEGER
-
   IF selection = 0 THEN
     selection = 1
   END IF
@@ -2309,6 +2409,7 @@ FUNCTION MenuShow
      
       ELSE
 
+        ' HACK: use global pressed variable
         SELECT CASE pressed
           CASE CHR$(ASCII.Return)
            
@@ -2319,6 +2420,7 @@ FUNCTION MenuShow
             fid = win(wid).selected
             
             MenuShow = fld(wid, fid).cid
+            MenuHide
             EXIT FUNCTION
 
           CASE CHR$(0) + CHR$(ScanCode.Left)
@@ -2349,17 +2451,25 @@ FUNCTION MenuShow
           '
           GOSUB NavigateRight
 
+        CASE CHR$(0) + CHR$(ScanCode.Down)
+          '
+          ' Down (open menu)
+          '
+          mode = MenusOpen
+
         CASE CHR$(ASCII.Return)
           '
           ' Enter (open menu)
           '
           mode = MenusOpen
        
-        CASE CHR$(0) + CHR$(ScanCode.Down)
+        CASE CHR$(ASCII.Escape)
           '
-          ' Down (open menu)
+          ' Escape (exit menu)
           '
-          mode = MenusOpen
+          MenuHide
+          MenuShow = 0
+          EXIT FUNCTION
 
       END SELECT
 
@@ -2425,6 +2535,7 @@ SUB SetupGame
   StatusUpdate "Please wait..."
   MenuLoad
   WinLoad
+  HabitatLoad
 
   '
   ' Draw master screens
@@ -2463,29 +2574,10 @@ END SUB
 SUB SetupGame.Atlas
 
   '
-  ' Plotting options
-  '
-  CONST PlotBanded = 1     ' Asteroids plotted in a narrow horizontal band
-  CONST PlotClustered = 2  ' Asteroids plotted close together in a cluster
-  CONST PlotRandom = 3     ' Asteroids plotted randomly
-
-  DIM aid      AS INTEGER
-  DIM i        AS INTEGER
-  DIM j        AS INTEGER
-  DIM lastPlot AS INTEGER
-  DIM mx       AS INTEGER
-  DIM my       AS INTEGER
-  DIM nx       AS INTEGER
-  DIM ny       AS INTEGER
-  DIM sx       AS INTEGER
-  DIM sy       AS INTEGER
-  DIM keypress AS STRING
-
-  '
   ' Initialize and display the atlas.
   '
   UI.SetPage UIPage.Atlas
-  AtlasAddRandom 1, asteroids
+  'AtlasAddRandom 1, asteroids
 
   '
   ' Set focus on the option to exit the atlas editor
@@ -2539,7 +2631,10 @@ SUB SetupGame.New
   '
 
   DIM aid AS INTEGER
+  DIM hid AS INTEGER
   DIM pid AS INTEGER
+  DIM cx  AS INTEGER
+  DIM cy  AS INTEGER
 
   DO
    
@@ -2596,6 +2691,19 @@ SUB SetupGame.New
   ' Initialize asteroid data
   '
   FOR aid = 1 TO asteroids
+   
+    '
+    ' Select a random habitat
+    '
+    hid = INT(RND * habitats) + 1
+    asteroid(aid).habitat = hid
+
+    '
+    ' Add the asteroid to the atlas
+    '
+    AtlasNextRandom cx, cy
+    AtlasAddItem cx, cy, aid, habitat(hid).label
+   
     asteroid(aid).Control = INT(RND * 10)
     asteroid(aid).detect = INT(RND * 10)
     asteroid(aid).mined = INT(RND * 50) + 50
@@ -2745,19 +2853,52 @@ SUB UI.Run
     '
     ' Wait for a command from the menu bar
     '
-    cid = MenuShow
-    
+    SELECT CASE uiCurrentPage
+     
+      CASE UIPage.Atlas
+        cid = UI.RunAtlas
+     
+      CASE ELSE
+        cid = MenuShow
+
+    END SELECT
+
     '
     ' Get the command ID for the selected menu item.
     '
-    Execute cid
-    IF cid = Command.EndGame THEN
-      EXIT SUB
+    IF cid > 0 THEN
+      Execute cid
+      IF cid = Command.EndGame THEN
+        EXIT SUB
+      END IF
     END IF
 
   LOOP
 
 END SUB
+
+FUNCTION UI.RunAtlas%
+ 
+  DIM aid AS INTEGER
+  STATIC cx  AS INTEGER
+  STATIC cy  AS INTEGER
+
+  IF cx = 0 THEN cx = 1
+  IF cy = 0 THEN cy = 1
+
+  IF AtlasPrompt(cx, cy, AtlasPromptFor.Item) THEN
+ 
+    aid = AtlasGetValue(cx, cy, 0)
+
+    HabitatShow asteroid(aid).habitat
+
+    UI.Redraw
+
+  ELSE
+    UI.RunAtlas% = MenuShow
+  END IF
+
+END FUNCTION
 
 SUB UI.SetFilter (Filter AS INTEGER, refreshUI AS INTEGER)
   '
@@ -2951,12 +3092,10 @@ FUNCTION WinDefineLabel% (wid%, posX%, posY%, text$)
 
 END FUNCTION
 
-' ===================================================================
-' WinDraw
-' -------------------------------------------------------------------
-' Draws the window to the active video page.
-' ===================================================================
 SUB WinDraw (wid AS INTEGER)
+  '
+  ' Draws the window to the active video page.
+  '
 
   DIM i          AS INTEGER
   DIM lowerLeft  AS STRING * 1
@@ -3230,7 +3369,10 @@ FUNCTION WinIsSelectable% (wid%, fid%)
 END FUNCTION
 
 SUB WinKey (wid%, fid%, keypress$)
-
+  '
+  ' Sends a keystroke to a field in the window
+  '
+ 
   SELECT CASE fld(wid%, fid%).kind
    
     CASE FieldKind.Boolean
@@ -3486,9 +3628,6 @@ FUNCTION WinParseCommand% (text$)
    
     CASE "ABOUT"
       cid = Command.About
-
-    CASE "DISTANCE":
-      cid = Command.Distance
 
     CASE "ENDGAME":
       cid = Command.EndGame
