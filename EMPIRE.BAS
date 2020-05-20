@@ -59,9 +59,9 @@ TYPE MenuType
   '
   ' A menu item on the top of the screen.
   '
-  posX AS INTEGER
-  text AS STRING * 10
-  wid  AS INTEGER
+  posX  AS INTEGER
+  text  AS STRING * 10
+  wid   AS INTEGER
 END TYPE
 
 TYPE MissionType
@@ -89,6 +89,7 @@ TYPE WindowType
   selected AS INTEGER
   sizeX    AS INTEGER
   sizeY    AS INTEGER
+  wname    AS STRING * 20
 END TYPE
 
 '
@@ -199,8 +200,10 @@ DECLARE FUNCTION WinDefine% (wid%, f AS FieldType, text$)
 DECLARE FUNCTION WinDefineButton% (wid%, posX%, posY%, sizeX%, cid%, text$)
 DECLARE FUNCTION WinDefineLabel% (wid%, posX%, posY%, text$)
 DECLARE FUNCTION WinDefineInteger% (wid%, posX%, posY%, sizeX%, text$)
+DECLARE FUNCTION WinGetWid% (wname$)
 DECLARE FUNCTION WinIsSelectable% (wid%, fid%)
 DECLARE FUNCTION WinParseCommand% (text$)
+
 DECLARE SUB WinDraw (wid%)
 DECLARE SUB WinDrawField (wid%, fid%)
 DECLARE SUB WinDrawOutline (wid%, sx%, sy%)
@@ -215,6 +218,7 @@ DECLARE SUB WinSelectPrevious (wid%)
 DECLARE SUB WinSelectFirst (wid%)
 DECLARE SUB WinSelectLast (wid%)
 DECLARE SUB WinShow (wid%)
+DECLARE SUB WinShowName (idname$)
 
 '
 ' Declarations
@@ -454,271 +458,240 @@ SetupGame
 UI.Run
 
 '
-' Menu bar data (loaded by MenuLoad)
-'
-DATA 5
-DATA " View ", 10
-DATA " Game ", 11
-DATA " Mission ", 12
-DATA " Options ", 13
-DATA " Special ", 14
-
-'
 ' Window Definitions
 '
 ' These are loaded by the WinLoad subroutine.
 '
 
 REM Window 1
-  DATA "Start"
-  DATA 10,22
-  DATA "$", 0, 1, " Select an option to get started: "
-  DATA "@", 12, 3, 10, "NewGame", " New Game "
-  DATA "@", 12, 4, 10, "<command>", " Old Game "
+  DATA "Windows"
+ 
+  DATA "Window"
+  DATA   "Name", "Start"
+  DATA   "PosX", 22
+  DATA   "PosY", 10
+  DATA   "$", 0, 1, " Select an option to get started: "
+  DATA   "@", 12, 3, 10, "NewGame", " New Game "
+  DATA   "@", 12, 4, 10, "<command>", " Old Game "
+  DATA "End"
 
 REM Window 2
-  DATA "Start"
-  DATA 10,11
-  DATA "$", 0, 1, "Initialization Mode"
-  DATA "+-"
-  DATA "+$", "How many asteroids should be in the game?  [Def=15]"
-  DATA "#", 56, 3, 2, 15
-
-REM Window 3
-  REM -- NOT USED --
-  DATA "Start"
-  DATA 11,24
-  DATA "+$", " Error: Too many players. "
-
-REM Window 4
-  REM -- NOT USED --
-  DATA "Start"
-  DATA 10,21
-  DATA "Help", 8
-  DATA "+$", " Error: The number of asteroids cannot "
-  DATA "+$", " be less than the number of players.   "
-  DATA "+-"
-  DATA "+$", " Press ? for more information.         "
+  DATA "Window"
+  DATA   "Name", "DialogAsteroids"
+  DATA   "PosX", 11
+  DATA   "PosY", 10
+  DATA   "$", 0, 1, "Initialization Mode"
+  DATA   "+-"
+  DATA   "+$", "How many asteroids should be in the game?  [Def=15]"
+  DATA   "#", 56, 3, 2, 15
+  DATA "End"
 
 REM Window 5
-  DATA "Start"
-  DATA 11,20
-  DATA "+$", " Error: The maximum number of asteroids "
-  DATA "+$", " allowed is nineteen.                   "
-
-REM Window 6
-  REM --- NOT USED --
-  DATA "Start"
-  DATA 10,19
-  DATA "Help", 7
-  DATA "+$", " Error: It is impossible to play the game "
-  DATA "+$", " with only one player and one asteroid.   "
-  DATA "+-"
-  DATA "+$", " Press ? for more information.            "
-
-REM Window 7
-  REM -- NOT USED --
-  DATA "Start"
-  DATA 9,10
-  DATA "+$", " When you start out the game, asteroids are automatically "
-  DATA "+$", " assigned to the players.  Because you only have one      "
-  DATA "+$", " asteroid to give to a single player, there are no other  "
-  DATA "+$", " asteroids to conquer.  This makes it impossible to solve "
-  DATA "+$", " the game.  Correct the problem by selecting a higher     "
-  DATA "+$", " number of asteroids.                                     "
-
-REM Window 8
-  REM -- NOT USED --
-  DATA "Start"
-  DATA 10,10
-  DATA "+$", " When you start out the game, asteroids are automatically "
-  DATA "+$", " assigned to the players.  Because you have selected less "
-  DATA "+$", " asteroids than players, not every player can be assigned "
-  DATA "+$", " an asteroid.  Correct the problem by selecting enough    "
-  DATA "+$", " asteroids to cover all the players.                      "
+  DATA "Window"
+  DATA   "Name", "TooManyAsteroids"
+  DATA   "PosX", 20
+  DATA   "PosY", 11
+  DATA   "+$", " Error: The maximum number of asteroids "
+  DATA   "+$", " allowed is nineteen.                   "
+  DATA "End"
 
 REM Window 9
-  DATA "Start"
-  DATA 3,3
-  DATA "+@", "<command>", "Look Behind Window"
-  DATA "+@", "<command>", "Next Step..."
-  DATA "+-"
-  DATA "+@", "ReplotCluster", "Cluster together "
-  DATA "+@", "ReplotBand", "Band together "
-  DATA "+@", "ReplotManual", "Plot Manually"
-  DATA "+@", "ReplotRandom", "Randomly place"
+  DATA "Window"
+  DATA   "Name", "AtlasMaker"
+  DATA   "PosX", 3
+  DATA   "PosY", 3
+  DATA   "+@", "<command>", "Look Behind Window"
+  DATA   "+@", "<command>", "Next Step..."
+  DATA   "+-"
+  DATA   "+@", "ReplotCluster", "Cluster together "
+  DATA   "+@", "ReplotBand", "Band together "
+  DATA   "+@", "ReplotManual", "Plot Manually"
+  DATA   "+@", "ReplotRandom", "Randomly place"
+  DATA "End"
 
 REM Window 10
-  DATA "Start"
-  DATA 2,2
-  DATA "+@", "ViewAtlas", "Show atlas"
-  DATA "+@", "ViewTable", "Show table"
-  DATA "+-"
-  DATA "+@", "FilterSelf", "Filter you"
-  DATA "+@", "FilterNone", "Remove Filter"
-  DATA "+-"
-  DATA "+@", "ReplotBand", "Replot banded"
-  DATA "+@", "ReplotCluster", "Replot clustered"
-  DATA "+@", "ReplotManual", "Replot manually"
-  DATA "+@", "ReplotRandom", "Replot randomly"
+  DATA "Window"
+  DATA   "Name", "ViewMenu"
+  DATA   "PosX", 2
+  DATA   "PosY", 2
+  DATA   "+@", "ViewAtlas", "Show atlas"
+  DATA   "+@", "ViewTable", "Show table"
+  DATA   "+-"
+  DATA   "+@", "FilterSelf", "Filter you"
+  DATA   "+@", "FilterNone", "Remove Filter"
+  DATA   "+-"
+  DATA   "+@", "ReplotBand", "Replot banded"
+  DATA   "+@", "ReplotCluster", "Replot clustered"
+  DATA   "+@", "ReplotManual", "Replot manually"
+  DATA   "+@", "ReplotRandom", "Replot randomly"
+  DATA "End"
 
 REM Window 11
-  DATA "Start"
-  DATA 2,9
-  DATA "+@", "<command>", "Load a game"
-  DATA "+@", "NextMonth", "Next month"
-  DATA "+@", "<command>", "Save the game"
-  DATA "+@", "EndGame", "Quit the game"
-   
+  DATA "Window"
+  DATA   "Name", "GameMenu"
+  DATA   "PosX", 9
+  DATA   "PosY", 2
+  DATA   "+@", "<command>", "Load a game"
+  DATA   "+@", "NextMonth", "Next month"
+  DATA   "+@", "<command>", "Save the game"
+  DATA   "+@", "EndGame", "Quit the game"
+  DATA "End"
+ 
 REM Window 12
-  DATA "Start"
-  DATA 2,15
-  DATA "+@", "<command>", "Assist another"
-  DATA "+@", "OrderAttack", "Attack an asteroid"
-  DATA "+@", "<command>", "List all known"
-  DATA "+@", "<command>", "Destroy an asteroid"
-  DATA "+@", "<command>", "Raid an asteroid"
-  DATA "+@", "<command>", "Reinforce an asteroid"
-  DATA "+@", "<command>", "Spy on an asteroid"
+  DATA "Window"
+  DATA   "Name", "MissionMenu"
+  DATA   "PosX", 15
+  DATA   "PosY", 2
+  DATA   "+@", "<command>", "Assist another"
+  DATA   "+@", "OrderAttack", "Attack an asteroid"
+  DATA   "+@", "<command>", "List all known"
+  DATA   "+@", "<command>", "Destroy an asteroid"
+  DATA   "+@", "<command>", "Raid an asteroid"
+  DATA   "+@", "<command>", "Reinforce an asteroid"
+  DATA   "+@", "<command>", "Spy on an asteroid"
+  DATA "End"
 
 REM Window 13
-  DATA "Start"
-  DATA 2,24
-  DATA "+@", "OptionAlerts", "Alerts"
-  DATA "+@", "<command>", "Border"
-  DATA "+@", "<command>", "Command entry"
-  DATA "+@", "<command>", "Confirming actions"
-  DATA "+@", "<command>", "Shadow"
-  DATA "+@", "<command>", "Sound effects"
+  DATA "Window"
+  DATA   "Name", "OptionsMenu"
+  DATA   "PosX", 24
+  DATA   "PosY", 2
+  DATA   "+@", "OptionAlerts", "Alerts"
+  DATA   "+@", "<command>", "Border"
+  DATA   "+@", "<command>", "Command entry"
+  DATA   "+@", "<command>", "Confirming actions"
+  DATA   "+@", "<command>", "Shadow"
+  DATA   "+@", "<command>", "Sound effects"
+  DATA "End"
 
 REM Window 14
-  DATA "Start"
-  DATA 2,33
-  DATA "+@", "About", "About..."
-  DATA "+@", "<command>", "Move ahead in time"
-  DATA "+@", "<command>", "Search for value"
+  DATA "Window"
+  DATA   "Name", "SpecialMenu"
+  DATA   "PosX", 33
+  DATA   "PosY", 2
+  DATA   "+@", "About", "About..."
+  DATA   "+@", "<command>", "Move ahead in time"
+  DATA   "+@", "<command>", "Search for value"
+  DATA "End"
 
 REM Window 15
-  DATA "Start"
-  DATA 3,15
-  DATA "+$", " Enter the source asteroid:"
-  DATA "+$", " Enter the target asteroid:"
-  DATA "+$", " Enter the number of ships:"
-  DATA "#", 32, 1, 2, 0
-  DATA "#", 32, 2, 2, 0
-  DATA "#", 30, 3, 4, 0
+  DATA "Window"
+  DATA   "Name", "DialogOrderAttack"
+  DATA   "PosX", 15
+  DATA   "PosY", 3
+  DATA   "+$", " Enter the source asteroid:"
+  DATA   "+$", " Enter the target asteroid:"
+  DATA   "+$", " Enter the number of ships:"
+  DATA   "#", 32, 1, 2, 0
+  DATA   "#", 32, 2, 2, 0
+  DATA   "#", 30, 3, 4, 0
+  DATA "End"
 
 REM Window 16
-  DATA "Start"
-  DATA 4,11
-  DATA "+$", " Error: The source asteroid does not exist. "
+  DATA "Window"
+  DATA   "Name", "SourceNotExist"
+  DATA   "PosX", 11
+  DATA   "PosY", 4
+  DATA   "+$", " Error: The source asteroid does not exist. "
+  DATA "End"
 
 REM Window 17
-  DATA "Start"
-  DATA 4,10
-  DATA "+$", " Error: You cannot control the source asteroid. "
-   
+  DATA "Window"
+  DATA   "Name", "CannotControl"
+  DATA   "PosX", 10
+  DATA   "PosY", 4
+  DATA   "+$", " Error: You cannot control the source asteroid. "
+  DATA "End"
+ 
 REM Window 18
-  DATA "Start
-  DATA 4,11
-  DATA "+$", " Error: The target asteroid does not exist. "
+  DATA "Window"
+  DATA   "Name", "TargetNotExist"
+  DATA   "PosX", 11
+  DATA   "PosY", 4
+  DATA   "+$", " Error: The target asteroid does not exist. "
+  DATA "End"
 
 REM Window 19
-  DATA "Start"
-  DATA 4,10
-  DATA "+$", " Error: The same asteroid has been specified "
-  DATA "+$", " for both the target and source.             "
-   
+  DATA "Window"
+  DATA   "Name", "SourceTargetSame"
+  DATA   "PosX", 10
+  DATA   "PosY", 4
+  DATA   "+$", " Error: The same asteroid has been specified "
+  DATA   "+$", " for both the target and source.             "
+  DATA "End"
+ 
 REM Window 20
-  DATA "Start"
-  DATA 4,10
-  DATA "+$", " Error: You cannot send the specified number of ships. "
-
-REM Window 21
-  DATA "Start"
-  DATA 3,34
-  ' HACK: create a field at index 1 to hold the distance value
-  DATA "$", 10, 1, "   "
-  DATA "$", 1, 1, "Distance:"
-
-REM Window 22
-  DATA "Start"
-  DATA 3,33
-  DATA "+$", "No longer used (formerly distance dialog)"
-
-REM Window 23
-  DATA "Start"
-  DATA 3,28
-  DATA "+$", " No longer used (formery distance error)"
-
-REM Window 24
-  DATA "Start"
-  DATA 3,28
-  DATA "+$", " No longer used (formerly distance error)"
-
-REM Window 25
-  DATA "Start"
-  DATA 3,34
-  DATA "+$", " No longer used (formerly distance error)"
-   
-REM Window 26
-  DATA "Start"
-  DATA 3,34
-  DATA "+$", "No longer used (formerly distance display)"
+  DATA "Window"
+  DATA   "Name", "NotEnoughShips"
+  DATA   "PosX", 10
+  DATA   "PosY", 4
+  DATA   "+$", " Error: You cannot send the specified number of ships. "
+  DATA "End"
 
 REM Window 27
-  DATA "Start"
-  DATA 9,19
-  DATA "+$", " Do you wish to sound alert? "
-  DATA "+-"
-  DATA "+&", "Yes"
+  DATA "Window"
+  DATA   "Name", "DialogAlerts"
+  DATA   "PosX", 19
+  DATA   "PosY", 9
+  DATA   "+$", " Do you wish to sound alert? "
+  DATA   "+-"
+  DATA   "+&", "Yes"
+  DATA "End"
 
 REM Window 28
-  DATA "Start"
-  DATA 5,20
-  DATA "+$", "           Battle Looms Ahead!          "
-  DATA "+$", "                                        "
-  DATA "+$", " The attacker is ruler                  "
-  DATA "+$", "   Ships:                               "
-  DATA "+$", "   Technology:                          "
-  DATA "+$", "                                        "
-  DATA "+$", " The defender is                        "
-  DATA "+$", "   Shield:                              "
-  DATA "+$", "   Ships:                               "
-  DATA "+$", "   Technology:                          "
-  DATA "+$", "                                        "
-  DATA "+$", " Press any key to begin...              "
-
-REM Window 29
-  REM -- NOT USED --
-  DATA "Start"
-  DATA 9,19
-  DATA "+$", " WARNING TO ALL PLAYERS: The current "
-  DATA "+$", " player has attempted to turn off    "
-  DATA "+$", " the Alert Next Player option.  Is   "
-  DATA "+$", " this person trying to cheat?        "
-  DATA "+-"
-  DATA "+&", "No"
+  DATA "Window"
+  DATA   "Name", "BattleMode"
+  DATA   "PosX", 20
+  DATA   "PosY", 5
+  DATA   "+$", "           Battle Looms Ahead!          "
+  DATA   "+$", "                                        "
+  DATA   "+$", " The attacker is ruler                  "
+  DATA   "+$", "   Ships:                               "
+  DATA   "+$", "   Technology:                          "
+  DATA   "+$", "                                        "
+  DATA   "+$", " The defender is                        "
+  DATA   "+$", "   Shield:                              "
+  DATA   "+$", "   Ships:                               "
+  DATA   "+$", "   Technology:                          "
+  DATA   "+$", "                                        "
+  DATA   "+$", " Press any key to begin...              "
+  DATA "End"
 
 REM Window 30
-  DATA "Start"
-  DATA 5, 1
-  DATA "+$", "   The Galactic Empire   "
-  DATA "+-"
-  DATA "+$", " (C) 1992 David J. Pinch "
-  
+  DATA "Window"
+  DATA   "Name", "About"
+  DATA   "PosX", 1
+  DATA   "PosY", 5
+  DATA   "+$", "   The Galactic Empire   "
+  DATA   "+-"
+  DATA   "+$", " (C) 1992 David J. Pinch "
+  DATA "End"
+
 REM Window 31
-  DATA "Start"
-  DATA 6,12
-  DATA "+$", " Battle Round:                                        "
-  DATA "+$", "                                                      "
-  DATA "+$", " Attacker's ships:                                    "
-  DATA "+$", " [__________________________________________________] "
-  DATA "+$", "                                                      "
-  DATA "+$", " Defender's ships:                                    "
-  DATA "+$", " [__________________________________________________] "
-   
-DATA "End of windows"
+  DATA "Window"
+  DATA   "Name", "BattleRound"
+  DATA   "PosX", 12
+  DATA   "PosY", 12
+  DATA   "+$", " Battle Round:                                        "
+  DATA   "+$", "                                                      "
+  DATA   "+$", " Attacker's ships:                                    "
+  DATA   "+$", " [__________________________________________________] "
+  DATA   "+$", "                                                      "
+  DATA   "+$", " Defender's ships:                                    "
+  DATA   "+$", " [__________________________________________________] "
+  DATA "End"
+ 
+DATA "EndWindows"
+
+'
+' Menu bar data (loaded by MenuLoad)
+'
+DATA 5
+DATA " View ", "ViewMenu"
+DATA " Game ", "GameMenu"
+DATA " Mission ", "MissionMenu"
+DATA " Options ", "OptionsMenu"
+DATA " Special ", "SpecialMenu"
 
 DATA "Habitats"
 DATA   "Habitat"
@@ -1495,6 +1468,7 @@ SUB BattleMode (id AS INTEGER)
   DIM start2   AS INTEGER
   DIM trg      AS INTEGER
   DIM x        AS INTEGER
+  DIM wid      AS INTEGER
 
   ' HACK with removal of multi-player support
   ' Not that this ever worked anyway
@@ -1503,26 +1477,27 @@ SUB BattleMode (id AS INTEGER)
 
   trg = mission(id).target
 
-  WinShow 28
+  wid = WinGetWid("BattleMode")
+  WinShow wid
  
-  COLOR 0, 7: LOCATE win(28).posY + 4, win(28).posX + 24
+  COLOR 0, 7: LOCATE win(wid).posY + 4, win(wid).posX + 24
   PRINT CHR$(mission(id).ruler + 64); "."
-  LOCATE win(28).posY + 5, win(28).posX + 10: PRINT mission(id).ships
-  LOCATE win(28).posY + 6, win(28).posX + 15: PRINT mission(id).techlevel
-  LOCATE win(28).posY + 8, win(28).posX + 18
+  LOCATE win(wid).posY + 5, win(wid).posX + 10: PRINT mission(id).ships
+  LOCATE win(wid).posY + 6, win(wid).posX + 15: PRINT mission(id).techlevel
+  LOCATE win(wid).posY + 8, win(wid).posX + 18
   IF asteroid(trg).ruler = 0 THEN
     PRINT "independent."
   ELSE
     PRINT "ruler "; CHR$(asteroid(trg).ruler + 64); "."
   END IF
  
-  LOCATE win(28).posY + 9, win(28).posX + 11
+  LOCATE win(wid).posY + 9, win(wid).posX + 11
   PRINT asteroid(trg).shield
  
-  LOCATE win(28).posY + 10, win(28).posX + 10
+  LOCATE win(wid).posY + 10, win(wid).posX + 10
   PRINT asteroid(trg).ships
  
-  LOCATE win(28).posY + 11, win(28).posX + 15
+  LOCATE win(wid).posY + 11, win(wid).posX + 15
   PRINT asteroid(trg).tech
   COLOR 7, 0
 
@@ -1536,11 +1511,12 @@ SUB BattleMode (id AS INTEGER)
   '  NEXT
   'LOOP UNTIL LEN(INKEY$)
 
-  WinShow 31
+  wid = WinGetWid("BattleRound")
+  WinShow wid
  
   DO
     round = round + 1
-    LOCATE win(31).posY + 2, win(31).posX + 15
+    LOCATE win(wid).posY + 2, win(wid).posX + 15
     COLOR 0, 7: PRINT round: COLOR 7, 0
     attacked = 0: defended = 0
    
@@ -1920,7 +1896,7 @@ SUB ExecuteAbout
   PCOPY VideoPage.Working, VideoPage.Display
   SCREEN , , VideoPage.Display, VideoPage.Display
 
-  WinShow 30
+  WinShowName "About"
 
   UI.Redraw
 
@@ -1973,7 +1949,7 @@ END SUB
 
 SUB ExecuteOptionAlerts
 
-  WinShow 27
+  WinShowName "DialogAlerts"
 
   'FOR x = 1 TO 3
   '  FOR Y = 300 TO 60 STEP -10
@@ -1991,31 +1967,43 @@ SUB ExecuteOrderAttack
   DIM num AS INTEGER
   DIM src AS INTEGER
   DIM trg AS INTEGER
+  DIM wid AS INTEGER
+
+  '
+  ' Lookup the dialog window
+  '
+  wid = WinGetWid("DialogOrderAttack")
 
   DO
    
     '
     ' Get the source, target, and fleet size
     '
-    WinShow 15
-    IF win(15).canceled THEN
+   
+    WinShow wid
+    IF win(wid).canceled THEN
       EXIT SUB
     END IF
 
-    src = VAL(txt(15, 4))
-    trg = VAL(txt(15, 5))
-    num = VAL(txt(15, 6))
+    src = VAL(txt(wid, 4))
+    trg = VAL(txt(wid, 5))
+    num = VAL(txt(wid, 6))
    
     IF src < 1 OR src > asteroids THEN
-      WinShow 16
-    ELSEIF asteroid(src).ruler <> turn THEN
-      WinShow 17
+      WinShowName "SourceNotExist"
+   
+    ELSEIF asteroid(src).ruler <> 1 THEN
+      WinShowName "CannotControl" ' HACK due to multi-player removal
+
     ELSEIF trg < 1 OR trg > asteroids THEN
-      WinShow 18
+      WinShowName "TargetNotExist"
+   
     ELSEIF src = trg THEN
-      WinShow 19
+      WinShowName "SourceTargetSame"
+   
     ELSEIF num < 1 OR num > asteroid(src).ships THEN
-      WinShow 20
+      WinShowName "NotEnoughShips"
+
     ELSE
       EXIT DO
     END IF
@@ -2038,12 +2026,6 @@ SUB ExecuteOrderAttack
   ' Deduct ships from the source asteroid
   '
   asteroid(src).ships = asteroid(src).ships - num
-    
-  '
-  ' Show the distance
-  '
-  txt(21, 1) = STR$(mission(missions).distance)
-  WinShow 21
   
 END SUB
 
@@ -2243,12 +2225,14 @@ END SUB
 
 SUB MenuLoad
   '
-  ' Loads the menu bar. This subroutine should only be called once.
+  ' Loads the menu bar. This subroutine should be called once
+  ' and after the windows are loaded.
   '
 
   DIM count AS INTEGER
   DIM i     AS INTEGER
   DIM posX  AS INTEGER
+  DIM wname AS STRING
 
   '
   ' Read the number of menu items in the bar
@@ -2265,7 +2249,8 @@ SUB MenuLoad
     ' Load the menu text and window ID
     '
     READ bar(i).text
-    READ bar(i).wid
+    READ wname
+    bar(i).wid = WinGetWid(wname)
     
     '
     ' Calculate the horizontal position of this menu item
@@ -2443,8 +2428,8 @@ SUB SetupGame
   ' Load menus and windows
   '
   StatusUpdate "Please wait..."
-  MenuLoad
   WinLoad
+  MenuLoad
   HabitatLoad
 
   '
@@ -2471,7 +2456,7 @@ SUB SetupGame
   '
   ' Show starting window #1
   '
-  WinShow 1
+  WinShowName "Start"
  
   IF fld(1, win(1).selected).cid = Command.NewGame THEN
     SetupGame.New
@@ -2483,25 +2468,27 @@ END SUB
 
 SUB SetupGame.Atlas
 
+  DIM wid AS INTEGER
+  LET wid = WinGetWid("AtlasMaker")
+
   '
   ' Initialize and display the atlas.
   '
   UI.SetPage UIPage.Atlas
-  'AtlasAddRandom 1, asteroids
 
   '
   ' Set focus on the option to exit the atlas editor
   '
-  WinSelect 9, 2
+  WinSelect wid, 2
 
   DO
    
     '
     ' Show the editor menu
     '
-    WinShow 9
+    WinShow wid
 
-    SELECT CASE win(9).selected
+    SELECT CASE win(wid).selected
      
       CASE 1
         '
@@ -2545,14 +2532,17 @@ SUB SetupGame.New
   DIM pid AS INTEGER
   DIM cx  AS INTEGER
   DIM cy  AS INTEGER
+  DIM wid AS INTEGER
 
   DO
    
     '
     ' Prompt for the number of asteroids
     '
-    WinShow 2
-    asteroids = VAL(txt(2, 4)): IF asteroids = 0 THEN asteroids = 15
+    wid = WinGetWid("DialogAsteroids")
+   
+    WinShow wid
+    asteroids = VAL(txt(wid, 4)): IF asteroids = 0 THEN asteroids = 15
    
     '
     ' Validate initial game options
@@ -2561,7 +2551,7 @@ SUB SetupGame.New
       '
       ' Too many asteroids
       '
-      WinShow 5
+      WinShowName "TooManyAsteroids"
 
     ELSE
       EXIT DO
@@ -3199,6 +3189,24 @@ SUB WinDrawOutline (wid%, sx%, sy%)
 
 END SUB
 
+FUNCTION WinGetWid% (wname$)
+  '
+  ' Returns the ID of the window with the specified name.
+  '
+ 
+  DIM wid AS INTEGER
+
+  FOR wid = 1 TO UBOUND(win)
+    IF RTRIM$(win(wid).wname) = wname$ THEN
+      WinGetWid% = wid
+      EXIT FUNCTION
+    END IF
+  NEXT
+
+  WinGetWid% = 0
+
+END FUNCTION
+
 FUNCTION WinIsSelectable% (wid%, fid%)
   '
   ' Returns True or False depending on whether the specified
@@ -3309,73 +3317,109 @@ SUB WinLoad
   DIM sizeX   AS INTEGER
   DIM wid     AS INTEGER
 
+  '
+  ' This should be a "Windows" block
+  '
+  READ block
+  IF block <> "Windows" THEN
+    StatusDebug "WinLoad: Expected 'Windows' but block was " + block
+    EXIT SUB
+  END IF
+
   DO
-    READ block
-    SELECT CASE block
-     
-      CASE "Start"
-        '
-        ' Start a new window definition
-        '
-        wid = wid + 1
-        READ win(wid).posY, win(wid).posX
    
-      CASE "+$"
-        READ block
-        fid = WinAppendLabel(wid, block)
+    '
+    ' This should be the next "Window" block, or the end of the windows
+    '
+    READ block
+    IF block = "EndWindows" THEN
+      EXIT SUB
+    ELSEIF block <> "Window" THEN
+      StatusDebug "WinLoad: Expected 'Window' but block was " + block
+      EXIT SUB
+    END IF
 
-      CASE "+-", "-"
-        fid = WinAppendSeparator(wid)
+    wid = wid + 1
 
-      CASE "+@"
-        READ block: cid = WinParseCommand(block)
-        READ block
-        ' HACK: pad the button text for now
-        fid = WinAppendButton(wid, cid, " " + block + " ")
+    DO
+
+      '
+      ' Read the next window attribute
+      '
+      READ block
+   
+      SELECT CASE block
      
-      CASE "+&"
-        READ block
-        fid = WinAppendBoolean(wid, block)
+        CASE "End"
+          EXIT DO
 
-      CASE "$"
-        READ posX
-        READ posY
-        READ block
-        fid = WinDefineLabel(wid, posX, posY, block)
+        CASE "+$"
+          READ block
+          fid = WinAppendLabel(wid, block)
 
-      CASE "@"
-        READ posX
-        READ posY
-        READ sizeX
-        READ block: cid = WinParseCommand(block)
-        READ block
-        fid = WinDefineButton(wid, posX, posY, sizeX, cid, block)
+        CASE "+-", "-"
+          fid = WinAppendSeparator(wid)
 
-      CASE "#"
-        READ posX
-        READ posY
-        READ sizeX
-        READ block
-        fid = WinDefineInteger(wid, posX, posY, sizeX, block)
+        CASE "+@"
+          READ block: cid = WinParseCommand(block)
+          READ block
+          ' HACK: pad the button text for now
+          fid = WinAppendButton(wid, cid, " " + block + " ")
+     
+        CASE "+&"
+          READ block
+          fid = WinAppendBoolean(wid, block)
 
-      CASE "Help"
-        '
-        ' Set Help Window
-        '
-        READ win(wid).helpWid
+        CASE "$"
+          READ posX
+          READ posY
+          READ block
+          fid = WinDefineLabel(wid, posX, posY, block)
 
-      CASE "End of windows"
-        '
-        ' End of window data
-        '
-        EXIT SUB
-    
-      CASE ELSE
+        CASE "@"
+          READ posX
+          READ posY
+          READ sizeX
+          READ block: cid = WinParseCommand(block)
+          READ block
+          fid = WinDefineButton(wid, posX, posY, sizeX, cid, block)
 
-        PRINT "Expected token for wid="; wid; " block="; block
-        END
+        CASE "#"
+          READ posX
+          READ posY
+          READ sizeX
+          READ block
+          fid = WinDefineInteger(wid, posX, posY, sizeX, block)
 
-    END SELECT
+        CASE "Name"
+          READ win(wid).wname
+
+        CASE "PosX"
+          READ win(wid).posX
+
+        CASE "PosY"
+          READ win(wid).posY
+
+        CASE "SizeX"
+          READ win(wid).sizeX
+
+        CASE "SizeY"
+          READ win(wid).sizeY
+
+        CASE "Help"
+          '
+          ' Set Help Window
+          '
+          READ win(wid).helpWid
+
+        CASE ELSE
+          StatusDebug "WinLoad unexpected token: wid=" + STR$(wid) + " block=" + block
+          WaitForKeyPress
+          END
+
+      END SELECT
+    LOOP
+
   LOOP
 
 END SUB
@@ -3865,6 +3909,22 @@ SUB WinShow (wid%)
 
     LOOP
   LOOP
+
+END SUB
+
+SUB WinShowName (idname$)
+  '
+  ' Shows the window with the specified name.
+  '
+ 
+  DIM wid AS INTEGER
+  LET wid = WinGetWid(idname$)
+ 
+  IF wid = 0 THEN
+    StatusDebug "WinShowName not found: " + idname$
+  ELSE
+    WinShow wid
+  END IF
 
 END SUB
 
