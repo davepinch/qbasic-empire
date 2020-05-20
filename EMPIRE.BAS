@@ -218,7 +218,7 @@ DECLARE SUB WinKey (wid%, fid%, keypress$)
 DECLARE SUB WinKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB WinKeyInteger (wid%, fid%, keypress$)
 DECLARE SUB WinLoad ()
-DECLARE SUB WinMove (id AS INTEGER)
+DECLARE SUB WinMove (wid%)
 DECLARE SUB WinSelectNext (wid%)
 DECLARE SUB WinSelect (wid%, fid%)
 DECLARE SUB WinSelectPrevious (wid%)
@@ -758,7 +758,7 @@ DATA   "Habitat"
 DATA     "Backdrop", "HAB-FRGE.PCB"
 DATA     "Label", "@X04ùÄ@X4EÅ@X04Ä"
 DATA     "Title", "Forge"
-DATA   "End"       
+DATA   "End"      
 DATA   "Habitat"
 DATA     "Backdrop", "HAB-TOWR.PCB"
 DATA     "Label", "@X07ÛÜ@X08ÜÛ"
@@ -3513,18 +3513,17 @@ SUB WinLoad
 
 END SUB
 
-SUB WinMove (wid AS INTEGER)
+SUB WinMove (wid%)
 
-  DIM keypress  AS STRING
-  DIM toX       AS INTEGER
-  DIM toY       AS INTEGER
-  DIM x         AS INTEGER
+  DIM keypress AS STRING
+  DIM toX      AS INTEGER
+  DIM toY      AS INTEGER
 
   '
   ' Get the starting location of the window
   '
-  toX = win(wid).posX
-  toY = win(wid).posY
+  toX = win(wid%).posX
+  toY = win(wid%).posY
 
   DO
    
@@ -3541,7 +3540,7 @@ SUB WinMove (wid AS INTEGER)
     '
     ' Draw the outline and wait for a keyboard command
     '
-    WinDrawOutline wid, toX, toY
+    WinDrawOutline wid%, toX, toY
     keypress = GetKey$
 
     SELECT CASE keypress
@@ -3562,21 +3561,14 @@ SUB WinMove (wid AS INTEGER)
         '
         ' Enter (final position selected)
         '
-        win(wid).posX = toX
-        win(wid).posY = toY
+        win(wid%).posX = toX
+        win(wid%).posY = toY
 
         '
         ' Restore the display page
         '
         SCREEN , , VideoPage.Display, VideoPage.Display
         EXIT SUB
-     
-      CASE CHR$(Control.O), "O"
-        '
-        ' Change outline
-        '
-        ' TODO: support?
-        'IF outline = 0 THEN outline = 1 ELSE outline = 0
      
       CASE CHR$(Control.S), CHR$(0) + CHR$(ScanCode.Left)
         '
@@ -3594,8 +3586,8 @@ SUB WinMove (wid AS INTEGER)
         '
         ' Escape (restore original location)
         '
-        toX = win(wid).posX
-        toY = win(wid).posY
+        toX = win(wid%).posX
+        toY = win(wid%).posY
    
     END SELECT
 
@@ -3607,9 +3599,9 @@ REM *** Subroutines ***
 
 CheckPlace:
   IF toY < 2 THEN toY = 2
-  IF toY > 23 - win(wid).sizeY THEN toY = 23 - win(wid).sizeY
+  IF toY > 23 - win(wid%).sizeY THEN toY = 23 - win(wid%).sizeY
   IF toX < 1 THEN toX = 1
-  IF toX > 78 - win(wid).sizeX THEN toX = 78 - win(wid).sizeX
+  IF toX > 78 - win(wid%).sizeX THEN toX = 78 - win(wid%).sizeX
   RETURN
 
 END SUB
