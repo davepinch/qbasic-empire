@@ -167,7 +167,7 @@ DECLARE SUB SetupGame.New ()
 '
 ' Status* subroutines
 '
-' These subroutines change the status bar on the bottom of the page.
+' These subroutines change the status on the bottom of the page.
 '
 DECLARE SUB StatusClear ()
 DECLARE SUB StatusDebug (text AS STRING)
@@ -413,7 +413,6 @@ CONST WinStyle.ShadowChar = 176
 CONST WinStyle.ShadowForecolor = 8
 CONST WinStyle.ShadowBackcolor = 0
 
-
 '
 ' Global atlas variables
 '
@@ -428,6 +427,12 @@ DIM SHARED habitat(1 TO 20) AS HabitatType
 DIM SHARED habitats AS INTEGER
 
 '
+' Global menu variables
+'
+DIM SHARED menuCount AS INTEGER
+DIM SHARED menuItem(1 TO MaxMenus) AS MenuType
+
+'
 ' Global UI variables
 '
 DIM SHARED uiCurrentFilter AS INTEGER
@@ -436,7 +441,6 @@ DIM SHARED uiCurrentPage   AS INTEGER
 '
 ' Global window variables
 '
-DIM SHARED bar(1 TO MaxMenus) AS MenuType
 DIM SHARED fld(1 TO MaxWindows, 1 TO MaxFields) AS FieldType
 DIM SHARED win(1 TO MaxWindows) AS WindowType
 DIM SHARED txt(1 TO MaxWindows, 1 TO MaxFields) AS STRING
@@ -509,10 +513,17 @@ REM Window 9
   DATA   "+@", "ReplotRandom", "Randomly place"
   DATA "End"
 
-REM Window 10
+  DATA "Window"
+  DATA   "Name", "FileMenu"
+  DATA   "PosX", 1
+  DATA   "PosY", 2
+  DATA   "+@", "About", "About..."
+  DATA   "+@", "EndGame", "Exit"
+  DATA "End"
+
   DATA "Window"
   DATA   "Name", "ViewMenu"
-  DATA   "PosX", 2
+  DATA   "PosX", 11
   DATA   "PosY", 2
   DATA   "+@", "ViewAtlas", "Show atlas"
   DATA   "+@", "ViewTable", "Show table"
@@ -526,52 +537,19 @@ REM Window 10
   DATA   "+@", "ReplotRandom", "Replot randomly"
   DATA "End"
 
-REM Window 11
-  DATA "Window"
-  DATA   "Name", "GameMenu"
-  DATA   "PosX", 9
-  DATA   "PosY", 2
-  DATA   "+@", "<command>", "Load a game"
-  DATA   "+@", "NextMonth", "Next month"
-  DATA   "+@", "<command>", "Save the game"
-  DATA   "+@", "EndGame", "Quit the game"
-  DATA "End"
- 
-REM Window 12
   DATA "Window"
   DATA   "Name", "MissionMenu"
-  DATA   "PosX", 15
+  DATA   "PosX", 21
   DATA   "PosY", 2
-  DATA   "+@", "<command>", "Assist another"
   DATA   "+@", "OrderAttack", "Attack an asteroid"
-  DATA   "+@", "<command>", "List all known"
-  DATA   "+@", "<command>", "Destroy an asteroid"
-  DATA   "+@", "<command>", "Raid an asteroid"
-  DATA   "+@", "<command>", "Reinforce an asteroid"
-  DATA   "+@", "<command>", "Spy on an asteroid"
+  DATA   "+@", "NextMonth", "Next month"
   DATA "End"
 
-REM Window 13
   DATA "Window"
   DATA   "Name", "OptionsMenu"
-  DATA   "PosX", 24
+  DATA   "PosX", 31
   DATA   "PosY", 2
   DATA   "+@", "OptionAlerts", "Alerts"
-  DATA   "+@", "<command>", "Border"
-  DATA   "+@", "<command>", "Command entry"
-  DATA   "+@", "<command>", "Confirming actions"
-  DATA   "+@", "<command>", "Shadow"
-  DATA   "+@", "<command>", "Sound effects"
-  DATA "End"
-
-REM Window 14
-  DATA "Window"
-  DATA   "Name", "SpecialMenu"
-  DATA   "PosX", 33
-  DATA   "PosY", 2
-  DATA   "+@", "About", "About..."
-  DATA   "+@", "<command>", "Move ahead in time"
-  DATA   "+@", "<command>", "Search for value"
   DATA "End"
 
 REM Window 15
@@ -684,14 +662,14 @@ REM Window 31
 DATA "EndWindows"
 
 '
-' Menu bar data (loaded by MenuLoad)
+' Menu data (loaded by MenuLoad)
 '
-DATA 5
-DATA " View ", "ViewMenu"
-DATA " Game ", "GameMenu"
-DATA " Mission ", "MissionMenu"
-DATA " Options ", "OptionsMenu"
-DATA " Special ", "SpecialMenu"
+DATA "Menus"
+DATA   "Menu", " File ", "FileMenu"
+DATA   "Menu", " View ", "ViewMenu"
+DATA   "Menu", " Mission ", "MissionMenu"
+DATA   "Menu", " Options ", "OptionsMenu"
+DATA "EndMenus"
 
 DATA "Habitats"
 DATA   "Habitat"
@@ -713,7 +691,7 @@ DATA   "Habitat"
 DATA     "Backdrop", "HAB-FRGE.PCB"
 DATA     "Label", "@X04ùÄ@X4EÅ@X04Ä"
 DATA     "Title", "Forge"
-DATA   "End"      
+DATA   "End"     
 DATA   "Habitat"
 DATA     "Backdrop", "HAB-TOWR.PCB"
 DATA     "Label", "@X07ÛÜ@X08ÜÛ"
@@ -2186,7 +2164,7 @@ SUB MenuDraw
   ' Draw each menu item
   '
   DIM i AS INTEGER
-  FOR i = LBOUND(bar) TO UBOUND(bar)
+  FOR i = 1 TO menuCount
     MenuDrawItem i, 0
   NEXT
 
@@ -2197,7 +2175,7 @@ SUB MenuDrawItem (itemId AS INTEGER, selected AS INTEGER)
   '
   ' Move to the screen location of the item
   '
-  LOCATE 1, bar(itemId).posX
+  LOCATE 1, menuItem(itemId).posX
 
   '
   ' Set the color depending on whether this item is selected
@@ -2208,13 +2186,13 @@ SUB MenuDrawItem (itemId AS INTEGER, selected AS INTEGER)
     COLOR MenuStyle.ForeColor, MenuStyle.BackColor
   END IF
 
-  PRINT bar(itemId).text;
+  PRINT menuItem(itemId).text;
 
 END SUB
 
 SUB MenuHide
   '
-  ' Hides the menu bar on the top of the screen.
+  ' Hides the menu on the top of the screen.
   '
   VIEW PRINT 1 TO 1
   COLOR 7, 0
@@ -2225,40 +2203,52 @@ END SUB
 
 SUB MenuLoad
   '
-  ' Loads the menu bar. This subroutine should be called once
+  ' Loads the menu. This subroutine should be called once
   ' and after the windows are loaded.
   '
 
-  DIM count AS INTEGER
-  DIM i     AS INTEGER
+  DIM block AS STRING
   DIM posX  AS INTEGER
   DIM wname AS STRING
 
-  '
-  ' Read the number of menu items in the bar
-  '
-  READ count
+  READ block
+  IF block <> "Menus" THEN
+    StatusDebug "MenuLoad: expected 'Menus' but encountered " + block
+  END IF
 
   '
   ' Load each menu definition
   '
   posX = 2
-  FOR i = 1 TO count
+  DO
    
-    '
-    ' Load the menu text and window ID
-    '
-    READ bar(i).text
-    READ wname
-    bar(i).wid = WinGetWid(wname)
-    
-    '
-    ' Calculate the horizontal position of this menu item
-    '
-    bar(i).posX = posX
-    posX = posX + LEN(bar(i).text)
+    READ block
+   
+    SELECT CASE block
 
-  NEXT
+      CASE "Menu"
+       
+        menuCount = menuCount + 1
+
+        READ menuItem(menuCount).text
+        READ wname
+        menuItem(menuCount).wid = WinGetWid(wname)
+
+        '
+        ' Calculate the horizontal position of this menu item
+        '
+        menuItem(menuCount).posX = posX
+        posX = posX + LEN(menuItem(menuCount).text)
+
+      CASE "EndMenus"
+        EXIT DO
+
+      CASE ELSE
+        StatusDebug "MenuLoad: expected Menu but encountered " + block
+   
+    END SELECT
+
+  LOOP
 
 END SUB
 
@@ -2295,10 +2285,10 @@ FUNCTION MenuShow
       ' The menu is open (a window is displayed)
       '
       arrowexit = 1
-      WinShow bar(selection).wid
+      WinShow menuItem(selection).wid
       arrowexit = 0
      
-      IF win(bar(selection).wid).canceled THEN
+      IF win(menuItem(selection).wid).canceled THEN
        
         mode = MenusClosed
      
@@ -2311,7 +2301,7 @@ FUNCTION MenuShow
             DIM wid AS INTEGER
             DIM fid AS INTEGER
 
-            wid = bar(selection).wid
+            wid = menuItem(selection).wid
             fid = win(wid).selected
             
             MenuShow = fld(wid, fid).cid
@@ -2379,7 +2369,7 @@ NavigateLeft:
   ' Moves to the menu item to the left
   '
   MenuDrawItem selection, 0
-  selection = selection - 1: IF selection = 0 THEN selection = 5
+  selection = selection - 1: IF selection = 0 THEN selection = menuCount
   RETURN
 
 NavigateRight:
@@ -2387,7 +2377,7 @@ NavigateRight:
   ' Moves to the menu item to the right
   '
   MenuDrawItem selection, 0
-  selection = selection + 1: IF selection = 6 THEN selection = 1
+  selection = selection + 1: IF selection > menuCount THEN selection = 1
   RETURN
 
 END FUNCTION
@@ -2593,7 +2583,7 @@ END SUB
 
 SUB StatusClear
   '
-  ' Clears the status bar
+  ' Clears the status
   '
   StatusUpdateLevel "", StatusLevel.Normal
 
@@ -2601,7 +2591,7 @@ END SUB
 
 SUB StatusDebug (text AS STRING)
   '
-  ' Writes a debug message to the status bar
+  ' Writes a debug message to the status
   '
   StatusUpdateLevel text, StatusLevel.Debug
 
@@ -2613,7 +2603,7 @@ END SUB
 
 SUB StatusUpdate (text AS STRING)
   '
-  ' Writes text to the status bar
+  ' Writes text to the status
   '
   StatusUpdateLevel text, StatusLevel.Normal
 
@@ -2708,7 +2698,7 @@ SUB UI.Run
   DO
     
     '
-    ' Wait for a command from the menu bar
+    ' Wait for a command from the menu
     '
     SELECT CASE uiCurrentPage
      
