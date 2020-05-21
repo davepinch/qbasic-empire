@@ -8,20 +8,12 @@
 ' To begin, press Shift + F5.
 ' To exit QBASIC, press Alt, F, X.
 
-TYPE AsteroidType
+TYPE AreaType
   '
   ' A place that can be visited.
   '
-  habitat  AS INTEGER
-  Control  AS INTEGER
-  detect   AS INTEGER
-  mined    AS INTEGER
-  produce  AS INTEGER ' Ships produced per month
-  ruler    AS INTEGER ' The player who rules the asteroid
-  ships    AS INTEGER ' Number of ships docked at the asteroid
-  shield   AS INTEGER
-  supply   AS INTEGER
-  tech     AS INTEGER
+  enabled AS INTEGER
+  habitat AS INTEGER
 END TYPE
 
 TYPE AtlasItemType
@@ -63,19 +55,6 @@ TYPE MenuType
   posX  AS INTEGER
   text  AS STRING * 10
   wid   AS INTEGER
-END TYPE
-
-TYPE MissionType
-  '
-  ' A mission to attack another asteroid.
-  '
-  distance  AS INTEGER
-  goal      AS INTEGER
-  ruler     AS INTEGER
-  ships     AS INTEGER
-  source    AS INTEGER
-  target    AS INTEGER
-  techlevel AS INTEGER
 END TYPE
 
 TYPE WindowType
@@ -135,9 +114,7 @@ DECLARE SUB Execute (cid AS INTEGER)
 DECLARE SUB ExecuteAbout ()
 DECLARE SUB ExecuteFilterNone ()
 DECLARE SUB ExecuteFilterSelf ()
-DECLARE SUB ExecuteNextMonth ()
 DECLARE SUB ExecuteOptionAlerts ()
-DECLARE SUB ExecuteOrderAttack ()
 DECLARE SUB ExecuteViewAtlas ()
 DECLARE SUB ExecuteViewTable ()
 
@@ -231,13 +208,18 @@ DECLARE SUB WinShow (wid%)
 DECLARE SUB WinShowName (idname$)
 
 '
+' World* subroutines
+'
+DECLARE SUB WorldInit (areas AS INTEGER)
+DECLARE FUNCTION WorldNextId% ()
+
+'
 ' Declarations
 '
-DECLARE SUB BattleMode (id AS INTEGER)
 DECLARE SUB DrawFile (filename AS STRING)
 DECLARE SUB DrawFileAt (filename AS STRING, offsetX AS INTEGER, offsetY AS INTEGER)
 DECLARE SUB DrawTable ()
-DECLARE SUB DrawTableRow (x AS INTEGER)
+DECLARE SUB DrawTableRow (row AS INTEGER, aid AS INTEGER)
 DECLARE SUB DrawTableRows ()
 DECLARE SUB DrawText (text AS STRING)
 DECLARE SUB PaintBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
@@ -292,10 +274,8 @@ CONST Command.About = 1
 CONST Command.EndGame = 2
 CONST Command.FilterNone = 3
 CONST Command.FilterSelf = 4
-CONST Command.NextMonth = 6
 CONST Command.NewGame = 8
 CONST Command.OptionAlerts = 9
-CONST Command.OrderAttack = 10
 CONST Command.ReplotBand = 11
 CONST Command.ReplotCluster = 12
 CONST Command.ReplotManual = 13
@@ -330,6 +310,7 @@ CONST HabitatUI.Nebula = "NEB"
 '
 ' Maximum UI elements
 '
+CONST MaxAreas = 30
 CONST MaxMenus = 5
 CONST MaxFields = 15
 CONST MaxWindows = 50
@@ -436,6 +417,11 @@ CONST WinStyle.ShadowForecolor = 8
 CONST WinStyle.ShadowBackcolor = 0
 
 '
+' Global area variables
+'
+DIM SHARED area(1 TO MaxAreas) AS AreaType
+
+'
 ' Global atlas variables
 '
 DIM SHARED atlasActive AS INTEGER
@@ -471,10 +457,6 @@ DIM SHARED txt(1 TO MaxWindows, 1 TO MaxFields) AS STRING
 ' Global variables
 '
 DIM SHARED arrowexit               AS INTEGER
-DIM SHARED asteroid(1 TO 19)       AS AsteroidType
-DIM SHARED asteroids               AS INTEGER
-DIM SHARED mission(1 TO 100)       AS MissionType
-DIM SHARED missions                AS INTEGER
 DIM SHARED pressed                 AS STRING
 
 '
@@ -503,22 +485,21 @@ REM Window 1
 
 REM Window 2
   DATA "Window"
-  DATA   "Name", "DialogAsteroids"
+  DATA   "Name", "DialogAreas"
   DATA   "PosX", 11
   DATA   "PosY", 10
   DATA   "$", 0, 1, "Initialization Mode"
   DATA   "+-"
-  DATA   "+$", "How many asteroids should be in the game?  [Def=15]"
+  DATA   "+$", "How many areas should be in the game?  [Def=15]"
   DATA   "#", 56, 3, 2, 15
   DATA "End"
 
 REM Window 5
   DATA "Window"
-  DATA   "Name", "TooManyAsteroids"
+  DATA   "Name", "TooManyAreas"
   DATA   "PosX", 20
   DATA   "PosY", 11
-  DATA   "+$", " Error: The maximum number of asteroids "
-  DATA   "+$", " allowed is nineteen.                   "
+  DATA   "+$", " Error: The maximum number of areas is 19 "
   DATA "End"
 
 REM Window 9
@@ -560,72 +541,10 @@ REM Window 9
   DATA "End"
 
   DATA "Window"
-  DATA   "Name", "MissionMenu"
+  DATA   "Name", "OptionsMenu"
   DATA   "PosX", 21
   DATA   "PosY", 2
-  DATA   "+@", "OrderAttack", "Attack an asteroid"
-  DATA   "+@", "NextMonth", "Next month"
-  DATA "End"
-
-  DATA "Window"
-  DATA   "Name", "OptionsMenu"
-  DATA   "PosX", 31
-  DATA   "PosY", 2
   DATA   "+@", "OptionAlerts", "Alerts"
-  DATA "End"
-
-REM Window 15
-  DATA "Window"
-  DATA   "Name", "DialogOrderAttack"
-  DATA   "PosX", 15
-  DATA   "PosY", 3
-  DATA   "+$", " Enter the source asteroid:"
-  DATA   "+$", " Enter the target asteroid:"
-  DATA   "+$", " Enter the number of ships:"
-  DATA   "#", 32, 1, 2, 0
-  DATA   "#", 32, 2, 2, 0
-  DATA   "#", 30, 3, 4, 0
-  DATA "End"
-
-REM Window 16
-  DATA "Window"
-  DATA   "Name", "SourceNotExist"
-  DATA   "PosX", 11
-  DATA   "PosY", 4
-  DATA   "+$", " Error: The source asteroid does not exist. "
-  DATA "End"
-
-REM Window 17
-  DATA "Window"
-  DATA   "Name", "CannotControl"
-  DATA   "PosX", 10
-  DATA   "PosY", 4
-  DATA   "+$", " Error: You cannot control the source asteroid. "
-  DATA "End"
- 
-REM Window 18
-  DATA "Window"
-  DATA   "Name", "TargetNotExist"
-  DATA   "PosX", 11
-  DATA   "PosY", 4
-  DATA   "+$", " Error: The target asteroid does not exist. "
-  DATA "End"
-
-REM Window 19
-  DATA "Window"
-  DATA   "Name", "SourceTargetSame"
-  DATA   "PosX", 10
-  DATA   "PosY", 4
-  DATA   "+$", " Error: The same asteroid has been specified "
-  DATA   "+$", " for both the target and source.             "
-  DATA "End"
- 
-REM Window 20
-  DATA "Window"
-  DATA   "Name", "NotEnoughShips"
-  DATA   "PosX", 10
-  DATA   "PosY", 4
-  DATA   "+$", " Error: You cannot send the specified number of ships. "
   DATA "End"
 
 REM Window 27
@@ -638,25 +557,6 @@ REM Window 27
   DATA   "+&", "Yes"
   DATA "End"
 
-REM Window 28
-  DATA "Window"
-  DATA   "Name", "BattleMode"
-  DATA   "PosX", 20
-  DATA   "PosY", 5
-  DATA   "+$", "           Battle Looms Ahead!          "
-  DATA   "+$", "                                        "
-  DATA   "+$", " The attacker is ruler                  "
-  DATA   "+$", "   Ships:                               "
-  DATA   "+$", "   Technology:                          "
-  DATA   "+$", "                                        "
-  DATA   "+$", " The defender is                        "
-  DATA   "+$", "   Shield:                              "
-  DATA   "+$", "   Ships:                               "
-  DATA   "+$", "   Technology:                          "
-  DATA   "+$", "                                        "
-  DATA   "+$", " Press any key to begin...              "
-  DATA "End"
-
 REM Window 30
   DATA "Window"
   DATA   "Name", "About"
@@ -667,20 +567,6 @@ REM Window 30
   DATA   "+$", " (C) 1992 David J. Pinch "
   DATA "End"
 
-REM Window 31
-  DATA "Window"
-  DATA   "Name", "BattleRound"
-  DATA   "PosX", 12
-  DATA   "PosY", 12
-  DATA   "+$", " Battle Round:                                        "
-  DATA   "+$", "                                                      "
-  DATA   "+$", " Attacker's ships:                                    "
-  DATA   "+$", " [__________________________________________________] "
-  DATA   "+$", "                                                      "
-  DATA   "+$", " Defender's ships:                                    "
-  DATA   "+$", " [__________________________________________________] "
-  DATA "End"
- 
 DATA "EndWindows"
 
 '
@@ -689,7 +575,6 @@ DATA "EndWindows"
 DATA "Menus"
 DATA   "Menu", " File ", "FileMenu"
 DATA   "Menu", " View ", "ViewMenu"
-DATA   "Menu", " Mission ", "MissionMenu"
 DATA   "Menu", " Options ", "OptionsMenu"
 DATA "EndMenus"
 
@@ -714,7 +599,7 @@ DATA   "Habitat"
 DATA     "Backdrop", "HAB-FRGE.PCB"
 DATA     "Label", "@X04ùÄ@X4EÅ@X04Ä"
 DATA     "Title", "Forge"
-DATA   "End"  
+DATA   "End"
 DATA   "Habitat"
 DATA     "Backdrop", "HAB-TOWR.PCB"
 DATA     "Label", "@X07ÛÜ@X08ÜÛ"
@@ -1456,117 +1341,6 @@ FUNCTION AtlasPrompt (outcx AS INTEGER, outcy AS INTEGER, promptFor AS INTEGER)
 
 END FUNCTION
 
-SUB BattleMode (id AS INTEGER)
-  '
-  ' Executes a battle (not finished)
-  '
- 
-  DIM attacked AS INTEGER
-  DIM defended AS INTEGER
-  DIM round    AS INTEGER
-  DIM shot     AS INTEGER
-  DIM start1   AS INTEGER
-  DIM start2   AS INTEGER
-  DIM trg      AS INTEGER
-  DIM x        AS INTEGER
-  DIM wid      AS INTEGER
-
-  ' HACK with removal of multi-player support
-  ' Not that this ever worked anyway
-  DIM turn AS INTEGER
-  LET turn = 1
-
-  trg = mission(id).target
-
-  wid = WinGetWid("BattleMode")
-  WinShow wid
- 
-  COLOR 0, 7: LOCATE win(wid).posY + 4, win(wid).posX + 24
-  PRINT CHR$(mission(id).ruler + 64); "."
-  LOCATE win(wid).posY + 5, win(wid).posX + 10: PRINT mission(id).ships
-  LOCATE win(wid).posY + 6, win(wid).posX + 15: PRINT mission(id).techlevel
-  LOCATE win(wid).posY + 8, win(wid).posX + 18
-  IF asteroid(trg).ruler = 0 THEN
-    PRINT "independent."
-  ELSE
-    PRINT "ruler "; CHR$(asteroid(trg).ruler + 64); "."
-  END IF
- 
-  LOCATE win(wid).posY + 9, win(wid).posX + 11
-  PRINT asteroid(trg).shield
- 
-  LOCATE win(wid).posY + 10, win(wid).posX + 10
-  PRINT asteroid(trg).ships
- 
-  LOCATE win(wid).posY + 11, win(wid).posX + 15
-  PRINT asteroid(trg).tech
-  COLOR 7, 0
-
-  ' HACK: remove this during development
-  'DO
-  '  FOR x = 1200 TO 800 STEP -35
-  '    SOUND x, .2
-  '  NEXT
-  '  FOR x = 800 TO 1200 STEP 35
-  '    SOUND x, .2
-  '  NEXT
-  'LOOP UNTIL LEN(INKEY$)
-
-  wid = WinGetWid("BattleRound")
-  WinShow wid
- 
-  DO
-    round = round + 1
-    LOCATE win(wid).posY + 2, win(wid).posX + 15
-    COLOR 0, 7: PRINT round: COLOR 7, 0
-    attacked = 0: defended = 0
-   
-    start1 = mission(id).ships
-    start2 = asteroid(trg).ships
-   
-    DO
-      IF turn = 0 AND attacked <= start1 THEN 'Attacker fires
-       
-        '
-        ' Calculate the power of the attack
-        '
-        shot = INT(RND * 3 - 1 + 2 ^ (mission(id).techlevel / 10))
-        shot = shot - shot * (asteroid(trg).shield) / 100
-       
-        '
-        ' Destroy ships on the target asteroid
-        '
-        asteroid(id).ships = asteroid(id).ships - shot
-        IF asteroid(id).ships < 1 THEN asteroid(id).ships = 0
-        attacked = attacked + 1
-     
-      ELSEIF turn = 1 AND defended <= start2 THEN 'Defender fires
-       
-        '
-        ' Calculate the power of the counter-attck
-        '
-        shot = INT(RND * 3 - 1 + 2 ^ (asteroid(trg).tech / 10))
-       
-        '
-        ' Destroy attacking ships
-        '
-        mission(id).ships = mission(id).ships - shot
-        IF mission(id).ships < 1 THEN mission(id).ships = 0
-        defended = defended + 1
-     
-      END IF
-     
-      IF turn = 0 THEN turn = 1 ELSE turn = 0
-      IF mission(id).ships = 0 OR asteroid(trg).ships = 0 THEN EXIT DO
-   
-    LOOP UNTIL attacked = start1 AND defended = start2
-  LOOP UNTIL mission(id).ships = 0 OR asteroid(id).ships = 0
-
-  ' LAST
-  END
-
-END SUB
-
 SUB DrawFile (filename AS STRING)
   '
   ' Draws a PCB file containing embedded color codes
@@ -1670,13 +1444,12 @@ SUB DrawTable
   '
   PRINT vertical;
   COLOR TableStyle.HeaderForecolor, TableStyle.HeaderBackcolor
-  PRINT " Id  Ruler  Tech  Mined  Supply  Detect  Control  Shield  Produce  Available ";
-  COLOR TableStyle.Forecolor, TableStyle.Backcolor
-  PRINT vertical
+  PRINT " Id  Habitat "
 
   '
   ' Draw the heading separator
   '
+  COLOR TableStyle.Forecolor, TableStyle.Backcolor
   PRINT divideLeft; STRING$(77, divideLine); divideRight
 
   '
@@ -1700,19 +1473,15 @@ SUB DrawTable
 
 END SUB
 
-SUB DrawTableRow (aid AS INTEGER)
-
-  IF aid > asteroids THEN
-    EXIT SUB
-  END IF
+SUB DrawTableRow (row AS INTEGER, aid AS INTEGER)
 
   '
   ' Move to the first character of the row (inside border)
   '
-  LOCATE aid + 4, 3
+  LOCATE row + 4, 3
 
   '
-  ' Determine whether this asteroid is being filtered
+  ' Determine whether this area is being filtered
   '
   IF IsFiltered(aid) THEN
     COLOR TableStyle.FilterForecolor, TableStyle.FilterBackcolor
@@ -1721,26 +1490,13 @@ SUB DrawTableRow (aid AS INTEGER)
   END IF
  
   '
-  ' Print the asteroid ID
+  ' Print the area ID
   '
   PRINT USING "##"; aid;
+  PRINT "  "; ' HACK
 
-  '
-  ' Print visible data
-  '
-  IF asteroid(aid).ruler > 0 THEN
-    LOCATE , 9: PRINT CHR$(64 + aid);
-    LOCATE , 15: PRINT USING "##"; asteroid(aid).tech;
-    LOCATE , 21: PRINT USING "###"; asteroid(aid).mined;
-    LOCATE , 28: PRINT USING "####"; asteroid(aid).supply;
-    LOCATE , 37: PRINT USING "##"; asteroid(aid).detect;
-    LOCATE , 45: PRINT USING "###"; asteroid(aid).Control;
-    LOCATE , 54: PRINT USING "###"; asteroid(aid).shield;
-    LOCATE , 62: PRINT USING "###"; asteroid(aid).produce;
-    LOCATE , 72: PRINT USING "####"; asteroid(aid).ships;
-  ELSE
-    LOCATE , 6: PRINT "[data not available]";
-  END IF
+  ' Print the habitat label
+  DrawText habitat(area(aid).habitat).title
 
 END SUB
 
@@ -1748,9 +1504,17 @@ SUB DrawTableRows
   '
   ' Draws the rows of the table
   '
+ 
   DIM aid AS INTEGER
-  FOR aid = 1 TO asteroids
-    DrawTableRow aid
+  DIM row AS INTEGER
+
+  FOR aid = LBOUND(area) TO UBOUND(area)
+  
+    IF area(aid).enabled THEN
+      row = row + 1
+      DrawTableRow row, aid
+    END IF
+
   NEXT
 
 END SUB
@@ -1852,15 +1616,9 @@ SUB Execute (cid AS INTEGER)
     CASE Command.FilterSelf
       ExecuteFilterSelf
 
-    CASE Command.NextMonth
-      ExecuteNextMonth
-
     CASE Command.OptionAlerts
       ExecuteOptionAlerts
        
-    CASE Command.OrderAttack
-      ExecuteOrderAttack
-      
     CASE Command.ReplotBand
       AtlasPlotBanded
 
@@ -1905,7 +1663,7 @@ END SUB
 
 SUB ExecuteFilterNone
   '
-  ' Removes the current filter (no asteroids filtered)
+  ' Removes the current filter
   '
   UI.SetFilter UIFilter.None, True
 
@@ -1919,35 +1677,6 @@ SUB ExecuteFilterSelf
 
 END SUB
 
-SUB ExecuteNextMonth
-  '
-  ' Changes to the next month
-  '
-
-  DIM x AS INTEGER
-
-  '
-  ' Move each mission closer to their targets.
-  '
-  FOR x = 1 TO missions
-    mission(x).distance = mission(x).distance - 1
-    IF mission(x).distance = 0 THEN
-      SELECT CASE mission(x).goal
-        CASE 1
-          BattleMode (x)
-      END SELECT
-    END IF
-  NEXT
-
-  '
-  ' Calculate ships produced for each asteroid
-  '
-  FOR x = 1 TO asteroids
-    asteroid(x).ships = asteroid(x).ships + asteroid(x).produce
-  NEXT
-
-END SUB
-
 SUB ExecuteOptionAlerts
 
   WinShowName "DialogAlerts"
@@ -1958,76 +1687,6 @@ SUB ExecuteOptionAlerts
   '  NEXT
   'NEXT
 
-END SUB
-
-SUB ExecuteOrderAttack
-  '
-  ' Orders an attack on an asteroid
-  '
- 
-  DIM num AS INTEGER
-  DIM src AS INTEGER
-  DIM trg AS INTEGER
-  DIM wid AS INTEGER
-
-  '
-  ' Lookup the dialog window
-  '
-  wid = WinGetWid("DialogOrderAttack")
-
-  DO
-   
-    '
-    ' Get the source, target, and fleet size
-    '
-   
-    WinShow wid
-    IF win(wid).canceled THEN
-      EXIT SUB
-    END IF
-
-    src = VAL(txt(wid, 4))
-    trg = VAL(txt(wid, 5))
-    num = VAL(txt(wid, 6))
-   
-    IF src < 1 OR src > asteroids THEN
-      WinShowName "SourceNotExist"
-   
-    ELSEIF asteroid(src).ruler <> 1 THEN
-      WinShowName "CannotControl" ' HACK due to multi-player removal
-
-    ELSEIF trg < 1 OR trg > asteroids THEN
-      WinShowName "TargetNotExist"
-   
-    ELSEIF src = trg THEN
-      WinShowName "SourceTargetSame"
-   
-    ELSEIF num < 1 OR num > asteroid(src).ships THEN
-      WinShowName "NotEnoughShips"
-
-    ELSE
-      EXIT DO
-    END IF
- 
-  LOOP
-    
-  '
-  ' Initialize mission data
-  '
-  missions = missions + 1
-  mission(missions).distance = 2 'HACK for now, CalcDistance(src, trg)
-  mission(missions).goal = 1
-  mission(missions).ruler = turn
-  mission(missions).ships = num
-  mission(missions).source = src
-  mission(missions).target = trg
-  mission(missions).techlevel = asteroid(src).tech
-    
-  '
-  ' Deduct ships from the source asteroid
-  '
-  asteroid(src).ships = asteroid(src).ships - num
-  
 END SUB
 
 SUB ExecuteViewAtlas
@@ -2157,25 +1816,25 @@ FUNCTION IsFiltered% (aid AS INTEGER)
 
   DIM filtering AS INTEGER
 
-  IF aid < 1 OR aid > asteroids THEN
+  IF aid < 1 OR aid > UBOUND(area) THEN
     '
-    ' Invalid asteroid
+    ' Invalid area
     '
     IsFiltered% = False
  
+  ELSEIF NOT area(aid).enabled THEN
+
+    IsFiltered% = False
+
   END IF
 
   IF filtering = UIFilter.None THEN
-    '
-    ' No filter is applied
-    '
+   
     IsFiltered = False
 
   ELSEIF filtering = UIFilter.Self THEN
-    '
-    ' Filter asteroids ruled by player
-    '
-    IsFiltered = asteroid(aid).ruler = 1 ' HACK
+   
+    IsFiltered = False ' Not supported yet HACK
 
   ELSE
 
@@ -2749,65 +2408,28 @@ SUB SetupGame.New
   ' Initializes a new game
   '
 
-  DIM aid AS INTEGER
-  DIM hid AS INTEGER
-  DIM pid AS INTEGER
-  DIM cx  AS INTEGER
-  DIM cy  AS INTEGER
-  DIM wid AS INTEGER
+  DIM areas AS INTEGER
+  DIM wid   AS INTEGER
 
   DO
    
     '
-    ' Prompt for the number of asteroids
+    ' Prompt for the number of areas
     '
-    wid = WinGetWid("DialogAsteroids")
+    wid = WinGetWid("DialogAreas")
    
     WinShow wid
-    asteroids = VAL(txt(wid, 4)): IF asteroids = 0 THEN asteroids = 15
+    areas = VAL(txt(wid, 4)): IF areas = 0 THEN areas = 15
    
-    '
-    ' Validate initial game options
-    '
-    IF asteroids > 19 THEN
-      '
-      ' Too many asteroids
-      '
-      WinShowName "TooManyAsteroids"
-
+    IF areas > 19 THEN
+      WinShowName "TooManyAreas"
     ELSE
       EXIT DO
     END IF
    
   LOOP
 
-  '
-  ' Initialize asteroid data
-  '
-  FOR aid = 1 TO asteroids
-   
-    '
-    ' Select a random habitat
-    '
-    hid = INT(RND * habitats) + 1
-    asteroid(aid).habitat = hid
-
-    '
-    ' Add the asteroid to the atlas
-    '
-    AtlasNextRandom cx, cy
-    AtlasAddItem cx, cy, aid, habitat(hid).label
-   
-    asteroid(aid).Control = INT(RND * 10)
-    asteroid(aid).detect = INT(RND * 10)
-    asteroid(aid).mined = INT(RND * 50) + 50
-    asteroid(aid).ruler = aid ' HACK with removal of multi-player support
-    asteroid(aid).produce = 50
-    asteroid(aid).tech = 10
-    asteroid(aid).shield = 0
-    asteroid(aid).ships = 200
-    asteroid(aid).supply = 0
-  NEXT
+  WorldInit areas
 
   SetupGame.Atlas
 
@@ -2970,7 +2592,7 @@ FUNCTION UI.RunAtlas%
  
     aid = AtlasGetValue(cx, cy, 0)
 
-    HabitatShow asteroid(aid).habitat
+    HabitatShow area(aid).habitat
 
     UI.Redraw
 
@@ -3764,17 +3386,11 @@ FUNCTION WinParseCommand% (text$)
     CASE "FILTERSELF":
       cid = Command.FilterSelf
 
-    CASE "NEXTMONTH":
-      cid = Command.NextMonth
-
     CASE "NEWGAME":
       cid = Command.NewGame
 
     CASE "OPTIONALERTS":
       cid = Command.OptionAlerts
-
-    CASE "ORDERATTACK":
-      cid = Command.OrderAttack
 
     CASE "REPLOTBAND":
       cid = Command.ReplotBand
@@ -4150,4 +3766,78 @@ SUB WinShowName (idname$)
   END IF
 
 END SUB
+
+SUB WorldInit (areas AS INTEGER)
+  '
+  ' Initializes the world
+  '
+ 
+  DIM aid AS INTEGER
+  DIM cx  AS INTEGER
+  DIM cy  AS INTEGER
+  DIM i   AS INTEGER
+
+  FOR i = 1 TO areas
+  
+    '
+    ' Get the next ID to use for an area
+    '
+    aid = WorldNextId%
+    area(aid).enabled = True
+
+    '
+    ' Select a random habitat
+    '
+    hid = INT(RND * habitats) + 1
+    area(aid).habitat = hid
+
+    '
+    ' Add the area to the atlas
+    '
+    AtlasNextRandom cx, cy
+    AtlasAddItem cx, cy, aid, habitat(hid).label
+  
+  NEXT
+
+END SUB
+
+FUNCTION WorldNextId%
+  '
+  ' Returns the next index to hold a new area
+  '
+
+  STATIC idx AS INTEGER
+
+  DIM try AS INTEGER
+  LET try = idx
+
+  DO
+    '
+    ' Try the next index
+    '
+    try = try + 1
+    IF try > UBOUND(area) THEN
+      try = LBOUND(area)
+    END IF
+
+    IF NOT area(try).enabled THEN
+      '
+      ' An open slot was found - return its index
+      '
+      idx = try
+      WorldNextId% = idx
+      EXIT FUNCTION
+    END IF
+
+    IF try = idx THEN
+      '
+      ' The loop went all the way around - no open slots
+      '
+      WorldNextId% = 0
+      EXIT FUNCTION
+    END IF
+
+  LOOP
+
+END FUNCTION
 
