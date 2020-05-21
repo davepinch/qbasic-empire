@@ -12,19 +12,19 @@ TYPE AreaType
   '
   ' A place that can be visited.
   '
-  enabled AS INTEGER
-  habitat AS INTEGER
+  allocated AS INTEGER
+  habitat   AS INTEGER
 END TYPE
 
 TYPE AtlasItemType
   '
   ' An item shown on the atlas.
   '
-  active AS INTEGER
-  cx     AS INTEGER
-  cy     AS INTEGER
-  value  AS INTEGER
-  label  AS STRING * 20 ' 4 cells + color codes
+  allocated AS INTEGER
+  cx        AS INTEGER
+  cy        AS INTEGER
+  value     AS INTEGER
+  label     AS STRING * 20 ' 4 cells + color codes
 END TYPE
 
 TYPE FieldType
@@ -43,7 +43,7 @@ TYPE HabitatType
   ' A type of habitat such as an electromagnetic storm.
   '
   backdrop AS STRING * 12
-  ui       AS STRING * 3
+  UI       AS STRING * 3
   label    AS STRING * 20
   title    AS STRING * 20
 END TYPE
@@ -685,7 +685,7 @@ SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, label AS STRIN
   '
   ' Add the item to the item list
   '
-  atlasItem(idx).active = -1
+  atlasItem(idx).allocated = -1
   atlasItem(idx).cx = cx
   atlasItem(idx).cy = cy
   atlasItem(idx).value = value
@@ -830,7 +830,7 @@ SUB AtlasDrawItems
   DIM idx AS INTEGER
   FOR idx = 1 TO UBOUND(atlasItem)
  
-    IF atlasItem(idx).active THEN
+    IF atlasItem(idx).allocated THEN
       AtlasDrawCell atlasItem(idx).cx, atlasItem(idx).cy
     END IF
 
@@ -928,7 +928,7 @@ FUNCTION AtlasIndexOf% (value AS INTEGER)
   FOR idx = LBOUND(atlasItem) TO UBOUND(atlasItem)
  
     IF atlasItem(idx).value = value THEN
-      IF atlasItem(idx).active THEN
+      IF atlasItem(idx).allocated THEN
         AtlasIndexOf% = idx
         EXIT FUNCTION
       END IF
@@ -950,7 +950,7 @@ SUB AtlasInit
   '
   DIM idx AS INTEGER
   FOR idx = 1 TO UBOUND(atlasItem)
-    atlasItem(idx).active = 0
+    atlasItem(idx).allocated = 0
   NEXT
 
   ' For performance, a copy of the empty grid is stored
@@ -1090,7 +1090,7 @@ FUNCTION AtlasNextIndex%
       try = 1
     END IF
 
-    IF NOT atlasItem(try).active THEN
+    IF NOT atlasItem(try).allocated THEN
       idx = try
       AtlasNextIndex = idx
       EXIT FUNCTION
@@ -1141,7 +1141,7 @@ SUB AtlasPlotBanded
 
   FOR idx = 1 TO UBOUND(atlasItem)
    
-    IF atlasItem(idx).active THEN
+    IF atlasItem(idx).allocated THEN
       '
       ' Get the new position near the same row as the prior location
       '
@@ -1170,7 +1170,7 @@ SUB AtlasPlotClustered
 
   FOR idx = 1 TO UBOUND(atlasItem)
   
-    IF atlasItem(idx).active THEN
+    IF atlasItem(idx).allocated THEN
       '
       ' Get the new position near the same row as the prior location
       '
@@ -1195,7 +1195,7 @@ SUB AtlasPlotManual
 
   FOR idx = 1 TO UBOUND(atlasItem)
  
-    IF atlasItem(idx).active THEN
+    IF atlasItem(idx).allocated THEN
   
       '
       ' Get the current position of the item
@@ -1235,7 +1235,7 @@ SUB AtlasPlotRandom
 
   FOR idx = 1 TO UBOUND(atlasItem)
   
-    IF atlasItem(idx).active THEN
+    IF atlasItem(idx).allocated THEN
       '
       ' Get the new position near the same row as the prior location
       '
@@ -1374,7 +1374,7 @@ SUB AtlasRemoveValue (value AS INTEGER)
   '
   ' Remove the item from the list
   '
-  atlasItem(idx).active = False
+  atlasItem(idx).allocated = False
 
   cx = atlasItem(idx).cx
   cy = atlasItem(idx).cy
@@ -1558,7 +1558,7 @@ SUB DrawTableRows
 
   FOR aid = LBOUND(area) TO UBOUND(area)
   
-    IF area(aid).enabled THEN
+    IF area(aid).allocated THEN
       row = row + 1
       DrawTableRow row, aid
     END IF
@@ -1780,7 +1780,7 @@ FUNCTION IsFiltered% (aid AS INTEGER)
     '
     IsFiltered% = False
  
-  ELSEIF NOT area(aid).enabled THEN
+  ELSEIF NOT area(aid).allocated THEN
 
     IsFiltered% = False
 
@@ -3742,7 +3742,7 @@ SUB WorldInit (areas AS INTEGER)
     ' Get the next ID to use for an area
     '
     aid = WorldNextId%
-    area(aid).enabled = True
+    area(aid).allocated = True
 
     '
     ' Select a random habitat
@@ -3815,7 +3815,7 @@ SUB WorldLoadHabitats
 
         CASE "UI"
           READ block
-          habitat(habitats).ui = block
+          habitat(habitats).UI = block
 
         CASE ELSE
           StatusDebug "WorldLoadHabitats: unrecognized " + block
@@ -3847,7 +3847,7 @@ FUNCTION WorldNextId%
       try = LBOUND(area)
     END IF
 
-    IF NOT area(try).enabled THEN
+    IF NOT area(try).allocated THEN
       '
       ' An open slot was found - return its index
       '
@@ -3870,9 +3870,9 @@ END FUNCTION
 
 SUB WorldRemove (aid AS INTEGER)
 
-  IF area(aid).enabled THEN
+  IF area(aid).allocated THEN
 
-    area(aid).enabled = False
+    area(aid).allocated = False
     AtlasRemoveValue aid
 
   END IF
@@ -3888,7 +3888,7 @@ SUB WorldShow (aid AS INTEGER)
   '
   hid = area(aid).habitat
 
-  SELECT CASE habitat(hid).ui
+  SELECT CASE habitat(hid).UI
   
     CASE "NEB":
       NebulaShow aid
