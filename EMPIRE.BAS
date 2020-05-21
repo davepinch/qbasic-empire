@@ -51,6 +51,7 @@ TYPE HabitatType
   ' A type of habitat such as an electromagnetic storm.
   '
   backdrop AS STRING * 12
+  UI       AS STRING * 3
   label    AS STRING * 20
   title    AS STRING * 20
 END TYPE
@@ -154,6 +155,15 @@ DECLARE SUB MenuLoad ()
 DECLARE SUB MenuDraw ()
 DECLARE SUB MenuDrawItem (itemId AS INTEGER, selected AS INTEGER)
 DECLARE FUNCTION MenuShow ()
+
+'
+' Nebula* subroutines
+'
+DECLARE SUB NebulaCreate (seq() AS INTEGER)
+DECLARE SUB NebulaCreateSeq (seq() AS INTEGER, y!)
+DECLARE SUB NebulaDraw (seq() AS INTEGER)
+DECLARE SUB NebulaHarvest (seq() AS INTEGER)
+DECLARE SUB NebulaShow ()
 
 '
 ' SetupGame.* subroutines
@@ -313,6 +323,11 @@ CONST FieldKind.Label = 4
 CONST FieldKind.Separator = 5
 
 '
+' Habitat UIs
+'
+CONST HabitatUI.Nebula = "NEB"
+
+'
 ' Maximum UI elements
 '
 CONST MaxMenus = 5
@@ -326,7 +341,14 @@ CONST MenuStyle.BackColor = 7
 CONST MenuStyle.ForeColor = 0
 CONST MenuStyle.SelectedBackColor = 0
 CONST MenuStyle.SelectedForeColor = 15
-                                    
+                                   
+'
+' NebulaIndex constants
+'
+CONST NebulaIndex.X = -2
+CONST NebulaIndex.Y = -1
+CONST NebulaIndex.Size = 0
+
 '
 ' ScanCode constants
 '
@@ -681,6 +703,7 @@ DATA   "Habitat"
 DATA     "Backdrop", "HAB-DNEB.PCB"
 DATA     "Label", "@X08Ä@X0FÄ@X07Ä@X08Ä"
 DATA     "Title", "Dark Nebula"
+DATA     "UI", "NEB"
 DATA   "End"
 DATA   "Habitat"
 DATA     "Backdrop", "HAB-STRM.PCB"
@@ -691,7 +714,7 @@ DATA   "Habitat"
 DATA     "Backdrop", "HAB-FRGE.PCB"
 DATA     "Label", "@X04ùÄ@X4EÅ@X04Ä"
 DATA     "Title", "Forge"
-DATA   "End"     
+DATA   "End"  
 DATA   "Habitat"
 DATA     "Backdrop", "HAB-TOWR.PCB"
 DATA     "Label", "@X07ÛÜ@X08ÜÛ"
@@ -1766,12 +1789,12 @@ SUB DrawText (text AS STRING)
       END IF
       EXIT DO
 
-    ELSEIF nextAt > LEN(text) - 3 THEN
-      '
-      ' Code found, but not enough space for 4 characters
-      '
-      PRINT RIGHT$(text, LEN(text) - startAt + 1);
-      EXIT DO
+    'ELSEIF nextAt > LEN(text) - 3 THEN
+    '  '
+    '  ' Code found, but not enough space for 4 characters
+    '  '
+    '  PRINT RIGHT$(text, LEN(text) - startAt + 1);
+    '  EXIT DO
 
     ELSE
       '
@@ -2093,6 +2116,10 @@ SUB HabitatLoad
           READ block
           habitat(habitats).title = block
 
+        CASE "UI"
+          READ block
+          habitat(habitats).UI = block
+
         CASE ELSE
           StatusDebug "HabitatLoad: unrecognized " + block
 
@@ -2109,12 +2136,20 @@ SUB HabitatShow (hid AS INTEGER)
   ' Shows a habitat screen
   '
 
-  SCREEN , , VideoPage.Working, VideoPage.Display
-  CLS
-  DrawFileAt habitat(hid).backdrop, 1, 2
-  PCOPY VideoPage.Working, VideoPage.Display
-  SCREEN , , VideoPage.Display, VideoPage.Display
-  WaitForKeyPress
+  SELECT CASE habitat(hid).UI
+   
+    CASE "NEB":
+      NebulaShow
+
+    CASE ELSE
+      SCREEN , , VideoPage.Working, VideoPage.Display
+      CLS
+      DrawFileAt habitat(hid).backdrop, 1, 2
+      PCOPY VideoPage.Working, VideoPage.Display
+      SCREEN , , VideoPage.Display, VideoPage.Display
+      WaitForKeyPress
+
+  END SELECT
 
 END SUB
 
@@ -2382,6 +2417,203 @@ NavigateRight:
 
 END FUNCTION
 
+SUB NebulaCreate (seq() AS INTEGER)
+
+  DIM i AS INTEGER
+
+  '
+  ' Initialize y positions of each sequence
+  '
+  FOR i = LBOUND(seq, 1) TO UBOUND(seq, 1)
+    seq(i, NebulaIndex.Y) = i
+  NEXT
+
+  FOR i = LBOUND(seq, 1) TO UBOUND(seq, 1)
+    '
+    ' Get a random index to swap
+    '
+    j = INT(RND * (UBOUND(seq, 1) - LBOUND(seq, 1) + 1)) + LBOUND(seq, 1)
+  
+    '
+    ' Swap values
+    '
+    tmp = seq(i, NebulaIndex.Y)
+    seq(i, NebulaIndex.Y) = seq(j, NebulaIndex.Y)
+    seq(j, NebulaIndex.Y) = tmp
+
+  NEXT
+
+  FOR y = LBOUND(seq, 1) TO UBOUND(seq, 1)
+   
+    NebulaCreateSeq seq(), y
+ 
+    '
+    ' Randomly assign x position
+    '
+    seq(y, NebulaIndex.X) = INT(RND * (80 - seq(y, NebulaIndex.Size))) + 1
+
+  NEXT
+  
+END SUB
+
+SUB NebulaCreateSeq (seq() AS INTEGER, y)
+
+  DIM i AS INTEGER
+  DIM p AS INTEGER
+
+  seq(y, 1) = 1
+  p = 1
+
+  FOR i = 2 TO UBOUND(seq, 2)
+    SELECT CASE p
+    
+      CASE 0:
+        SELECT CASE INT(RND * 3)
+        
+          CASE 0:
+            p = 1
+
+          CASE ELSE
+            seq(y, NebulaIndex.Size) = i - 1
+            EXIT SUB
+      
+        END SELECT
+    
+      CASE 1:
+        SELECT CASE INT(RND * 4)
+          CASE 0
+            p = 0
+          CASE 1
+            p = 2
+          CASE ELSE
+            p = 1
+        END SELECT
+      CASE 2:
+        SELECT CASE INT(RND * 4)
+          CASE 0
+            p = 1
+          CASE 1
+            p = 3
+          CASE ELSE
+            p = 2
+        END SELECT
+    
+      CASE 3:
+      
+        SELECT CASE INT(RND * 4)
+          CASE 0
+            p = 3
+          CASE ELSE
+            p = 2
+        END SELECT
+
+    END SELECT
+  
+    seq(y, i) = p
+
+  NEXT
+
+  seq(y, NebulaIndex.Size) = UBOUND(seq, 2)
+
+END SUB
+
+SUB NebulaDraw (seq() AS INTEGER)
+
+  DIM i AS INTEGER
+  DIM j AS INTEGER
+
+  FOR i = LBOUND(seq, 1) TO UBOUND(seq, 1)
+ 
+    LOCATE seq(i, NebulaIndex.Y), seq(i, NebulaIndex.X)
+
+    FOR j = 1 TO seq(i, NebulaIndex.Size)
+     
+      SELECT CASE seq(i, j)
+        CASE 1:
+          COLOR 8
+          PRINT "Ä";
+
+        CASE 2:
+          COLOR 7
+          PRINT "Ä";
+
+        CASE 3:
+          COLOR 15
+          PRINT "Ä";
+
+        CASE 0:
+          PRINT " ";
+
+      END SELECT
+   
+    NEXT
+
+  NEXT
+
+END SUB
+
+SUB NebulaHarvest (seq() AS INTEGER)
+
+  DIM v AS INTEGER
+  DIM y AS INTEGER
+
+  FOR y = LBOUND(seq, 1) TO UBOUND(seq, 1)
+ 
+    FOR x = 1 TO seq(y, NebulaIndex.Size)
+       
+      v = seq(y, x)
+      IF v > 0 THEN
+        seq(y, x) = v - 1
+      END IF
+
+    NEXT
+
+  NEXT
+
+END SUB
+
+SUB NebulaShow
+
+  DIM count    AS INTEGER
+  DIM keypress AS STRING
+ 
+  DIM seq(2 TO 24, -2 TO 40) AS INTEGER
+
+  CLS
+
+  NebulaCreate seq()
+ 
+  DO
+   
+    NebulaDraw seq()
+   
+    SELECT CASE count
+      CASE 0: StatusUpdate "@X07[@X0FSpace@X07] [@X0FESC@X07]"
+      CASE 1: StatusUpdate "@X07[@X07Space@X07] [@X0FESC@X07]"
+      CASE 2: StatusUpdate "@X07[@X08Space@X07] [@X0FESC@X07]"
+    END SELECT
+
+    keypress = GetKey$
+
+    IF keypress = CHR$(ASCII.Space) THEN
+     
+      NebulaHarvest seq()
+      count = count + 1
+      IF count = 3 THEN
+        CLS
+        StatusUpdate "@X07[@X04Empty@X07] [@X0FESC@X07]"
+        WaitForKeyPress
+        EXIT DO
+      END IF
+
+    ELSE
+      EXIT DO
+    END IF
+
+  LOOP
+
+END SUB
+
 SUB PaintBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
   
    DIM at% ' Attribute
@@ -2630,7 +2862,8 @@ SUB StatusUpdateLevel (text AS STRING, level AS INTEGER)
   ' Print the updated status and reset the viewport
   '
   CLS
-  PRINT text;
+  'PRINT text;
+  DrawText text
   VIEW PRINT
   
 END SUB
