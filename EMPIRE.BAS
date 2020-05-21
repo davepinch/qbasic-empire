@@ -43,7 +43,7 @@ TYPE HabitatType
   ' A type of habitat such as an electromagnetic storm.
   '
   backdrop AS STRING * 12
-  UI       AS STRING * 3
+  ui       AS STRING * 3
   label    AS STRING * 20
   title    AS STRING * 20
 END TYPE
@@ -97,11 +97,13 @@ DECLARE SUB AtlasPlotBanded ()
 DECLARE SUB AtlasPlotClustered ()
 DECLARE SUB AtlasPlotManual ()
 DECLARE SUB AtlasPlotRandom ()
+DECLARE SUB AtlasRemoveValue (value AS INTEGER)
 DECLARE FUNCTION AtlasNextIndex% ()
 DECLARE FUNCTION AtlasCellFiltered% (cx AS INTEGER, cy AS INTEGER)
 DECLARE FUNCTION AtlasGetScreenX% (cx AS INTEGER)
 DECLARE FUNCTION AtlasGetScreenY% (cy AS INTEGER)
 DECLARE FUNCTION AtlasGetValue% (cx AS INTEGER, cy AS INTEGER, default AS INTEGER)
+DECLARE FUNCTION AtlasIndexOf% (value AS INTEGER)
 DECLARE FUNCTION AtlasPrompt (outcx AS INTEGER, outcy AS INTEGER, promptFor AS INTEGER)
 
 '
@@ -119,12 +121,6 @@ DECLARE SUB ExecuteViewAtlas ()
 DECLARE SUB ExecuteViewTable ()
 
 '
-' Habitat*
-'
-DECLARE SUB HabitatShow (hid AS INTEGER)
-DECLARE SUB HabitatLoad ()
-
-'
 ' Menu* subroutines
 '
 DECLARE SUB MenuHide ()
@@ -140,7 +136,7 @@ DECLARE SUB NebulaCreate (seq() AS INTEGER)
 DECLARE SUB NebulaCreateSeq (seq() AS INTEGER, y!)
 DECLARE SUB NebulaDraw (seq() AS INTEGER)
 DECLARE SUB NebulaHarvest (seq() AS INTEGER)
-DECLARE SUB NebulaShow ()
+DECLARE SUB NebulaShow (aid AS INTEGER)
 
 '
 ' SetupGame.* subroutines
@@ -211,6 +207,9 @@ DECLARE SUB WinShowName (idname$)
 ' World* subroutines
 '
 DECLARE SUB WorldInit (areas AS INTEGER)
+DECLARE SUB WorldRemove (aid AS INTEGER)
+DECLARE SUB WorldShow (aid AS INTEGER)
+DECLARE SUB WorldLoadHabitats ()
 DECLARE FUNCTION WorldNextId% ()
 
 '
@@ -811,7 +810,6 @@ SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
   IF idx = 0 THEN
     PRINT STRING$(AtlasStyle.CellSizeX, " ");
   ELSE
-    'PRINT atlasitem(idx).label;
     DrawText RTRIM$(atlasItem(idx).label)
   END IF
 
@@ -918,6 +916,27 @@ FUNCTION AtlasGetValue% (cx AS INTEGER, cy AS INTEGER, default AS INTEGER)
   ELSE
     AtlasGetValue% = atlasItem(idx).value
   END IF
+
+END FUNCTION
+
+FUNCTION AtlasIndexOf% (value AS INTEGER)
+  '
+  ' Returns the index of the first item with the specified value.
+  '
+
+  DIM idx AS INTEGER
+  FOR idx = LBOUND(atlasItem) TO UBOUND(atlasItem)
+ 
+    IF atlasItem(idx).value = value THEN
+      IF atlasItem(idx).active THEN
+        AtlasIndexOf% = idx
+        EXIT FUNCTION
+      END IF
+    END IF
+
+  NEXT
+
+  AtlasIndexOf% = 0
 
 END FUNCTION
 
@@ -1341,6 +1360,35 @@ FUNCTION AtlasPrompt (outcx AS INTEGER, outcy AS INTEGER, promptFor AS INTEGER)
 
 END FUNCTION
 
+SUB AtlasRemoveValue (value AS INTEGER)
+
+  DIM cx  AS INTEGER
+  DIM cy  AS INTEGER
+  DIM idx AS INTEGER
+
+  '
+  ' Get the index of the item with this value
+  '
+  idx = AtlasIndexOf%(value)
+
+  '
+  ' Remove the item from the list
+  '
+  atlasItem(idx).active = False
+
+  cx = atlasItem(idx).cx
+  cy = atlasItem(idx).cy
+
+  '
+  ' Remove the item from the grid
+  '
+  atlasGrid(cx, cy) = 0
+  IF atlasActive THEN
+    AtlasDrawCell cx, cy
+  END IF
+
+END SUB
+
 SUB DrawFile (filename AS STRING)
   '
   ' Draws a PCB file containing embedded color codes
@@ -1721,96 +1769,6 @@ FUNCTION GetKey$
   GetKey$ = k
 
 END FUNCTION
-
-SUB HabitatLoad
-  '
-  ' Loads habitat information from DATA
-  '
- 
-  DIM block AS STRING
-
-  '
-  ' Verify this is the start of a data block
-  '
-  READ block
-  IF block <> "Habitats" THEN
-    StatusDebug "HabitatLoad: data started with " + block
-    EXIT SUB
-  END IF
-
-  DO
- 
-    '
-    ' The next block can be "End" (end of data) or "Habitat" (new habitat)
-    '
-    READ block
-    IF block = "End" THEN
-      EXIT SUB
-    END IF
-    IF block <> "Habitat" THEN
-      StatusDebug "HabitatLoad: block started with " + block
-      EXIT SUB
-    END IF
-
-    habitats = habitats + 1
-    
-    DO
-   
-      READ block
-
-      SELECT CASE block
-       
-        CASE "End"
-          EXIT DO
-       
-        CASE "Backdrop"
-          READ block
-          habitat(habitats).backdrop = block
-
-        CASE "Label"
-          READ block
-          habitat(habitats).label = block
-
-        CASE "Title"
-          READ block
-          habitat(habitats).title = block
-
-        CASE "UI"
-          READ block
-          habitat(habitats).UI = block
-
-        CASE ELSE
-          StatusDebug "HabitatLoad: unrecognized " + block
-
-      END SELECT
-
-    LOOP
-
-  LOOP
-
-END SUB
-
-SUB HabitatShow (hid AS INTEGER)
-  '
-  ' Shows a habitat screen
-  '
-
-  SELECT CASE habitat(hid).UI
-   
-    CASE "NEB":
-      NebulaShow
-
-    CASE ELSE
-      SCREEN , , VideoPage.Working, VideoPage.Display
-      CLS
-      DrawFileAt habitat(hid).backdrop, 1, 2
-      PCOPY VideoPage.Working, VideoPage.Display
-      SCREEN , , VideoPage.Display, VideoPage.Display
-      WaitForKeyPress
-
-  END SELECT
-
-END SUB
 
 FUNCTION IsFiltered% (aid AS INTEGER)
 
@@ -2231,7 +2189,7 @@ SUB NebulaHarvest (seq() AS INTEGER)
 
 END SUB
 
-SUB NebulaShow
+SUB NebulaShow (aid AS INTEGER)
 
   DIM count    AS INTEGER
   DIM keypress AS STRING
@@ -2250,6 +2208,7 @@ SUB NebulaShow
       CASE 0: StatusUpdate "@X07[@X0FSpace@X07] [@X0FESC@X07]"
       CASE 1: StatusUpdate "@X07[@X07Space@X07] [@X0FESC@X07]"
       CASE 2: StatusUpdate "@X07[@X08Space@X07] [@X0FESC@X07]"
+   
     END SELECT
 
     keypress = GetKey$
@@ -2262,6 +2221,7 @@ SUB NebulaShow
         CLS
         StatusUpdate "@X07[@X04Empty@X07] [@X0FESC@X07]"
         WaitForKeyPress
+        WorldRemove aid
         EXIT DO
       END IF
 
@@ -2311,7 +2271,7 @@ SUB SetupGame
   StatusUpdate "Please wait..."
   WinLoad
   MenuLoad
-  HabitatLoad
+  WorldLoadHabitats
 
   '
   ' Draw master screens
@@ -2592,8 +2552,7 @@ FUNCTION UI.RunAtlas%
  
     aid = AtlasGetValue(cx, cy, 0)
 
-    HabitatShow area(aid).habitat
-
+    WorldShow aid
     UI.Redraw
 
   ELSE
@@ -3801,6 +3760,74 @@ SUB WorldInit (areas AS INTEGER)
 
 END SUB
 
+SUB WorldLoadHabitats
+  '
+  ' Loads habitat information from DATA
+  '
+ 
+  DIM block AS STRING
+
+  '
+  ' Verify this is the start of a data block
+  '
+  READ block
+  IF block <> "Habitats" THEN
+    StatusDebug "WorldLoadHabitats: data started with " + block
+    EXIT SUB
+  END IF
+
+  DO
+ 
+    '
+    ' The next block can be "End" (end of data) or "Habitat" (new habitat)
+    '
+    READ block
+    IF block = "End" THEN
+      EXIT SUB
+    END IF
+    IF block <> "Habitat" THEN
+      StatusDebug "WorldLoadHabitats: block started with " + block
+      EXIT SUB
+    END IF
+
+    habitats = habitats + 1
+    
+    DO
+   
+      READ block
+
+      SELECT CASE block
+       
+        CASE "End"
+          EXIT DO
+       
+        CASE "Backdrop"
+          READ block
+          habitat(habitats).backdrop = block
+
+        CASE "Label"
+          READ block
+          habitat(habitats).label = block
+
+        CASE "Title"
+          READ block
+          habitat(habitats).title = block
+
+        CASE "UI"
+          READ block
+          habitat(habitats).ui = block
+
+        CASE ELSE
+          StatusDebug "WorldLoadHabitats: unrecognized " + block
+
+      END SELECT
+
+    LOOP
+
+  LOOP
+
+END SUB
+
 FUNCTION WorldNextId%
   '
   ' Returns the next index to hold a new area
@@ -3840,4 +3867,41 @@ FUNCTION WorldNextId%
   LOOP
 
 END FUNCTION
+
+SUB WorldRemove (aid AS INTEGER)
+
+  IF area(aid).enabled THEN
+
+    area(aid).enabled = False
+    AtlasRemoveValue aid
+
+  END IF
+
+END SUB
+
+SUB WorldShow (aid AS INTEGER)
+
+  DIM hid AS INTEGER
+ 
+  '
+  ' Get the habitat of the area
+  '
+  hid = area(aid).habitat
+
+  SELECT CASE habitat(hid).ui
+  
+    CASE "NEB":
+      NebulaShow aid
+
+    CASE ELSE
+      SCREEN , , VideoPage.Working, VideoPage.Display
+      CLS
+      DrawFileAt habitat(hid).backdrop, 1, 2
+      PCOPY VideoPage.Working, VideoPage.Display
+      SCREEN , , VideoPage.Display, VideoPage.Display
+      WaitForKeyPress
+
+  END SELECT
+
+END SUB
 
