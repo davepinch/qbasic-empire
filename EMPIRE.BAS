@@ -15,6 +15,7 @@ TYPE AreaType
   '
   allocated AS INTEGER
   habitat   AS INTEGER
+  level     AS INTEGER
 END TYPE
 
 TYPE AtlasItemType
@@ -99,6 +100,7 @@ DECLARE SUB AtlasPlotBanded ()
 DECLARE SUB AtlasPlotClustered ()
 DECLARE SUB AtlasPlotManual ()
 DECLARE SUB AtlasPlotRandom ()
+DECLARE SUB AtlasRemoveItem (idx AS INTEGER)
 DECLARE SUB AtlasRemoveValue (value AS INTEGER)
 DECLARE SUB AtlasSetLabel (idx AS INTEGER, label AS STRING)
 DECLARE FUNCTION AtlasNextIndex% ()
@@ -107,7 +109,7 @@ DECLARE FUNCTION AtlasGetScreenX% (cx AS INTEGER)
 DECLARE FUNCTION AtlasGetScreenY% (cy AS INTEGER)
 DECLARE FUNCTION AtlasGetValue% (cx AS INTEGER, cy AS INTEGER, default AS INTEGER)
 DECLARE FUNCTION AtlasIndexOf% (value AS INTEGER)
-DECLARE FUNCTION AtlasPrompt (outcx AS INTEGER, outcy AS INTEGER, promptFor AS INTEGER)
+DECLARE FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS INTEGER, outpress AS STRING)
 
 '
 ' Execute* subroutines
@@ -140,6 +142,7 @@ DECLARE SUB NebulaCreateSeq (seq() AS INTEGER, y!)
 DECLARE SUB NebulaDraw (seq() AS INTEGER)
 DECLARE SUB NebulaHarvest (seq() AS INTEGER)
 DECLARE SUB NebulaShow (aid AS INTEGER)
+DECLARE FUNCTION NebulaLabel$ (level AS INTEGER)
 
 '
 ' SetupGame.* subroutines
@@ -166,6 +169,7 @@ DECLARE SUB StatusUpdateLevel (text AS STRING, level AS INTEGER)
 DECLARE SUB UI.Redraw ()
 DECLARE SUB UI.Refresh ()
 DECLARE SUB UI.Run ()
+DECLARE SUB UI.RunWorld (aid AS INTEGER)
 DECLARE SUB UI.SetFilter (Filter AS INTEGER, refreshUI AS INTEGER)
 DECLARE SUB UI.SetPage (page AS INTEGER)
 DECLARE FUNCTION UI.RunAtlas% ()
@@ -214,7 +218,6 @@ DECLARE SUB WorldAddNebula (size AS INTEGER)
 DECLARE SUB WorldInit (areas AS INTEGER)
 DECLARE SUB WorldRemove (aid AS INTEGER)
 DECLARE SUB WorldSetLabel (aid AS INTEGER, label AS STRING)
-DECLARE SUB WorldShow (aid AS INTEGER)
 DECLARE SUB WorldLoadHabitats ()
 DECLARE FUNCTION WorldAdd% (hid AS INTEGER, cx AS INTEGER, cy AS INTEGER)
 DECLARE FUNCTION WorldNextId% ()
@@ -941,7 +944,7 @@ FUNCTION AtlasIndexOf% (value AS INTEGER)
   '
 
   DIM idx AS INTEGER
-  FOR idx = LBOUND(atlasItem) TO UBOUND(atlasItem)
+  FOR idx = 1 TO UBOUND(atlasItem)
  
     IF atlasItem(idx).value = value THEN
       IF atlasItem(idx).allocated THEN
@@ -1128,7 +1131,9 @@ SUB AtlasNextManual (outcx AS INTEGER, outcy AS INTEGER)
   ' Returns the next manually-selected position.
   '
  
-  IF NOT AtlasPrompt(outcx, outcy, AtlasPromptFor.EmptyOrSelf) THEN
+  DIM outpress AS STRING
+
+  IF NOT AtlasPrompt(AtlasPromptFor.EmptyOrSelf, outcx, outcy, outpress) THEN
     outcx = 0
     outcy = 0
   END IF
@@ -1268,7 +1273,7 @@ SUB AtlasPlotRandom
   
 END SUB
 
-FUNCTION AtlasPrompt (outcx AS INTEGER, outcy AS INTEGER, promptFor AS INTEGER)
+FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS INTEGER, outpress AS STRING)
   '
   ' Prompts the user to select a cell and either returns the
   ' selected coordinates or (0,0) if canceled.
@@ -1319,13 +1324,15 @@ FUNCTION AtlasPrompt (outcx AS INTEGER, outcy AS INTEGER, promptFor AS INTEGER)
     SELECT CASE keypress
   
       CASE CHR$(ASCII.Escape)
+        outpress = keypress
         AtlasPrompt = False
         EXIT FUNCTION
 
-      CASE CHR$(ASCII.Return)
+      CASE CHR$(ASCII.Return), " "
         IF valid THEN
           outcx = mx
           outcy = my
+          outpress = keypress
           AtlasPrompt = True
           EXIT FUNCTION
         END IF
@@ -1376,32 +1383,45 @@ FUNCTION AtlasPrompt (outcx AS INTEGER, outcy AS INTEGER, promptFor AS INTEGER)
 
 END FUNCTION
 
-SUB AtlasRemoveValue (value AS INTEGER)
+SUB AtlasRemoveItem (idx AS INTEGER)
+  '
+  ' Removes the specified item from the atlas.
+  '
 
   DIM cx  AS INTEGER
   DIM cy  AS INTEGER
-  DIM idx AS INTEGER
 
-  '
-  ' Get the index of the item with this value
-  '
-  idx = AtlasIndexOf%(value)
+  IF atlasItem(idx).allocated THEN
+ 
+    '
+    ' Remove the item from the list
+    '
+    atlasItem(idx).allocated = False
+ 
+    '
+    ' Remove the item from the grid
+    '
+    cx = atlasItem(idx).cx
+    cy = atlasItem(idx).cy
 
-  '
-  ' Remove the item from the list
-  '
-  atlasItem(idx).allocated = False
-
-  cx = atlasItem(idx).cx
-  cy = atlasItem(idx).cy
-
-  '
-  ' Remove the item from the grid
-  '
-  atlasGrid(cx, cy) = 0
-  IF atlasActive THEN
-    AtlasDrawCell cx, cy
+    atlasGrid(cx, cy) = 0
+    IF atlasActive THEN
+      AtlasDrawCell cx, cy
+    END IF
+ 
   END IF
+
+END SUB
+
+SUB AtlasRemoveValue (value AS INTEGER)
+  '
+  ' Removes the item with the specified value from the atlas
+  '
+
+  DIM idx AS INTEGER
+  LET idx = AtlasIndexOf%(value)
+
+  AtlasRemoveItem idx
 
 END SUB
 
@@ -1409,6 +1429,7 @@ SUB AtlasSetLabel (idx AS INTEGER, label AS STRING)
   '
   ' Sets the label for the specified item
   '
+ 
   atlasItem(idx).label = label
   IF atlasActive THEN
     AtlasDrawItem idx
@@ -2220,12 +2241,51 @@ SUB NebulaHarvest (seq() AS INTEGER)
 
 END SUB
 
+FUNCTION NebulaLabel$ (level AS INTEGER)
+
+  DIM label AS STRING
+
+  SELECT CASE level
+
+    CASE 0:
+      label = " @X08Ä  "
+
+    CASE 1:
+      SELECT CASE INT(RND * 4)
+        CASE 0: label = "@X08Ä - "
+        CASE 1: label = "@X08 ÄÄ "
+        CASE 2: label = "@X08 Ä Ä"
+        CASE 3: label = "@X08Ä  Ä"
+      END SELECT
+
+    CASE 2:
+      SELECT CASE INT(RND * 4)
+        CASE 0: label = "@X08Ä@X07Ä @X08Ä"
+        CASE 1: label = "@X08Ä @X07Ä@X08Ä"
+        CASE 2: label = " @X08Ä@X07Ä@X08Ä"
+        CASE 3: label = "@X08Ä@X07ÄÄ@X08Ä"
+      END SELECT
+
+    CASE 3:
+      SELECT CASE INT(RND * 3)
+        CASE 0: label = "@X08Ä@X07Ä@X0FÄ@X07"
+        CASE 1: label = "@X07ÄÄ@X0FÄ@X07Ä"
+        CASE 2: label = "@X08Ä @X0FÄ@X08Ä"
+      END SELECT
+
+    CASE ELSE
+      label = ""
+
+  END SELECT
+
+  NebulaLabel$ = label
+
+END FUNCTION
+
 SUB NebulaShow (aid AS INTEGER)
 
-  DIM count    AS INTEGER
   DIM keypress AS STRING
- 
-  DIM seq(2 TO 24, -2 TO 40) AS INTEGER
+  DIM seq(2 TO 24, -2 TO 30) AS INTEGER
 
   CLS
 
@@ -2234,15 +2294,28 @@ SUB NebulaShow (aid AS INTEGER)
   '
   NebulaCreate seq()
  
+  '
+  ' HACK for now: update sequence to reflect the level
+  '
+  SELECT CASE area(aid).level
+    CASE 0:
+      area(aid).level = 3
+    CASE 1:
+      NebulaHarvest seq()
+      NebulaHarvest seq()
+    CASE 2:
+      NebulaHarvest seq()
+  END SELECT
+
   DO
    
     NebulaDraw seq()
    
-    SELECT CASE count
-      CASE 0: StatusUpdate "@X07[@X0FSpace@X07] [@X0FESC@X07]"
-      CASE 1: StatusUpdate "@X07[@X07Space@X07] [@X0FESC@X07]"
-      CASE 2: StatusUpdate "@X07[@X08Space@X07] [@X0FESC@X07]"
-      CASE 3: StatusUpdate "@X07[@X04Empty@X07] [@X0FESC@X07]"
+    SELECT CASE area(aid).level
+      CASE 3: StatusUpdate "@X07[@X0FSpace@X07] [@X0FESC@X07]"
+      CASE 2: StatusUpdate "@X07[@X07Space@X07] [@X0FESC@X07]"
+      CASE 1: StatusUpdate "@X07[@X08Space@X07] [@X0FESC@X07]"
+      CASE 0: StatusUpdate "@X07[@X04Empty@X07] [@X0FESC@X07]"
     END SELECT
 
     keypress = GetKey$
@@ -2260,23 +2333,24 @@ SUB NebulaShow (aid AS INTEGER)
     
       CASE " "
        
+        IF area(aid).level = 0 THEN
+          EXIT SUB
+        END IF
+
         '
         ' Perform the harvest
         '
-        count = count + 1
-        SELECT CASE count
-          CASE 1
-            NebulaHarvest seq()
-            WorldSetLabel aid, "@X08Ä@X07ÄÄ@X08Ä"
-          CASE 2
-            NebulaHarvest seq()
-            WorldSetLabel aid, "@X08Ä@X07Ä @X08Ä"
-          CASE 3
-            NebulaHarvest seq()
-            WorldRemove aid
-          CASE 4
-            EXIT SUB
-        END SELECT
+        area(aid).level = area(aid).level - 1
+        NebulaHarvest seq()
+       
+        '
+        ' Update or remove the label
+        '
+        IF area(aid).level = 0 THEN
+          WorldRemove aid
+        ELSE
+          WorldSetLabel aid, NebulaLabel$(area(aid).level)
+        END IF
 
     END SELECT
 
@@ -2562,27 +2636,60 @@ END SUB
 
 FUNCTION UI.RunAtlas%
  
-  DIM aid AS INTEGER
+  DIM aid      AS INTEGER
+  DIM outpress AS STRING
+
   STATIC cx  AS INTEGER
   STATIC cy  AS INTEGER
 
   IF cx = 0 THEN cx = 1
   IF cy = 0 THEN cy = 1
 
-  IF AtlasPrompt(cx, cy, AtlasPromptFor.Item) THEN
+  IF AtlasPrompt(AtlasPromptFor.Item, cx, cy, outpress) THEN
  
     aid = AtlasGetValue(cx, cy, 0)
 
-    AtlasDisplayOff
-    WorldShow aid
-    UI.SetPage UIPage.Atlas
-    UI.Redraw
+    SELECT CASE outpress
+      CASE CHR$(ASCII.Return)
+        AtlasDisplayOff
+        UI.RunWorld aid
+        UI.SetPage UIPage.Atlas
+        UI.Redraw
+      CASE " "
+        
+    END SELECT
 
   ELSE
     UI.RunAtlas% = MenuShow
   END IF
 
 END FUNCTION
+
+SUB UI.RunWorld (aid AS INTEGER)
+
+  DIM hid AS INTEGER
+ 
+  '
+  ' Get the habitat of the area
+  '
+  hid = area(aid).habitat
+
+  SELECT CASE habitat(hid).UI
+  
+    CASE "NEB":
+      NebulaShow aid
+
+    CASE ELSE
+      SCREEN , , VideoPage.Working, VideoPage.Display
+      CLS
+      DrawFileAt habitat(hid).backdrop, 1, 2
+      PCOPY VideoPage.Working, VideoPage.Display
+      SCREEN , , VideoPage.Display, VideoPage.Display
+      WaitForKeyPress
+
+  END SELECT
+
+END SUB
 
 SUB UI.SetFilter (Filter AS INTEGER, refreshUI AS INTEGER)
   '
@@ -3949,6 +4056,9 @@ FUNCTION WorldNextId%
 END FUNCTION
 
 SUB WorldRemove (aid AS INTEGER)
+  '
+  ' Removes an area from the world
+  '
 
   IF area(aid).allocated THEN
 
@@ -3973,32 +4083,6 @@ SUB WorldSetLabel (aid AS INTEGER, label AS STRING)
   IF idx > 0 THEN
     AtlasSetLabel idx, label
   END IF
-
-END SUB
-
-SUB WorldShow (aid AS INTEGER)
-
-  DIM hid AS INTEGER
- 
-  '
-  ' Get the habitat of the area
-  '
-  hid = area(aid).habitat
-
-  SELECT CASE habitat(hid).UI
-  
-    CASE "NEB":
-      NebulaShow aid
-
-    CASE ELSE
-      SCREEN , , VideoPage.Working, VideoPage.Display
-      CLS
-      DrawFileAt habitat(hid).backdrop, 1, 2
-      PCOPY VideoPage.Working, VideoPage.Display
-      SCREEN , , VideoPage.Display, VideoPage.Display
-      WaitForKeyPress
-
-  END SELECT
 
 END SUB
 
