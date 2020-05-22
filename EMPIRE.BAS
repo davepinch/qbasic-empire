@@ -206,10 +206,13 @@ DECLARE SUB WinShowName (idname$)
 '
 ' World* subroutines
 '
+DECLARE SUB WorldAddCluster (hid AS INTEGER, size AS INTEGER)
+DECLARE SUB WorldAddNebula (size AS INTEGER)
 DECLARE SUB WorldInit (areas AS INTEGER)
 DECLARE SUB WorldRemove (aid AS INTEGER)
 DECLARE SUB WorldShow (aid AS INTEGER)
 DECLARE SUB WorldLoadHabitats ()
+DECLARE FUNCTION WorldAdd% (hid AS INTEGER, cx AS INTEGER, cy AS INTEGER)
 DECLARE FUNCTION WorldNextId% ()
 
 '
@@ -309,7 +312,6 @@ CONST HabitatUI.Nebula = "NEB"
 '
 ' Maximum UI elements
 '
-CONST MaxAreas = 30
 CONST MaxMenus = 5
 CONST MaxFields = 15
 CONST MaxWindows = 50
@@ -416,22 +418,18 @@ CONST WinStyle.ShadowForecolor = 8
 CONST WinStyle.ShadowBackcolor = 0
 
 '
-' Global area variables
+' Global world variables
 '
-DIM SHARED area(1 TO MaxAreas) AS AreaType
+DIM SHARED area(1 TO 30)       AS AreaType
+DIM SHARED habitat(1 TO 20)    AS HabitatType
+DIM SHARED habitats            AS INTEGER
 
 '
 ' Global atlas variables
 '
 DIM SHARED atlasActive AS INTEGER
 DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS INTEGER
-DIM SHARED atlasItem(1 TO 20) AS AtlasItemType
-
-'
-' Global habitat variables
-'
-DIM SHARED habitat(1 TO 20) AS HabitatType
-DIM SHARED habitats AS INTEGER
+DIM SHARED atlasItem(1 TO 30) AS AtlasItemType
 
 '
 ' Global menu variables
@@ -478,8 +476,8 @@ REM Window 1
   DATA   "PosX", 22
   DATA   "PosY", 10
   DATA   "$", 0, 1, " Select an option to get started: "
-  DATA   "@", 12, 3, 10, "NewGame", " New Game "
-  DATA   "@", 12, 4, 10, "<command>", " Old Game "
+  DATA   "@", 12, 3, 10, "NewGame",   " New Game "
+  DATA   "@", 12, 4, 10, "<command>", " Exit App "
   DATA "End"
 
 REM Window 2
@@ -681,7 +679,11 @@ SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, label AS STRIN
   ' Get the index of the new item
   '
   idx = AtlasNextIndex%
- 
+  IF idx = 0 THEN
+    StatusDebug "AtlasAddItem: no index available"
+    EXIT SUB
+  END IF
+
   '
   ' Add the item to the item list
   '
@@ -1501,14 +1503,12 @@ SUB DrawTable
   PRINT divideLeft; STRING$(77, divideLine); divideRight
 
   '
-  ' Draw each row of data
+  ' Draw each row
   '
   DIM x AS INTEGER
   FOR x = 3 TO 23
-   
     LOCATE x, 1: PRINT vertical
     LOCATE x, 79: PRINT vertical;
-
   NEXT
 
   '
@@ -1526,6 +1526,12 @@ SUB DrawTableRow (row AS INTEGER, aid AS INTEGER)
   '
   ' Move to the first character of the row (inside border)
   '
+  ' HACK: supress error caused by too many rows - fix later.
+  IF row < 1 OR row > 19 THEN
+    StatusDebug "DrawRowTable row=" + STR$(row)
+    EXIT SUB
+  END IF
+
   LOCATE row + 4, 3
 
   '
@@ -2300,7 +2306,7 @@ SUB SetupGame
   WinShowName "Start"
  
   IF fld(1, win(1).selected).cid = Command.NewGame THEN
-    SetupGame.New
+    WorldInit 15
   ELSE
     END
   END IF
@@ -2360,38 +2366,6 @@ SUB SetupGame.Atlas
     END SELECT
 
   LOOP
-
-END SUB
-
-SUB SetupGame.New
-  '
-  ' Initializes a new game
-  '
-
-  DIM areas AS INTEGER
-  DIM wid   AS INTEGER
-
-  DO
-   
-    '
-    ' Prompt for the number of areas
-    '
-    wid = WinGetWid("DialogAreas")
-   
-    WinShow wid
-    areas = VAL(txt(wid, 4)): IF areas = 0 THEN areas = 15
-   
-    IF areas > 19 THEN
-      WinShowName "TooManyAreas"
-    ELSE
-      EXIT DO
-    END IF
-   
-  LOOP
-
-  WorldInit areas
-
-  SetupGame.Atlas
 
 END SUB
 
@@ -2509,6 +2483,11 @@ SUB UI.Run
   '
  
   DIM cid AS INTEGER
+
+  '
+  ' Set the atlas as the initial page
+  '
+  UI.SetPage UIPage.Atlas
 
   DO
     
@@ -3726,6 +3705,63 @@ SUB WinShowName (idname$)
 
 END SUB
 
+FUNCTION WorldAdd% (hid AS INTEGER, cx AS INTEGER, cy AS INTEGER)
+
+  DIM aid AS INTEGER
+
+  '
+  ' Allocate the area
+  '
+  LET aid = WorldNextId%
+  area(aid).allocated = True
+  area(aid).habitat = hid
+
+  '
+  ' Position on the atlas
+  '
+  AtlasAddItem cx, cy, aid, habitat(hid).label
+
+  WorldAdd% = aid
+
+END FUNCTION
+
+SUB WorldAddCluster (hid AS INTEGER, size AS INTEGER)
+
+  DIM aid AS INTEGER
+  DIM cx  AS INTEGER
+  DIM cy  AS INTEGER
+  DIM i   AS INTEGER
+ 
+  FOR i = 1 TO size
+    AtlasNextClustered cx, cy
+    aid = WorldAdd%(hid, cx, cy)
+  NEXT
+  
+END SUB
+
+SUB WorldAddNebula (size AS INTEGER)
+
+  DIM hid AS INTEGER
+  DIM i   AS INTEGER
+
+  '
+  ' Find the nebula habitat
+  '
+  FOR i = 1 TO habitats
+    IF habitat(i).UI = HabitatUI.Nebula THEN
+      hid = i
+      EXIT FOR
+    END IF
+  NEXT
+  IF hid = 0 THEN
+    StatusDebug "WorldAddNebula: unable to find nebula habitat"
+    EXIT SUB
+  END IF
+
+  WorldAddCluster hid, size
+
+END SUB
+
 SUB WorldInit (areas AS INTEGER)
   '
   ' Initializes the world
@@ -3734,28 +3770,28 @@ SUB WorldInit (areas AS INTEGER)
   DIM aid AS INTEGER
   DIM cx  AS INTEGER
   DIM cy  AS INTEGER
+  DIM hid AS INTEGER
   DIM i   AS INTEGER
 
+  WorldAddNebula 15
+
   FOR i = 1 TO areas
-  
-    '
-    ' Get the next ID to use for an area
-    '
-    aid = WorldNextId%
-    area(aid).allocated = True
 
     '
     ' Select a random habitat
     '
     hid = INT(RND * habitats) + 1
-    area(aid).habitat = hid
 
     '
-    ' Add the area to the atlas
+    ' Select a random location
     '
     AtlasNextRandom cx, cy
-    AtlasAddItem cx, cy, aid, habitat(hid).label
-  
+   
+    '
+    ' Add the area to the world
+    '
+    aid = WorldAdd%(hid, cx, cy)
+
   NEXT
 
 END SUB
