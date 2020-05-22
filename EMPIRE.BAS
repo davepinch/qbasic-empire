@@ -2214,26 +2214,19 @@ SUB NebulaShow (aid AS INTEGER)
       CASE 0: StatusUpdate "@X07[@X0FSpace@X07] [@X0FESC@X07]"
       CASE 1: StatusUpdate "@X07[@X07Space@X07] [@X0FESC@X07]"
       CASE 2: StatusUpdate "@X07[@X08Space@X07] [@X0FESC@X07]"
-   
+      CASE 3: StatusUpdate "@X07[@X04Empty@X07] [@X0FESC@X07]"
     END SELECT
 
     keypress = GetKey$
 
-    IF keypress = CHR$(ASCII.Space) THEN
-     
-      NebulaHarvest seq()
-      count = count + 1
-      IF count = 3 THEN
-        CLS
-        StatusUpdate "@X07[@X04Empty@X07] [@X0FESC@X07]"
-        WaitForKeyPress
-        WorldRemove aid
-        EXIT DO
-      END IF
-
-    ELSE
+    IF count = 3 THEN
+      WorldRemove aid
       EXIT DO
     END IF
+   
+    count = count + 1
+
+    NebulaHarvest seq()
 
   LOOP
 

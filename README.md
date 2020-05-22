@@ -6,12 +6,14 @@
 
 # controls
 
-* Use the arrow keys to navigate dialog boxes.
+* Follow any prompts on the screen.
+* Use the arrow keys to navigate dialog boxes and the atlas.
+* Press Enter to select a menu item; press Escape to cancel an operation.
 * Use ^S, ^E, ^D and ^X to move windows.
 
 # plans
 
-Currently in step 1:
+Currently in step 2:
 
 1. Setup open source.
 2. Clean up code.
@@ -25,7 +27,7 @@ Around 1991 I had a friend who greatly enjoyed a text-based, multi-player, space
 
 # installation
 
-This game is written in QBASIC. A copy of QBASIC.EXE is included in the repo in case you don't have the original MS-DOS media. However, the end of this document contains backup instructions for downloading a copy from the Internet Archive.
+This game is written in QBASIC. A copy of QBASIC.EXE is included in the repo in case you don't have the original MS-DOS media. The end of this document has instructions for downloading a cached copy from the Internet Archive.
 
 Assuming you no longer have a running copy of MS-DOS, you will need to run QBASIC.EXE under an MS-DOS emulator. DOSBox is recommended and can be downloaded for free from https://www.dosbox.com.
 
