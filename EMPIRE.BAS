@@ -7,6 +7,7 @@
 '
 ' To begin, press Shift + F5.
 ' To exit QBASIC, press Alt, F, X.
+' To view full screen (in DOSBox), press Alt-Enter.
 
 TYPE AreaType
   '
@@ -84,6 +85,7 @@ DECLARE SUB AtlasDisplayOn ()
 DECLARE SUB AtlasDraw ()
 DECLARE SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
 DECLARE SUB AtlasDrawGrid ()
+DECLARE SUB AtlasDrawItem (idx AS INTEGER)
 DECLARE SUB AtlasDrawItems ()
 DECLARE SUB AtlasDrawSelect (cx AS INTEGER, cy AS INTEGER, valid AS INTEGER)
 DECLARE SUB AtlasDrawUnselect (cx AS INTEGER, cy AS INTEGER)
@@ -98,6 +100,7 @@ DECLARE SUB AtlasPlotClustered ()
 DECLARE SUB AtlasPlotManual ()
 DECLARE SUB AtlasPlotRandom ()
 DECLARE SUB AtlasRemoveValue (value AS INTEGER)
+DECLARE SUB AtlasSetLabel (idx AS INTEGER, label AS STRING)
 DECLARE FUNCTION AtlasNextIndex% ()
 DECLARE FUNCTION AtlasCellFiltered% (cx AS INTEGER, cy AS INTEGER)
 DECLARE FUNCTION AtlasGetScreenX% (cx AS INTEGER)
@@ -210,6 +213,7 @@ DECLARE SUB WorldAddCluster (hid AS INTEGER, size AS INTEGER)
 DECLARE SUB WorldAddNebula (size AS INTEGER)
 DECLARE SUB WorldInit (areas AS INTEGER)
 DECLARE SUB WorldRemove (aid AS INTEGER)
+DECLARE SUB WorldSetLabel (aid AS INTEGER, label AS STRING)
 DECLARE SUB WorldShow (aid AS INTEGER)
 DECLARE SUB WorldLoadHabitats ()
 DECLARE FUNCTION WorldAdd% (hid AS INTEGER, cx AS INTEGER, cy AS INTEGER)
@@ -825,6 +829,16 @@ SUB AtlasDrawGrid
 
 END SUB
 
+SUB AtlasDrawItem (idx AS INTEGER)
+  '
+  ' Draws the specified item
+  '
+  IF atlasItem(idx).allocated THEN
+    AtlasDrawCell atlasItem(idx).cx, atlasItem(idx).cy
+  END IF
+
+END SUB
+
 SUB AtlasDrawItems
   '
   ' Draws the active items of the atlas.
@@ -1387,6 +1401,17 @@ SUB AtlasRemoveValue (value AS INTEGER)
   atlasGrid(cx, cy) = 0
   IF atlasActive THEN
     AtlasDrawCell cx, cy
+  END IF
+
+END SUB
+
+SUB AtlasSetLabel (idx AS INTEGER, label AS STRING)
+  '
+  ' Sets the label for the specified item
+  '
+  atlasItem(idx).label = label
+  IF atlasActive THEN
+    AtlasDrawItem idx
   END IF
 
 END SUB
@@ -2204,6 +2229,9 @@ SUB NebulaShow (aid AS INTEGER)
 
   CLS
 
+  '
+  ' Create the nebula data structure
+  '
   NebulaCreate seq()
  
   DO
@@ -2219,14 +2247,38 @@ SUB NebulaShow (aid AS INTEGER)
 
     keypress = GetKey$
 
-    IF count = 3 THEN
-      WorldRemove aid
-      EXIT DO
-    END IF
-   
-    count = count + 1
+    SELECT CASE keypress
+     
+      CASE CHR$(ASCII.Backspace)
+        EXIT SUB
 
-    NebulaHarvest seq()
+      CASE CHR$(ASCII.Return)
+        EXIT SUB
+
+      CASE CHR$(ASCII.Escape)
+        EXIT SUB
+    
+      CASE " "
+       
+        '
+        ' Perform the harvest
+        '
+        count = count + 1
+        SELECT CASE count
+          CASE 1
+            NebulaHarvest seq()
+            WorldSetLabel aid, "@X08Ä@X07ÄÄ@X08Ä"
+          CASE 2
+            NebulaHarvest seq()
+            WorldSetLabel aid, "@X08Ä@X07Ä @X08Ä"
+          CASE 3
+            NebulaHarvest seq()
+            WorldRemove aid
+          CASE 4
+            EXIT SUB
+        END SELECT
+
+    END SELECT
 
   LOOP
 
@@ -2484,9 +2536,6 @@ SUB UI.Run
 
   DO
     
-    '
-    ' Wait for a command from the menu
-    '
     SELECT CASE uiCurrentPage
      
       CASE UIPage.Atlas
@@ -2524,7 +2573,9 @@ FUNCTION UI.RunAtlas%
  
     aid = AtlasGetValue(cx, cy, 0)
 
+    AtlasDisplayOff
     WorldShow aid
+    UI.SetPage UIPage.Atlas
     UI.Redraw
 
   ELSE
@@ -3904,6 +3955,23 @@ SUB WorldRemove (aid AS INTEGER)
     area(aid).allocated = False
     AtlasRemoveValue aid
 
+  END IF
+
+END SUB
+
+SUB WorldSetLabel (aid AS INTEGER, label AS STRING)
+  '
+  ' Updates the label for the specified area
+  '
+ 
+  DIM idx AS INTEGER
+
+  '
+  ' Get the index of the item in the atlas data
+  '
+  idx = AtlasIndexOf(aid)
+  IF idx > 0 THEN
+    AtlasSetLabel idx, label
   END IF
 
 END SUB
