@@ -79,6 +79,7 @@ TYPE WindowType
   selected AS INTEGER
   sizeX    AS INTEGER
   sizeY    AS INTEGER
+  style    AS INTEGER
   wname    AS STRING * 20
 END TYPE
 
@@ -226,6 +227,8 @@ DECLARE FUNCTION WinParseCommand% (text$)
 DECLARE SUB WinDraw (wid%)
 DECLARE SUB WinDrawField (wid%, fid%)
 DECLARE SUB WinDrawOutline (wid%, sx%, sy%)
+DECLARE SUB WinDrawStyle1 (wid%)
+DECLARE SUB WinDrawStyle2 (wid%)
 DECLARE SUB WinKey (wid%, fid%, keypress$)
 DECLARE SUB WinKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB WinKeyInteger (wid%, fid%, keypress$)
@@ -462,13 +465,19 @@ CONST VideoPage.Table = 3
 '
 ' These constants define the colors and other styles of windows.
 '
-CONST WinStyle.Backcolor = 1
-CONST WinStyle.Forecolor = 7
+CONST WinStyle1.Backcolor = 1
+CONST WinStyle1.Forecolor = 7
+CONST WinStyle1.SelectedBackcolor = 7
+CONST WinStyle1.SelectedForecolor = 0
+
+CONST WinStyle2.Backcolor = 0
+CONST WinStyle2.Forecolor = 5
+CONST WinStyle2.SelectedBackcolor = 5
+CONST WinStyle2.SelectedForecolor = 13
+
 CONST WinStyle.Border = 1
 CONST WinStyle.OutlineBackcolor = 2
 CONST WinStyle.OutlineForecolor = 7
-CONST WinStyle.SelectedBackcolor = 7
-CONST WinStyle.SelectedForecolor = 0
 
 '
 ' Global world variables
@@ -568,6 +577,7 @@ REM Window 9
   DATA   "Name", "ViewMenu"
   DATA   "PosX", 11
   DATA   "PosY", 2
+  DATA   "Style", 2
   DATA   "+@", "ViewAtlas", "Show atlas"
   DATA   "+@", "ViewTable", "Show table"
   DATA   "+@", "ViewInbox", "Show inbox"
@@ -3363,74 +3373,23 @@ SUB WinDraw (wid%)
   ' Draws the window to the active video page.
   '
 
-  DIM i          AS INTEGER
-  DIM lowerLeft  AS STRING * 1
-  DIM lowerFlat  AS STRING * 1
-  DIM lowerRight AS STRING * 1
-  DIM sideLeft   AS STRING * 1
-  DIM sideRight  AS STRING * 1
-  DIM upperLeft  AS STRING * 1
-  DIM upperFlat  AS STRING * 1
-  DIM upperRight AS STRING * 1
+  DIM fid AS INTEGER
 
   '
-  ' Setup border characters
+  ' Draw the stylized border
   '
-  SELECT CASE WinStyle.Border
-    CASE 1
-      lowerFlat = CHR$(196)
-      lowerLeft = CHR$(192)
-      lowerRight = CHR$(217)
-      sideLeft = CHR$(179)
-      sideRight = CHR$(179)
-      upperLeft = CHR$(218)
-      upperFlat = CHR$(196)
-      upperRight = CHR$(191)
-    CASE 2
-      lowerFlat = CHR$(205)
-      lowerLeft = CHR$(200)
-      lowerRight = CHR$(188)
-      sideLeft = CHR$(179)
-      sideRight = CHR$(179)
-      upperLeft = CHR$(201)
-      upperFlat = CHR$(205)
-      upperRight = CHR$(187)
+  SELECT CASE win(wid%).style
+   
+    CASE 0, 1:
+      WinDrawStyle1 wid%
+
+    CASE 2:
+      WinDrawStyle2 wid%
+
   END SELECT
 
-  '
-  ' Set the display color of the window
-  '
-  COLOR WinStyle.Forecolor, WinStyle.Backcolor
-
-  '
-  ' Draw the top border
-  '
-  LOCATE win(wid%).posY, win(wid%).posX
-  PRINT upperLeft; STRING$(win(wid%).sizeX, upperFlat); upperRight
-
-  '
-  ' Draw each row of the window
-  '
-  FOR r = 1 TO win(wid%).sizeY
-   
-    LOCATE win(wid%).posY + r, win(wid%).posX
-    PRINT sideLeft;
-    PRINT STRING$(win(wid%).sizeX, CHR$(ASCII.Space));
-    PRINT sideRight;
-
-  NEXT
-    
-  '
-  ' Draw the lower border
-  '
-  LOCATE win(wid%).posY + win(wid%).sizeY + 1, win(wid%).posX
-  PRINT lowerLeft; STRING$(win(wid%).sizeX, lowerFlat); lowerRight;
- 
-  '
-  ' Draw fields
-  '
-  FOR i = 1 TO win(wid%).fields
-    WinDrawField wid%, i
+  FOR fid = 1 TO win(wid%).fields
+    WinDrawField wid%, fid
   NEXT
 
 END SUB
@@ -3473,11 +3432,27 @@ SUB WinDrawField (wid%, fid%)
   ' Set the color depending on whether the field is selected
   '
   IF win(wid%).selected = fid% THEN
-    backcolor = WinStyle.SelectedBackcolor
-    forecolor = WinStyle.SelectedForecolor
+   
+    SELECT CASE win(wid%).style
+      CASE 0, 1:
+        backcolor = WinStyle1.SelectedBackcolor
+        forecolor = WinStyle1.SelectedForecolor
+      CASE 2:
+        backcolor = WinStyle2.SelectedBackcolor
+        forecolor = WinStyle2.SelectedForecolor
+    END SELECT
+
   ELSE
-    backcolor = WinStyle.Backcolor
-    forecolor = WinStyle.Forecolor
+   
+    SELECT CASE win(wid%).style
+      CASE 0, 1:
+        backcolor = WinStyle1.Backcolor
+        forecolor = WinStyle1.Forecolor
+      CASE 2:
+        backcolor = WinStyle2.Backcolor
+        forecolor = WinStyle2.Forecolor
+    END SELECT
+
   END IF
   COLOR forecolor, backcolor
 
@@ -3576,6 +3551,136 @@ SUB WinDrawOutline (wid%, sx%, sy%)
   ELSE
     PRINT CHR$(196); CHR$(217);
   END IF
+
+END SUB
+
+SUB WinDrawStyle1 (wid%)
+  '
+  ' Draws the window in a basic (default) style
+  '
+
+  CONST lowerFlat = "Ä"   ' CHR$(196)
+  CONST lowerLeft = "À"   ' CHR$(192)
+  CONST lowerRight = "Ù"  ' CHR$(217)
+  CONST sideLeft = "³"    ' CHR$(179)
+  CONST sideRight = "³"   ' CHR$(179)
+  CONST upperLeft = "Ú"   ' CHR$(218)
+  CONST upperFlat = "Ä"   ' CHR$(196)
+  CONST upperRight = "¿"  ' CHR$(191)
+
+  DIM i AS INTEGER
+
+  '
+  ' Set the display color of the window
+  '
+  COLOR WinStyle1.Forecolor, WinStyle1.Backcolor
+
+  '
+  ' Draw the top border
+  '
+  LOCATE win(wid%).posY, win(wid%).posX
+  PRINT upperLeft; STRING$(win(wid%).sizeX, upperFlat); upperRight
+
+  '
+  ' Draw each row of the window
+  '
+  FOR r = 1 TO win(wid%).sizeY
+  
+    LOCATE win(wid%).posY + r, win(wid%).posX
+    PRINT sideLeft;
+    PRINT STRING$(win(wid%).sizeX, " ");
+    PRINT sideRight;
+
+  NEXT
+   
+  '
+  ' Draw the lower border
+  '
+  LOCATE win(wid%).posY + win(wid%).sizeY + 1, win(wid%).posX
+  PRINT lowerLeft; STRING$(win(wid%).sizeX, lowerFlat); lowerRight;
+
+END SUB
+
+SUB WinDrawStyle2 (wid%)
+  '
+  ' Draws the window in a stylized way
+  '
+
+  DIM idx AS INTEGER
+  DIM row AS INTEGER
+
+  '
+  ' Initialize special border characters
+  '
+  DIM ch(0 TO 8) AS STRING * 1  ' Character
+  DIM fc(0 TO 8) AS INTEGER     ' Forecolor
+  DIM bc(0 TO 8) AS INTEGER     ' Backcolor
+
+  ch(0) = CHR$(179): bc(0) = 0: fc(0) = 13
+  ch(1) = CHR$(219): bc(1) = 5: fc(1) = 13
+  ch(2) = CHR$(178): bc(2) = 5: fc(2) = 13
+  ch(3) = CHR$(177): bc(3) = 5: fc(3) = 13
+  ch(4) = CHR$(176): bc(4) = 5: fc(4) = 13
+  ch(5) = CHR$(219): bc(5) = 0: fc(5) = 5
+  ch(6) = CHR$(178): bc(6) = 0: fc(6) = 5
+  ch(7) = CHR$(177): bc(7) = 0: fc(7) = 5
+  ch(8) = CHR$(176): bc(8) = 0: fc(8) = 5
+
+  '
+  ' Top border of the window
+  '
+ 
+  LOCATE win(wid%).posY, win(wid%).posX
+  COLOR fc(0), bc(0)
+ 
+  PRINT CHR$(220);
+  PRINT STRING$(win(wid%).sizeX, 196);
+  PRINT CHR$(191);
+
+  FOR row = 1 TO win(wid%).sizeY
+
+    '
+    ' Get the index of the left border character
+    '
+    idx = row
+    IF idx > UBOUND(ch) THEN
+      idx = 0
+    END IF
+
+    '
+    ' Left border
+    '
+    LOCATE win(wid%).posY + row, win(wid%).posX
+    COLOR fc(idx), bc(idx)
+    PRINT ch(idx);
+
+    '
+    ' Inner space
+    '
+    PRINT STRING$(win(wid%).sizeX, " ");
+
+    '
+    ' Get the index of the right border
+    '
+    idx = win(wid%).sizeY - row + 1
+    IF idx > UBOUND(ch) THEN idx = 0
+
+    '
+    ' Right border
+    '
+    COLOR fc(idx), bc(idx)
+    PRINT ch(idx);
+
+  NEXT
+
+  '
+  ' Bottom border of the inbox
+  '
+  LOCATE win(wid%).posY + win(wid%).sizeY + 1, win(wid%).posX
+  COLOR fc(0), bc(0)
+  PRINT CHR$(192);
+  PRINT STRING$(win(wid%).sizeX, 196);
+  PRINT CHR$(223);
 
 END SUB
 
@@ -3795,6 +3900,9 @@ SUB WinLoad
 
         CASE "SizeY"
           READ win(wid).sizeY
+
+        CASE "Style"
+          READ win(wid).style
 
         CASE "Help"
           '
