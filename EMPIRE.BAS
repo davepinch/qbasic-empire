@@ -1,3 +1,4 @@
+DECLARE SUB UI.RedrawInbox ()
 
 ' The Galactic Empire
 ' By David Pinch, 1991-2020
@@ -302,7 +303,8 @@ CONST Command.ReplotCluster = 12
 CONST Command.ReplotManual = 13
 CONST Command.ReplotRandom = 14
 CONST Command.ViewAtlas = 15
-CONST Command.ViewTable = 16
+CONST Command.ViewInbox = 16
+CONST Command.ViewTable = 17
 
 '
 ' Control Character constants
@@ -408,7 +410,8 @@ CONST UIPage.None = 0
 CONST UIPage.About = 1
 CONST UIPage.Area = 2
 CONST UIPage.Atlas = 3
-CONST UIPage.Table = 4
+CONST UIPage.Inbox = 4
+CONST UIPage.Table = 5
 
 '
 ' UIResult.* constants
@@ -555,7 +558,8 @@ REM Window 9
   DATA   "PosY", 2
   DATA   "+@", "ViewAtlas", "Show atlas"
   DATA   "+@", "ViewTable", "Show table"
-  DATA   "+-"
+  DATA   "+@", "ViewInbox", "Show inbox"
+  DATA   "+-"         
   DATA   "+@", "FilterSelf", "Filter you"
   DATA   "+@", "FilterNone", "Remove Filter"
   DATA   "+-"
@@ -1770,6 +1774,9 @@ SUB Execute (cid AS INTEGER)
     CASE Command.ViewAtlas
       ExecuteViewAtlas
      
+    CASE Command.ViewInbox
+      UI.SetPage UIPage.Inbox
+
     CASE Command.ViewTable
       ExecuteViewTable
 
@@ -2582,6 +2589,9 @@ SUB UI.Redraw
     CASE UIPage.Atlas
       UI.RedrawAtlas
 
+    CASE UIPage.Inbox
+      UI.RedrawInbox
+
     CASE UIPage.Table
       UI.RedrawTable
 
@@ -2633,9 +2643,6 @@ SUB UI.RedrawArea
 END SUB
 
 SUB UI.RedrawAtlas
-  '
-  ' Redraws the atlas page
-  '
 
   '
   ' Copy the blank atlas to the working page and draw items
@@ -2668,6 +2675,36 @@ SUB UI.RedrawFile (filename AS STRING)
  
   PCOPY VideoPage.Working, VideoPage.Display
   SCREEN , , VideoPage.Display, VideoPage.Display
+
+END SUB
+
+SUB UI.RedrawInbox
+
+  Assert uiCurrentPage = UIPage.Inbox, "UI.RedrawInbox", "Wrong UI page"
+
+  CONST BorderForecolor = 13
+  CONST BorderBackcolor = 4
+  CONST InnerSizeX = 60
+  CONST InnerSizeY = 1
+  CONST OuterPosX = (80 - InnerSizeX - 2) \ 2
+  CONST OuterPosY = 3
+
+  '
+  ' Top border of the inbox
+  '
+  LOCATE OuterPosY, OuterPosX
+  COLOR BorderForecolor
+  PRINT CHR$(220);
+  PRINT STRING$(InnerSizeX, 196);
+  PRINT CHR$(191);
+
+  '
+  ' Bottom border of the inbox
+  '
+  LOCATE OuterPosY + InnerSizeY + 1, OuterPosX
+  PRINT CHR$(192);
+  PRINT STRING$(InnerSizeX, 196);
+  PRINT CHR$(223);
 
 END SUB
 
@@ -3757,6 +3794,9 @@ FUNCTION WinParseCommand% (text$)
 
     CASE "VIEWATLAS":
       cid = Command.ViewAtlas
+
+    CASE "VIEWINBOX":
+      cid = Command.ViewInbox
 
     CASE "VIEWTABLE":
       cid = Command.ViewTable
