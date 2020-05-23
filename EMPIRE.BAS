@@ -542,25 +542,6 @@ REM Window 1
   DATA   "@", 12, 4, 10, "<command>", " Exit App "
   DATA "End"
 
-REM Window 2
-  DATA "Window"
-  DATA   "Name", "DialogAreas"
-  DATA   "PosX", 11
-  DATA   "PosY", 10
-  DATA   "$", 0, 1, "Initialization Mode"
-  DATA   "+-"
-  DATA   "+$", "How many areas should be in the game?  [Def=15]"
-  DATA   "#", 56, 3, 2, 15
-  DATA "End"
-
-REM Window 5
-  DATA "Window"
-  DATA   "Name", "TooManyAreas"
-  DATA   "PosX", 20
-  DATA   "PosY", 11
-  DATA   "+$", " Error: The maximum number of areas is 19 "
-  DATA "End"
-
 REM Window 9
   DATA "Window"
   DATA   "Name", "AtlasMaker"
