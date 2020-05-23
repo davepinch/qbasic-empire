@@ -54,9 +54,8 @@ TYPE MessageType
   '
   ' An inbox message.
   '
-  allocated AS INTEGER
   opened    AS INTEGER
-  subject   AS STRING * 40
+  subject   AS STRING * 20
 END TYPE
 
 TYPE MenuType
@@ -364,7 +363,7 @@ CONST InboxStyle.OuterPosY = 3
 '
 CONST MaxMenus = 5
 CONST MaxFields = 15
-CONST MaxWindows = 50
+CONST MaxWindows = 20
 
 '
 ' MenuStyle constants
@@ -479,7 +478,7 @@ CONST WinStyle.ShadowBackcolor = 0
 ' Global world variables
 '
 DIM SHARED area(1 TO 30)       AS AreaType
-DIM SHARED habitat(1 TO 20)    AS HabitatType
+DIM SHARED habitat(1 TO 10)    AS HabitatType
 DIM SHARED habitats            AS INTEGER
 
 '
