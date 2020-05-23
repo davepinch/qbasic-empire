@@ -119,6 +119,7 @@ DECLARE FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS I
 '
 DECLARE SUB Execute (cid AS INTEGER)
 DECLARE SUB ExecuteAbout ()
+DECLARE SUB ExecuteEndGame ()
 DECLARE SUB ExecuteFilterNone ()
 DECLARE SUB ExecuteFilterSelf ()
 DECLARE SUB ExecuteOptionAlerts ()
@@ -167,12 +168,20 @@ DECLARE SUB StatusUpdateLevel (text AS STRING, level AS INTEGER)
 ' UI subroutines
 '
 DECLARE SUB UI.Redraw ()
+DECLARE SUB UI.RedrawAbout ()
+DECLARE SUB UI.RedrawArea ()
+DECLARE SUB UI.RedrawAtlas ()
+DECLARE SUB UI.RedrawFile (filename AS STRING)
+DECLARE SUB UI.RedrawTable ()
 DECLARE SUB UI.Refresh ()
 DECLARE SUB UI.Run ()
-DECLARE SUB UI.RunWorld (aid AS INTEGER)
-DECLARE SUB UI.SetFilter (Filter AS INTEGER, refreshUI AS INTEGER)
+DECLARE SUB UI.SetFilter (filter AS INTEGER, refreshUI AS INTEGER)
 DECLARE SUB UI.SetPage (page AS INTEGER)
+
+DECLARE FUNCTION UI.RunAbout% ()
+DECLARE FUNCTION UI.RunArea% ()
 DECLARE FUNCTION UI.RunAtlas% ()
+DECLARE FUNCTION UI.RunNebula% (aid AS INTEGER)
 
 '
 ' Win* declarations
@@ -225,6 +234,7 @@ DECLARE FUNCTION WorldNextId% ()
 '
 ' Declarations
 '
+DECLARE SUB Assert (truth AS INTEGER, where AS STRING, what AS STRING)
 DECLARE SUB DrawFile (filename AS STRING)
 DECLARE SUB DrawFileAt (filename AS STRING, offsetX AS INTEGER, offsetY AS INTEGER)
 DECLARE SUB DrawTable ()
@@ -393,9 +403,16 @@ CONST UIFilter.Self = 1
 ' UIPage.* constants
 '
 CONST UIPage.None = 0
-CONST UIPage.Atlas = 1
-CONST UIPage.Table = 2
-CONST UIPage.About = 3
+CONST UIPage.About = 1
+CONST UIPage.Area = 2
+CONST UIPage.Atlas = 3
+CONST UIPage.Table = 4
+
+'
+' UIResult.* constants
+'
+CONST UIResult.Exit = 0
+CONST UIResult.Escape = 1
 
 '
 ' VideoPage.* constants
@@ -449,6 +466,8 @@ DIM SHARED menuItem(1 TO MaxMenus) AS MenuType
 '
 DIM SHARED uiCurrentFilter AS INTEGER
 DIM SHARED uiCurrentPage   AS INTEGER
+DIM SHARED uicx AS INTEGER
+DIM SHARED uicy AS INTEGER
 
 '
 ' Global window variables
@@ -615,6 +634,18 @@ DATA     "Label", "@X06שש@X0Eם@X06ש"
 DATA     "Title", "Red Ocean"
 DATA   "End"
 DATA "End"
+
+SUB Assert (truth AS INTEGER, where AS STRING, what AS STRING)
+
+  IF NOT truth THEN
+    StatusDebug where + ": " + what
+  END IF
+
+END SUB
+
+SUB AssertFail (where AS STRING, text AS STRING)
+  Assert 0, where, text
+END SUB
 
 SUB AtlasAddBand (fromValue AS INTEGER, toValue AS INTEGER)
   '
@@ -1710,6 +1741,9 @@ SUB Execute (cid AS INTEGER)
     CASE Command.About
       ExecuteAbout
 
+    CASE Command.EndGame
+      ExecuteEndGame
+
     CASE Command.FilterNone
       ExecuteFilterNone
 
@@ -1746,19 +1780,17 @@ END SUB
 
 SUB ExecuteAbout
   '
-  ' Displays a window showing information about the game.
+  ' Shows the about page
   '
- 
-  SCREEN , , VideoPage.Working, VideoPage.Display
-  CLS
-  DrawFileAt "ABOUT.PCB", 1, 2
-  PCOPY VideoPage.Working, VideoPage.Display
-  SCREEN , , VideoPage.Display, VideoPage.Display
+  UI.SetPage UIPage.About
 
-  WinShowName "About"
+END SUB
 
-  UI.Redraw
-
+SUB ExecuteEndGame
+  '
+  ' Ends the game
+  '
+  END
 END SUB
 
 SUB ExecuteFilterNone
@@ -2282,82 +2314,6 @@ FUNCTION NebulaLabel$ (level AS INTEGER)
 
 END FUNCTION
 
-SUB NebulaShow (aid AS INTEGER)
-
-  DIM keypress AS STRING
-  DIM seq(2 TO 24, -2 TO 30) AS INTEGER
-
-  CLS
-
-  '
-  ' Create the nebula data structure
-  '
-  NebulaCreate seq()
- 
-  '
-  ' HACK for now: update sequence to reflect the level
-  '
-  SELECT CASE area(aid).level
-    CASE 0:
-      area(aid).level = 3
-    CASE 1:
-      NebulaHarvest seq()
-      NebulaHarvest seq()
-    CASE 2:
-      NebulaHarvest seq()
-  END SELECT
-
-  DO
-   
-    NebulaDraw seq()
-   
-    SELECT CASE area(aid).level
-      CASE 3: StatusUpdate "@X07[@X0FSpace@X07] [@X0FESC@X07]"
-      CASE 2: StatusUpdate "@X07[@X07Space@X07] [@X0FESC@X07]"
-      CASE 1: StatusUpdate "@X07[@X08Space@X07] [@X0FESC@X07]"
-      CASE 0: StatusUpdate "@X07[@X04Empty@X07] [@X0FESC@X07]"
-    END SELECT
-
-    keypress = GetKey$
-
-    SELECT CASE keypress
-     
-      CASE CHR$(ASCII.Backspace)
-        EXIT SUB
-
-      CASE CHR$(ASCII.Return)
-        EXIT SUB
-
-      CASE CHR$(ASCII.Escape)
-        EXIT SUB
-    
-      CASE " "
-       
-        IF area(aid).level = 0 THEN
-          EXIT SUB
-        END IF
-
-        '
-        ' Perform the harvest
-        '
-        area(aid).level = area(aid).level - 1
-        NebulaHarvest seq()
-       
-        '
-        ' Update or remove the label
-        '
-        IF area(aid).level = 0 THEN
-          WorldRemove aid
-        ELSE
-          WorldSetLabel aid, NebulaLabel$(area(aid).level)
-        END IF
-
-    END SELECT
-
-  LOOP
-
-END SUB
-
 SUB PaintBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
   
    DIM at% ' Attribute
@@ -2548,27 +2504,113 @@ SUB UI.Redraw
   ' Redraws the UI.
   '
 
-  '
-  ' Write to the buffer page (keeping visual display the same)
-  '
-  SCREEN , , VideoPage.Working, VideoPage.Display
+  Assert uiCurrentPage <> UIPage.None, "UI.Redraw", "UI page must be set."
 
   SELECT CASE uiCurrentPage
  
-    CASE UIPage.None
-      StatusDebug "UI.Redraw() called without an active page"
+    CASE UIPage.About
+      UI.RedrawAbout
+
+    CASE UIPage.Area
+      UI.RedrawArea
 
     CASE UIPage.Atlas
-      PCOPY VideoPage.Atlas, VideoPage.Working
-      AtlasDrawItems
-      AtlasDisplayOn
+      UI.RedrawAtlas
 
     CASE UIPage.Table
-      AtlasDisplayOff
-      PCOPY VideoPage.Table, VideoPage.Working
-      DrawTableRows
+      UI.RedrawTable
 
   END SELECT
+
+END SUB
+
+SUB UI.RedrawAbout
+  '
+  ' Redraws the About page
+  '
+
+  Assert uiCurrentPage = UIPage.About, "UI.RedrawAbout", "Wrong UI page"
+
+  UI.RedrawFile "ABOUT.PCB"
+
+END SUB
+
+SUB UI.RedrawArea
+  '
+  ' Redraws the current area
+  '
+
+  Assert uicx <> 0, "UI.RedrawArea", "uicx cannot be 0"
+  Assert uicy <> 0, "UI.RedrawArea", "uicy cannot be 0"
+
+  DIM aid AS INTEGER
+  DIM hid AS INTEGER
+
+  '
+  ' Get the current area
+  '
+  aid = AtlasGetValue(uicx, uicy, 0)
+  Assert aid <> 0, "UI.RedrawArea", "aid cannot be 0"
+
+  '
+  ' Get the habitat of the area
+  '
+  hid = area(aid).habitat
+  Assert hid <> 0, "UI.RedrawArea", "hid cannot be 0"
+  
+  '
+  ' Draw the backdrop file for this habitat
+  '
+  IF RTRIM$(habitat(hid).backdrop) <> "" THEN
+    UI.RedrawFile habitat(hid).backdrop
+  END IF
+
+END SUB
+
+SUB UI.RedrawAtlas
+  '
+  ' Redraws the atlas page
+  '
+
+  '
+  ' Copy the blank atlas to the working page and draw items
+  '
+  SCREEN , , VideoPage.Working, VideoPage.Display
+  PCOPY VideoPage.Atlas, VideoPage.Working
+  AtlasDrawItems
+
+  '
+  ' Restore the display page
+  '
+  SCREEN , , VideoPage.Working, VideoPage.Working
+  PCOPY VideoPage.Working, VideoPage.Display
+  SCREEN , , VideoPage.Display, VideoPage.Display
+
+END SUB
+
+SUB UI.RedrawFile (filename AS STRING)
+  '
+  ' Loads and redraws the specified file on the display page
+  '
+ 
+  SCREEN , , VideoPage.Working, VideoPage.Display
+  CLS
+ 
+  '
+  ' Draw the file on second row (leaving space for the menu bar)
+  '
+  DrawFileAt filename, 1, 2
+ 
+  PCOPY VideoPage.Working, VideoPage.Display
+  SCREEN , , VideoPage.Display, VideoPage.Display
+
+END SUB
+
+SUB UI.RedrawTable
+
+  SCREEN , , VideoPage.Working, VideoPage.Display
+  PCOPY VideoPage.Table, VideoPage.Working
+  DrawTableRows
 
   '
   ' Restore the display page
@@ -2601,102 +2643,242 @@ SUB UI.Run
   ' Runs the user interface
   '
  
-  DIM cid AS INTEGER
+  DIM cid    AS INTEGER
+  DIM result AS INTEGER
 
   '
-  ' Set the atlas as the initial page
+  ' Set the atlas (setting the page causes it to redraw)
   '
   UI.SetPage UIPage.Atlas
 
   DO
     
+    Assert uiCurrentPage <> UIPage.None, "UI.Run", "UI page must be set"
+
     SELECT CASE uiCurrentPage
-     
+    
+      CASE UIPage.About
+        result = UI.RunAbout%
+
+      CASE UIPage.Area
+        result = UI.RunArea%
+
       CASE UIPage.Atlas
-        cid = UI.RunAtlas
-     
-      CASE ELSE
-        cid = MenuShow
+        result = UI.RunAtlas%
 
     END SELECT
 
-    '
-    ' Get the command ID for the selected menu item.
-    '
-    IF cid > 0 THEN
-      Execute cid
-      IF cid = Command.EndGame THEN
-        EXIT SUB
-      END IF
-    END IF
+    SELECT CASE result
+
+      CASE UIResult.Exit
+        '
+        ' The UI page exited normally.
+        '
+
+      CASE UIResult.Escape
+        '
+        ' The player pressed the escape key to open the menu
+        '
+        cid = MenuShow
+        IF cid > 0 THEN
+          Execute cid
+        END IF
+
+    END SELECT
 
   LOOP
 
 END SUB
 
-FUNCTION UI.RunAtlas%
- 
-  DIM aid      AS INTEGER
-  DIM outpress AS STRING
+FUNCTION UI.RunAbout%
+  '
+  ' Displays a screen showing information about the game.
+  '
 
-  STATIC cx  AS INTEGER
-  STATIC cy  AS INTEGER
+  Assert uiCurrentPage = UIPage.About, "UI.RunAbout", "Wrong UI page"
 
-  IF cx = 0 THEN cx = 1
-  IF cy = 0 THEN cy = 1
+  '
+  ' Lookup the about window
+  '
+  DIM wid AS INTEGER
+  LET wid = WinGetWid("About")
+  Assert wid <> 0, "UI.RunAbout", "About window not found"
 
-  IF AtlasPrompt(AtlasPromptFor.Item, cx, cy, outpress) THEN
- 
-    aid = AtlasGetValue(cx, cy, 0)
-
-    SELECT CASE outpress
-      CASE CHR$(ASCII.Return)
-        AtlasDisplayOff
-        UI.RunWorld aid
-        UI.SetPage UIPage.Atlas
-        UI.Redraw
-      CASE " "
-        
-    END SELECT
-
+  WinShow wid
+  IF win(wid).canceled THEN
+    UI.RunAbout% = UIResult.Escape
   ELSE
-    UI.RunAtlas% = MenuShow
+    ' HACK: not sure which page to exit to
+    UI.SetPage UIPage.Atlas
+    UI.RunAbout% = UIResult.Exit
   END IF
 
 END FUNCTION
 
-SUB UI.RunWorld (aid AS INTEGER)
+FUNCTION UI.RunArea%
 
+  Assert uiCurrentPage = UIPage.Area, "UI.RunArea", "Wrong UI page"
+
+  DIM aid AS INTEGER
   DIM hid AS INTEGER
- 
+
+  '
+  ' Get the current area
+  '
+  aid = AtlasGetValue(uicx, uicy, 0)
+  Assert aid <> 0, "UI.RunArea", "aid cannot be 0"
+  
   '
   ' Get the habitat of the area
   '
   hid = area(aid).habitat
+  Assert hid <> 0, "UI.RunArea", "hit cannot be 0"
 
   SELECT CASE habitat(hid).UI
   
     CASE "NEB":
-      NebulaShow aid
+      UI.RunArea% = UI.RunNebula(aid)
 
     CASE ELSE
-      SCREEN , , VideoPage.Working, VideoPage.Display
-      CLS
-      DrawFileAt habitat(hid).backdrop, 1, 2
-      PCOPY VideoPage.Working, VideoPage.Display
-      SCREEN , , VideoPage.Display, VideoPage.Display
-      WaitForKeyPress
+     
+      SELECT CASE GetKey$
+        CASE CHR$(ASCII.Escape)
+          UI.RunArea% = UIResult.Escape
+        CASE ELSE
+          UI.SetPage UIPage.Atlas
+          UI.RunArea% = UIResult.Exit
+      END SELECT
 
   END SELECT
 
-END SUB
+END FUNCTION
 
-SUB UI.SetFilter (Filter AS INTEGER, refreshUI AS INTEGER)
+FUNCTION UI.RunAtlas%
+ 
+  Assert uiCurrentPage = UIPage.Atlas, "UI.RunAtlas", "Wrong UI page"
+
+  DIM outpress AS STRING
+
+  '
+  ' Set the default position if this is the first run
+  '
+  IF uicx = 0 THEN uicx = 1
+  IF uicy = 0 THEN uicy = 1
+
+  IF AtlasPrompt(AtlasPromptFor.Item, uicx, uicy, outpress) THEN
+
+    SELECT CASE outpress
+     
+      CASE CHR$(ASCII.Return)
+        UI.SetPage UIPage.Area
+        UI.RunAtlas% = UIResult.Exit
+
+      CASE " "
+        ' TODO: take quick action when space is hit on the atlas
+        UI.SetPage UIPage.Area
+        UI.RunAtlas% = UIResult.Exit
+
+    END SELECT
+
+  ELSE
+    '
+    ' The player hit escape
+    '
+    UI.RunAtlas% = UIResult.Escape
+
+  END IF
+
+END FUNCTION
+
+FUNCTION UI.RunNebula% (aid AS INTEGER)
+
+  Assert aid <> 0, "UI.RunNebula", "aid cannot be 0"
+
+  DIM keypress AS STRING
+  DIM seq(2 TO 24, -2 TO 30) AS INTEGER
+
+  CLS
+
+  '
+  ' Create the nebula data structure
+  '
+  NebulaCreate seq()
+ 
+  '
+  ' HACK for now: update sequence to reflect the level
+  '
+  SELECT CASE area(aid).level
+    CASE 0:
+      area(aid).level = 3
+    CASE 1:
+      NebulaHarvest seq()
+      NebulaHarvest seq()
+    CASE 2:
+      NebulaHarvest seq()
+  END SELECT
+
+  DO
+   
+    NebulaDraw seq()
+   
+    SELECT CASE area(aid).level
+      CASE 3: StatusUpdate "@X07[@X0FSpace@X07] [@X0FESC@X07]"
+      CASE 2: StatusUpdate "@X07[@X07Space@X07] [@X0FESC@X07]"
+      CASE 1: StatusUpdate "@X07[@X08Space@X07] [@X0FESC@X07]"
+      CASE 0: StatusUpdate "@X07[@X04Empty@X07] [@X0FESC@X07]"
+    END SELECT
+
+    keypress = GetKey$
+
+    SELECT CASE keypress
+     
+      CASE CHR$(ASCII.Backspace)
+        UI.RunNebula% = UIResult.Exit
+        EXIT FUNCTION
+
+      CASE CHR$(ASCII.Return)
+        UI.SetPage UIPage.Atlas
+        UI.RunNebula% = UIResult.Exit
+        EXIT FUNCTION
+
+      CASE CHR$(ASCII.Escape)
+        UI.RunNebula% = UIResult.Escape
+        EXIT FUNCTION
+    
+      CASE " "
+       
+        IF area(aid).level = 0 THEN
+          UI.RunNebula% = UIResult.Exit
+          EXIT FUNCTION
+        END IF
+
+        '
+        ' Perform the harvest
+        '
+        area(aid).level = area(aid).level - 1
+        NebulaHarvest seq()
+       
+        '
+        ' Update or remove the label
+        '
+        IF area(aid).level = 0 THEN
+          WorldRemove aid
+        ELSE
+          WorldSetLabel aid, NebulaLabel$(area(aid).level)
+        END IF
+
+    END SELECT
+
+  LOOP
+
+END FUNCTION
+
+SUB UI.SetFilter (filter AS INTEGER, refreshUI AS INTEGER)
   '
   ' Applies a filter to emphasize items and optionally refreshes the screen.
   '
 
-  uiCurrentFilter = Filter
+  uiCurrentFilter = filter
 
   IF refreshUI THEN
     UI.Refresh
@@ -2709,9 +2891,22 @@ SUB UI.SetPage (page AS INTEGER)
   ' Sets the current page shown in the UI
   '
  
+  Assert page <> UIPage.None, "UI.SetPage", "page cannot be 0"
+
+  '
+  ' Switch to the specified page and redraw
+  '
   uiCurrentPage = page
- 
   UI.Redraw
+
+  '
+  ' Turn on the atlas
+  '
+  IF page = UIPage.Atlas THEN
+    AtlasDisplayOn
+  ELSE
+    AtlasDisplayOff
+  END IF
 
 END SUB
 
@@ -4060,11 +4255,11 @@ SUB WorldRemove (aid AS INTEGER)
   ' Removes an area from the world
   '
 
-  IF area(aid).allocated THEN
+  Assert aid <> 0, "WorldRemove", "aid cannot be 0"
 
+  IF area(aid).allocated THEN
     area(aid).allocated = False
     AtlasRemoveValue aid
-
   END IF
 
 END SUB
