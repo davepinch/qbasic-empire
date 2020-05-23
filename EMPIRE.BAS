@@ -167,6 +167,8 @@ DECLARE SUB StatusUpdateLevel (text AS STRING, level AS INTEGER)
 '
 ' UI subroutines
 '
+DECLARE SUB UI.Action ()
+DECLARE SUB UI.ActionNebula (aid AS INTEGER)
 DECLARE SUB UI.Redraw ()
 DECLARE SUB UI.RedrawAbout ()
 DECLARE SUB UI.RedrawArea ()
@@ -2499,6 +2501,69 @@ SUB StatusUpdateLevel (text AS STRING, level AS INTEGER)
   
 END SUB
 
+SUB UI.Action
+  '
+  ' Applies the default action to the currently selected location
+  '
+ 
+  DIM aid AS INTEGER
+  DIM hid AS INTEGER
+
+  '
+  ' Get the current area
+  '
+  aid = AtlasGetValue(uicx, uicy, 0)
+  IF aid > 0 THEN
+
+    '
+    ' Get the habitat of the area
+    '
+    hid = area(aid).habitat
+    Assert hid <> 0, "UI.RunArea", "hit cannot be 0"
+
+    SELECT CASE habitat(hid).UI
+      CASE "NEB"
+        UI.ActionNebula aid
+    END SELECT
+
+  END IF
+
+END SUB
+
+SUB UI.ActionNebula (aid AS INTEGER)
+
+  Assert aid > 0, "UI.ActionNebula", "aid cannot be 0"
+
+  DIM level AS INTEGER
+  LET level = area(aid).level
+
+  '
+  ' Set the default level
+  '
+  IF level = 0 THEN
+    level = 3
+  END IF
+
+  IF level = 1 THEN
+   
+    '
+    ' This is the last extraction
+    '
+    WorldRemove aid
+ 
+  ELSE
+   
+    '
+    ' Extract one level
+    '
+    level = level - 1
+    area(aid).level = level
+    WorldSetLabel aid, NebulaLabel$(level)
+
+  END IF
+
+END SUB
+
 SUB UI.Redraw
   '
   ' Redraws the UI.
@@ -2765,6 +2830,8 @@ FUNCTION UI.RunAtlas%
   IF uicx = 0 THEN uicx = 1
   IF uicy = 0 THEN uicy = 1
 
+PromptAgain:
+
   IF AtlasPrompt(AtlasPromptFor.Item, uicx, uicy, outpress) THEN
 
     SELECT CASE outpress
@@ -2774,9 +2841,13 @@ FUNCTION UI.RunAtlas%
         UI.RunAtlas% = UIResult.Exit
 
       CASE " "
-        ' TODO: take quick action when space is hit on the atlas
-        UI.SetPage UIPage.Area
-        UI.RunAtlas% = UIResult.Exit
+       
+        UI.Action
+        
+        '
+        ' Keep one GOTO in this code just to break the rules.
+        '
+        GOTO PromptAgain
 
     END SELECT
 
@@ -2832,11 +2903,7 @@ FUNCTION UI.RunNebula% (aid AS INTEGER)
 
     SELECT CASE keypress
      
-      CASE CHR$(ASCII.Backspace)
-        UI.RunNebula% = UIResult.Exit
-        EXIT FUNCTION
-
-      CASE CHR$(ASCII.Return)
+      CASE CHR$(ASCII.Return), CHR$(ASCII.Backspace)
         UI.SetPage UIPage.Atlas
         UI.RunNebula% = UIResult.Exit
         EXIT FUNCTION
