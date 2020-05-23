@@ -469,10 +469,6 @@ CONST WinStyle.OutlineBackcolor = 2
 CONST WinStyle.OutlineForecolor = 7
 CONST WinStyle.SelectedBackcolor = 7
 CONST WinStyle.SelectedForecolor = 0
-CONST WinStyle.Shadow = 0
-CONST WinStyle.ShadowChar = 176
-CONST WinStyle.ShadowForecolor = 8
-CONST WinStyle.ShadowBackcolor = 0
 
 '
 ' Global world variables
@@ -594,7 +590,7 @@ REM Window 9
   DATA   "+@", "ViewAtlas", "Show atlas"
   DATA   "+@", "ViewTable", "Show table"
   DATA   "+@", "ViewInbox", "Show inbox"
-  DATA   "+-"      
+  DATA   "+-"     
   DATA   "+@", "FilterSelf", "Filter you"
   DATA   "+@", "FilterNone", "Remove Filter"
   DATA   "+-"
@@ -3441,13 +3437,6 @@ SUB WinDraw (wid%)
     PRINT STRING$(win(wid%).sizeX, CHR$(ASCII.Space));
     PRINT sideRight;
 
-    SELECT CASE WinStyle.Shadow
-      CASE 1
-        COLOR WinStyle.ShadowForecolor, WinStyle.ShadowBackcolor
-        PRINT CHR$(WinStyle.ShadowChar)
-        COLOR WinStyle.Forecolor, WinStyle.Backcolor
-    END SELECT
-
   NEXT
     
   '
@@ -3456,18 +3445,6 @@ SUB WinDraw (wid%)
   LOCATE win(wid%).posY + win(wid%).sizeY + 1, win(wid%).posX
   PRINT lowerLeft; STRING$(win(wid%).sizeX, lowerFlat); lowerRight;
  
-  '
-  ' Draw the shadow (including the shadow of the lower border)
-  '
-  SELECT CASE WinStyle.Shadow
-    CASE 1
-      COLOR WinStyle.ShadowForecolor, WinStyle.ShadowBackcolor
-      PRINT CHR$(WinStyle.ShadowChar);
-      LOCATE win(wid%).posY + win(wid%).sizeY + 2, win(wid%).posX + 1
-      PRINT STRING$(win(wid%).sizeX + 2, WinStyle.ShadowChar);
-      COLOR WinStyle.Forecolor, WinStyle.Backcolor
-  END SELECT
-
   '
   ' Draw fields
   '
