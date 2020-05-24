@@ -227,6 +227,11 @@ DECLARE FUNCTION WinParseCommand% (text$)
 DECLARE SUB WinDraw (wid%)
 DECLARE SUB WinDrawField (wid%, fid%)
 DECLARE SUB WinDrawOutline (wid%, sx%, sy%)
+DECLARE SUB WinDrawOutline1 (wid%, sx%, sy%)
+DECLARE SUB WinDrawOutline2 (wid%, sx%, sy%)
+DECLARE SUB WinDrawSeparator (wid%, fid%)
+DECLARE SUB WinDrawSeparator1 (wid%, fid%)
+DECLARE SUB WinDrawSeparator2 (wid%, fid%)
 DECLARE SUB WinDrawStyle1 (wid%)
 DECLARE SUB WinDrawStyle2 (wid%)
 DECLARE SUB WinKey (wid%, fid%, keypress$)
@@ -469,6 +474,8 @@ CONST WinStyle1.Backcolor = 1
 CONST WinStyle1.Forecolor = 7
 CONST WinStyle1.SelectedBackcolor = 7
 CONST WinStyle1.SelectedForecolor = 0
+CONST WinStyle1.OutlineBackcolor = 2
+CONST WinStyle1.OutlineForecolor = 7
 
 CONST WinStyle2.Backcolor = 0
 CONST WinStyle2.Forecolor = 5
@@ -476,8 +483,6 @@ CONST WinStyle2.SelectedBackcolor = 5
 CONST WinStyle2.SelectedForecolor = 13
 
 CONST WinStyle.Border = 1
-CONST WinStyle.OutlineBackcolor = 2
-CONST WinStyle.OutlineForecolor = 7
 
 '
 ' Global world variables
@@ -3454,6 +3459,7 @@ SUB WinDrawField (wid%, fid%)
     END SELECT
 
   END IF
+ 
   COLOR forecolor, backcolor
 
   '
@@ -3476,7 +3482,7 @@ SUB WinDrawField (wid%, fid%)
       '
       ' Separator
       '
-      PRINT STRING$(win(wid%).sizeX, 196);
+      WinDrawSeparator wid%, fid%
 
     CASE FieldKind.Integer
       '
@@ -3492,10 +3498,22 @@ END SUB
 
 SUB WinDrawOutline (wid%, sx%, sy%)
 
+  SELECT CASE win(wid%).style
+    CASE 0, 1:
+      WinDrawOutline1 wid%, sx%, sy%
+
+    CASE 2:
+      WinDrawOutline2 wid%, sx%, sy%
+  END SELECT
+
+END SUB
+
+SUB WinDrawOutline1 (wid%, sx%, sy%)
+
   '
   ' Set the color of the outline
   '
-  COLOR WinStyle.OutlineForecolor, WinStyle.OutlineBackcolor
+  COLOR WinStyle1.OutlineForecolor, WinStyle1.OutlineBackcolor
 
   '
   ' Draw upper-left corner
@@ -3551,6 +3569,69 @@ SUB WinDrawOutline (wid%, sx%, sy%)
   ELSE
     PRINT CHR$(196); CHR$(217);
   END IF
+
+END SUB
+
+SUB WinDrawOutline2 (wid%, sx%, sy%)
+
+  WinDrawOutline1 wid%, sx%, sy%
+  
+END SUB
+
+SUB WinDrawSeparator (wid%, fid%)
+
+  SELECT CASE win(wid%).style
+    CASE 0, 1
+      WinDrawSeparator1 wid%, fid%
+    CASE 2
+      WinDrawSeparator2 wid%, fid%
+  END SELECT
+
+END SUB
+
+SUB WinDrawSeparator1 (wid%, fid%)
+  '
+  ' Draws the specified separator field.
+  '
+
+  DIM sx AS INTEGER
+  DIM sy AS INTEGER
+
+  '
+  ' Calculate screen coordinates
+  '
+  sx = win(wid%).posX
+  sy = win(wid%).posY + fld(wid%, fid%).posY
+  LOCATE sy, sx
+
+  '
+  ' Write the separator
+  '
+  PRINT CHR$(195);
+  PRINT STRING$(win(wid%).sizeX, 196);
+  PRINT CHR$(180);
+
+END SUB
+
+SUB WinDrawSeparator2 (wid%, fid%)
+  '
+  ' Draws the specified separator field in style #2.
+  '
+
+  DIM sx AS INTEGER
+  DIM sy AS INTEGER
+
+  '
+  ' Calculate screen coordinates
+  '
+  sx = win(wid%).posX + 1
+  sy = win(wid%).posY + fld(wid%, fid%).posY
+  LOCATE sy, sx
+
+  '
+  ' Write the separator
+  '
+  PRINT STRING$(win(wid%).sizeX, 196);
 
 END SUB
 
