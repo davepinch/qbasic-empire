@@ -216,6 +216,8 @@ DECLARE FUNCTION WinAppendBoolean% (wid%, text$)
 DECLARE FUNCTION WinAppendButton% (wid%, cid%, text$)
 DECLARE FUNCTION WinAppendLabel% (wid%, text$)
 DECLARE FUNCTION WinAppendSeparator% (wid%)
+DECLARE FUNCTION WinCreate% ()
+DECLARE FUNCTION WinCreateEx% (style%, posX%, posY%, sizeX%, sizeY%)
 DECLARE FUNCTION WinDefine% (wid%, f AS FieldType, text$)
 DECLARE FUNCTION WinDefineButton% (wid%, posX%, posY%, sizeX%, cid%, text$)
 DECLARE FUNCTION WinDefineLabel% (wid%, posX%, posY%, text$)
@@ -524,6 +526,7 @@ DIM SHARED uicy AS INTEGER
 '
 DIM SHARED fld(1 TO MaxWindows, 1 TO MaxFields) AS FieldType
 DIM SHARED win(1 TO MaxWindows) AS WindowType
+DIM SHARED wins AS INTEGER
 DIM SHARED txt(1 TO MaxWindows, 1 TO MaxFields) AS STRING
 
 '
@@ -586,7 +589,7 @@ REM Window 9
   DATA   "+@", "ViewAtlas", "Show atlas"
   DATA   "+@", "ViewTable", "Show table"
   DATA   "+@", "ViewInbox", "Show inbox"
-  DATA   "+-"     
+  DATA   "+-"    
   DATA   "+@", "FilterSelf", "Filter you"
   DATA   "+@", "FilterNone", "Remove Filter"
   DATA   "+-"
@@ -3274,14 +3277,38 @@ FUNCTION WinAppendSeparator% (wid%)
 
 END FUNCTION
 
-' ===================================================================
-' WinDefine
-' -------------------------------------------------------------------
-' Defines a new field in a window and returns the field ID. Any code
-' that creates new fields should ultimately call this function
-' because it applies certain rules such as adjusting the window size.
-' ===================================================================
+FUNCTION WinCreate%
+  '
+  ' Creates an empty window
+  '
+  wins = wins + 1
+  WinCreate% = wins
+
+END FUNCTION
+
+FUNCTION WinCreateEx% (style%, posX%, posY%, sizeX%, sizeY%)
+  '
+  ' Allocates a new window
+  '
+ 
+  DIM wid AS INTEGER
+  LET wid = WinCreate%
+ 
+  win(wins).posX = posX%
+  win(wins).posY = posY%
+  win(wins).style = style%
+  win(wins).sizeX = sizeX%
+  win(wins).sizeY = sizeY%
+
+  WinCreateEx% = wid
+
+END FUNCTION
+
 FUNCTION WinDefine% (wid%, f AS FieldType, text$)
+
+  ' Defines a new field in a window and returns the field ID. Any code
+  ' that creates new fields should ultimately call this function
+  ' because it applies certain rules such as adjusting the window size.
 
   DIM fid  AS INTEGER
   DIM minX AS INTEGER
@@ -3915,7 +3942,7 @@ SUB WinLoad
       EXIT SUB
     END IF
 
-    wid = wid + 1
+    wid = WinCreate%
 
     DO
 
