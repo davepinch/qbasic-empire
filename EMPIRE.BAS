@@ -139,9 +139,7 @@ DECLARE SUB ExecuteViewTable ()
 ' Inbox* subroutines
 '
 DECLARE SUB InboxAdd (subject AS STRING)
-DECLARE SUB InboxDraw (rows AS INTEGER)
-DECLARE SUB InboxDrawRow (row AS INTEGER)
-DECLARE SUB InboxReset ()
+DECLARE SUB InboxInit ()
 
 '
 ' Menu* subroutines
@@ -191,7 +189,6 @@ DECLARE SUB UI.RedrawAbout ()
 DECLARE SUB UI.RedrawArea ()
 DECLARE SUB UI.RedrawAtlas ()
 DECLARE SUB UI.RedrawFile (filename AS STRING)
-DECLARE SUB UI.RedrawInbox ()
 DECLARE SUB UI.RedrawTable ()
 DECLARE SUB UI.Refresh ()
 DECLARE SUB UI.Run ()
@@ -372,7 +369,7 @@ CONST InboxStyle.OuterPosY = 3
 ' Maximum UI elements
 '
 CONST MaxMenus = 5
-CONST MaxFields = 15
+CONST MaxFields = 13
 CONST MaxWindows = 20
 
 '
@@ -505,7 +502,7 @@ DIM SHARED atlasItem(1 TO 30) AS AtlasItemType
 '
 DIM SHARED msg(1 TO 19) AS MessageType
 DIM SHARED msgs AS INTEGER
-DIM SHARED msgx AS INTEGER
+DIM SHARED mwid AS INTEGER
 
 '
 ' Global menu variables
@@ -585,11 +582,10 @@ REM Window 9
   DATA   "Name", "ViewMenu"
   DATA   "PosX", 11
   DATA   "PosY", 2
-  DATA   "Style", 2
   DATA   "+@", "ViewAtlas", "Show atlas"
   DATA   "+@", "ViewTable", "Show table"
   DATA   "+@", "ViewInbox", "Show inbox"
-  DATA   "+-"    
+  DATA   "+-"   
   DATA   "+@", "FilterSelf", "Filter you"
   DATA   "+@", "FilterNone", "Remove Filter"
   DATA   "+-"
@@ -1894,136 +1890,40 @@ SUB InboxAdd (subject AS STRING)
   ' Adds a new message to the inbox
   '
  
-  '
-  ' Get the next message index
-  '
   msgs = msgs + 1
-
-  '
-  ' Store the message
-  '
   msg(msgs).opened = False
   msg(msgs).subject = subject
 
-END SUB
-
-SUB InboxDraw (rows AS INTEGER)
-
-  Assert rows >= 0, "InboxDraw", "rows must be 0 or greater"
-  Assert rows <= InboxStyle.InnerSizeY, "InboxDraw", "exceeded max rows"
-
-  DIM idx AS INTEGER
-  DIM row AS INTEGER
-
   '
-  ' Initialize special border characters
+  ' Make a button for the message
   '
-  DIM ch(0 TO 8) AS STRING * 1  ' Character
-  DIM fc(0 TO 8) AS INTEGER     ' Forecolor
-  DIM bc(0 TO 8) AS INTEGER     ' Backcolor
+  DIM f AS FieldType
 
-  ch(0) = CHR$(179): bc(0) = 0: fc(0) = 13
-  ch(1) = CHR$(219): bc(1) = 5: fc(1) = 13
-  ch(2) = CHR$(178): bc(2) = 5: fc(2) = 13
-  ch(3) = CHR$(177): bc(3) = 5: fc(3) = 13
-  ch(4) = CHR$(176): bc(4) = 5: fc(4) = 13
-  ch(5) = CHR$(219): bc(5) = 0: fc(5) = 5
-  ch(6) = CHR$(178): bc(6) = 0: fc(6) = 5
-  ch(7) = CHR$(177): bc(7) = 0: fc(7) = 5
-  ch(8) = CHR$(176): bc(8) = 0: fc(8) = 5
- 
-  '
-  ' Top border of the inbox
-  '
-  LOCATE InboxStyle.OuterPosY, InboxStyle.OuterPosX
-  COLOR fc(0), bc(0)
-  PRINT CHR$(220);
-  PRINT STRING$(InboxStyle.InnerSizeX, 196);
-  PRINT CHR$(191);
+  f.kind = FieldKind.Button
+  f.posX = 1
+  f.posY = msgs
+  f.sizeX = win(mwid).sizeX
 
-  FOR row = 1 TO rows
-
-    '
-    ' Get the index of the left border character
-    '
-    idx = row
-    IF idx > UBOUND(ch) THEN
-      idx = 0
-    END IF
-
-    '
-    ' Left border
-    '
-    LOCATE InboxStyle.OuterPosY + row, InboxStyle.OuterPosX
-    COLOR fc(idx), bc(idx)
-    PRINT ch(idx);
-
-    InboxDrawRow row
-
-    '
-    ' Get the index of the right border
-    '
-    idx = rows - row + 1
-    IF idx > UBOUND(ch) THEN idx = 0
-
-    '
-    ' Right border
-    '
-    COLOR fc(idx), bc(idx)
-    PRINT ch(idx);
-
-  NEXT
-
-  '
-  ' Bottom border of the inbox
-  '
-  LOCATE InboxStyle.OuterPosY + rows + 1, InboxStyle.OuterPosX
-  COLOR fc(0), bc(0)
-  PRINT CHR$(192);
-  PRINT STRING$(InboxStyle.InnerSizeX, 196);
-  PRINT CHR$(223);
+  DIM fid AS INTEGER
+  LET fid = WinDefine(mwid, f, subject)
 
 END SUB
 
-SUB InboxDrawRow (row AS INTEGER)
-
-  Assert row > 0, "InboxDrawRow", "row cannot be 0 or negative"
-
-  DIM sx   AS INTEGER
-  DIM sy   AS INTEGER
-  DIM text AS STRING
-
-  '
-  ' Calculate the screen coordinates of the row
-  '
-  sx = InboxStyle.OuterPosX + 1
-  sy = InboxStyle.OuterPosY + row
-  LOCATE sy, sx
-
-  '
-  ' Set the color depending on whether the row is selected
-  '
-  IF msgx = row THEN
-    COLOR 13, 5
-  ELSE
-    COLOR 5, 0
-  END IF
-
-  text = " " + RTRIM$(msg(row).subject)
-  text = text + STRING$(InboxStyle.InnerSizeX - LEN(text), " ")
-
-  '
-  ' Draw the row
-  '
-  PRINT text;
-
-END SUB
-
-SUB InboxReset
+SUB InboxInit
   '
   ' Initializes the mailbox to its default state
   '
+ 
+  CONST InnerSizeX = 61
+  CONST InnerSizeY = 19
+  CONST OuterPosX = 10
+  CONST OuterPosY = 3
+
   msgs = 0
+
+  IF msgw = 0 THEN
+    mwid = WinCreateEx%(2, OuterPosX, OuterPosY, InnerSizeX, InnerSizeY)
+  END IF
 
   InboxAdd "Welcome 1"
   InboxAdd "Welcome 2"
@@ -2557,7 +2457,7 @@ SUB SetupGame
   WinShowName "Start"
  
   IF fld(1, win(1).selected).cid = Command.NewGame THEN
-    InboxReset
+    InboxInit
     WorldInit 15
   ELSE
     END
@@ -2757,9 +2657,6 @@ SUB UI.Redraw
     CASE UIPage.Atlas
       UI.RedrawAtlas
 
-    CASE UIPage.Inbox
-      UI.RedrawInbox
-
     CASE UIPage.Table
       UI.RedrawTable
 
@@ -2843,14 +2740,6 @@ SUB UI.RedrawFile (filename AS STRING)
  
   PCOPY VideoPage.Working, VideoPage.Display
   SCREEN , , VideoPage.Display, VideoPage.Display
-
-END SUB
-
-SUB UI.RedrawInbox
-
-  Assert uiCurrentPage = UIPage.Inbox, "UI.RedrawInbox", "Wrong UI page"
-
-  InboxDraw InboxStyle.InnerSizeY
 
 END SUB
 
@@ -3051,43 +2940,12 @@ FUNCTION UI.RunInbox%
 
   Assert uiCurrentPage = UIPage.Inbox, "UI.RunInbox", "Wrong UI page"
   
-  DIM keypress AS STRING
-
-  IF msgs = 0 THEN
-    '
-    ' No messages
-    '
-    WaitForKeyPress
-    UI.SetPage UIPage.Atlas
-    UI.RunInbox = UIResult.Exit
-
+  WinShow mwid
+  IF win(mwid).canceled THEN
+    UI.RunInbox% = UIResult.Escape
   ELSE
-
-    '
-    ' Get the current selection
-    '
-    IF msgx = 0 THEN msgx = 1
-
-    '
-    ' Draw the current selection
-    '
-    InboxDrawRow msgx
-   
-    keypress = GetKey$
-   
-    SELECT CASE keypress
-     
-      CASE CHR$(ASCII.Escape)
-        UI.RunInbox% = UIResult.Escape
-        EXIT FUNCTION
-
-      CASE CHR$(ASCII.Return)
-        UI.SetPage UIPage.Atlas
-        UI.RunIndex% = UIResult.Exit
-        EXIT FUNCTION
-
-    END SELECT
-
+    UI.SetPage UIPage.Atlas
+    UI.RunInbox% = UIResult.Exit
   END IF
 
 END FUNCTION
@@ -3305,6 +3163,8 @@ FUNCTION WinCreateEx% (style%, posX%, posY%, sizeX%, sizeY%)
 END FUNCTION
 
 FUNCTION WinDefine% (wid%, f AS FieldType, text$)
+
+  Assert wid% > 0, "WinDefine", "wid cannot be 0"
 
   ' Defines a new field in a window and returns the field ID. Any code
   ' that creates new fields should ultimately call this function
@@ -3765,6 +3625,7 @@ SUB WinDrawStyle2 (wid%)
     '
     ' Inner space
     '
+    COLOR fc(0), bc(0)
     PRINT STRING$(win(wid%).sizeX, " ");
 
     '
