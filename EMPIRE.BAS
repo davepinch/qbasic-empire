@@ -33,11 +33,12 @@ TYPE FieldType
   '
   ' Information about an input field in a window.
   '
-  kind  AS INTEGER
-  cid   AS INTEGER
-  posX  AS INTEGER
-  posY  AS INTEGER
-  sizeX AS INTEGER
+  kind     AS INTEGER
+  childWid AS INTEGER
+  cid      AS INTEGER
+  posX     AS INTEGER
+  posY     AS INTEGER
+  sizeX    AS INTEGER
 END TYPE
 
 TYPE HabitatType
@@ -54,33 +55,37 @@ TYPE MessageType
   '
   ' An inbox message.
   '
-  opened    AS INTEGER
-  subject   AS STRING * 20
+  opened  AS INTEGER
+  subject AS STRING * 20
 END TYPE
 
-TYPE MenuType
-  '
-  ' A menu item on the top of the screen.
-  '
-  posX  AS INTEGER
-  text  AS STRING * 10
-  wid   AS INTEGER
+TYPE WinStackItem
+  wid      AS INTEGER
+  backpage AS INTEGER
+  workpage AS INTEGER
+END TYPE
+
+TYPE WinResultType
+  action   AS INTEGER
+  canceled AS INTEGER
+  cid      AS INTEGER
+  selected AS INTEGER
 END TYPE
 
 TYPE WindowType
   '
   ' A window on the screen for showing information or collecting input.
   '
-  canceled AS INTEGER
-  fields   AS INTEGER
-  helpWid  AS INTEGER
-  posX     AS INTEGER
-  posY     AS INTEGER
-  selected AS INTEGER
-  sizeX    AS INTEGER
-  sizeY    AS INTEGER
-  style    AS INTEGER
-  wname    AS STRING * 20
+  arrowexit AS INTEGER
+  fields    AS INTEGER
+  helpWid   AS INTEGER
+  posX      AS INTEGER
+  posY      AS INTEGER
+  selected  AS INTEGER
+  sizeX     AS INTEGER
+  sizeY     AS INTEGER
+  style     AS INTEGER
+  wname     AS STRING * 20
 END TYPE
 
 '
@@ -99,7 +104,6 @@ DECLARE SUB AtlasDrawItem (idx AS INTEGER)
 DECLARE SUB AtlasDrawItems ()
 DECLARE SUB AtlasDrawSelect (cx AS INTEGER, cy AS INTEGER, valid AS INTEGER)
 DECLARE SUB AtlasDrawUnselect (cx AS INTEGER, cy AS INTEGER)
-DECLARE SUB AtlasInit ()
 DECLARE SUB AtlasMoveItem (idx AS INTEGER, nx AS INTEGER, ny AS INTEGER)
 DECLARE SUB AtlasNextBanded (outcx AS INTEGER, outcy AS INTEGER)
 DECLARE SUB AtlasNextClustered (outcx AS INTEGER, outcy AS INTEGER)
@@ -127,13 +131,7 @@ DECLARE FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS I
 ' in the Execute(cid) function to learn how to implement a command.
 '
 DECLARE SUB Execute (cid AS INTEGER)
-DECLARE SUB ExecuteAbout ()
-DECLARE SUB ExecuteEndGame ()
-DECLARE SUB ExecuteFilterNone ()
-DECLARE SUB ExecuteFilterSelf ()
 DECLARE SUB ExecuteOptionAlerts ()
-DECLARE SUB ExecuteViewAtlas ()
-DECLARE SUB ExecuteViewTable ()
 
 '
 ' Inbox* subroutines
@@ -142,32 +140,13 @@ DECLARE SUB InboxAdd (subject AS STRING)
 DECLARE SUB InboxInit ()
 
 '
-' Menu* subroutines
-'
-DECLARE SUB MenuHide ()
-DECLARE SUB MenuLoad ()
-DECLARE SUB MenuDraw ()
-DECLARE SUB MenuDrawItem (itemId AS INTEGER, selected AS INTEGER)
-DECLARE FUNCTION MenuShow ()
-
-'
 ' Nebula* subroutines
 '
 DECLARE SUB NebulaCreate (seq() AS INTEGER)
 DECLARE SUB NebulaCreateSeq (seq() AS INTEGER, y!)
 DECLARE SUB NebulaDraw (seq() AS INTEGER)
 DECLARE SUB NebulaHarvest (seq() AS INTEGER)
-DECLARE SUB NebulaShow (aid AS INTEGER)
 DECLARE FUNCTION NebulaLabel$ (level AS INTEGER)
-
-'
-' SetupGame.* subroutines
-'
-' These subroutines prepare a game for play.
-'
-DECLARE SUB SetupGame ()
-DECLARE SUB SetupGame.Atlas ()
-DECLARE SUB SetupGame.New ()
 
 '
 ' Status* subroutines
@@ -208,43 +187,60 @@ DECLARE FUNCTION UI.RunNebula% (aid AS INTEGER)
 ' screen. Note: due to lengthly parameters in some cases, the
 ' functions are defined with data type characters instead of "AS".
 '
-DECLARE FUNCTION WinAppend% (wid%, f AS FieldType, text$)
-DECLARE FUNCTION WinAppendBoolean% (wid%, text$)
-DECLARE FUNCTION WinAppendButton% (wid%, cid%, text$)
-DECLARE FUNCTION WinAppendLabel% (wid%, text$)
-DECLARE FUNCTION WinAppendSeparator% (wid%)
+DECLARE FUNCTION WinClipText% (wid%, fid%, outposx%, outposy%, outsizeX%, outtext$)
 DECLARE FUNCTION WinCreate% ()
 DECLARE FUNCTION WinCreateEx% (style%, posX%, posY%, sizeX%, sizeY%)
+DECLARE FUNCTION WinCreateField% (wid%)
 DECLARE FUNCTION WinDefine% (wid%, f AS FieldType, text$)
-DECLARE FUNCTION WinDefineButton% (wid%, posX%, posY%, sizeX%, cid%, text$)
-DECLARE FUNCTION WinDefineLabel% (wid%, posX%, posY%, text$)
-DECLARE FUNCTION WinDefineInteger% (wid%, posX%, posY%, sizeX%, text$)
+DECLARE FUNCTION WinGetOuterSizeX% (wid%)
+DECLARE FUNCTION WinGetOuterSizeY% (wid%)
 DECLARE FUNCTION WinGetWid% (wname$)
 DECLARE FUNCTION WinIsSelectable% (wid%, fid%)
+DECLARE FUNCTION WinLoadBoolean% (wid%)
+DECLARE FUNCTION WinLoadButton% (wid%)
+DECLARE FUNCTION WinLoadField% (wid%, endtag$)
+DECLARE FUNCTION WinLoadLabel% (wid%)
+DECLARE FUNCTION WinLoadPopup% (wid%)
+DECLARE FUNCTION WinMapKey% (wid%, pressed AS STRING)
 DECLARE FUNCTION WinParseCommand% (text$)
 
+DECLARE SUB WinAutoSize (wid%)
+DECLARE SUB WinClose (wid%)
 DECLARE SUB WinDraw (wid%)
+DECLARE SUB WinDrawBox (wid%)
+DECLARE SUB WinDrawBox0 (wid%, offsetX%, offsetY%, fcolor%, bcolor%)
+DECLARE SUB WinDrawBox1 (wid%)
+DECLARE SUB WinDrawBox2 (wid%)
 DECLARE SUB WinDrawField (wid%, fid%)
 DECLARE SUB WinDrawOutline (wid%, sx%, sy%)
+DECLARE SUB WinDrawOutline0 (wid%, sx%, sy%)
 DECLARE SUB WinDrawOutline1 (wid%, sx%, sy%)
 DECLARE SUB WinDrawOutline2 (wid%, sx%, sy%)
 DECLARE SUB WinDrawSeparator (wid%, fid%)
+DECLARE SUB WinDrawSeparator0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%)
 DECLARE SUB WinDrawSeparator1 (wid%, fid%)
 DECLARE SUB WinDrawSeparator2 (wid%, fid%)
-DECLARE SUB WinDrawStyle1 (wid%)
-DECLARE SUB WinDrawStyle2 (wid%)
+DECLARE SUB WinDrawText (wid%, fid%)
+DECLARE SUB WinDrawText0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%, sfc%, sbc%)
+DECLARE SUB WinDrawText1 (wid%, fid%)
+DECLARE SUB WinDrawText2 (wid%, fid%)
 DECLARE SUB WinKey (wid%, fid%, keypress$)
 DECLARE SUB WinKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB WinKeyInteger (wid%, fid%, keypress$)
 DECLARE SUB WinLoad ()
-DECLARE SUB WinMove (wid%)
+DECLARE SUB WinLoadWindow ()
+DECLARE SUB WinOpen (wid%)
+DECLARE SUB WinRefreshField (wid%, fid%)
+DECLARE SUB WinRefreshWindow (wid%)
+DECLARE SUB WinRun (wid%, result AS WinResultType)
+DECLARE SUB WinRunMove (wid%, bumpX%, bumpY%)
+DECLARE SUB WinRunName (idname$)
 DECLARE SUB WinSelectNext (wid%)
 DECLARE SUB WinSelect (wid%, fid%)
 DECLARE SUB WinSelectPrevious (wid%)
 DECLARE SUB WinSelectFirst (wid%)
 DECLARE SUB WinSelectLast (wid%)
-DECLARE SUB WinShow (wid%)
-DECLARE SUB WinShowName (idname$)
+DECLARE SUB WinSetText (wid%, fid%, text$)
 
 '
 ' World* subroutines
@@ -262,6 +258,7 @@ DECLARE FUNCTION WorldNextId% ()
 ' Declarations
 '
 DECLARE SUB Assert (truth AS INTEGER, where AS STRING, what AS STRING)
+DECLARE SUB AssertFail (where AS STRING, what AS STRING)
 DECLARE SUB DrawFile (filename AS STRING)
 DECLARE SUB DrawFileAt (filename AS STRING, offsetX AS INTEGER, offsetY AS INTEGER)
 DECLARE SUB DrawTable ()
@@ -269,7 +266,7 @@ DECLARE SUB DrawTableRow (row AS INTEGER, aid AS INTEGER)
 DECLARE SUB DrawTableRows ()
 DECLARE SUB DrawText (text AS STRING)
 DECLARE SUB PaintBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
-DECLARE SUB WaitForKeyPress ()
+DECLARE SUB SetupGame ()
 DECLARE FUNCTION GetKey$ ()
 DECLARE FUNCTION IsFiltered% (aid AS INTEGER)
 
@@ -277,6 +274,7 @@ DECLARE FUNCTION IsFiltered% (aid AS INTEGER)
 ' ASCII character constants
 '
 CONST ASCII.Backspace = 8
+CONST ASCII.Tab = 9
 CONST ASCII.Return = 13
 CONST ASCII.Escape = 27
 CONST ASCII.Space = 32
@@ -296,7 +294,6 @@ CONST AtlasStyle.CellBackcolor = 0
 CONST AtlasStyle.CellForecolor = 7
 CONST AtlasStyle.CellSizeX = 4
 CONST AtlasStyle.CellSizeY = 1
-CONST AtlasStyle.DrawFile = "GRID.PCB"
 CONST AtlasStyle.FilterBackcolor = 7
 CONST AtlasStyle.FilterForecolor = 15
 CONST AtlasStyle.GridSizeX = 15
@@ -320,15 +317,15 @@ CONST Command.About = 1
 CONST Command.EndGame = 2
 CONST Command.FilterNone = 3
 CONST Command.FilterSelf = 4
-CONST Command.NewGame = 8
-CONST Command.OptionAlerts = 9
-CONST Command.ReplotBand = 11
-CONST Command.ReplotCluster = 12
-CONST Command.ReplotManual = 13
-CONST Command.ReplotRandom = 14
-CONST Command.ViewAtlas = 15
-CONST Command.ViewInbox = 16
-CONST Command.ViewTable = 17
+CONST Command.NewGame = 5
+CONST Command.OptionAlerts = 6
+CONST Command.ReplotBand = 7
+CONST Command.ReplotCluster = 8
+CONST Command.ReplotManual = 9
+CONST Command.ReplotRandom = 10
+CONST Command.ViewAtlas = 11
+CONST Command.ViewInbox = 12
+CONST Command.ViewTable = 13
 
 '
 ' Control Character constants
@@ -347,7 +344,8 @@ CONST FieldKind.Boolean = 1
 CONST FieldKind.Button = 2
 CONST FieldKind.Integer = 3
 CONST FieldKind.Label = 4
-CONST FieldKind.Separator = 5
+CONST FieldKind.Popup = 5
+CONST FieldKind.Separator = 6
 
 '
 ' Habitat UIs
@@ -370,16 +368,8 @@ CONST InboxStyle.OuterPosY = 3
 '
 CONST MaxMenus = 5
 CONST MaxFields = 13
-CONST MaxWindows = 20
+CONST MaxWindows = 15
 
-'
-' MenuStyle constants
-'
-CONST MenuStyle.BackColor = 7
-CONST MenuStyle.ForeColor = 0
-CONST MenuStyle.SelectedBackColor = 0
-CONST MenuStyle.SelectedForeColor = 15
-                                   
 '
 ' NebulaIndex constants
 '
@@ -404,18 +394,6 @@ CONST ScanCode.PageDown = 81
 '
 CONST StatusLevel.Normal = 0
 CONST StatusLevel.Debug = 1
-
-'
-' StatusStyle.* constants
-'
-' These constants define the style of the status bar on the bottom
-' of the screen. The status bar is used to display quick updates and
-' error/debug information.
-'
-CONST StatusStyle.NormalForecolor = 15
-CONST StatusStyle.NormalBackcolor = 0
-CONST StatusStyle.DebugBackcolor = 4
-CONST StatusStyle.DebugForecolor = 15
 
 '
 ' TableStyle.* constants
@@ -461,27 +439,44 @@ CONST UIResult.Escape = 1
 '
 CONST VideoPage.Display = 0
 CONST VideoPage.Working = 1
-CONST VideoPage.Atlas = 2
-CONST VideoPage.Table = 3
+
+'
+' WinAction* constants
+'
+CONST WinAction.None = 0
+CONST WinAction.Cancel = 1
+CONST WinAction.Complete = 2
+CONST WinAction.Execute = 3
+CONST WinAction.ExitLeft = 4
+CONST WinAction.ExitRight = 5
+CONST WinAction.Help = 6
+CONST WinAction.MoveDown = 7
+CONST WinAction.MoveLeft = 8
+CONST WinAction.MoveRight = 9
+CONST WinAction.MoveUp = 10
+CONST WinAction.OpenPopup = 11
+CONST WinAction.SelectFirst = 12
+CONST WinAction.SelectLast = 13
+CONST WinAction.SelectNext = 14
+CONST WinAction.SelectPrevious = 15
 
 '
 ' WinStyle.* constants
 '
 ' These constants define the colors and other styles of windows.
 '
+CONST WinStyle0.Backcolor = 7
+CONST WinStyle0.Forecolor = 0
+CONST WinStyle0.SelectedBackcolor = 1
+CONST WinStyle0.SelectedForecolor = 15
 CONST WinStyle1.Backcolor = 1
 CONST WinStyle1.Forecolor = 7
 CONST WinStyle1.SelectedBackcolor = 7
 CONST WinStyle1.SelectedForecolor = 0
-CONST WinStyle1.OutlineBackcolor = 2
-CONST WinStyle1.OutlineForecolor = 7
-
 CONST WinStyle2.Backcolor = 0
 CONST WinStyle2.Forecolor = 5
 CONST WinStyle2.SelectedBackcolor = 5
-CONST WinStyle2.SelectedForecolor = 13
-
-CONST WinStyle.Border = 1
+CONST WinStyle2.SelectedForecolor = 0
 
 '
 ' Global world variables
@@ -500,15 +495,9 @@ DIM SHARED atlasItem(1 TO 30) AS AtlasItemType
 '
 ' Global messaging variables
 '
-DIM SHARED msg(1 TO 19) AS MessageType
+DIM SHARED msg(1 TO 10) AS MessageType
 DIM SHARED msgs AS INTEGER
 DIM SHARED mwid AS INTEGER
-
-'
-' Global menu variables
-'
-DIM SHARED menuCount AS INTEGER
-DIM SHARED menuItem(1 TO MaxMenus) AS MenuType
 
 '
 ' Global UI variables
@@ -524,13 +513,11 @@ DIM SHARED uicy AS INTEGER
 DIM SHARED fld(1 TO MaxWindows, 1 TO MaxFields) AS FieldType
 DIM SHARED win(1 TO MaxWindows) AS WindowType
 DIM SHARED wins AS INTEGER
+DIM SHARED win0 AS INTEGER
 DIM SHARED txt(1 TO MaxWindows, 1 TO MaxFields) AS STRING
 
-'
-' Global variables
-'
-DIM SHARED arrowexit               AS INTEGER
-DIM SHARED pressed                 AS STRING
+DIM SHARED winstack(1 TO 3) AS WinStackItem
+DIM SHARED winstacked       AS INTEGER
 
 '
 ' Main
@@ -541,97 +528,173 @@ UI.Run
 '
 ' Window Definitions
 '
-' These are loaded by the WinLoad subroutine.
-'
 
-REM Window 1
-  DATA "Windows"
+DATA "Windows"
  
-  DATA "Window"
-  DATA   "Name", "Start"
-  DATA   "PosX", 22
-  DATA   "PosY", 10
-  DATA   "$", 0, 1, " Select an option to get started: "
-  DATA   "@", 12, 3, 10, "NewGame",   " New Game "
-  DATA   "@", 12, 4, 10, "<command>", " Exit App "
-  DATA "End"
+DATA "Window"
+DATA   "Name", "Start"
+DATA   "PosY", 10
+DATA   "Label"
+DATA     "Text", " Select an option to get started... "
+DATA   "EndLabel"
+DATA   "Button"
+DATA     "Command", "NewGame"
+DATA     "PosX", 14
+DATA     "PosY", 3
+DATA     "Text", " New Game "
+DATA   "EndButton"
+DATA   "Button"
+DATA     "Command", "EndGame"
+DATA     "PosX", 14
+DATA     "PosY", 4
+DATA     "Text", " End Game "
+DATA   "EndButton"
+DATA "EndWindow"
 
-REM Window 9
-  DATA "Window"
-  DATA   "Name", "AtlasMaker"
-  DATA   "PosX", 3
-  DATA   "PosY", 3
-  DATA   "+@", "<command>", "Look Behind Window"
-  DATA   "+@", "<command>", "Next Step..."
-  DATA   "+-"
-  DATA   "+@", "ReplotCluster", "Cluster together "
-  DATA   "+@", "ReplotBand", "Band together "
-  DATA   "+@", "ReplotManual", "Plot Manually"
-  DATA   "+@", "ReplotRandom", "Randomly place"
-  DATA "End"
+DATA "Window"
+DATA   "Name", "FileMenu"
+DATA   "ArrowExit", 3
+DATA   "PosX", 1
+DATA   "PosY", 2
+DATA   "Button"
+DATA     "Command", "About"
+DATA     "PosX", 1
+DATA     "PosY", 1
+DATA     "SizeX", -1
+DATA     "Text", " About... "
+DATA   "EndButton"
+DATA   "Button"
+DATA     "Command", "EndGame"
+DATA     "PosX", 1
+DATA     "PosY", 2
+DATA     "Text", " Exit Game "
+DATA   "EndButton"
+DATA "EndWindow"
 
-  DATA "Window"
-  DATA   "Name", "FileMenu"
-  DATA   "PosX", 1
-  DATA   "PosY", 2
-  DATA   "+@", "About", "About..."
-  DATA   "+@", "EndGame", "Exit"
-  DATA "End"
+DATA "Window"
+DATA   "Name", "ViewMenu"
+DATA   "ArrowExit", 3
+DATA   "PosX", 7
+DATA   "PosY", 2
+DATA   "SizeX", 20
+DATA   "Button"
+DATA     "Command", "ViewAtlas"
+DATA     "PosY", 1
+DATA     "SizeX", -1
+DATA     "Text", " Show atlas "
+DATA   "EndButton"
+DATA   "Button"
+DATA     "Command", "ViewTable"
+DATA     "PosY", 2
+DATA     "SizeX", -1
+DATA     "Text", " Show table"
+DATA   "EndButton"
+DATA   "Button"
+DATA     "Command", "ViewInbox"
+DATA     "PosY", 3
+DATA     "SizeX", -1
+DATA     "Text", " Show inbox"
+DATA   "EndButton"
+DATA   "-"
+DATA   "Button"
+DATA     "Command", "ReplotBand"
+DATA     "SizeX", -1
+DATA     "Text", " Replot banded"
+DATA   "EndButton"
+DATA   "Button"
+DATA     "Command", "ReplotCluster"
+DATA     "SizeX", -1
+DATA     "Text", " Replot clustered"
+DATA   "EndButton"
+DATA   "Button"
+DATA     "Command", "ReplotManual"
+DATA     "SizeX", -1
+DATA     "Text", " Replot manually"
+DATA   "EndButton"
+DATA   "Button"
+DATA     "Command", "ReplotRandom"
+DATA     "SizeX", -1
+DATA     "Text", " Replot randomly"
+DATA   "EndButton"
+DATA "EndWindow"
 
-  DATA "Window"
-  DATA   "Name", "ViewMenu"
-  DATA   "PosX", 11
-  DATA   "PosY", 2
-  DATA   "+@", "ViewAtlas", "Show atlas"
-  DATA   "+@", "ViewTable", "Show table"
-  DATA   "+@", "ViewInbox", "Show inbox"
-  DATA   "+-"   
-  DATA   "+@", "FilterSelf", "Filter you"
-  DATA   "+@", "FilterNone", "Remove Filter"
-  DATA   "+-"
-  DATA   "+@", "ReplotBand", "Replot banded"
-  DATA   "+@", "ReplotCluster", "Replot clustered"
-  DATA   "+@", "ReplotManual", "Replot manually"
-  DATA   "+@", "ReplotRandom", "Replot randomly"
-  DATA "End"
+DATA "Window"
+DATA   "Name", "OptionsMenu"
+DATA   "ArrowExit", 3
+DATA   "PosX", 13
+DATA   "PosY", 2
+DATA   "SizeX", 20
+DATA   "Button"
+DATA     "Command", "OptionAlerts"
+DATA     "PosX", 1
+DATA     "PosY", 1
+DATA     "SizeX", -1
+DATA     "Text", " Alerts"
+DATA   "EndButton"
+DATA "EndWindow"
 
-  DATA "Window"
-  DATA   "Name", "OptionsMenu"
-  DATA   "PosX", 21
-  DATA   "PosY", 2
-  DATA   "+@", "OptionAlerts", "Alerts"
-  DATA "End"
+DATA "Window"
+DATA   "Name", "DialogAlerts"
+DATA   "PosX", 19
+DATA   "PosY", 9
+DATA   "Label"
+DATA     "Text", "Do you wish to sound alerts?"
+DATA   "EndLabel"
+DATA   "Boolean"
+DATA     "SizeX", -1
+DATA     "Text", "Yes"
+DATA   "EndBoolean"
+DATA "EndWindow"
 
-REM Window 27
-  DATA "Window"
-  DATA   "Name", "DialogAlerts"
-  DATA   "PosX", 19
-  DATA   "PosY", 9
-  DATA   "+$", " Do you wish to sound alert? "
-  DATA   "+-"
-  DATA   "+&", "Yes"
-  DATA "End"
+DATA "Window"
+DATA   "Name", "About"
+DATA   "PosX", 1
+DATA   "PosY", 5
+DATA   "Style", 2
+DATA   "Label"
+DATA     "PosY", 1
+DATA     "Text", "   The Galactic Empire   "
+DATA   "EndLabel"
+DATA   "Label"
+DATA     "PosY", 2
+DATA     "Text", " (C) 1992 David J Pinch "
+DATA   "EndLabel"
+DATA "EndWindow"
 
-REM Window 30
-  DATA "Window"
-  DATA   "Name", "About"
-  DATA   "PosX", 1
-  DATA   "PosY", 5
-  DATA   "+$", "   The Galactic Empire   "
-  DATA   "+-"
-  DATA   "+$", " (C) 1992 David J. Pinch "
-  DATA "End"
+DATA "Window"
+DATA   "Name", "Menu"
+DATA   "PosX", 1
+DATA   "PosY", 1
+DATA   "SizeX", 80
+DATA   "SizeY", 1
+DATA   "Style", 0
+DATA   "Popup"
+DATA     "Child", "FileMenu"
+DATA     "PosX", 1
+DATA     "PosY", 1
+DATA     "Text", " FILE "
+DATA   "EndPopup"
+DATA   "Popup"
+DATA     "Child", "ViewMenu"
+DATA     "PosX", 7
+DATA     "PosY", 1
+DATA     "Text", " VIEW "
+DATA   "EndPopup"
+DATA   "Popup"
+DATA     "Child", "OptionsMenu"
+DATA     "PosX", 13
+DATA     "PosY", 1
+DATA     "Text", " OPTIONS "
+DATA   "EndPopup"
+DATA   "Button"
+DATA     "PosX", 76
+DATA     "PosY", 1
+DATA     "Text", " END "
+DATA     "Command", "EndGame"
+DATA   "EndButton"
+DATA "EndWindow"
 
 DATA "EndWindows"
-
-'
-' Menu data (loaded by MenuLoad)
-'
-DATA "Menus"
-DATA   "Menu", " File ", "FileMenu"
-DATA   "Menu", " View ", "ViewMenu"
-DATA   "Menu", " Options ", "OptionsMenu"
-DATA "EndMenus"
 
 DATA "Habitats"
 DATA   "Habitat"
@@ -670,9 +733,16 @@ DATA "End"
 SUB Assert (truth AS INTEGER, where AS STRING, what AS STRING)
 
   IF NOT truth THEN
+    SCREEN , , 0, 0
     StatusDebug where + ": " + what
+    DIM s$: s$ = GetKey$
+    END
   END IF
 
+END SUB
+
+SUB AssertFail (where AS STRING, what AS STRING)
+  Assert 0, where, what
 END SUB
 
 SUB AtlasAddBand (fromValue AS INTEGER, toValue AS INTEGER)
@@ -1018,28 +1088,6 @@ FUNCTION AtlasIndexOf% (value AS INTEGER)
 
 END FUNCTION
 
-SUB AtlasInit
-  '
-  ' Initializes the atlas data and video page.
-  '
-  
-  '
-  ' Mark all items as inactive.
-  '
-  DIM idx AS INTEGER
-  FOR idx = 1 TO UBOUND(atlasItem)
-    atlasItem(idx).allocated = 0
-  NEXT
-
-  ' For performance, a copy of the empty grid is stored
-  ' on a background video page so it can be redrawn quickly.
-  '
-  SCREEN , , VideoPage.Atlas, VideoPage.Display
-  AtlasDrawGrid
-  SCREEN , , VideoPage.Display, VideoPage.Display
-
-END SUB
-
 SUB AtlasMoveItem (idx AS INTEGER, nx AS INTEGER, ny AS INTEGER)
   '
   ' Moves the item with at the specified index.
@@ -1139,6 +1187,9 @@ SUB AtlasNextClustered (outcx AS INTEGER, outcy AS INTEGER)
       IF ry < 1 THEN ry = ry + 2
       IF rx > AtlasStyle.GridSizeX THEN rx = rx - 2
       IF ry > AtlasStyle.GridSizeY THEN ry = ry - 2
+
+      ' BUG: this could fail if x,y is a corner and the nearby
+      ' cells of the corner are filled.
 
     LOOP UNTIL atlasGrid(rx, ry) = 0
 
@@ -1767,16 +1818,16 @@ SUB Execute (cid AS INTEGER)
   SELECT CASE cid
    
     CASE Command.About
-      ExecuteAbout
+      UI.SetPage UIPage.About
 
     CASE Command.EndGame
-      ExecuteEndGame
+      END
 
     CASE Command.FilterNone
-      ExecuteFilterNone
+      UI.SetFilter UIFilter.None, True
 
     CASE Command.FilterSelf
-      ExecuteFilterSelf
+      UI.SetFilter UIFilter.Self, True
 
     CASE Command.OptionAlerts
       ExecuteOptionAlerts
@@ -1794,13 +1845,13 @@ SUB Execute (cid AS INTEGER)
       AtlasPlotRandom
 
     CASE Command.ViewAtlas
-      ExecuteViewAtlas
+      UI.SetPage UIPage.Atlas
      
     CASE Command.ViewInbox
       UI.SetPage UIPage.Inbox
 
     CASE Command.ViewTable
-      ExecuteViewTable
+      UI.SetPage UIPage.Table
 
     CASE ELSE
       StatusDebug "Execute(" + LTRIM$(STR$(cid)) + "): unrecognized cid"
@@ -1809,62 +1860,15 @@ SUB Execute (cid AS INTEGER)
 
 END SUB
 
-SUB ExecuteAbout
-  '
-  ' Shows the about page
-  '
-  UI.SetPage UIPage.About
-
-END SUB
-
-SUB ExecuteEndGame
-  '
-  ' Ends the game
-  '
-  END
-END SUB
-
-SUB ExecuteFilterNone
-  '
-  ' Removes the current filter
-  '
-  UI.SetFilter UIFilter.None, True
-
-END SUB
-
-SUB ExecuteFilterSelf
-  '
-  ' Filters data to the player
-  '
-  UI.SetFilter UIFilter.Self, True
-
-END SUB
-
 SUB ExecuteOptionAlerts
 
-  WinShowName "DialogAlerts"
+  WinRunName "DialogAlerts"
 
   'FOR x = 1 TO 3
   '  FOR Y = 300 TO 60 STEP -10
   '    SOUND Y, .2
   '  NEXT
   'NEXT
-
-END SUB
-
-SUB ExecuteViewAtlas
-  '
-  ' Displays the atlas
-  '
-  UI.SetPage UIPage.Atlas
-
-END SUB
-
-SUB ExecuteViewTable
-  '
-  ' Displays the data table
-  '
-  UI.SetPage UIPage.Table
 
 END SUB
 
@@ -1959,238 +1963,6 @@ FUNCTION IsFiltered% (aid AS INTEGER)
     IsFiltered = False
 
   END IF
-
-END FUNCTION
-
-SUB MenuDraw
-
-  '
-  ' Clear the menu space on the top row of the screen
-  '
-  VIEW PRINT 1 TO 1
-  COLOR MenuStyle.ForeColor, MenuStyle.BackColor
-  CLS 2
-  VIEW PRINT
-
-  '
-  ' Draw each menu item
-  '
-  DIM i AS INTEGER
-  FOR i = 1 TO menuCount
-    MenuDrawItem i, 0
-  NEXT
-
-END SUB
-
-SUB MenuDrawItem (itemId AS INTEGER, selected AS INTEGER)
-
-  '
-  ' Move to the screen location of the item
-  '
-  LOCATE 1, menuItem(itemId).posX
-
-  '
-  ' Set the color depending on whether this item is selected
-  '
-  IF selected THEN
-    COLOR MenuStyle.SelectedForeColor, MenuStyle.SelectedBackColor
-  ELSE
-    COLOR MenuStyle.ForeColor, MenuStyle.BackColor
-  END IF
-
-  PRINT menuItem(itemId).text;
-
-END SUB
-
-SUB MenuHide
-  '
-  ' Hides the menu on the top of the screen.
-  '
-  VIEW PRINT 1 TO 1
-  COLOR 7, 0
-  CLS 2
-  VIEW PRINT
-
-END SUB
-
-SUB MenuLoad
-  '
-  ' Loads the menu. This subroutine should be called once
-  ' and after the windows are loaded.
-  '
-
-  DIM block AS STRING
-  DIM posX  AS INTEGER
-  DIM wname AS STRING
-
-  READ block
-  IF block <> "Menus" THEN
-    StatusDebug "MenuLoad: expected 'Menus' but encountered " + block
-  END IF
-
-  '
-  ' Load each menu definition
-  '
-  posX = 2
-  DO
-   
-    READ block
-   
-    SELECT CASE block
-
-      CASE "Menu"
-       
-        menuCount = menuCount + 1
-
-        READ menuItem(menuCount).text
-        READ wname
-        menuItem(menuCount).wid = WinGetWid(wname)
-
-        '
-        ' Calculate the horizontal position of this menu item
-        '
-        menuItem(menuCount).posX = posX
-        posX = posX + LEN(menuItem(menuCount).text)
-
-      CASE "EndMenus"
-        EXIT DO
-
-      CASE ELSE
-        StatusDebug "MenuLoad: expected Menu but encountered " + block
-   
-    END SELECT
-
-  LOOP
-
-END SUB
-
-FUNCTION MenuShow
-  '
-  ' Returns the command ID of an item selected from the menu.
-  '
- 
-  CONST MenusClosed = 0
-  CONST MenusOpen = 1
-
-  DIM keypress AS STRING
-  DIM mode     AS INTEGER
- 
-  '
-  ' Keep track of the current menu item
-  '
-  STATIC selection AS INTEGER
-  IF selection = 0 THEN
-    selection = 1
-  END IF
-
-  MenuDraw
-
-  DO
-   
-    '
-    ' Draw the selected menu item
-    '
-    MenuDrawItem selection, 1
-
-    IF mode = MenusOpen THEN
-      '
-      ' The menu is open (a window is displayed)
-      '
-      arrowexit = 1
-      WinShow menuItem(selection).wid
-      arrowexit = 0
-     
-      IF win(menuItem(selection).wid).canceled THEN
-       
-        mode = MenusClosed
-     
-      ELSE
-
-        ' HACK: use global pressed variable
-        SELECT CASE pressed
-          CASE CHR$(ASCII.Return)
-           
-            DIM wid AS INTEGER
-            DIM fid AS INTEGER
-
-            wid = menuItem(selection).wid
-            fid = win(wid).selected
-            
-            MenuShow = fld(wid, fid).cid
-            MenuHide
-            EXIT FUNCTION
-
-          CASE CHR$(0) + CHR$(ScanCode.Left)
-            GOSUB NavigateLeft
-          CASE CHR$(0) + CHR$(ScanCode.Right)
-            GOSUB NavigateRight
-        END SELECT
-
-      END IF
-
-    ELSE
-      '
-      ' The menu is closed
-      '
-      keypress = GetKey$
-   
-      SELECT CASE keypress
-    
-        CASE CHR$(0) + CHR$(ScanCode.Left)
-          '
-          ' Move left
-          '
-          GOSUB NavigateLeft
-
-        CASE CHR$(0) + CHR$(ScanCode.Right)
-          '
-          ' Move right
-          '
-          GOSUB NavigateRight
-
-        CASE CHR$(0) + CHR$(ScanCode.Down)
-          '
-          ' Down (open menu)
-          '
-          mode = MenusOpen
-
-        CASE CHR$(ASCII.Return)
-          '
-          ' Enter (open menu)
-          '
-          mode = MenusOpen
-       
-        CASE CHR$(ASCII.Escape)
-          '
-          ' Escape (exit menu)
-          '
-          MenuHide
-          MenuShow = 0
-          EXIT FUNCTION
-
-      END SELECT
-
-    END IF
-   
-  LOOP
-
-REM *** Subroutines ***
-
-NavigateLeft:
-  '
-  ' Moves to the menu item to the left
-  '
-  MenuDrawItem selection, 0
-  selection = selection - 1: IF selection = 0 THEN selection = menuCount
-  RETURN
-
-NavigateRight:
-  '
-  ' Moves to the menu item to the right
-  '
-  MenuDrawItem selection, 0
-  selection = selection + 1: IF selection > menuCount THEN selection = 1
-  RETURN
 
 END FUNCTION
 
@@ -2427,20 +2199,7 @@ SUB SetupGame
   '
   StatusUpdate "Please wait..."
   WinLoad
-  MenuLoad
   WorldLoadHabitats
-
-  '
-  ' Draw master screens
-  '
-  SCREEN , , VideoPage.Table, VideoPage.Display
-  DrawTable
-  StatusClear
-
-  '
-  ' Initialize the atlas
-  '
-  AtlasInit
 
   '
   ' Draw title screen
@@ -2454,70 +2213,15 @@ SUB SetupGame
   '
   ' Show starting window #1
   '
-  WinShowName "Start"
+  DIM result AS WinResultType
+  WinRun WinGetWid("Start"), result
  
-  IF fld(1, win(1).selected).cid = Command.NewGame THEN
+  IF result.cid = Command.NewGame THEN
     InboxInit
     WorldInit 15
   ELSE
     END
   END IF
-
-END SUB
-
-SUB SetupGame.Atlas
-
-  DIM wid AS INTEGER
-  LET wid = WinGetWid("AtlasMaker")
-
-  '
-  ' Initialize and display the atlas.
-  '
-  UI.SetPage UIPage.Atlas
-
-  '
-  ' Set focus on the option to exit the atlas editor
-  '
-  WinSelect wid, 2
-
-  DO
-   
-    '
-    ' Show the editor menu
-    '
-    WinShow wid
-
-    SELECT CASE win(wid).selected
-     
-      CASE 1
-        '
-        ' Hide the window in order to see the grid
-        '
-        StatusUpdate "Press any key to restore the window..."
-        WaitForKeyPress
-        StatusClear
-     
-      CASE 2
-        '
-        ' Exit the atlas maker
-        '
-        EXIT SUB
-     
-      CASE 4:
-        AtlasPlotClustered
-
-      CASE 5:
-        AtlasPlotBanded
-
-      CASE 6:
-        AtlasPlotManual
-
-      CASE 7:
-        AtlasPlotRandom
-    
-    END SELECT
-
-  LOOP
 
 END SUB
 
@@ -2551,26 +2255,20 @@ END SUB
 
 SUB StatusUpdateLevel (text AS STRING, level AS INTEGER)
 
-  '
-  ' Set the viewport to the last row of the screen
-  '
-  VIEW PRINT 25 TO 25
- 
-  '
-  ' Set the color based on the status level
-  '
+  CONST NormalForecolor = 15
+  CONST NormalBackcolor = 0
+  CONST DebugBackcolor = 4
+  CONST DebugForecolor = 15
+
   SELECT CASE level
     CASE StatusLevel.Debug:
-      COLOR StatusStyle.DebugForecolor, StatusStyle.DebugBackcolor
+      COLOR DebugForecolor, DebugBackcolor
     CASE ELSE
-      COLOR StatusStyle.NormalForecolor, StatusStyle.NormalBackcolor
+      COLOR NormalForecolor, NormalBackcolor
   END SELECT
-
-  '
-  ' Print the updated status and reset the viewport
-  '
+ 
+  VIEW PRINT 25 TO 25
   CLS
-  'PRINT text;
   DrawText text
   VIEW PRINT
   
@@ -2709,16 +2407,9 @@ END SUB
 
 SUB UI.RedrawAtlas
 
-  '
-  ' Copy the blank atlas to the working page and draw items
-  '
   SCREEN , , VideoPage.Working, VideoPage.Display
-  PCOPY VideoPage.Atlas, VideoPage.Working
-  AtlasDrawItems
-
-  '
-  ' Restore the display page
-  '
+  CLS
+  AtlasDraw
   SCREEN , , VideoPage.Working, VideoPage.Working
   PCOPY VideoPage.Working, VideoPage.Display
   SCREEN , , VideoPage.Display, VideoPage.Display
@@ -2746,7 +2437,9 @@ END SUB
 SUB UI.RedrawTable
 
   SCREEN , , VideoPage.Working, VideoPage.Display
-  PCOPY VideoPage.Table, VideoPage.Working
+ 
+  CLS
+  DrawTable
   DrawTableRows
 
   '
@@ -2780,13 +2473,19 @@ SUB UI.Run
   ' Runs the user interface
   '
  
-  DIM cid    AS INTEGER
-  DIM result AS INTEGER
+  DIM menuwid AS INTEGER
+  DIM uresult AS INTEGER
+  DIM wresult AS WinResultType
 
   '
   ' Set the atlas (setting the page causes it to redraw)
   '
   UI.SetPage UIPage.Atlas
+
+  '
+  ' Find the main menu
+  '
+  menuwid = WinGetWid("Menu")
 
   DO
     
@@ -2795,20 +2494,20 @@ SUB UI.Run
     SELECT CASE uiCurrentPage
     
       CASE UIPage.About
-        result = UI.RunAbout%
+        uresult = UI.RunAbout%
 
       CASE UIPage.Area
-        result = UI.RunArea%
+        uresult = UI.RunArea%
 
       CASE UIPage.Atlas
-        result = UI.RunAtlas%
+        uresult = UI.RunAtlas%
 
       CASE UIPage.Inbox
-        result = UI.RunInbox%
+        uresult = UI.RunInbox%
 
     END SELECT
 
-    SELECT CASE result
+    SELECT CASE uresult
 
       CASE UIResult.Exit
         '
@@ -2819,9 +2518,10 @@ SUB UI.Run
         '
         ' The player pressed the escape key to open the menu
         '
-        cid = MenuShow
-        IF cid > 0 THEN
-          Execute cid
+       
+        WinRun menuwid, wresult
+        IF wresult.cid > 0 THEN
+          Execute wresult.cid
         END IF
 
     END SELECT
@@ -2837,15 +2537,18 @@ FUNCTION UI.RunAbout%
 
   Assert uiCurrentPage = UIPage.About, "UI.RunAbout", "Wrong UI page"
 
+  DIM aboutWid AS INTEGER
+  DIM result   AS WinResultType
+
   '
   ' Lookup the about window
   '
-  DIM wid AS INTEGER
-  LET wid = WinGetWid("About")
-  Assert wid <> 0, "UI.RunAbout", "About window not found"
+  aboutWid = WinGetWid("About")
+  Assert aboutWid <> 0, "UI.RunAbout", "About window not found"
 
-  WinShow wid
-  IF win(wid).canceled THEN
+  WinRun aboutWid, result
+
+  IF result.canceled THEN
     UI.RunAbout% = UIResult.Escape
   ELSE
     ' HACK: not sure which page to exit to
@@ -2940,8 +2643,11 @@ FUNCTION UI.RunInbox%
 
   Assert uiCurrentPage = UIPage.Inbox, "UI.RunInbox", "Wrong UI page"
   
-  WinShow mwid
-  IF win(mwid).canceled THEN
+  DIM result AS WinResultType
+
+  WinRun mwid, result
+ 
+  IF result.canceled THEN
     UI.RunInbox% = UIResult.Escape
   ELSE
     UI.SetPage UIPage.Atlas
@@ -3066,80 +2772,192 @@ SUB UI.SetPage (page AS INTEGER)
 
 END SUB
 
-SUB WaitForKeyPress
+SUB WinAutoSize (wid%)
   '
-  ' Waits for any key to be pressed. The key is discarded from input.
+  ' Expands the size of the window based on field sizes and positions.
   '
-  DIM k AS STRING
+ 
+  Assert wid% > 0, "WinAutoSize", "wid cannot be 0"
 
-  DO
-    k = INKEY$
-  LOOP UNTIL LEN(k)
+  DIM fid%
+  DIM fieldx2%
+  DIM fieldy2%
+  DIM highestx%
+  DIM highesty%
+
+  highestx% = win(wid%).sizeX
+  highesty% = win(wid%).sizeY
+
+  FOR fid% = 1 TO win(wid%).fields
+ 
+    '
+    ' Get the field size (default to text size if autosizing).
+    ' Size 0 means use text size; size -1 means use window size.
+    '
+    fieldx2% = fld(wid%, fid%).sizeX
+    IF fieldx2% = 0 OR fieldx2% = -1 THEN
+      fieldx2% = LEN(txt(wid%, fid%))
+    END IF
+
+    '
+    ' Get the coordinates of the lower-right corner
+    '
+    fieldx2% = fld(wid%, fid%).posX + fieldx2% - 1
+    fieldy2% = fld(wid%, fid%).posY
+
+    IF fieldx2% > highestx% THEN highestx% = fieldx2%
+    IF fieldy2% > highesty% THEN highesty% = fieldy2%
+
+  NEXT
+
+  IF highestx% > win(wid%).sizeX THEN
+    win(wid%).sizeX = highestx%
+  END IF
+
+  IF highesty% > win(wid%).sizeY THEN
+    win(wid%).sizeY = highesty%
+  END IF
 
 END SUB
 
-FUNCTION WinAppend% (wid%, f AS FieldType, text$)
+FUNCTION WinClipText% (wid%, fid%, outposx%, outposy%, outsizeX%, outtext$)
   '
-  ' Position the field below the bottom of the window
+  ' Returns True if any portion of the field text is visible. If True,
+  ' the starting position, clipped size, and clipped text is returned.
+  ' The clipped text is filled with spaces to match the clipped size.
   '
-  f.posY = win(wid%).sizeY + 1
+
+  Assert wid% > 0, "WinClipText", "wid cannot be 0"
 
   '
-  ' Add the field definition to the window (the window will autosize)
+  ' Get the size of the field
   '
-  WinAppend% = WinDefine(wid%, f, text$)
+  outsizeX% = fld(wid%, fid%).sizeX
+  IF outsizeX% = -1 THEN
+    '
+    ' A size of -1 means the window size
+    '
+    outsizeX% = win(wid%).sizeX
+
+  ELSE
+
+    IF outsizeX% = 0 THEN
+      '
+      ' A size of 0 means to use the size of the text
+      '
+      outsizeX% = LEN(txt(wid%, fid%))
+    END IF
+
+    IF outsizeX% > win(wid%).sizeX THEN
+      '
+      ' The field cannot be larger than the window
+      '
+      outsideX% = win(wid%).sizeX
+    END IF
+
+  END IF
+
+  IF outsizeX% < 1 THEN
+    '
+    ' No visible size
+    '
+    WinClipText% = False
+    EXIT FUNCTION
+  END IF
+
+  '
+  ' Get the position of the field.
+  '
+  outposx% = fld(wid%, fid%).posX
+  outposy% = fld(wid%, fid%).posY
+  IF outposx% = 0 THEN
+    '
+    ' Default to the first column
+    '
+    outposx% = 1
+  END IF
+
+  IF outposx% > win(wid%).sizeX THEN
+    '
+    ' No portion visible
+    '
+    WinClipText% = False
+    EXIT FUNCTION
+ 
+  ELSEIF outposx% > 0 THEN
+    '
+    ' The field starts within the window but might be clipped.
+    ' The value outposX + outsizeX is the index of the first
+    ' character after the field.
+    '
+    DIM last%
+    LET last% = outposx% + outsizeX% - 1
+
+    IF last% > win(wid%).sizeX THEN
+      outsizeX% = last% - win(wid%).sizeX
+    END IF
+
+    '
+    ' Get the text value and pad/clip
+    '
+    outtext$ = txt(wid%, fid%)
+    IF LEN(outtext$) < outsizeX% THEN
+      '
+      ' The text value is shorter than the field size
+      '
+      outtext$ = outtext$ + STRING$(outsizeX% - LEN(outtext$), " ")
+
+    ELSEIF LEN(outtext$) > outsizeX% THEN
+      '
+      ' The text value is longer than the field size
+      '
+      outtext$ = LEFT$(outtext$, outsizeX%)
+   
+    END IF
+
+    WinClipText% = True
+    EXIT FUNCTION
+
+  ELSE
+    '
+    ' The field is to the left of the window (not supported)
+    '
+    AssertFail "WinClipText", "Negative position not supported."
+    WinClipText% = False
+    EXIT FUNCTION
+
+  END IF
 
 END FUNCTION
 
-FUNCTION WinAppendBoolean% (wid%, text$)
+SUB WinClose (wid%)
 
-  DIM f AS FieldType
+  IF winstacked = 0 THEN
+  
+    AssertFail "WinClose", "No windows"
 
-  f.kind = FieldKind.Boolean
-  f.posX = 0 ' Center
+  ELSEIF winstack(winstacked).wid <> wid% THEN
 
-  WinAppendBoolean% = WinAppend(wid%, f, text$)
+    AssertFail "WinClose", "Not supported; specify top window only"
 
-END FUNCTION
+  ELSE
 
-FUNCTION WinAppendButton% (wid%, cid%, text$)
+    '
+    ' Change active and visual display to the backpage
+    '
+    SCREEN , , winstack(winstacked).backpage, winstack(winstacked).backpage
+    winstacked = winstacked - 1
 
-  DIM f AS FieldType
+  END IF
 
-  f.kind = FieldKind.Button
-  f.cid = cid%
-  f.posX = 1
-
-  WinAppendButton% = WinAppend(wid%, f, text$)
-
-END FUNCTION
-
-FUNCTION WinAppendLabel% (wid%, text$)
-
-  DIM f AS FieldType
-
-  f.kind = FieldKind.Label
-  f.posX = 1
-
-  WinAppendLabel% = WinAppend(wid%, f, text$)
-
-END FUNCTION
-
-FUNCTION WinAppendSeparator% (wid%)
-
-  DIM f AS FieldType
-
-  f.kind = FieldKind.Separator
-
-  WinAppendSeparator% = WinAppend(wid%, f, "-")
-
-END FUNCTION
+END SUB
 
 FUNCTION WinCreate%
   '
   ' Creates an empty window
   '
   wins = wins + 1
+  win(wins).style = 1
   WinCreate% = wins
 
 END FUNCTION
@@ -3159,6 +2977,18 @@ FUNCTION WinCreateEx% (style%, posX%, posY%, sizeX%, sizeY%)
   win(wins).sizeY = sizeY%
 
   WinCreateEx% = wid
+
+END FUNCTION
+
+FUNCTION WinCreateField% (wid%)
+
+  Assert wid% > 0, "WinCreateField", "wid cannot be 0"
+
+  DIM fid%
+  LET fid% = win(wid%).fields + 1
+
+  win(wid%).fields = fid%
+  WinCreateField% = fid%
 
 END FUNCTION
 
@@ -3209,323 +3039,66 @@ FUNCTION WinDefine% (wid%, f AS FieldType, text$)
 
 END FUNCTION
 
-FUNCTION WinDefineButton% (wid%, posX%, posY%, sizeX%, cid%, text$)
-  '
-  ' Defines a button field in a window.
-  '
-
-  DIM f AS FieldType
-
-  f.kind = FieldKind.Button
-  f.cid = cid%
-  f.posX = posX%
-  f.posY = posY%
-  f.sizeX = sizeX%
-
-  WinDefineButton = WinDefine(wid%, f, text$)
-
-END FUNCTION
-
-FUNCTION WinDefineInteger% (wid%, posX%, posY%, sizeX%, text$)
-  '
-  ' Defines an integer field in a window.
-  '
- 
-  DIM f AS FieldType
-
-  f.kind = FieldKind.Integer
-  f.posX = posX%
-  f.posY = posY%
-  f.sizeX = sizeX%
-
-  WinDefineInteger% = WinDefine(wid%, f, text$)
-
-END FUNCTION
-
-FUNCTION WinDefineLabel% (wid%, posX%, posY%, text$)
-  '
-  ' Defines a label field in a window. A label field is non-editable
-  ' text that cannot be selected (receive focus) or edited directly
-  ' by the user.
-  '
-
-  DIM f AS FieldType
-
-  f.kind = FieldKind.Label
-  f.posX = posX%
-  f.posY = posY%
-  f.sizeX = LEN(text$)
-
-  WinDefineLabel = WinDefine(wid%, f, text$)
-
-END FUNCTION
-
 SUB WinDraw (wid%)
   '
   ' Draws the window to the active video page.
   '
 
+  Assert wid% > 0, "WinDraw", "wid cannot be 0"
+  Assert win(wid%).posX > 0, "WinDraw", "posX must be > 0"
+  Assert win(wid%).posY > 0, "WinDraw", "posY must be > 0"
+  Assert win(wid%).sizeX > 0, "WinDraw", "sizeX must be > 0"
+  Assert win(wid%).sizeY > 0, "WinDraw", "sizeY must be > 0"
+
+  WinDrawBox wid%
+ 
   DIM fid AS INTEGER
-
-  '
-  ' Draw the stylized border
-  '
-  SELECT CASE win(wid%).style
-   
-    CASE 0, 1:
-      WinDrawStyle1 wid%
-
-    CASE 2:
-      WinDrawStyle2 wid%
-
-  END SELECT
-
   FOR fid = 1 TO win(wid%).fields
     WinDrawField wid%, fid
   NEXT
 
 END SUB
 
-SUB WinDrawField (wid%, fid%)
+SUB WinDrawBox (wid%)
 
-  DIM backcolor AS INTEGER
-  DIM forecolor AS INTEGER
-  DIM posX      AS INTEGER
-  DIM posY      AS INTEGER
-  DIM sizeX     AS INTEGER
-  DIM sx        AS INTEGER
-  DIM sy        AS INTEGER
- 
-  '
-  ' Adjust the field size (if zero, then fill width of window)
-  '
-  sizeX = fld(wid%, fid%).sizeX
-  IF sizeX = 0 THEN
-    sizeX = win(wid%).sizeX
-  END IF
- 
-  '
-  ' Adjust the position of the field (if zero, center)
-  '
-  posX = fld(wid%, fid%).posX
-  posY = fld(wid%, fid%).posY
-  IF posX = 0 THEN
-    posX = INT((win(wid%).sizeX - sizeX) / 2) + 1
-  END IF
-
-  '
-  ' Calculate the screen coordinates of the field
-  '
-  sx = posX + win(wid%).posX
-  sy = posY + win(wid%).posY
-  LOCATE sy, sx
-
-  '
-  ' Set the color depending on whether the field is selected
-  '
-  IF win(wid%).selected = fid% THEN
-   
-    SELECT CASE win(wid%).style
-      CASE 0, 1:
-        backcolor = WinStyle1.SelectedBackcolor
-        forecolor = WinStyle1.SelectedForecolor
-      CASE 2:
-        backcolor = WinStyle2.SelectedBackcolor
-        forecolor = WinStyle2.SelectedForecolor
-    END SELECT
-
-  ELSE
-   
-    SELECT CASE win(wid%).style
-      CASE 0, 1:
-        backcolor = WinStyle1.Backcolor
-        forecolor = WinStyle1.Forecolor
-      CASE 2:
-        backcolor = WinStyle2.Backcolor
-        forecolor = WinStyle2.Forecolor
-    END SELECT
-
-  END IF
- 
-  COLOR forecolor, backcolor
-
-  '
-  ' Get the kind of field
-  '
-  SELECT CASE fld(wid%, fid%).kind
-   
-    CASE FieldKind.Button, FieldKind.Boolean, FieldKind.Label
-      '
-      ' Button and Boolean (text)
-      '
-      PRINT txt(wid%, fid%);
-     
-      '
-      ' Pad remaining spaces
-      '
-      PRINT STRING$(sizeX - LEN(txt(wid%, fid%)), ASCII.Space);
-
-    CASE FieldKind.Separator
-      '
-      ' Separator
-      '
-      WinDrawSeparator wid%, fid%
-
-    CASE FieldKind.Integer
-      '
-      ' Integer Input
-      '
-      DIM format AS STRING
-      format = STRING$(fld(wid%, fid%).sizeX, "#")
-      PRINT USING format; VAL(txt(wid%, fid%));
- 
-  END SELECT
-
-END SUB
-
-SUB WinDrawOutline (wid%, sx%, sy%)
+  Assert wid% > 0, "WinDrawBox", "wid cannot be 0"
 
   SELECT CASE win(wid%).style
-    CASE 0, 1:
-      WinDrawOutline1 wid%, sx%, sy%
+  
+    CASE 0:
+      WinDrawBox0 wid%, 0, 0, WinStyle0.Forecolor, WinStyle0.Backcolor
+
+    CASE 1:
+      WinDrawBox1 wid%
 
     CASE 2:
-      WinDrawOutline2 wid%, sx%, sy%
+      WinDrawBox2 wid%
+
   END SELECT
 
 END SUB
 
-SUB WinDrawOutline1 (wid%, sx%, sy%)
+SUB WinDrawBox0 (wid%, offsetX%, offsetY%, fcolor%, bcolor%)
+  '
+  ' Draws the window box with no styling
+  '
+ 
+  COLOR fcolor%, bcolor%
 
-  '
-  ' Set the color of the outline
-  '
-  COLOR WinStyle1.OutlineForecolor, WinStyle1.OutlineBackcolor
-
-  '
-  ' Draw upper-left corner
-  '
-  LOCATE sy%, sx%
-  SELECT CASE WinStyle.Border
-    CASE 1
-      PRINT CHR$(218); CHR$(196);
-    CASE 2
-      PRINT CHR$(201); CHR$(205);
-  END SELECT
-  LOCATE sy% + 1, sx%
-  SELECT CASE WinStyle.Border
-    CASE 1
-      PRINT CHR$(179);
-    CASE 2
-      PRINT CHR$(186);
-  END SELECT
-
-  '
-  ' Draw lower-left corner
-  '
-  LOCATE sy% + win(wid%).sizeY, sx%
-  IF WinStyle.Border = 2 THEN PRINT CHR$(186);  ELSE PRINT CHR$(179);
-  LOCATE sy% + win(wid%).sizeY + 1, sx%
-  SELECT CASE WinStyle.Border
-    CASE 1
-      PRINT CHR$(192); CHR$(196);
-    CASE 2
-      PRINT CHR$(200); CHR$(205);
-  END SELECT
-
-  '
-  ' Draw upper-right corner
-  '
-  LOCATE sy%, sx% + win(wid%).sizeX
-  IF WinStyle.Border = 2 THEN
-    PRINT CHR$(205); CHR$(187);
-  ELSE
-    PRINT CHR$(196); CHR$(191);
-  END IF
-  LOCATE sy% + 1, sx% + win(wid%).sizeX + 1
-  IF WinStyle.Border = 2 THEN PRINT CHR$(186);  ELSE PRINT CHR$(179);
-
-  '
-  ' Draw lower-right corner
-  '
-  LOCATE sy% + win(wid%).sizeY, sx% + win(wid%).sizeX + 1
-  IF WinStyle.Border = 2 THEN PRINT CHR$(186);  ELSE PRINT CHR$(179);
-  LOCATE sy% + win(wid%).sizeY + 1, sx% + win(wid%).sizeX
-  IF WinStyle.Border = 2 THEN
-    PRINT CHR$(205); CHR$(188);
-  ELSE
-    PRINT CHR$(196); CHR$(217);
-  END IF
+  DIM row AS INTEGER
+  FOR row = 1 TO win(wid%).sizeY
+    LOCATE win(wid%).posY + row - 1 + offsetY%, win(wid%).posX + offsetX%
+    PRINT STRING$(win(wid%).sizeX, " ");
+  NEXT
 
 END SUB
 
-SUB WinDrawOutline2 (wid%, sx%, sy%)
-
-  WinDrawOutline1 wid%, sx%, sy%
-  
-END SUB
-
-SUB WinDrawSeparator (wid%, fid%)
-
-  SELECT CASE win(wid%).style
-    CASE 0, 1
-      WinDrawSeparator1 wid%, fid%
-    CASE 2
-      WinDrawSeparator2 wid%, fid%
-  END SELECT
-
-END SUB
-
-SUB WinDrawSeparator1 (wid%, fid%)
-  '
-  ' Draws the specified separator field.
-  '
-
-  DIM sx AS INTEGER
-  DIM sy AS INTEGER
-
-  '
-  ' Calculate screen coordinates
-  '
-  sx = win(wid%).posX
-  sy = win(wid%).posY + fld(wid%, fid%).posY
-  LOCATE sy, sx
-
-  '
-  ' Write the separator
-  '
-  PRINT CHR$(195);
-  PRINT STRING$(win(wid%).sizeX, 196);
-  PRINT CHR$(180);
-
-END SUB
-
-SUB WinDrawSeparator2 (wid%, fid%)
-  '
-  ' Draws the specified separator field in style #2.
-  '
-
-  DIM sx AS INTEGER
-  DIM sy AS INTEGER
-
-  '
-  ' Calculate screen coordinates
-  '
-  sx = win(wid%).posX + 1
-  sy = win(wid%).posY + fld(wid%, fid%).posY
-  LOCATE sy, sx
-
-  '
-  ' Write the separator
-  '
-  PRINT STRING$(win(wid%).sizeX, 196);
-
-END SUB
-
-SUB WinDrawStyle1 (wid%)
+SUB WinDrawBox1 (wid%)
   '
   ' Draws the window in a basic (default) style
   '
+
+  Assert wid% > 0, "WinDrawBox1", "wid cannot be 0"
 
   CONST lowerFlat = "Ä"   ' CHR$(196)
   CONST lowerLeft = "À"   ' CHR$(192)
@@ -3536,7 +3109,7 @@ SUB WinDrawStyle1 (wid%)
   CONST upperFlat = "Ä"   ' CHR$(196)
   CONST upperRight = "¿"  ' CHR$(191)
 
-  DIM i AS INTEGER
+  DIM r AS INTEGER
 
   '
   ' Set the display color of the window
@@ -3547,18 +3120,16 @@ SUB WinDrawStyle1 (wid%)
   ' Draw the top border
   '
   LOCATE win(wid%).posY, win(wid%).posX
-  PRINT upperLeft; STRING$(win(wid%).sizeX, upperFlat); upperRight
+  PRINT upperLeft; STRING$(win(wid%).sizeX, upperFlat); upperRight;
 
   '
   ' Draw each row of the window
   '
   FOR r = 1 TO win(wid%).sizeY
-  
     LOCATE win(wid%).posY + r, win(wid%).posX
     PRINT sideLeft;
     PRINT STRING$(win(wid%).sizeX, " ");
     PRINT sideRight;
-
   NEXT
    
   '
@@ -3569,7 +3140,7 @@ SUB WinDrawStyle1 (wid%)
 
 END SUB
 
-SUB WinDrawStyle2 (wid%)
+SUB WinDrawBox2 (wid%)
   '
   ' Draws the window in a stylized way
   '
@@ -3653,6 +3224,286 @@ SUB WinDrawStyle2 (wid%)
 
 END SUB
 
+SUB WinDrawField (wid%, fid%)
+
+  SELECT CASE fld(wid%, fid%).kind
+    '
+    ' Check the most common kinds first
+    '
+    CASE FieldKind.Button
+      WinDrawText wid%, fid%
+
+    CASE FieldKind.Label
+      WinDrawText wid%, fid%
+
+    CASE FieldKind.Separator
+      WinDrawSeparator wid%, fid%
+
+    CASE ELSE
+      WinDrawText wid%, fid%
+
+  END SELECT
+
+END SUB
+
+SUB WinDrawOutline (wid%, sx%, sy%)
+
+  SELECT CASE win(wid%).style
+   
+    CASE 0:
+      WinDrawOutline0 wid%, sx%, sy%
+
+    CASE 1:
+      WinDrawOutline1 wid%, sx%, sy%
+
+    CASE 2:
+      WinDrawOutline2 wid%, sx%, sy%
+ 
+  END SELECT
+
+END SUB
+
+SUB WinDrawOutline0 (wid%, sx%, sy%)
+
+  Assert wid% > 0, "WinDrawOutline0", "wid cannot be 0"
+  Assert sx% > 0, "WinDrawOutline0", "sx must be positive"
+  Assert sy% > 0, "WinDrawOutline0", "sy must be positive"
+
+  IF win(wid%).sizeY = 1 THEN
+
+    LOCATE sy%, sx%
+    COLOR 7, 0: PRINT "[";
+    COLOR 8, 0: PRINT STRING$(win(wid%).sizeX - 2, "-");
+    COLOR 7, 0: PRINT "]";
+
+  ELSE
+
+    AssertFail "WinDrawOutline0", "Not implemented"
+
+  END IF
+
+
+END SUB
+
+SUB WinDrawOutline1 (wid%, sx%, sy%)
+
+  CONST OutlineBackcolor = 2
+  CONST OutlineForecolor = 15
+
+  '
+  ' Set the color of the outline
+  '
+  COLOR OutlineForecolor, OutlineBackcolor
+
+  '
+  ' Draw upper-left corner
+  '
+  LOCATE sy%, sx%
+  PRINT CHR$(218);
+  PRINT CHR$(196);
+
+  LOCATE sy% + 1, sx%
+  PRINT CHR$(179);
+ 
+  '
+  ' Draw lower-left corner
+  '
+  LOCATE sy% + win(wid%).sizeY, sx%
+  PRINT CHR$(179);
+  LOCATE sy% + win(wid%).sizeY + 1, sx%
+  PRINT CHR$(192); CHR$(196);
+
+  '
+  ' Draw upper-right corner
+  '
+  LOCATE sy%, sx% + win(wid%).sizeX
+  PRINT CHR$(196); CHR$(191);
+  LOCATE sy% + 1, sx% + win(wid%).sizeX + 1
+  PRINT CHR$(179);
+
+  '
+  ' Draw lower-right corner
+  '
+  LOCATE sy% + win(wid%).sizeY, sx% + win(wid%).sizeX + 1
+  PRINT CHR$(179);
+  LOCATE sy% + win(wid%).sizeY + 1, sx% + win(wid%).sizeX
+  PRINT CHR$(196); CHR$(217);
+
+END SUB
+
+SUB WinDrawOutline2 (wid%, sx%, sy%)
+
+  WinDrawOutline1 wid%, sx%, sy%
+  
+END SUB
+
+SUB WinDrawSeparator (wid%, fid%)
+
+  SELECT CASE win(wid%).style
+    CASE 0
+      WinDrawSeparator0 wid%, fid%, 0, 0, WinStyle0.Forecolor, WinStyle0.Backcolor
+    CASE 1
+      WinDrawSeparator1 wid%, fid%
+    CASE 2
+      WinDrawSeparator2 wid%, fid%
+  END SELECT
+
+END SUB
+
+SUB WinDrawSeparator0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%)
+
+  DIM sx AS INTEGER
+  DIM sy AS INTEGER
+
+  '
+  ' Get screen coordinates
+  '
+  sx = win(wid%).posX + offsetX%
+  sy = win(wid%).posY + fld(wid%, fid%).posY - 1 + offsetY%
+  LOCATE sy, sx
+
+  COLOR fc%, bc%
+  PRINT STRING$(win(wid%).sizeX, 196);
+
+END SUB
+
+SUB WinDrawSeparator1 (wid%, fid%)
+  '
+  ' Draws the specified separator field.
+  '
+
+  DIM sx AS INTEGER
+  DIM sy AS INTEGER
+
+  '
+  ' Move the cursor to the left border
+  '
+  sx = win(wid%).posX
+  sy = win(wid%).posY + fld(wid%, fid%).posY
+  LOCATE sy, sx
+
+  COLOR WinStyle1.Forecolor, WinStyle1.Backcolor
+  PRINT CHR$(195);
+  PRINT STRING$(win(wid%).sizeX, 196);
+  PRINT CHR$(180);
+
+END SUB
+
+SUB WinDrawSeparator2 (wid%, fid%)
+  '
+  ' Draws a separator using style #2
+  '
+  WinDrawSeparator0 wid%, fid%, 0, 0, 5, 0
+
+END SUB
+
+SUB WinDrawText (wid%, fid%)
+
+  SELECT CASE win(wid%).style
+  
+    CASE 0:
+      WinDrawText0 wid%, fid%, 0, 0, WinStyle0.Forecolor, WinStyle0.Backcolor, WinStyle0.SelectedForecolor, WinStyle0.SelectedBackcolor
+
+    CASE 1:
+      WinDrawText1 wid%, fid%
+
+    CASE 2:
+      WinDrawText2 wid%, fid%
+
+  END SELECT
+
+END SUB
+
+SUB WinDrawText0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%, sfc%, sbc%)
+  '
+  ' Draws the field text using the specified colors, moved by the offset
+  '
+
+  Assert wid% > 0, "WinDrawText0", "wid cannot be 0"
+  Assert fid% > 0, "WinDrawText0", "fid cannot be 0"
+
+  '
+  ' Get the position of the field
+  '
+  DIM outposx%
+  DIM outposy%
+  DIM outsizeX%
+  DIM outtext$
+
+  IF NOT WinClipText(wid%, fid%, outposx%, outposy%, outsizeX%, outtext$) THEN
+    '
+    ' The text is not visible
+    '
+    EXIT SUB
+  END IF
+
+  '
+  ' Calculate the screen coordinates of the field
+  '
+  sx = outposx% + win(wid%).posX - 1 + offsetX%
+  sy = outposy% + win(wid%).posY - 1 + offsetY%
+  LOCATE sy, sx
+ 
+  IF win(wid%).selected = fid% THEN
+    COLOR sfc%, sbc%
+  ELSE
+    COLOR fc%, bc%
+  END IF
+
+  PRINT outtext$;
+   
+END SUB
+
+SUB WinDrawText1 (wid%, fid%)
+  '
+  ' Draws the text of the field using style #1
+  '
+  WinDrawText0 wid%, fid%, 1, 1, WinStyle1.Forecolor, WinStyle1.Backcolor, WinStyle1.SelectedForecolor, WinStyle1.SelectedBackcolor
+
+END SUB
+
+SUB WinDrawText2 (wid%, fid%)
+  '
+  ' Draws the text of the field using style #2
+  '
+  WinDrawText0 wid%, fid%, 1, 1, WinStyle2.Forecolor, WinStyle2.Backcolor, WinStyle2.SelectedForecolor, WinStyle2.SelectedBackcolor
+
+END SUB
+
+FUNCTION WinGetOuterSizeX% (wid%)
+  '
+  ' Returns the outer size of the window (including the border)
+  '
+  Assert wid% > 0, "WinGetOuterSizeX", "wid cannot be 0"
+
+  SELECT CASE win(wid%).style
+    CASE 0:
+      WinGetOuterSizeX% = win(wid%).sizeX
+
+    CASE 1, 2:
+      WinGetOuterSizeX% = win(wid%).sizeX + 2
+
+  END SELECT
+
+END FUNCTION
+
+FUNCTION WinGetOuterSizeY% (wid%)
+  '
+  ' Returns the outer size of the window (including the border)
+  '
+  Assert wid% > 0, "WinGetOuterSizeY", "wid cannot be 0"
+
+  SELECT CASE win(wid%).style
+    CASE 0:
+      WinGetOuterSizeY% = win(wid%).sizeY
+
+    CASE 1, 2:
+      WinGetOuterSizeY% = win(wid%).sizeY + 2
+
+  END SELECT
+
+END FUNCTION
+
 FUNCTION WinGetWid% (wname$)
   '
   ' Returns the ID of the window with the specified name.
@@ -3660,7 +3511,7 @@ FUNCTION WinGetWid% (wname$)
  
   DIM wid AS INTEGER
 
-  FOR wid = 1 TO UBOUND(win)
+  FOR wid = 1 TO wins
     IF RTRIM$(win(wid).wname) = wname$ THEN
       WinGetWid% = wid
       EXIT FUNCTION
@@ -3698,6 +3549,9 @@ FUNCTION WinIsSelectable% (wid%, fid%)
       CASE FieldKind.Integer
         WinIsSelectable = True
 
+      CASE FieldKind.Popup
+        WinIsSelectable = True
+
       CASE ELSE
         WinIsSelectable = False
 
@@ -3713,7 +3567,7 @@ SUB WinKey (wid%, fid%, keypress$)
   '
  
   SELECT CASE fld(wid%, fid%).kind
-   
+  
     CASE FieldKind.Boolean
       WinKeyBoolean wid%, fid%, keypress$
 
@@ -3731,11 +3585,19 @@ SUB WinKeyBoolean (wid%, fid%, keypress$)
  
   SELECT CASE keypress$
 
+    CASE " "
+      SELECT CASE txt(wid%, fid%)
+        CASE "No"
+          WinSetText wid%, fid%, "Yes"
+        CASE "Yes"
+          WinSetText wid%, fid%, "No"
+      END SELECT
+
     CASE "n", "N"
-      txt(wid%, fid%) = " No  "
+      WinSetText wid%, fid%, "No"
 
     CASE "y", "Y"
-      txt(wid%, fid%) = " Yes "
+      WinSetText wid%, fid%, "Yes"
 
   END SELECT
 
@@ -3773,271 +3635,427 @@ SUB WinLoad
   '
   ' Loads Window definitions. This should only be called once.
   '
-  DIM block   AS STRING
-  DIM cid     AS INTEGER
-  DIM fid     AS INTEGER
-  DIM posX    AS INTEGER
-  DIM posY    AS INTEGER
-  DIM sizeX   AS INTEGER
-  DIM wid     AS INTEGER
+ 
+  DIM block$
 
-  '
-  ' This should be a "Windows" block
-  '
-  READ block
-  IF block <> "Windows" THEN
-    StatusDebug "WinLoad: Expected 'Windows' but block was " + block
-    EXIT SUB
-  END IF
+  READ block$
+  Assert block$ = "Windows", "WinLoad", "Windows block expected"
 
   DO
-   
-    '
-    ' This should be the next "Window" block, or the end of the windows
-    '
-    READ block
-    IF block = "EndWindows" THEN
-      EXIT SUB
-    ELSEIF block <> "Window" THEN
-      StatusDebug "WinLoad: Expected 'Window' but block was " + block
-      EXIT SUB
-    END IF
+    
+    READ block$
 
-    wid = WinCreate%
-
-    DO
-
-      '
-      ' Read the next window attribute
-      '
-      READ block
-   
-      SELECT CASE block
+    SELECT CASE block$
      
-        CASE "End"
-          EXIT DO
+      CASE "Window"
+        WinLoadWindow
 
-        CASE "+$"
-          READ block
-          fid = WinAppendLabel(wid, block)
+      CASE "EndWindows"
+        EXIT DO
 
-        CASE "+-", "-"
-          fid = WinAppendSeparator(wid)
+      CASE ELSE
+        AssertFail "WinLoad", "Expected " + block$
 
-        CASE "+@"
-          READ block: cid = WinParseCommand(block)
-          READ block
-          ' HACK: pad the button text for now
-          fid = WinAppendButton(wid, cid, " " + block + " ")
-     
-        CASE "+&"
-          READ block
-          fid = WinAppendBoolean(wid, block)
-
-        CASE "$"
-          READ posX
-          READ posY
-          READ block
-          fid = WinDefineLabel(wid, posX, posY, block)
-
-        CASE "@"
-          READ posX
-          READ posY
-          READ sizeX
-          READ block: cid = WinParseCommand(block)
-          READ block
-          fid = WinDefineButton(wid, posX, posY, sizeX, cid, block)
-
-        CASE "#"
-          READ posX
-          READ posY
-          READ sizeX
-          READ block
-          fid = WinDefineInteger(wid, posX, posY, sizeX, block)
-
-        CASE "Name"
-          READ win(wid).wname
-
-        CASE "PosX"
-          READ win(wid).posX
-
-        CASE "PosY"
-          READ win(wid).posY
-
-        CASE "SizeX"
-          READ win(wid).sizeX
-
-        CASE "SizeY"
-          READ win(wid).sizeY
-
-        CASE "Style"
-          READ win(wid).style
-
-        CASE "Help"
-          '
-          ' Set Help Window
-          '
-          READ win(wid).helpWid
-
-        CASE ELSE
-          StatusDebug "WinLoad unexpected token: wid=" + STR$(wid) + " block=" + block
-          WaitForKeyPress
-          END
-
-      END SELECT
-    LOOP
+    END SELECT
 
   LOOP
 
 END SUB
 
-SUB WinMove (wid%)
-
-  DIM keypress AS STRING
-  DIM toX      AS INTEGER
-  DIM toY      AS INTEGER
+FUNCTION WinLoadBoolean% (wid%)
+ 
+  Assert wid% > 0, "WinLoadBoolean", "wid cannot be 0"
 
   '
-  ' Get the starting location of the window
+  ' Load the field values
   '
-  toX = win(wid%).posX
-  toY = win(wid%).posY
+  DIM fid%
+  LET fid% = WinLoadField(wid%, "EndBoolean")
+
+  fld(wid%, fid%).kind = FieldKind.Boolean
+  WinLoadBoolean% = fid%
+
+END FUNCTION
+
+FUNCTION WinLoadButton% (wid%)
+
+  Assert wid% > 0, "WinLoadButton", "wid cannot be 0"
+
+  '
+  ' Load the field values
+  '
+  DIM fid%
+  LET fid% = WinLoadField(wid%, "EndButton")
+
+  fld(wid%, fid%).kind = FieldKind.Button
+  WinLoadButton% = fid%
+
+END FUNCTION
+
+FUNCTION WinLoadField% (wid%, endtag$)
+
+  Assert wid% > 0, "WinLoadField", "wid cannot be 0"
+
+  DIM block$
+  DIM fid%
+
+  fid% = WinCreateField(wid%)
 
   DO
+
+    READ block$
+
+    SELECT CASE block$
    
-    '
-    ' Copy the display page to the working video page
-    '
-    PCOPY VideoPage.Display, VideoPage.Working
+      CASE endtag$
+        EXIT DO
 
-    '
-    ' Manipulate the working video page
-    '
-    SCREEN , , VideoPage.Working, VideoPage.Working
+      CASE "Child"
+        READ block$
+        fld(wid%, fid%).childWid = WinGetWid(block$)
 
-    '
-    ' Draw the outline and wait for a keyboard command
-    '
-    WinDrawOutline wid%, toX, toY
-    keypress = GetKey$
+      CASE "Command"
+        READ block$
+        fld(wid%, fid%).cid = WinParseCommand(block$)
 
-    SELECT CASE keypress
+      CASE "PosX"
+        READ fld(wid%, fid%).posX
 
-      CASE CHR$(Control.D), "D", CHR$(0) + CHR$(ScanCode.Right)
-        '
-        ' Move right
-        '
-        toX = toX + 1
-     
-      CASE CHR$(Control.E), "E", CHR$(0) + CHR$(ScanCode.Up)
-        '
-        ' Move Up
-        '
-        toY = toY - 1
-     
-      CASE CHR$(ASCII.Return)
-        '
-        ' Enter (final position selected)
-        '
-        win(wid%).posX = toX
-        win(wid%).posY = toY
+      CASE "PosY"
+        READ fld(wid%, fid%).posY
 
-        '
-        ' Restore the display page
-        '
-        SCREEN , , VideoPage.Display, VideoPage.Display
-        EXIT SUB
-     
-      CASE CHR$(Control.S), CHR$(0) + CHR$(ScanCode.Left)
-        '
-        ' Move Left
-        '
-        toX = toX - 1
-     
-      CASE CHR$(Control.X), CHR$(0) + CHR$(ScanCode.Down)
-        '
-        ' Move Down
-        '
-        toY = toY + 1
-     
-      CASE CHR$(ASCII.Escape)
-        '
-        ' Escape (restore original location)
-        '
-        toX = win(wid%).posX
-        toY = win(wid%).posY
-   
+      CASE "SizeX"
+        READ fld(wid%, fid%).sizeX
+
+      CASE "Text"
+        READ txt(wid%, fid%)
+
+      CASE ELSE
+        AssertFail "WinLoadField", "Unexpected token " + block$
+
     END SELECT
 
-    GOSUB CheckPlace
- 
   LOOP
+ 
+  IF fld(wid%, fid%).posX = 0 THEN
+    '
+    ' If no x position is specified, default to 1.
+    '
+    fld(wid%, fid%).posX = 1
+  END IF
 
-REM *** Subroutines ***
+  IF fld(wid%, fid%).posY = 0 THEN
+    '
+    ' If no y position is specified, stack under the last field.
+    '
+    IF fid% = 1 THEN
+      fld(wid%, fid%).posY = 1
+    ELSE
+      fld(wid%, fid%).posY = fld(wid%, fid% - 1).posY + 1
+    END IF
+  END IF
 
-CheckPlace:
-  IF toY < 2 THEN toY = 2
-  IF toY > 23 - win(wid%).sizeY THEN toY = 23 - win(wid%).sizeY
-  IF toX < 1 THEN toX = 1
-  IF toX > 78 - win(wid%).sizeX THEN toX = 78 - win(wid%).sizeX
-  RETURN
+  IF fld(wid%, fid%).sizeX = 0 THEN
+    '
+    ' If no size is specified, use the size of the text
+    '
+    fld(wid%, fid%).sizeX = LEN(txt(wid%, fid%))
+
+  END IF
+
+  WinLoadField% = fid%
+
+END FUNCTION
+
+FUNCTION WinLoadLabel% (wid%)
+
+  Assert wid% > 0, "WinLoadLabel", "wid cannot be 0"
+
+  DIM fid%
+ 
+  fid% = WinLoadField(wid%, "EndLabel")
+  fld(wid%, fid%).kind = FieldKind.Label
+  WinLoadLabel% = fid%
+
+END FUNCTION
+
+FUNCTION WinLoadPopup% (wid%)
+ 
+  Assert wid% > 0, "WinLoadPopup", "wid cannot be 0"
+
+  DIM fid%
+ 
+  fid% = WinLoadField(wid%, "EndPopup")
+  fld(wid%, fid%).kind = FieldKind.Popup
+  WinLoadPopup = fid%
+
+END FUNCTION
+
+SUB WinLoadWindow
+
+  DIM block$
+  DIM fid%
+  DIM wid%
+
+  LET wid% = WinCreate%
+
+  DO
+
+    READ block$
+  
+    SELECT CASE block$
+   
+      CASE "ArrowExit"
+        READ win(wid%).arrowexit
+
+      CASE "Button"
+        fid% = WinLoadButton(wid%)
+
+      CASE "EndWindow"
+        EXIT DO
+
+      CASE "Label"
+        fid% = WinLoadLabel(wid%)
+
+      CASE "Name"
+        READ win(wid%).wname
+
+      CASE "Popup"
+        fid% = WinLoadPopup(wid%)
+
+      CASE "PosX"
+        READ win(wid%).posX
+
+      CASE "PosY"
+        READ win(wid%).posY
+
+      CASE "SizeX"
+        READ win(wid%).sizeX
+
+      CASE "SizeY"
+        READ win(wid%).sizeY
+
+      CASE "Style"
+        READ win(wid%).style
+
+      CASE "Boolean"
+        fid% = WinLoadBoolean(wid%)
+     
+      CASE "-"
+        fid% = WinCreateField%(wid%)
+        fld(wid%, fid%).kind = FieldKind.Separator
+        IF fid% = 1 THEN
+          fld(wid%, fid%).posY = 1
+        ELSE
+          fld(wid%, fid%).posY = fld(wid%, fid% - 1).posY + 1
+        END IF
+
+      CASE ELSE
+        AssertFail "WinLoadWindow", "Unexpected token " + block$
+
+    END SELECT
+  LOOP
+  
+  WinAutoSize wid%
+
+  IF win(wid%).posX = 0 THEN
+    '
+    ' Center horizontally
+    '
+    win(wid%).posX = INT((80 - win(wid%).sizeX) / 2) + 1
+  END IF
+
+  IF win(wid%).posY = 0 THEN
+    '
+    ' Center vertically
+    '
+    win(wid%).posY = INT((25 - win(wid%).sizeY) / 2) + 1
+  END IF
+
+END SUB
+
+FUNCTION WinMapKey% (wid%, pressed AS STRING)
+
+  DIM childWid  AS INTEGER
+  DIM cid       AS INTEGER
+  DIM exitLeft  AS INTEGER
+  DIM exitRight AS INTEGER
+  DIM selected  AS INTEGER
+
+  '
+  ' Examine the field.
+  ' ArrowExit bit 0 means to exit when navigating left
+  ' ArrowExit bit 1 means to exit when nagivating right
+  '
+  exitLeft = win(wid%).arrowexit AND &H1
+  exitRight = win(wid%).arrowexit AND &H2
+  selected = win(wid%).selected
+  IF selected > 0 THEN
+    childWid = fld(wid%, selected).childWid
+    cid = fld(wid%, selected).cid
+  END IF
+
+  SELECT CASE pressed
+
+    CASE CHR$(ASCII.Return)
+      IF childWid > 0 THEN
+        WinMapKey% = WinAction.OpenPopup
+      ELSEIF cid > 0 THEN
+        WinMapKey% = WinAction.Execute
+      ELSE
+        WinMapKey% = WinAction.Complete
+      END IF
+
+    CASE CHR$(ASCII.Escape)
+      WinMapKey% = WinAction.Cancel
+
+    CASE CHR$(ASCII.Tab)
+      WinMapKey% = WinAction.SelectNext
+
+    CASE CHR$(0) + CHR$(ScanCode.Down)
+      IF childWid > 0 THEN
+        WinMapKey% = WinAction.OpenPopup
+      ELSE
+        WinMapKey% = WinAction.SelectNext
+      END IF
+
+    CASE CHR$(0) + CHR$(ScanCode.End)
+      WinMapKey% = WinAction.SelectLast
+
+    CASE CHR$(0) + CHR$(ScanCode.Home)
+      WinMapKey% = WinAction.SelectFirst
+
+    CASE CHR$(0) + CHR$(ScanCode.Left)
+      IF exitLeft THEN
+        WinMapKey% = WinAction.ExitLeft
+      ELSE
+        WinMapKey% = WinAction.SelectPrevious
+      END IF
+
+    CASE CHR$(0) + CHR$(ScanCode.PageDown)
+      WinMapKey% = WinAction.SelectLast
+
+    CASE CHR$(0) + CHR$(ScanCode.PageUp)
+      WinMapKey% = WinAction.SelectFirst
+
+    CASE CHR$(0) + CHR$(ScanCode.Right)
+      IF exitRight THEN
+        WinMapKey% = WinAction.ExitRight
+      ELSE
+        WinMapKey% = WinAction.SelectNext
+      END IF
+
+    CASE CHR$(0) + CHR$(ScanCode.Up)
+      WinMapKey% = WinAction.SelectPrevious
+
+    CASE CHR$(Control.D)
+      WinMapKey% = WinAction.MoveRight
+
+    CASE CHR$(Control.E)
+      WinMapKey% = WinAction.MoveUp
+
+    CASE CHR$(Control.S)
+      WinMapKey% = WinAction.MoveLeft
+
+    CASE CHR$(Control.X)
+      WinMapKey% = WinAction.MoveDown
+
+    CASE "?", "/"
+      WinMapKey = WinAction.Help
+
+    CASE ELSE
+      WinMapKey = WinAction.None
+
+  END SELECT
+
+END FUNCTION
+
+SUB WinOpen (wid%)
+  '
+  ' Displays the window and gives it focus
+  '
+  
+  DIM backpage AS INTEGER
+  DIM workpage AS INTEGER
+
+  winstacked = winstacked + 1
+ 
+  '
+  ' Assign video pages and update stack
+  '
+  backpage = winstacked - 1
+  workpage = winstacked
+  winstack(winstacked).wid = wid%
+  winstack(winstacked).backpage = backpage
+  winstack(winstacked).workpage = workpage
+
+  '
+  ' Draw the window
+  '
+  SCREEN , , workpage, backpage
+  PCOPY backpage, workpage
+  WinDraw wid%
+  
+  '
+  ' Set focus to a field
+  '
+  IF win(wid%).selected = 0 THEN
+    WinSelectFirst wid%
+  END IF
+
+  '
+  ' Set the working page as the visual page
+  '
+  SCREEN , , workpage, workpage
 
 END SUB
 
 FUNCTION WinParseCommand% (text$)
   '
-  ' Translates a command name into an integer value. This is used when
-  ' loading window definitions so that the developer can refer to a
-  ' command with a human-friendly string instead of an integer.
-  ' When creating new commands, add an entry to this function that
-  ' maps a human-friendly name to a value in the Command.* constants.
-
+  ' Translates a command name into a Command.* constant value.
+  '
   DIM cid AS INTEGER
 
-  SELECT CASE UCASE$(text$)
+  SELECT CASE text$
    
-    CASE "ABOUT"
+    CASE "About"
       cid = Command.About
 
-    CASE "ENDGAME":
+    CASE "EndGame":
       cid = Command.EndGame
 
-    CASE "FILTERNONE":
+    CASE "FilterNone":
       cid = Command.FilterNone
 
-    CASE "FILTERSELF":
+    CASE "FilterSelf":
       cid = Command.FilterSelf
 
-    CASE "NEWGAME":
+    CASE "NewGame":
       cid = Command.NewGame
 
-    CASE "OPTIONALERTS":
+    CASE "OptionAlerts":
       cid = Command.OptionAlerts
 
-    CASE "REPLOTBAND":
+    CASE "ReplotBand":
       cid = Command.ReplotBand
 
-    CASE "REPLOTCLUSTER":
+    CASE "ReplotCluster":
       cid = Command.ReplotCluster
 
-    CASE "REPLOTMANUAL":
+    CASE "ReplotManual":
       cid = Command.ReplotManual
 
-    CASE "REPLOTRANDOM":
+    CASE "ReplotRandom":
       cid = Command.ReplotRandom
 
-    CASE "VIEWATLAS":
+    CASE "ViewAtlas":
       cid = Command.ViewAtlas
 
-    CASE "VIEWINBOX":
+    CASE "ViewInbox":
       cid = Command.ViewInbox
 
-    CASE "VIEWTABLE":
+    CASE "ViewTable":
       cid = Command.ViewTable
-
-    CASE "", "<COMMAND>"
-      ' HACK: ignore <command> as it is a development placeholder
-      cid = 0
 
     CASE ELSE
       StatusDebug "WinParseCommand: " + text$ + " not recognized"
@@ -4049,24 +4067,320 @@ FUNCTION WinParseCommand% (text$)
 
 END FUNCTION
 
+SUB WinRefreshField (wid%, fid%)
+
+  IF winstacked > 0 THEN
+    IF winstack(winstacked).wid = wid% THEN
+      WinDrawField wid%, fid%
+    END IF
+  END IF
+
+END SUB
+
+SUB WinRefreshWindow (wid%)
+
+  Assert wid% > 0, "WinRefreshWindow", "wid cannot be 0"
+  Assert winstacked > 0, "WinRefreshWindow", "no windows"
+  Assert winstack(winstacked).wid = wid%, "WinRefreshWindow", "top win only"
+
+  SCREEN , , winstack(winstacked).workpage, winstack(winstacked).backpage
+  PCOPY winstack(winstacked).backpage, winstack(winstacked).workpage
+  WinDraw wid%
+  SCREEN , , winstack(winstacked).workpage, winstack(winstacked).workpage
+
+END SUB
+
+SUB WinRun (wid%, result AS WinResultType)
+
+  DIM nopopups AS INTEGER
+  DIM pressed  AS STRING
+
+  WinOpen wid%
+
+  DO
+
+    '
+    ' Determine if the selected field is a popup.
+    ' If so, that window needs to be displayed now.
+    '
+    DO
+
+      IF nopopups THEN
+              
+        EXIT DO
+
+      ELSEIF win(wid%).selected = 0 THEN
+       
+        EXIT DO
+
+      ELSEIF fld(wid%, win(wid%).selected).kind <> FieldKind.Popup THEN
+       
+        EXIT DO
+
+      ELSEIF fld(wid%, win(wid%).selected).childWid = 0 THEN
+       
+        EXIT DO
+
+      ELSE
+     
+        WinRun fld(wid%, win(wid%).selected).childWid, result
+       
+        SELECT CASE result.action
+         
+          CASE WinAction.Cancel
+            '
+            ' The user canceled the popup, so disable popups until
+            ' the user explicitly opens the popup window.
+            '
+            nopopups = True
+            EXIT DO
+
+          CASE WinAction.Execute
+            '
+            ' The user selected a command from the popup. The result
+            ' will be passed up via the output result parameter.
+            '
+            WinClose wid%
+            EXIT SUB
+         
+          CASE WinAction.ExitLeft
+            WinSelectPrevious wid%
+         
+          CASE WinAction.ExitRight
+            WinSelectNext wid%
+         
+          CASE ELSE
+            EXIT DO
+
+        END SELECT
+
+      END IF
+
+    LOOP
+
+    pressed = GetKey$
+   
+    SELECT CASE WinMapKey%(wid%, pressed)
+     
+      CASE WinAction.Cancel
+        result.action = WinAction.Cancel
+        result.canceled = True
+        result.cid = 0
+        result.selected = win(wid%).selected
+        WinClose wid%
+        EXIT SUB
+
+      CASE WinAction.Complete
+        result.action = WinAction.Complete
+        result.canceled = False
+        result.cid = 0
+        result.selected = win(wid%).selected
+        WinClose wid%
+        EXIT SUB
+
+      CASE WinAction.Execute
+        result.action = WinAction.Execute
+        result.canceled = False
+        result.selected = win(wid%).selected
+        result.cid = fld(wid%, result.selected).cid
+        WinClose wid%
+        EXIT SUB
+
+      CASE WinAction.ExitLeft
+        result.action = WinAction.ExitLeft
+        result.canceled = True
+        result.cid = 0
+        result.selected = win(wid%).selected
+        WinClose wid%
+        EXIT SUB
+
+      CASE WinAction.ExitRight
+        result.action = WinAction.ExitRight
+        result.canceled = True
+        result.cid = 0
+        result.selected = win(wid%).selected
+        WinClose wid%
+        EXIT SUB
+
+      CASE WinAction.Help
+        IF win(wid%).helpWid <> 0 THEN
+          WinRun win(wid%).helpWid, result
+        END IF
+
+      CASE WinAction.MoveDown
+        WinRunMove wid%, 0, 1
+
+      CASE WinAction.MoveLeft
+        WinRunMove wid%, -1, 0
+
+      CASE WinAction.MoveRight
+        WinRunMove wid%, 1, 0
+
+      CASE WinAction.MoveUp
+        WinRunMove wid%, 0, -1
+
+      CASE WinAction.OpenPopup
+        nopopups = False
+
+      CASE WinAction.SelectFirst
+        WinSelectFirst wid%
+
+      CASE WinAction.SelectLast
+        WinSelectLast wid%
+
+      CASE WinAction.SelectNext
+        WinSelectNext wid%
+
+      CASE WinAction.SelectPrevious
+        WinSelectPrevious wid%
+
+      CASE ELSE
+        WinKey wid%, (win(wid%).selected), pressed
+
+    END SELECT
+
+  LOOP
+
+END SUB
+
+SUB WinRunMove (wid%, bumpX%, bumpY%)
+
+  Assert wid% > 0, "WinMove", "wid cannot be 0"
+  Assert winstacked > 0, "WinMove", "no windows"
+  Assert winstack(winstacked).wid = wid%, "WinMove", "Top window only"
+
+  DIM minX    AS INTEGER
+  DIM minY    AS INTEGER
+  DIM maxX    AS INTEGER
+  DIM maxY    AS INTEGER
+  DIM pressed AS STRING
+  DIM toX     AS INTEGER
+  DIM toY     AS INTEGER
+
+  minX = 1
+  minY = 1
+  maxX = 80 - WinGetOuterSizeX(wid%) + 1
+  maxY = 24 - WinGetOuterSizeY(wid%) + 1
+
+  '
+  ' Get the starting location of the window
+  '
+  toX = win(wid%).posX + bumpX%
+  toY = win(wid%).posY + bumpY%
+
+  IF toX < minX THEN toX = minX
+  IF toX > maxX THEN toX = maxX
+  IF toY < minY THEN toY = minY
+  IF toY > maxY THEN toY = maxY
+
+  DO
+   
+    '
+    ' Reset the page
+    '
+    PCOPY winstack(winstacked).backpage, winstack(winstacked).workpage
+
+    '
+    ' Draw the outline and wait for a keyboard command
+    '
+    WinDrawOutline wid%, toX, toY
+    pressed = GetKey$
+
+    SELECT CASE pressed
+
+      CASE CHR$(ASCII.Return)
+        '
+        ' Enter (final position selected)
+        '
+        win(wid%).posX = toX
+        win(wid%).posY = toY
+
+        '
+        ' Restore the display page
+        '
+        WinRefreshWindow wid%
+        EXIT SUB
+     
+      CASE CHR$(Control.D), CHR$(0) + CHR$(ScanCode.Right)
+        '
+        ' Move right
+        '
+        toX = toX + 1
+        IF toX > maxX THEN toX = maxX
+
+      CASE CHR$(Control.E), CHR$(0) + CHR$(ScanCode.Up)
+        '
+        ' Move Up
+        '
+        toY = toY - 1
+        IF toY < minY THEN toY = minY
+     
+      CASE CHR$(Control.S), CHR$(0) + CHR$(ScanCode.Left)
+        '
+        ' Move Left
+        '
+        toX = toX - 1
+        IF toX < minX THEN toX = minX
+
+      CASE CHR$(Control.X), CHR$(0) + CHR$(ScanCode.Down)
+        '
+        ' Move Down
+        '
+        toY = toY + 1
+        IF toY > maxY THEN toY = maxY
+
+      CASE CHR$(ASCII.Escape)
+        '
+        ' Escape (restore original location)
+        '
+        toX = win(wid%).posX
+        toY = win(wid%).posY
+   
+    END SELECT
+
+  LOOP
+
+END SUB
+
+SUB WinRunName (idname$)
+ 
+  DIM wid AS INTEGER
+  DIM result AS WinResultType
+
+  wid = WinGetWid(idname$)
+  Assert wid <> 0, "WinRunName", "wid cannot be 0"
+
+  WinRun wid, result
+
+END SUB
+
 SUB WinSelect (wid%, fid%)
   '
-  ' Selects the specified field (gives it focus)
+  ' Sets focus to a field
   '
- 
-  IF fid% > 0 THEN
 
-    ' If a non-zero field ID is specified, make sure the field is
-    ' actually selectable. Note that fid% can be zero in cases where
-    ' the caller wants to unselect all fields.
+  Assert wid% > 0, "WinSelect", "wid cannot be 0"
+  Assert fid% >= 0, "WinSelect", "fid cannot be negative"
 
-    IF NOT WinIsSelectable(wid%, fid%) THEN
-      StatusDebug "WinSelect(" + STR$(wid%) + "," + STR$(fid%) + "): fid is not selectable"
-    END IF
+  DIM old%
+  LET old% = win(wid%).selected
 
+  IF old% = fid% THEN
+    '
+    ' Same field
+    '
+    EXIT SUB
   END IF
 
   win(wid%).selected = fid%
+
+  IF old% > 0 THEN
+    WinRefreshField wid%, old%
+  END IF
+
+  IF fid% > 0 THEN
+    WinRefreshField wid%, fid%
+  END IF
 
 END SUB
 
@@ -4074,6 +4388,8 @@ SUB WinSelectFirst (wid%)
   '
   ' Selects the first selectable field
   '
+
+  Assert wid% > 0, "WinSelectFirst", "wid cannot be 0"
 
   IF win(wid%).fields = 0 THEN
     '
@@ -4105,6 +4421,8 @@ SUB WinSelectLast (wid%)
   ' Selects the last selectable field
   '
 
+  Assert wid% > 0, "WinSelectLast", "wid cannot be 0"
+
   IF win(wid%).fields = 0 THEN
     '
     ' This window has no fields
@@ -4135,13 +4453,13 @@ SUB WinSelectNext (wid%)
   ' Selects the next selectable field
   '
 
+  Assert wid% > 0, "WinSelectNext", "wid cannot be 0"
+
   DIM fid%
   DIM firstFid%
 
   IF win(wid%).fields = 0 THEN
-    '
-    ' No fields are defined
-    '
+   
     fid% = 0
  
   ELSE
@@ -4166,13 +4484,22 @@ SUB WinSelectNext (wid%)
         fid% = 1
       END IF
 
-    LOOP UNTIL (fid% = firstFid%) OR WinIsSelectable(wid%, fid%)
+      IF WinIsSelectable(wid%, fid%) THEN
+        EXIT DO
+      END IF
+
+      IF fid% = firstFid% THEN
+        '
+        ' We found ourself, but we are not selectable
+        '
+        fid% = 0
+        EXIT DO
+      END IF
+
+    LOOP
 
   END IF
 
-  '
-  ' Select the field
-  '
   WinSelect wid%, fid%
 
 END SUB
@@ -4182,13 +4509,13 @@ SUB WinSelectPrevious (wid%)
   ' Selects the field before the current one (looping around)
   '
 
+  Assert wid% > 0, "WinSelectPrevious", "wid cannot be 0"
+
   DIM fid%
   DIM startingFid%
 
   IF win(wid%).fields = 0 THEN
-    '
-    ' No fields are defined
-    '
+   
     fid% = 0
 
   ELSE
@@ -4213,182 +4540,46 @@ SUB WinSelectPrevious (wid%)
         fid% = win(wid%).fields
       END IF
 
-    LOOP UNTIL (fid% = startingFid%) OR WinIsSelectable(wid%, fid%)
+      IF WinIsSelectable(wid%, fid%) THEN
+        EXIT DO
+      END IF
+
+      IF fid% = startingFid% THEN
+        '
+        ' We looped back to ourself, but we are not selectable.
+        '
+        fid% = 0
+        EXIT DO
+      END IF
+
+    LOOP
 
   END IF
 
-  '
-  ' Select the field
-  '
   WinSelect wid%, fid%
 
 END SUB
 
-SUB WinShow (wid%)
+SUB WinSetText (wid%, fid%, text$)
   '
-  ' Displays and runs the specified window
+  ' Sets the text of the specified field.
   '
- 
-  DIM oldSelected AS INTEGER
 
-  DO
-   
-    '
-    ' Show the display page but write to the working page
-    '
-    SCREEN , , VideoPage.Working, VideoPage.Display
+  Assert wid% > 0, "WinSetText", "wid cannot be 0"
+  Assert fid% > 0, "WinSetText", "fid cannot be 0"
 
-    '
-    ' Copy the display page to the working page
-    '
-    PCOPY VideoPage.Display, VideoPage.Working
-
-    '
-    ' Draw the window onto the working page
-    '
-    WinDraw wid%
-   
-    '
-    ' Set the working page as the visual page
-    '
-    SCREEN , , VideoPage.Working, VideoPage.Working
-   
-    '
-    ' Set focus to a field
-    '
-    IF win(wid%).selected = 0 THEN
-      WinSelectFirst wid%
-    END IF
-
-    DO
-
-      '
-      ' Get the current field that has focus
-      '
-      oldSelected = win(wid%).selected
-      IF oldSelected <> 0 THEN
-        '
-        ' If a field is selected, draw it now.
-        '
-        WinDrawField wid%, oldSelected
-      END IF
-
-      '
-      ' Wait for a keystroke
-      '
-      pressed = GetKey$
-      SELECT CASE pressed
-     
-        CASE CHR$(ASCII.Return)
-          '
-          ' Return/Enter
-          '
-          win(wid%).canceled = False
-        
-          '
-          ' Restore the display page
-          '
-          SCREEN , , VideoPage.Display, VideoPage.Display
-          EXIT SUB
-       
-        CASE CHR$(0) + CHR$(ScanCode.Down), CHR$(ASCII.Space)
-          '
-          ' Down
-          '
-          WinSelectNext wid%
-
-        CASE CHR$(0) + CHR$(ScanCode.Up)
-          '
-          ' Up
-          '
-          WinSelectPrevious wid%
-
-        CASE CHR$(0) + CHR$(ScanCode.Home)
-          '
-          ' Home (first field)
-          '
-          WinSelectFirst wid%
-
-        CASE CHR$(0) + CHR$(ScanCode.End)
-          '
-          ' End (last field)
-          '
-          WinSelectLast wid%
-
-        CASE "/", "?"
-          '
-          ' Help
-          '
-          IF win(wid%).helpWid <> 0 THEN
-            WinShow win(wid%).helpWid
-          END IF
-
-        CASE CHR$(0) + CHR$(ScanCode.Left), CHR$(0) + CHR$(ScanCode.Right)
-          '
-          ' Left/right arrow (exit for menu windows)
-          '
-          IF arrowexit THEN
-            ' HACK
-            win(wid%).canceled = False
-           
-            '
-            ' Restore the display page and exit
-            '
-            SCREEN , , VideoPage.Display, VideoPage.Display
-            EXIT SUB
-          END IF
-     
-        CASE CHR$(ASCII.Escape)
-          '
-          ' Escape (cancel)
-          '
-          win(wid%).canceled = True
-         
-          '
-          ' Restore the display page
-          '
-          SCREEN , , VideoPage.Display, VideoPage.Display
-          EXIT SUB
-
-        CASE CHR$(Control.D), CHR$(Control.E), CHR$(19), CHR$(24)
-          WinMove wid%
-          '
-          ' Exit the input loop to jump up to the window loop.
-          ' This will force a refresh of the window.
-          '
-          EXIT DO
-
-        CASE ELSE
-          WinKey wid%, win(wid%).selected, pressed
-
-      END SELECT
-   
-      '
-      ' Redraw the old field if selection changed.
-      ' The new field will be redrawn at the start of this DO loop.
-      '
-      IF oldSelected <> win(wid%).selected THEN
-        WinDrawField wid%, oldSelected
-      END IF
-
-    LOOP
-  LOOP
+  txt(wid%, fid%) = text$
+  WinRefreshField wid%, fid%
 
 END SUB
 
-SUB WinShowName (idname$)
+SUB WinUpdateBegin (wid%)
   '
-  ' Shows the window with the specified name.
+  ' Indicates a window is being updated
   '
- 
-  DIM wid AS INTEGER
-  LET wid = WinGetWid(idname$)
- 
-  IF wid = 0 THEN
-    StatusDebug "WinShowName not found: " + idname$
-  ELSE
-    WinShow wid
-  END IF
+
+  win0 = wid%
+
 
 END SUB
 
@@ -4494,10 +4685,7 @@ SUB WorldLoadHabitats
   ' Verify this is the start of a data block
   '
   READ block
-  IF block <> "Habitats" THEN
-    StatusDebug "WorldLoadHabitats: data started with " + block
-    EXIT SUB
-  END IF
+  Assert block = "Habitats", "WorldLoadHabitats", "unexpected " + block
 
   DO
  
@@ -4508,11 +4696,8 @@ SUB WorldLoadHabitats
     IF block = "End" THEN
       EXIT SUB
     END IF
-    IF block <> "Habitat" THEN
-      StatusDebug "WorldLoadHabitats: block started with " + block
-      EXIT SUB
-    END IF
-
+   
+    Assert block = "Habitat", "WorldLoadHabitats", "unexpected " + block
     habitats = habitats + 1
     
     DO
@@ -4541,7 +4726,7 @@ SUB WorldLoadHabitats
           habitat(habitats).UI = block
 
         CASE ELSE
-          StatusDebug "WorldLoadHabitats: unrecognized " + block
+          AssertFail "WorldLoadHabitats", "unexpected " + block
 
       END SELECT
 
@@ -4596,7 +4781,7 @@ SUB WorldRemove (aid AS INTEGER)
   ' Removes an area from the world
   '
 
-  Assert aid <> 0, "WorldRemove", "aid cannot be 0"
+  Assert aid > 0, "WorldRemove", "aid cannot be 0"
 
   IF area(aid).allocated THEN
     area(aid).allocated = False
@@ -4609,13 +4794,10 @@ SUB WorldSetLabel (aid AS INTEGER, label AS STRING)
   '
   ' Updates the label for the specified area
   '
- 
-  DIM idx AS INTEGER
+  Assert aid > 0, "WorldSetLabel", "aid cannot be 0"
 
-  '
-  ' Get the index of the item in the atlas data
-  '
-  idx = AtlasIndexOf(aid)
+  DIM idx AS INTEGER
+  LET idx = AtlasIndexOf(aid)
   IF idx > 0 THEN
     AtlasSetLabel idx, label
   END IF
