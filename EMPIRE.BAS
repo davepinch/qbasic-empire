@@ -34,7 +34,7 @@ TYPE FieldType
   ' Information about an input field in a window.
   '
   kind     AS INTEGER
-  childWid AS INTEGER
+  childWid AS INTEGER  ' TODO: add nparam and combine these two
   cid      AS INTEGER
   posX     AS INTEGER
   posY     AS INTEGER
@@ -59,12 +59,6 @@ TYPE MessageType
   subject AS STRING * 20
 END TYPE
 
-TYPE WinStackItem
-  wid      AS INTEGER
-  backpage AS INTEGER
-  workpage AS INTEGER
-END TYPE
-
 TYPE WinResultType
   action   AS INTEGER
   canceled AS INTEGER
@@ -72,10 +66,13 @@ TYPE WinResultType
   selected AS INTEGER
 END TYPE
 
-TYPE WindowType
-  '
-  ' A window on the screen for showing information or collecting input.
-  '
+TYPE WinStackItem
+  wid      AS INTEGER
+  backpage AS INTEGER
+  workpage AS INTEGER
+END TYPE
+
+TYPE WinType
   arrowexit AS INTEGER
   fields    AS INTEGER
   helpWid   AS INTEGER
@@ -187,21 +184,18 @@ DECLARE FUNCTION UI.RunNebula% (aid AS INTEGER)
 ' screen. Note: due to lengthly parameters in some cases, the
 ' functions are defined with data type characters instead of "AS".
 '
+DECLARE FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$)
+DECLARE FUNCTION WinAddSeparator% (wid%, posX%, posY%)
 DECLARE FUNCTION WinClipText% (wid%, fid%, outposx%, outposy%, outsizeX%, outtext$)
 DECLARE FUNCTION WinCreate% ()
 DECLARE FUNCTION WinCreateEx% (style%, posX%, posY%, sizeX%, sizeY%)
 DECLARE FUNCTION WinCreateField% (wid%)
-DECLARE FUNCTION WinDefine% (wid%, f AS FieldType, text$)
 DECLARE FUNCTION WinGetOuterSizeX% (wid%)
 DECLARE FUNCTION WinGetOuterSizeY% (wid%)
 DECLARE FUNCTION WinGetWid% (wname$)
 DECLARE FUNCTION WinIsSelectable% (wid%, fid%)
-DECLARE FUNCTION WinLoadBoolean% (wid%)
-DECLARE FUNCTION WinLoadButton% (wid%)
-DECLARE FUNCTION WinLoadField% (wid%, endtag$)
-DECLARE FUNCTION WinLoadLabel% (wid%)
-DECLARE FUNCTION WinLoadPopup% (wid%)
-DECLARE FUNCTION WinMapKey% (wid%, pressed AS STRING)
+DECLARE FUNCTION WinLoadField% (wid%, kind%)
+DECLARE FUNCTION WinMapKey% (wid%, pressed$)
 DECLARE FUNCTION WinParseCommand% (text$)
 
 DECLARE SUB WinAutoSize (wid%)
@@ -212,13 +206,14 @@ DECLARE SUB WinDrawBox0 (wid%, offsetX%, offsetY%, fcolor%, bcolor%)
 DECLARE SUB WinDrawBox1 (wid%)
 DECLARE SUB WinDrawBox2 (wid%)
 DECLARE SUB WinDrawField (wid%, fid%)
+DECLARE SUB WinDrawFile (wid%, fid%)
 DECLARE SUB WinDrawOutline (wid%, sx%, sy%)
 DECLARE SUB WinDrawOutline0 (wid%, sx%, sy%)
 DECLARE SUB WinDrawOutline1 (wid%, sx%, sy%)
 DECLARE SUB WinDrawOutline2 (wid%, sx%, sy%)
 DECLARE SUB WinDrawSeparator (wid%, fid%)
 DECLARE SUB WinDrawSeparator0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%)
-DECLARE SUB WinDrawSeparator1 (wid%, fid%)
+DECLARE SUB WinDrawSeparator1 (wid%, fid%, fc%, bc%)
 DECLARE SUB WinDrawSeparator2 (wid%, fid%)
 DECLARE SUB WinDrawText (wid%, fid%)
 DECLARE SUB WinDrawText0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%, sfc%, sbc%)
@@ -352,21 +347,9 @@ CONST FieldKind.Separator = 6
 '
 CONST HabitatUI.Nebula = "NEB"
 
-CONST InboxStyle.InnerSizeX = 61
-CONST InboxStyle.InnerSizeY = 19
-CONST InboxStyle.OuterPosX = 10
-CONST InboxStyle.OuterPosY = 3
-  '
-  ' These constants define the position and size of the inbox.
-  ' The InnerSize constants define the size of the inner content
-  ' section of the inbox (excluding the border). The OuterPos
-  ' constants define the position of the inbox in relation to its
-  ' upper-left border character.
-
 '
 ' Maximum UI elements
 '
-CONST MaxMenus = 5
 CONST MaxFields = 13
 CONST MaxWindows = 15
 
@@ -497,7 +480,6 @@ DIM SHARED atlasItem(1 TO 30) AS AtlasItemType
 '
 DIM SHARED msg(1 TO 10) AS MessageType
 DIM SHARED msgs AS INTEGER
-DIM SHARED mwid AS INTEGER
 
 '
 ' Global UI variables
@@ -511,11 +493,10 @@ DIM SHARED uicy AS INTEGER
 ' Global window variables
 '
 DIM SHARED fld(1 TO MaxWindows, 1 TO MaxFields) AS FieldType
-DIM SHARED win(1 TO MaxWindows) AS WindowType
-DIM SHARED wins AS INTEGER
-DIM SHARED win0 AS INTEGER
+DIM SHARED win(1 TO MaxWindows) AS WinType
 DIM SHARED txt(1 TO MaxWindows, 1 TO MaxFields) AS STRING
 
+DIM SHARED wincount         AS INTEGER
 DIM SHARED winstack(1 TO 3) AS WinStackItem
 DIM SHARED winstacked       AS INTEGER
 
@@ -692,6 +673,19 @@ DATA     "PosY", 1
 DATA     "Text", " END "
 DATA     "Command", "EndGame"
 DATA   "EndButton"
+DATA "EndWindow"
+
+DATA "Window"
+DATA   "Name", "Inbox"
+DATA   "PosX", 10
+DATA   "PosY", 3
+DATA   "SizeX", 61
+DATA   "SizeY", 19
+DATA   "Style", 2
+DATA   "Separator"
+DATA     "PosX", 21
+DATA     "PosY", 0
+DATA   "EndSeparator"
 DATA "EndWindow"
 
 DATA "EndWindows"
@@ -1901,15 +1895,11 @@ SUB InboxAdd (subject AS STRING)
   '
   ' Make a button for the message
   '
-  DIM f AS FieldType
-
-  f.kind = FieldKind.Button
-  f.posX = 1
-  f.posY = msgs
-  f.sizeX = win(mwid).sizeX
-
+  DIM wid AS INTEGER
   DIM fid AS INTEGER
-  LET fid = WinDefine(mwid, f, subject)
+
+  LET wid = WinGetWid("Inbox")
+  LET fid = WinAddButton(wid, 1, msgs, 20, " " + subject)
 
 END SUB
 
@@ -1918,17 +1908,7 @@ SUB InboxInit
   ' Initializes the mailbox to its default state
   '
  
-  CONST InnerSizeX = 61
-  CONST InnerSizeY = 19
-  CONST OuterPosX = 10
-  CONST OuterPosY = 3
-
   msgs = 0
-
-  IF msgw = 0 THEN
-    mwid = WinCreateEx%(2, OuterPosX, OuterPosY, InnerSizeX, InnerSizeY)
-  END IF
-
   InboxAdd "Welcome 1"
   InboxAdd "Welcome 2"
 
@@ -2644,8 +2624,10 @@ FUNCTION UI.RunInbox%
   Assert uiCurrentPage = UIPage.Inbox, "UI.RunInbox", "Wrong UI page"
   
   DIM result AS WinResultType
+  DIM wid    AS INTEGER
 
-  WinRun mwid, result
+  wid = WinGetWid("Inbox")
+  WinRun wid, result
  
   IF result.canceled THEN
     UI.RunInbox% = UIResult.Escape
@@ -2771,6 +2753,43 @@ SUB UI.SetPage (page AS INTEGER)
   END IF
 
 END SUB
+
+FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$)
+
+  Assert wid% > 0, "WinAddButton", "wid cannot be 0"
+
+  DIM fid%
+  LET fid% = WinCreateField(wid%)
+
+  fld(wid%, fid%).childWid = 0
+  fld(wid%, fid%).cid = 0
+  fld(wid%, fid%).kind = FieldKind.Button
+  fld(wid%, fid%).posX = posX%
+  fld(wid%, fid%).posY = posY%
+  fld(wid%, fid%).sizeX = sizeX%
+  txt(wid%, fid%) = text$
+
+  WinAddButton% = fid%
+
+END FUNCTION
+
+FUNCTION WinAddSeparator% (wid%, posX%, posY%)
+
+  Assert wid% > 0, "WinAddSeparator", "wid cannot be 0"
+
+  DIM fid%
+  LET fid% = WinCreateField(wid%)
+
+  fld(wid%, fid%).kind = FieldKind.Separator
+  fld(wid%, fid%).childWid = 0
+  fld(wid%, fid%).cid = 0
+  fld(wid%, fid%).posX = posX%
+  fld(wid%, fid%).posY = posY%
+  fld(wid%, fid%).sizeX = 0
+
+  WinAddSeparator% = fid%
+
+END FUNCTION
 
 SUB WinAutoSize (wid%)
   '
@@ -2956,9 +2975,9 @@ FUNCTION WinCreate%
   '
   ' Creates an empty window
   '
-  wins = wins + 1
-  win(wins).style = 1
-  WinCreate% = wins
+  wincount = wincount + 1
+  win(wincount).style = 1
+  WinCreate% = wincount
 
 END FUNCTION
 
@@ -2970,11 +2989,11 @@ FUNCTION WinCreateEx% (style%, posX%, posY%, sizeX%, sizeY%)
   DIM wid AS INTEGER
   LET wid = WinCreate%
  
-  win(wins).posX = posX%
-  win(wins).posY = posY%
-  win(wins).style = style%
-  win(wins).sizeX = sizeX%
-  win(wins).sizeY = sizeY%
+  win(wid).posX = posX%
+  win(wid).posY = posY%
+  win(wid).style = style%
+  win(wid).sizeX = sizeX%
+  win(wid).sizeY = sizeY%
 
   WinCreateEx% = wid
 
@@ -2989,53 +3008,6 @@ FUNCTION WinCreateField% (wid%)
 
   win(wid%).fields = fid%
   WinCreateField% = fid%
-
-END FUNCTION
-
-FUNCTION WinDefine% (wid%, f AS FieldType, text$)
-
-  Assert wid% > 0, "WinDefine", "wid cannot be 0"
-
-  ' Defines a new field in a window and returns the field ID. Any code
-  ' that creates new fields should ultimately call this function
-  ' because it applies certain rules such as adjusting the window size.
-
-  DIM fid  AS INTEGER
-  DIM minX AS INTEGER
-
-  '
-  ' Increment the number of fields
-  '
-  win(wid%).fields = win(wid%).fields + 1
-  fid = win(wid%).fields
-
-  '
-  ' Save the field properties
-  '
-  fld(wid%, fid) = f
-  txt(wid%, fid) = text$
-
-  '
-  ' Find the minimum permitted size of the window
-  '
-  minX = f.posX + f.sizeX - 1
-  IF minX < LEN(text$) THEN minX = LEN(text$)
-
-  '
-  ' Expand window horizontally if necessary
-  '
-  IF win(wid%).sizeX < minX THEN
-    win(wid%).sizeX = minX
-  END IF
-
-  '
-  ' Expand window vertically if necessary
-  '
-  IF win(wid%).sizeY < f.posY THEN
-    win(wid%).sizeY = f.posY
-  END IF
-
-  WinDefine = fid
 
 END FUNCTION
 
@@ -3343,7 +3315,7 @@ SUB WinDrawSeparator (wid%, fid%)
     CASE 0
       WinDrawSeparator0 wid%, fid%, 0, 0, WinStyle0.Forecolor, WinStyle0.Backcolor
     CASE 1
-      WinDrawSeparator1 wid%, fid%
+      WinDrawSeparator1 wid%, fid%, WinStyle1.Forecolor, WinStyle1.Backcolor
     CASE 2
       WinDrawSeparator2 wid%, fid%
   END SELECT
@@ -3355,37 +3327,94 @@ SUB WinDrawSeparator0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%)
   DIM sx AS INTEGER
   DIM sy AS INTEGER
 
-  '
-  ' Get screen coordinates
-  '
-  sx = win(wid%).posX + offsetX%
-  sy = win(wid%).posY + fld(wid%, fid%).posY - 1 + offsetY%
-  LOCATE sy, sx
-
   COLOR fc%, bc%
-  PRINT STRING$(win(wid%).sizeX, 196);
+ 
+  IF fld(wid%, fid%).posY > 0 THEN
+    '
+    ' Horizontal separator
+    '
+    sx = win(wid%).posX + offsetX%
+    sy = win(wid%).posY + fld(wid%, fid%).posY - 1 + offsetY%
+    LOCATE sy, sx
+    PRINT STRING$(win(wid%).sizeX, 196);
+
+  END IF
+
+  IF fld(wid%, fid%).posX > 0 THEN
+    '
+    ' Vertical separator
+    '
+   
+    sx = win(wid%).posX + fld(wid%, fid%).posX - 1 + offsetX%
+
+    FOR sy = 1 TO win(wid%).sizeY
+      LOCATE sy + win(wid%).posY - 1 + offsetY%, sx
+      PRINT CHR$(179);
+    NEXT
+
+  END IF
+
+  IF fld(wid%, fid%).posX > 0 AND fld(wid%, fid%).posY > 0 THEN
+    '
+    ' Intersection
+    '
+    sx = win(wid%).posX + fld(wid%, fid%).posX - 1 + offsetX%
+    sy = win(wid%).posY + fld(wid%, fid%).posY - 1 + offsetY%
+
+    LOCATE sy, sx
+    PRINT CHR$(197);
+
+  END IF
 
 END SUB
 
-SUB WinDrawSeparator1 (wid%, fid%)
+SUB WinDrawSeparator1 (wid%, fid%, fc%, bc%)
   '
-  ' Draws the specified separator field.
+  ' Draws the specified separator field based on a single-line border.
   '
 
   DIM sx AS INTEGER
   DIM sy AS INTEGER
 
-  '
-  ' Move the cursor to the left border
-  '
-  sx = win(wid%).posX
-  sy = win(wid%).posY + fld(wid%, fid%).posY
-  LOCATE sy, sx
+  WinDrawSeparator0 wid%, fid%, 1, 1, fc%, bc%
 
-  COLOR WinStyle1.Forecolor, WinStyle1.Backcolor
-  PRINT CHR$(195);
-  PRINT STRING$(win(wid%).sizeX, 196);
-  PRINT CHR$(180);
+  IF fld(wid%, fid%).posX > 0 THEN
+    '
+    ' Top border
+    '
+    sx = win(wid%).posX + fld(wid%, fid%).posX
+    sy = win(wid%).posY
+
+    LOCATE sy, sx
+    PRINT CHR$(194);
+
+    '
+    ' Bottom border
+    '
+    sy = win(wid%).posY + win(wid%).sizeY + 1
+    LOCATE sy, sx
+    PRINT CHR$(193);
+
+  END IF
+
+  IF fld(wid%, fid%).posY > 0 THEN
+    '
+    ' Left border
+    '
+    sx = win(wid%).posX
+    sy = win(wid%).posY + fld(wid%, fid%).posY
+
+    LOCATE sy, sx
+    PRINT CHR$(195);
+   
+    '
+    ' Right border
+    '
+    sx = win(wid%).posX + win(wid%).sizeX + 1
+    LOCATE sy, sx
+    PRINT CHR$(180);
+
+  END IF
 
 END SUB
 
@@ -3393,7 +3422,7 @@ SUB WinDrawSeparator2 (wid%, fid%)
   '
   ' Draws a separator using style #2
   '
-  WinDrawSeparator0 wid%, fid%, 0, 0, 5, 0
+  WinDrawSeparator1 wid%, fid%, 13, 0
 
 END SUB
 
@@ -3511,7 +3540,7 @@ FUNCTION WinGetWid% (wname$)
  
   DIM wid AS INTEGER
 
-  FOR wid = 1 TO wins
+  FOR wid = 1 TO wincount
     IF RTRIM$(win(wid).wname) = wname$ THEN
       WinGetWid% = wid
       EXIT FUNCTION
@@ -3662,44 +3691,40 @@ SUB WinLoad
 
 END SUB
 
-FUNCTION WinLoadBoolean% (wid%)
- 
-  Assert wid% > 0, "WinLoadBoolean", "wid cannot be 0"
-
-  '
-  ' Load the field values
-  '
-  DIM fid%
-  LET fid% = WinLoadField(wid%, "EndBoolean")
-
-  fld(wid%, fid%).kind = FieldKind.Boolean
-  WinLoadBoolean% = fid%
-
-END FUNCTION
-
-FUNCTION WinLoadButton% (wid%)
-
-  Assert wid% > 0, "WinLoadButton", "wid cannot be 0"
-
-  '
-  ' Load the field values
-  '
-  DIM fid%
-  LET fid% = WinLoadField(wid%, "EndButton")
-
-  fld(wid%, fid%).kind = FieldKind.Button
-  WinLoadButton% = fid%
-
-END FUNCTION
-
-FUNCTION WinLoadField% (wid%, endtag$)
+FUNCTION WinLoadField% (wid%, kind%)
 
   Assert wid% > 0, "WinLoadField", "wid cannot be 0"
 
   DIM block$
+  DIM endtag$
   DIM fid%
 
   fid% = WinCreateField(wid%)
+
+  SELECT CASE kind%
+   
+    CASE FieldKind.Button
+      endtag$ = "EndButton"
+
+    CASE FieldKind.Boolean
+      endtag$ = "EndBoolean"
+
+    CASE FieldKind.Integer
+      endtag$ = "EndInteger"
+
+    CASE FieldKind.Label
+      endtag$ = "EndLabel"
+
+    CASE FieldKind.Popup
+      endtag$ = "EndPopup"
+
+    CASE FieldKind.Separator
+      endtag$ = "EndSeparator"
+
+    CASE ELSE
+      AssertFail "WinLoadField", "Unknown field type:" + STR$(kind%)
+
+  END SELECT
 
   DO
 
@@ -3737,18 +3762,29 @@ FUNCTION WinLoadField% (wid%, endtag$)
 
   LOOP
  
+  fld(wid%, fid%).kind = kind%
+
   IF fld(wid%, fid%).posX = 0 THEN
     '
     ' If no x position is specified, default to 1.
+    ' Expect for separators, in which x>0 indicates a
+    ' vertical separator at the specified x position.
     '
-    fld(wid%, fid%).posX = 1
+    IF kind% <> FieldKind.Separator THEN
+      fld(wid%, fid%).posX = 1
+    END IF
+
   END IF
 
   IF fld(wid%, fid%).posY = 0 THEN
     '
     ' If no y position is specified, stack under the last field.
     '
-    IF fid% = 1 THEN
+    IF kind% = FieldKind.Separator THEN
+      '
+      ' 0 is OK
+      '
+    ELSEIF fid% = 1 THEN
       fld(wid%, fid%).posY = 1
     ELSE
       fld(wid%, fid%).posY = fld(wid%, fid% - 1).posY + 1
@@ -3764,30 +3800,6 @@ FUNCTION WinLoadField% (wid%, endtag$)
   END IF
 
   WinLoadField% = fid%
-
-END FUNCTION
-
-FUNCTION WinLoadLabel% (wid%)
-
-  Assert wid% > 0, "WinLoadLabel", "wid cannot be 0"
-
-  DIM fid%
- 
-  fid% = WinLoadField(wid%, "EndLabel")
-  fld(wid%, fid%).kind = FieldKind.Label
-  WinLoadLabel% = fid%
-
-END FUNCTION
-
-FUNCTION WinLoadPopup% (wid%)
- 
-  Assert wid% > 0, "WinLoadPopup", "wid cannot be 0"
-
-  DIM fid%
- 
-  fid% = WinLoadField(wid%, "EndPopup")
-  fld(wid%, fid%).kind = FieldKind.Popup
-  WinLoadPopup = fid%
 
 END FUNCTION
 
@@ -3809,25 +3821,28 @@ SUB WinLoadWindow
         READ win(wid%).arrowexit
 
       CASE "Button"
-        fid% = WinLoadButton(wid%)
+        fid% = WinLoadField(wid%, FieldKind.Button)
 
       CASE "EndWindow"
         EXIT DO
 
       CASE "Label"
-        fid% = WinLoadLabel(wid%)
+        fid% = WinLoadField(wid%, FieldKind.Label)
 
       CASE "Name"
         READ win(wid%).wname
 
       CASE "Popup"
-        fid% = WinLoadPopup(wid%)
+        fid% = WinLoadField(wid%, FieldKind.Popup)
 
       CASE "PosX"
         READ win(wid%).posX
 
       CASE "PosY"
         READ win(wid%).posY
+
+      CASE "Separator"
+        fid% = WinLoadField(wid%, FieldKind.Separator)
 
       CASE "SizeX"
         READ win(wid%).sizeX
@@ -3839,7 +3854,7 @@ SUB WinLoadWindow
         READ win(wid%).style
 
       CASE "Boolean"
-        fid% = WinLoadBoolean(wid%)
+        fid% = WinLoadField(wid%, FieldKind.Boolean)
      
       CASE "-"
         fid% = WinCreateField%(wid%)
@@ -3851,7 +3866,7 @@ SUB WinLoadWindow
         END IF
 
       CASE ELSE
-        AssertFail "WinLoadWindow", "Unexpected token " + block$
+        AssertFail "WinLoadWindow", "Unexpected token: " + block$
 
     END SELECT
   LOOP
@@ -3874,7 +3889,7 @@ SUB WinLoadWindow
 
 END SUB
 
-FUNCTION WinMapKey% (wid%, pressed AS STRING)
+FUNCTION WinMapKey% (wid%, pressed$)
 
   DIM childWid  AS INTEGER
   DIM cid       AS INTEGER
@@ -3895,7 +3910,7 @@ FUNCTION WinMapKey% (wid%, pressed AS STRING)
     cid = fld(wid%, selected).cid
   END IF
 
-  SELECT CASE pressed
+  SELECT CASE pressed$
 
     CASE CHR$(ASCII.Return)
       IF childWid > 0 THEN
@@ -4570,16 +4585,6 @@ SUB WinSetText (wid%, fid%, text$)
 
   txt(wid%, fid%) = text$
   WinRefreshField wid%, fid%
-
-END SUB
-
-SUB WinUpdateBegin (wid%)
-  '
-  ' Indicates a window is being updated
-  '
-
-  win0 = wid%
-
 
 END SUB
 
