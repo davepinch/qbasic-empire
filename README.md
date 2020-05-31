@@ -6,10 +6,9 @@
 
 # controls
 
-* Follow any prompts on the screen.
-* Use the arrow keys to navigate dialog boxes and the atlas.
-* Press Enter to select a menu item; press Escape to cancel an operation.
-* Use ^S, ^E, ^D and ^X to move windows.
+* Use the arrow keys, Home, End, PgDn and PgUp to navigate menus and windows.
+* Press Enter to select a menu item, or press ESC to cancel a menu.
+* Once you see the atlas, press Escape to open the top menubar.
 
 # plans
 

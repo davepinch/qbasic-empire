@@ -195,30 +195,22 @@ DECLARE FUNCTION WinMapKey% (wid%, pressed$)
 DECLARE FUNCTION WinParseCommand% (text$)
 DECLARE FUNCTION WinParseMacro% (value$, index1%, outsel$, outval$)
 DECLARE FUNCTION WinParseSelector% (wid%, fid%, sel$)
-DECLARE FUNCTION WinScreenX% (wid%, x%)
-DECLARE FUNCTION WinScreenY% (wid%, y%)
 
 DECLARE SUB WinAutoSize (wid%)
 DECLARE SUB WinClose (wid%)
 DECLARE SUB WinDraw (wid%)
 DECLARE SUB WinDrawBox (wid%)
-DECLARE SUB WinDrawBox0 (wid%, offsetX%, offsetY%, fcolor%, bcolor%)
+DECLARE SUB WinDrawBox0 (wid%)
 DECLARE SUB WinDrawBox1 (wid%)
 DECLARE SUB WinDrawBox2 (wid%)
 DECLARE SUB WinDrawField (wid%, fid%)
 DECLARE SUB WinDrawFile (wid%, fid%)
-DECLARE SUB WinDrawOutline (wid%, sx%, sy%)
-DECLARE SUB WinDrawOutline0 (wid%, sx%, sy%)
-DECLARE SUB WinDrawOutline1 (wid%, sx%, sy%)
-DECLARE SUB WinDrawOutline2 (wid%, sx%, sy%)
 DECLARE SUB WinDrawSeparator (wid%, fid%)
-DECLARE SUB WinDrawSeparator0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%)
+DECLARE SUB WinDrawSeparator0 (wid%, fid%, fc%, bc%)
 DECLARE SUB WinDrawSeparator1 (wid%, fid%, fc%, bc%)
 DECLARE SUB WinDrawSeparator2 (wid%, fid%)
 DECLARE SUB WinDrawText (wid%, fid%)
-DECLARE SUB WinDrawText0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%, sfc%, sbc%)
-DECLARE SUB WinDrawText1 (wid%, fid%)
-DECLARE SUB WinDrawText2 (wid%, fid%)
+DECLARE SUB WinDrawText0 (wid%, fid%, fc%, bc%, sfc%, sbc%)
 DECLARE SUB WinKey (wid%, fid%, keypress$)
 DECLARE SUB WinKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB WinKeyInteger (wid%, fid%, keypress$)
@@ -228,7 +220,6 @@ DECLARE SUB WinOpen (wid%)
 DECLARE SUB WinRefreshField (wid%, fid%)
 DECLARE SUB WinRefreshWindow (wid%)
 DECLARE SUB WinRun (wid%, result AS WinResultType)
-DECLARE SUB WinRunMove (wid%, bumpX%, bumpY%)
 DECLARE SUB WinRunName (idname$)
 DECLARE SUB WinSelectNext (wid%)
 DECLARE SUB WinSelect (wid%, fid%)
@@ -323,14 +314,8 @@ CONST Command.ViewInbox = 12
 CONST Command.ViewTable = 13
 
 '
-' Control Character constants
+' Field Flags
 '
-CONST Control.D = 4
-CONST Control.E = 5
-CONST Control.O = 15
-CONST Control.S = 19
-CONST Control.X = 24
-
 CONST FieldFlag.None = 0
 CONST FieldFlag.Bound = 1
 
@@ -437,10 +422,6 @@ CONST WinAction.Execute = 3
 CONST WinAction.ExitLeft = 4
 CONST WinAction.ExitRight = 5
 CONST WinAction.Help = 6
-CONST WinAction.MoveDown = 7
-CONST WinAction.MoveLeft = 8
-CONST WinAction.MoveRight = 9
-CONST WinAction.MoveUp = 10
 CONST WinAction.OpenPopup = 11
 CONST WinAction.SelectFirst = 12
 CONST WinAction.SelectLast = 13
@@ -533,8 +514,8 @@ DATA "EndWindow"
 DATA "Window"
 DATA   "Name", "FileMenu"
 DATA   "ArrowExit", 3
-DATA   "PosX", 1
-DATA   "PosY", 2
+DATA   "PosX", 2
+DATA   "PosY", 3
 DATA   "Button"
 DATA     "Command", "About"
 DATA     "OffsetX", 0
@@ -554,7 +535,7 @@ DATA "Window"
 DATA   "Name", "ViewMenu"
 DATA   "ArrowExit", 3
 DATA   "PosX", 7
-DATA   "PosY", 2
+DATA   "PosY", 3
 DATA   "SizeX", 20
 DATA   "Button"
 DATA     "Command", "ViewAtlas"
@@ -607,7 +588,7 @@ DATA "Window"
 DATA   "Name", "OptionsMenu"
 DATA   "ArrowExit", 3
 DATA   "PosX", 13
-DATA   "PosY", 2
+DATA   "PosY", 3
 DATA   "SizeX", 20
 DATA   "Button"
 DATA     "Command", "OptionAlerts"
@@ -686,7 +667,7 @@ DATA "EndWindow"
 DATA "Window"
 DATA   "Name", "Inbox"
 DATA   "PosX", 10
-DATA   "PosY", 3
+DATA   "PosY", 4
 DATA   "SizeX", 61
 DATA   "SizeY", 19
 DATA   "Style", 2
@@ -3034,7 +3015,7 @@ SUB WinDraw (wid%)
   Assert win(wid%).sizeY > 0, "WinDraw", "sizeY must be > 0"
 
   WinDrawBox wid%
- 
+
   DIM fid AS INTEGER
   FOR fid = 1 TO win(wid%).fields
     WinDrawField wid%, fid
@@ -3044,12 +3025,12 @@ END SUB
 
 SUB WinDrawBox (wid%)
 
-  Assert wid% > 0, "WinDrawBox", "wid cannot be 0"
+  Assert wid% > 0, "WinDrawBorder", "wid cannot be 0"
 
   SELECT CASE win(wid%).style
-  
+ 
     CASE 0:
-      WinDrawBox0 wid%, 0, 0, WinStyle0.Forecolor, WinStyle0.Backcolor
+      WinDrawBox0 wid%
 
     CASE 1:
       WinDrawBox1 wid%
@@ -3061,25 +3042,21 @@ SUB WinDrawBox (wid%)
 
 END SUB
 
-SUB WinDrawBox0 (wid%, offsetX%, offsetY%, fcolor%, bcolor%)
-  '
-  ' Draws the window box with no styling
-  '
- 
-  COLOR fcolor%, bcolor%
+SUB WinDrawBox0 (wid%)
 
-  DIM row AS INTEGER
-  FOR row = 1 TO win(wid%).sizeY
-    LOCATE win(wid%).posY + row - 1 + offsetY%, win(wid%).posX + offsetX%
+  Assert wid% > 0, "WinDrawBox0", "wid cannot be 0"
+
+  DIM r AS INTEGER
+
+  COLOR WinStyle0.Forecolor, WinStyle0.Backcolor
+  FOR r = 1 TO win(wid%).sizeY
+    LOCATE win(wid%).posY + r - 1, win(wid%).posX
     PRINT STRING$(win(wid%).sizeX, " ");
   NEXT
 
 END SUB
 
 SUB WinDrawBox1 (wid%)
-  '
-  ' Draws the window in a basic (default) style
-  '
 
   Assert wid% > 0, "WinDrawBox1", "wid cannot be 0"
 
@@ -3093,40 +3070,43 @@ SUB WinDrawBox1 (wid%)
   CONST upperRight = "¿"  ' CHR$(191)
 
   DIM r AS INTEGER
+  DIM x1 AS INTEGER ' Upper-left x-coord
+  DIM y1 AS INTEGER ' Upper-left y-coord
+  DIM x2 AS INTEGER ' Lower-right x-coord
+  DIM y2 AS INTEGER ' Lower-right y-coord
 
-  '
-  ' Set the display color of the window
-  '
+  x1 = win(wid%).posX - 1
+  y1 = win(wid%).posY - 1
+  x2 = x1 + win(wid%).sizeX + 1
+  y2 = y1 + win(wid%).sizeY + 1
+
   COLOR WinStyle1.Forecolor, WinStyle1.Backcolor
 
   '
   ' Draw the top border
   '
-  LOCATE win(wid%).posY, win(wid%).posX
-  PRINT upperLeft; STRING$(win(wid%).sizeX, upperFlat); upperRight;
+  LOCATE y1, x1
+  PRINT upperLeft; STRING$(win(wid%).sizeX, upperFlat); upperRight
 
   '
   ' Draw each row of the window
   '
-  FOR r = 1 TO win(wid%).sizeY
-    LOCATE win(wid%).posY + r, win(wid%).posX
-    PRINT sideLeft;
-    PRINT STRING$(win(wid%).sizeX, " ");
-    PRINT sideRight;
+  FOR r = y1 + 1 TO y2 - 1
+    LOCATE r, x1
+    PRINT sideLeft; STRING$(win(wid%).sizeX, " "); sideRight
   NEXT
-   
+  
   '
   ' Draw the lower border
   '
-  LOCATE win(wid%).posY + win(wid%).sizeY + 1, win(wid%).posX
-  PRINT lowerLeft; STRING$(win(wid%).sizeX, lowerFlat); lowerRight;
+  LOCATE y2, x1
+  PRINT lowerLeft; STRING$(win(wid%).sizeX, lowerFlat); lowerRight
 
 END SUB
 
 SUB WinDrawBox2 (wid%)
-  '
-  ' Draws the window in a stylized way
-  '
+
+  Assert wid% > 0, "WinDrawBox2", "wid cannot be 0"
 
   DIM idx AS INTEGER
   DIM row AS INTEGER
@@ -3151,10 +3131,8 @@ SUB WinDrawBox2 (wid%)
   '
   ' Top border of the window
   '
- 
-  LOCATE win(wid%).posY, win(wid%).posX
+  LOCATE win(wid%).posY - 1, win(wid%).posX - 1
   COLOR fc(0), bc(0)
- 
   PRINT CHR$(220);
   PRINT STRING$(win(wid%).sizeX, 196);
   PRINT CHR$(191);
@@ -3172,7 +3150,7 @@ SUB WinDrawBox2 (wid%)
     '
     ' Left border
     '
-    LOCATE win(wid%).posY + row, win(wid%).posX
+    LOCATE win(wid%).posY + row - 1, win(wid%).posX - 1
     COLOR fc(idx), bc(idx)
     PRINT ch(idx);
 
@@ -3183,7 +3161,7 @@ SUB WinDrawBox2 (wid%)
     PRINT STRING$(win(wid%).sizeX, " ");
 
     '
-    ' Get the index of the right border
+    ' Get the index of the right border char
     '
     idx = win(wid%).sizeY - row + 1
     IF idx > UBOUND(ch) THEN idx = 0
@@ -3197,9 +3175,9 @@ SUB WinDrawBox2 (wid%)
   NEXT
 
   '
-  ' Bottom border of the inbox
+  ' Bottom border
   '
-  LOCATE win(wid%).posY + win(wid%).sizeY + 1, win(wid%).posX
+  LOCATE win(wid%).posY + win(wid%).sizeY, win(wid%).posX - 1
   COLOR fc(0), bc(0)
   PRINT CHR$(192);
   PRINT STRING$(win(wid%).sizeX, 196);
@@ -3246,109 +3224,18 @@ SUB WinDrawFile (wid%, fid%)
     EXIT SUB
   END IF
 
-  sx = WinScreenX(wid%, fld(wid%, fid%).offsetX)
-  sy = WinScreenY(wid%, fld(wid%, fid%).offsetY)
+  sx = win(wid%).posX + fld(wid%, fid%).offsetX
+  sy = win(wid%).posY + fld(wid%, fid%).offsetY
 
   DrawFileAt filename, sx, sy
 
-END SUB
-
-SUB WinDrawOutline (wid%, sx%, sy%)
-
-  SELECT CASE win(wid%).style
-   
-    CASE 0:
-      WinDrawOutline0 wid%, sx%, sy%
-
-    CASE 1:
-      WinDrawOutline1 wid%, sx%, sy%
-
-    CASE 2:
-      WinDrawOutline2 wid%, sx%, sy%
- 
-  END SELECT
-
-END SUB
-
-SUB WinDrawOutline0 (wid%, sx%, sy%)
-
-  Assert wid% > 0, "WinDrawOutline0", "wid cannot be 0"
-  Assert sx% > 0, "WinDrawOutline0", "sx must be positive"
-  Assert sy% > 0, "WinDrawOutline0", "sy must be positive"
-
-  IF win(wid%).sizeY = 1 THEN
-
-    LOCATE sy%, sx%
-    COLOR 7, 0: PRINT "[";
-    COLOR 8, 0: PRINT STRING$(win(wid%).sizeX - 2, "-");
-    COLOR 7, 0: PRINT "]";
-
-  ELSE
-
-    AssertFail "WinDrawOutline0", "Not implemented"
-
-  END IF
-
-
-END SUB
-
-SUB WinDrawOutline1 (wid%, sx%, sy%)
-
-  CONST OutlineBackcolor = 2
-  CONST OutlineForecolor = 15
-
-  '
-  ' Set the color of the outline
-  '
-  COLOR OutlineForecolor, OutlineBackcolor
-
-  '
-  ' Draw upper-left corner
-  '
-  LOCATE sy%, sx%
-  PRINT CHR$(218);
-  PRINT CHR$(196);
-
-  LOCATE sy% + 1, sx%
-  PRINT CHR$(179);
- 
-  '
-  ' Draw lower-left corner
-  '
-  LOCATE sy% + win(wid%).sizeY, sx%
-  PRINT CHR$(179);
-  LOCATE sy% + win(wid%).sizeY + 1, sx%
-  PRINT CHR$(192); CHR$(196);
-
-  '
-  ' Draw upper-right corner
-  '
-  LOCATE sy%, sx% + win(wid%).sizeX
-  PRINT CHR$(196); CHR$(191);
-  LOCATE sy% + 1, sx% + win(wid%).sizeX + 1
-  PRINT CHR$(179);
-
-  '
-  ' Draw lower-right corner
-  '
-  LOCATE sy% + win(wid%).sizeY, sx% + win(wid%).sizeX + 1
-  PRINT CHR$(179);
-  LOCATE sy% + win(wid%).sizeY + 1, sx% + win(wid%).sizeX
-  PRINT CHR$(196); CHR$(217);
-
-END SUB
-
-SUB WinDrawOutline2 (wid%, sx%, sy%)
-
-  WinDrawOutline1 wid%, sx%, sy%
-  
 END SUB
 
 SUB WinDrawSeparator (wid%, fid%)
 
   SELECT CASE win(wid%).style
     CASE 0
-      WinDrawSeparator0 wid%, fid%, 0, 0, WinStyle0.Forecolor, WinStyle0.Backcolor
+      WinDrawSeparator0 wid%, fid%, WinStyle0.Forecolor, WinStyle0.Backcolor
     CASE 1
       WinDrawSeparator1 wid%, fid%, WinStyle1.Forecolor, WinStyle1.Backcolor
     CASE 2
@@ -3357,7 +3244,7 @@ SUB WinDrawSeparator (wid%, fid%)
 
 END SUB
 
-SUB WinDrawSeparator0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%)
+SUB WinDrawSeparator0 (wid%, fid%, fc%, bc%)
 
   DIM sx AS INTEGER
   DIM sy AS INTEGER
@@ -3368,8 +3255,8 @@ SUB WinDrawSeparator0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%)
     '
     ' Horizontal separator
     '
-    sx = win(wid%).posX + offsetX%
-    sy = win(wid%).posY + fld(wid%, fid%).offsetY + offsetY%
+    sx = win(wid%).posX
+    sy = win(wid%).posY + fld(wid%, fid%).offsetY
     LOCATE sy, sx
     PRINT STRING$(win(wid%).sizeX, 196);
 
@@ -3380,10 +3267,10 @@ SUB WinDrawSeparator0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%)
     ' Vertical separator
     '
    
-    sx = win(wid%).posX + fld(wid%, fid%).offsetX + offsetX%
+    sx = win(wid%).posX + fld(wid%, fid%).offsetX
 
     FOR sy = 1 TO win(wid%).sizeY
-      LOCATE sy + win(wid%).posY - 1 + offsetY%, sx
+      LOCATE sy + win(wid%).posY - 1, sx
       PRINT CHR$(179);
     NEXT
 
@@ -3393,8 +3280,8 @@ SUB WinDrawSeparator0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%)
     '
     ' Intersection
     '
-    sx = win(wid%).posX + fld(wid%, fid%).offsetX + offsetX%
-    sy = win(wid%).posY + fld(wid%, fid%).offsetY + offsetY%
+    sx = win(wid%).posX + fld(wid%, fid%).offsetX
+    sy = win(wid%).posY + fld(wid%, fid%).offsetY
 
     LOCATE sy, sx
     PRINT CHR$(197);
@@ -3411,14 +3298,14 @@ SUB WinDrawSeparator1 (wid%, fid%, fc%, bc%)
   DIM sx AS INTEGER
   DIM sy AS INTEGER
 
-  WinDrawSeparator0 wid%, fid%, 1, 1, fc%, bc%
+  WinDrawSeparator0 wid%, fid%, fc%, bc%
 
   IF fld(wid%, fid%).offsetX > 0 THEN
     '
     ' Top border
     '
-    sx = win(wid%).posX + fld(wid%, fid%).offsetX + 1
-    sy = win(wid%).posY
+    sx = win(wid%).posX + fld(wid%, fid%).offsetX
+    sy = win(wid%).posY - 1
 
     LOCATE sy, sx
     PRINT CHR$(194);
@@ -3426,7 +3313,7 @@ SUB WinDrawSeparator1 (wid%, fid%, fc%, bc%)
     '
     ' Bottom border
     '
-    sy = win(wid%).posY + win(wid%).sizeY + 1
+    sy = win(wid%).posY + win(wid%).sizeY
     LOCATE sy, sx
     PRINT CHR$(193);
 
@@ -3436,8 +3323,8 @@ SUB WinDrawSeparator1 (wid%, fid%, fc%, bc%)
     '
     ' Left border
     '
-    sx = win(wid%).posX
-    sy = win(wid%).posY + fld(wid%, fid%).offsetY + 1
+    sx = win(wid%).posX - 1
+    sy = win(wid%).posY + fld(wid%, fid%).offsetY
 
     LOCATE sy, sx
     PRINT CHR$(195);
@@ -3445,7 +3332,7 @@ SUB WinDrawSeparator1 (wid%, fid%, fc%, bc%)
     '
     ' Right border
     '
-    sx = win(wid%).posX + win(wid%).sizeX + 1
+    sx = win(wid%).posX + win(wid%).sizeX
     LOCATE sy, sx
     PRINT CHR$(180);
 
@@ -3466,21 +3353,21 @@ SUB WinDrawText (wid%, fid%)
   SELECT CASE win(wid%).style
   
     CASE 0:
-      WinDrawText0 wid%, fid%, 0, 0, WinStyle0.Forecolor, WinStyle0.Backcolor, WinStyle0.SelectedForecolor, WinStyle0.SelectedBackcolor
+      WinDrawText0 wid%, fid%, WinStyle0.Forecolor, WinStyle0.Backcolor, WinStyle0.SelectedForecolor, WinStyle0.SelectedBackcolor
 
     CASE 1:
-      WinDrawText1 wid%, fid%
+      WinDrawText0 wid%, fid%, WinStyle1.Forecolor, WinStyle1.Backcolor, WinStyle1.SelectedForecolor, WinStyle1.SelectedBackcolor
 
     CASE 2:
-      WinDrawText2 wid%, fid%
+      WinDrawText0 wid%, fid%, WinStyle2.Forecolor, WinStyle2.Backcolor, WinStyle2.SelectedForecolor, WinStyle2.SelectedBackcolor
 
   END SELECT
 
 END SUB
 
-SUB WinDrawText0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%, sfc%, sbc%)
+SUB WinDrawText0 (wid%, fid%, fc%, bc%, sfc%, sbc%)
   '
-  ' Draws the field text using the specified colors, moved by the offset
+  ' Draws the field text using the specified colors
   '
 
   Assert wid% > 0, "WinDrawText0", "wid cannot be 0"
@@ -3504,8 +3391,8 @@ SUB WinDrawText0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%, sfc%, sbc%)
   '
   ' Calculate the screen coordinates of the field
   '
-  sx = outoffx% + win(wid%).posX + offsetX%
-  sy = outoffy% + win(wid%).posY + offsetY%
+  sx = win(wid%).posX + outoffx%
+  sy = win(wid%).posY + outoffy%
   LOCATE sy, sx
  
   IF win(wid%).selected = fid% THEN
@@ -3516,22 +3403,6 @@ SUB WinDrawText0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%, sfc%, sbc%)
 
   PRINT outtext$;
    
-END SUB
-
-SUB WinDrawText1 (wid%, fid%)
-  '
-  ' Draws the text of the field using style #1
-  '
-  WinDrawText0 wid%, fid%, 1, 1, WinStyle1.Forecolor, WinStyle1.Backcolor, WinStyle1.SelectedForecolor, WinStyle1.SelectedBackcolor
-
-END SUB
-
-SUB WinDrawText2 (wid%, fid%)
-  '
-  ' Draws the text of the field using style #2
-  '
-  WinDrawText0 wid%, fid%, 1, 1, WinStyle2.Forecolor, WinStyle2.Backcolor, WinStyle2.SelectedForecolor, WinStyle2.SelectedBackcolor
-
 END SUB
 
 FUNCTION WinExpandField$ (wid%, fid%)
@@ -4056,18 +3927,6 @@ FUNCTION WinMapKey% (wid%, pressed$)
     CASE CHR$(0) + CHR$(ScanCode.Up)
       WinMapKey% = WinAction.SelectPrevious
 
-    CASE CHR$(Control.D)
-      WinMapKey% = WinAction.MoveRight
-
-    CASE CHR$(Control.E)
-      WinMapKey% = WinAction.MoveUp
-
-    CASE CHR$(Control.S)
-      WinMapKey% = WinAction.MoveLeft
-
-    CASE CHR$(Control.X)
-      WinMapKey% = WinAction.MoveDown
-
     CASE "?", "/"
       WinMapKey = WinAction.Help
 
@@ -4387,18 +4246,6 @@ SUB WinRun (wid%, result AS WinResultType)
           WinRun win(wid%).helpWid, result
         END IF
 
-      CASE WinAction.MoveDown
-        WinRunMove wid%, 0, 1
-
-      CASE WinAction.MoveLeft
-        WinRunMove wid%, -1, 0
-
-      CASE WinAction.MoveRight
-        WinRunMove wid%, 1, 0
-
-      CASE WinAction.MoveUp
-        WinRunMove wid%, 0, -1
-
       CASE WinAction.OpenPopup
         nopopups = False
 
@@ -4423,105 +4270,6 @@ SUB WinRun (wid%, result AS WinResultType)
 
 END SUB
 
-SUB WinRunMove (wid%, bumpX%, bumpY%)
-
-  Assert wid% > 0, "WinMove", "wid cannot be 0"
-  Assert winstacked > 0, "WinMove", "no windows"
-  Assert winstack(winstacked).wid = wid%, "WinMove", "Top window only"
-
-  DIM minX    AS INTEGER
-  DIM minY    AS INTEGER
-  DIM maxX    AS INTEGER
-  DIM maxY    AS INTEGER
-  DIM pressed AS STRING
-  DIM toX     AS INTEGER
-  DIM toY     AS INTEGER
-
-  minX = 1
-  minY = 1
-  maxX = 80 - WinGetOuterSizeX(wid%) + 1
-  maxY = 24 - WinGetOuterSizeY(wid%) + 1
-
-  '
-  ' Get the starting location of the window
-  '
-  toX = win(wid%).posX + bumpX%
-  toY = win(wid%).posY + bumpY%
-
-  IF toX < minX THEN toX = minX
-  IF toX > maxX THEN toX = maxX
-  IF toY < minY THEN toY = minY
-  IF toY > maxY THEN toY = maxY
-
-  DO
-   
-    '
-    ' Reset the page
-    '
-    PCOPY winstack(winstacked).backpage, winstack(winstacked).workpage
-
-    '
-    ' Draw the outline and wait for a keyboard command
-    '
-    WinDrawOutline wid%, toX, toY
-    pressed = GetKey$
-
-    SELECT CASE pressed
-
-      CASE CHR$(ASCII.Return)
-        '
-        ' Enter (final position selected)
-        '
-        win(wid%).posX = toX
-        win(wid%).posY = toY
-
-        '
-        ' Restore the display page
-        '
-        WinRefreshWindow wid%
-        EXIT SUB
-     
-      CASE CHR$(Control.D), CHR$(0) + CHR$(ScanCode.Right)
-        '
-        ' Move right
-        '
-        toX = toX + 1
-        IF toX > maxX THEN toX = maxX
-
-      CASE CHR$(Control.E), CHR$(0) + CHR$(ScanCode.Up)
-        '
-        ' Move Up
-        '
-        toY = toY - 1
-        IF toY < minY THEN toY = minY
-     
-      CASE CHR$(Control.S), CHR$(0) + CHR$(ScanCode.Left)
-        '
-        ' Move Left
-        '
-        toX = toX - 1
-        IF toX < minX THEN toX = minX
-
-      CASE CHR$(Control.X), CHR$(0) + CHR$(ScanCode.Down)
-        '
-        ' Move Down
-        '
-        toY = toY + 1
-        IF toY > maxY THEN toY = maxY
-
-      CASE CHR$(ASCII.Escape)
-        '
-        ' Escape (restore original location)
-        '
-        toX = win(wid%).posX
-        toY = win(wid%).posY
-   
-    END SELECT
-
-  LOOP
-
-END SUB
-
 SUB WinRunName (idname$)
  
   DIM wid AS INTEGER
@@ -4533,39 +4281,6 @@ SUB WinRunName (idname$)
   WinRun wid, result
 
 END SUB
-
-FUNCTION WinScreenX% (wid%, offsetX%)
- 
-  SELECT CASE win(wid%).style
-   
-    CASE 0:
-      WinScreenX% = win(wid%).posX + offsetX%
-
-    CASE 1, 2:
-      WinScreenX% = win(wid%).posX + offsetX% + 1
-
-    CASE ELSE
-      AssertFail "WinScreenX", "Unknown style"
-
-  END SELECT
-
-END FUNCTION
-
-FUNCTION WinScreenY% (wid%, offsetY%)
-
-  SELECT CASE win(wid%).style
-    CASE 0:
-      WinScreenY% = win(wid%).posY + offsetY%
-
-    CASE 1, 2:
-      WinScreenY% = win(wid%).posY + offsetY% + 1
-
-    CASE ELSE
-      AssertFail "WinScreenY", "Unknown style"
-
-  END SELECT
-
-END FUNCTION
 
 SUB WinSelect (wid%, fid%)
   '
