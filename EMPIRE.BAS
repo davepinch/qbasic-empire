@@ -37,8 +37,8 @@ TYPE FieldType
   childWid AS INTEGER  ' TODO: add nparam and combine these two
   cid      AS INTEGER
   flags    AS INTEGER
-  posX     AS INTEGER
-  posY     AS INTEGER
+  offsetX  AS INTEGER
+  offsetY  AS INTEGER
   sizeX    AS INTEGER
   value    AS INTEGER
 END TYPE
@@ -180,7 +180,7 @@ DECLARE FUNCTION UI.RunNebula% (aid AS INTEGER)
 '
 DECLARE FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$, value%)
 DECLARE FUNCTION WinAddSeparator% (wid%, posX%, posY%)
-DECLARE FUNCTION WinClipText% (wid%, fid%, outposx%, outposy%, outsizeX%, outtext$)
+DECLARE FUNCTION WinClipText% (wid%, fid%, outposx%, outposy%, outsizex%, outtext$)
 DECLARE FUNCTION WinGetText$ (wid%, fid%)
 DECLARE FUNCTION WinCreate% ()
 DECLARE FUNCTION WinCreateEx% (style%, posX%, posY%, sizeX%, sizeY%)
@@ -518,14 +518,14 @@ DATA     "Text", " Select an option to get started... "
 DATA   "EndLabel"
 DATA   "Button"
 DATA     "Command", "NewGame"
-DATA     "PosX", 14
-DATA     "PosY", 3
+DATA     "OffsetX", 12
+DATA     "OffsetY", 2
 DATA     "Text", " New Game "
 DATA   "EndButton"
 DATA   "Button"
 DATA     "Command", "EndGame"
-DATA     "PosX", 14
-DATA     "PosY", 4
+DATA     "OffsetX", 12
+DATA     "OffsetY", 3
 DATA     "Text", " End Game "
 DATA   "EndButton"
 DATA "EndWindow"
@@ -537,15 +537,15 @@ DATA   "PosX", 1
 DATA   "PosY", 2
 DATA   "Button"
 DATA     "Command", "About"
-DATA     "PosX", 1
-DATA     "PosY", 1
+DATA     "OffsetX", 0
+DATA     "OffsetY", 0
 DATA     "SizeX", -1
 DATA     "Text", " About... "
 DATA   "EndButton"
 DATA   "Button"
 DATA     "Command", "EndGame"
-DATA     "PosX", 1
-DATA     "PosY", 2
+DATA     "OffsetX", 0
+DATA     "OffsetY", 1
 DATA     "Text", " Exit Game "
 DATA   "EndButton"
 DATA "EndWindow"
@@ -558,40 +558,46 @@ DATA   "PosY", 2
 DATA   "SizeX", 20
 DATA   "Button"
 DATA     "Command", "ViewAtlas"
-DATA     "PosY", 1
+DATA     "OffsetY", 0
 DATA     "SizeX", -1
 DATA     "Text", " Show atlas "
 DATA   "EndButton"
 DATA   "Button"
 DATA     "Command", "ViewTable"
-DATA     "PosY", 2
+DATA     "OffsetY", 1
 DATA     "SizeX", -1
 DATA     "Text", " Show table"
 DATA   "EndButton"
 DATA   "Button"
 DATA     "Command", "ViewInbox"
-DATA     "PosY", 3
+DATA     "OffsetY", 2
 DATA     "SizeX", -1
 DATA     "Text", " Show inbox"
 DATA   "EndButton"
-DATA   "-"
+DATA   "Separator"
+DATA     "OffsetY", 3
+DATA   "EndSeparator"
 DATA   "Button"
 DATA     "Command", "ReplotBand"
+DATA     "OffsetY", 4
 DATA     "SizeX", -1
 DATA     "Text", " Replot banded"
 DATA   "EndButton"
 DATA   "Button"
 DATA     "Command", "ReplotCluster"
+DATA     "OffsetY", 5
 DATA     "SizeX", -1
 DATA     "Text", " Replot clustered"
 DATA   "EndButton"
 DATA   "Button"
 DATA     "Command", "ReplotManual"
+DATA     "OffsetY", 6
 DATA     "SizeX", -1
 DATA     "Text", " Replot manually"
 DATA   "EndButton"
 DATA   "Button"
 DATA     "Command", "ReplotRandom"
+DATA     "OffsetY", 7
 DATA     "SizeX", -1
 DATA     "Text", " Replot randomly"
 DATA   "EndButton"
@@ -605,8 +611,8 @@ DATA   "PosY", 2
 DATA   "SizeX", 20
 DATA   "Button"
 DATA     "Command", "OptionAlerts"
-DATA     "PosX", 1
-DATA     "PosY", 1
+DATA     "OffsetX", 0
+DATA     "OffsetY", 0
 DATA     "SizeX", -1
 DATA     "Text", " Alerts"
 DATA   "EndButton"
@@ -617,9 +623,13 @@ DATA   "Name", "DialogAlerts"
 DATA   "PosX", 19
 DATA   "PosY", 9
 DATA   "Label"
+DATA     "OffsetX", 0
+DATA     "OffsetY", 0
 DATA     "Text", "Do you wish to sound alerts?"
 DATA   "EndLabel"
 DATA   "Boolean"
+DATA     "OffsetX", 0
+DATA     "OffsetY", 1
 DATA     "SizeX", -1
 DATA     "Text", "Yes"
 DATA   "EndBoolean"
@@ -631,11 +641,11 @@ DATA   "PosX", 1
 DATA   "PosY", 5
 DATA   "Style", 2
 DATA   "Label"
-DATA     "PosY", 1
+DATA     "OffsetY", 0
 DATA     "Text", "   The Galactic Empire   "
 DATA   "EndLabel"
 DATA   "Label"
-DATA     "PosY", 2
+DATA     "OffsetY", 1
 DATA     "Text", " (C) 1992 David J Pinch "
 DATA   "EndLabel"
 DATA "EndWindow"
@@ -649,25 +659,25 @@ DATA   "SizeY", 1
 DATA   "Style", 0
 DATA   "Popup"
 DATA     "Child", "FileMenu"
-DATA     "PosX", 1
-DATA     "PosY", 1
+DATA     "OffsetX", 0
+DATA     "OffsetY", 0
 DATA     "Text", " FILE "
 DATA   "EndPopup"
 DATA   "Popup"
 DATA     "Child", "ViewMenu"
-DATA     "PosX", 7
-DATA     "PosY", 1
+DATA     "OffsetX", 6
+DATA     "OffsetY", 0
 DATA     "Text", " VIEW "
 DATA   "EndPopup"
 DATA   "Popup"
 DATA     "Child", "OptionsMenu"
-DATA     "PosX", 13
-DATA     "PosY", 1
+DATA     "OffsetX", 12
+DATA     "OffsetY", 0
 DATA     "Text", " OPTIONS "
 DATA   "EndPopup"
 DATA   "Button"
-DATA     "PosX", 76
-DATA     "PosY", 1
+DATA     "OffsetX", 75
+DATA     "OffsetY", 0
 DATA     "Text", " END "
 DATA     "Command", "EndGame"
 DATA   "EndButton"
@@ -681,12 +691,12 @@ DATA   "SizeX", 61
 DATA   "SizeY", 19
 DATA   "Style", 2
 DATA   "Separator"
-DATA     "PosX", 21
-DATA     "PosY", 0
+DATA     "OffsetX", 20
+DATA     "OffsetY", 0
 DATA   "EndSeparator"
 DATA   "File"
-DATA     "PosX", 22
-DATA     "PosY", 1
+DATA     "OffsetX", 21
+DATA     "OffsetY", 0
 DATA     "SizeX", 38
 DATA     "BoundText", "MSG{sel:Value}.PCB"
 DATA   "EndFile"
@@ -1904,12 +1914,11 @@ SUB InboxAdd (subject AS STRING, value AS INTEGER)
   DIM wid AS INTEGER
   DIM fid AS INTEGER
  
-  ' HACK: determine y position
   SHARED posY AS INTEGER
-  posY = posY + 1
 
   wid = WinGetWid("Inbox")
-  fid = WinAddButton(wid, 1, posY, 20, " " + subject, value)
+  fid = WinAddButton(wid, 0, posY, 20, " " + subject, value)
+  posY = posY + 1
 
 END SUB
 
@@ -2763,7 +2772,7 @@ SUB UI.SetPage (page AS INTEGER)
 
 END SUB
 
-FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$, value%)
+FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value%)
 
   Assert wid% > 0, "WinAddButton", "wid cannot be 0"
 
@@ -2773,8 +2782,8 @@ FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$, value%)
   fld(wid%, fid%).childWid = 0
   fld(wid%, fid%).cid = 0
   fld(wid%, fid%).kind = FieldKind.Button
-  fld(wid%, fid%).posX = posX%
-  fld(wid%, fid%).posY = posY%
+  fld(wid%, fid%).offsetX = offsetX%
+  fld(wid%, fid%).offsetY = offsetY%
   fld(wid%, fid%).sizeX = sizeX%
   fld(wid%, fid%).value = value%
   txt(wid%, fid%) = text$
@@ -2783,7 +2792,7 @@ FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$, value%)
 
 END FUNCTION
 
-FUNCTION WinAddSeparator% (wid%, posX%, posY%)
+FUNCTION WinAddSeparator% (wid%, offsetX%, offsetY%)
 
   Assert wid% > 0, "WinAddSeparator", "wid cannot be 0"
 
@@ -2793,9 +2802,11 @@ FUNCTION WinAddSeparator% (wid%, posX%, posY%)
   fld(wid%, fid%).kind = FieldKind.Separator
   fld(wid%, fid%).childWid = 0
   fld(wid%, fid%).cid = 0
-  fld(wid%, fid%).posX = posX%
-  fld(wid%, fid%).posY = posY%
+  fld(wid%, fid%).flags = 0
+  fld(wid%, fid%).offsetX = offsetX%
+  fld(wid%, fid%).offsetY = offsetY%
   fld(wid%, fid%).sizeX = 0
+  fld(wid%, fid%).value = 0
 
   WinAddSeparator% = fid%
 
@@ -2811,6 +2822,7 @@ SUB WinAutoSize (wid%)
   DIM fid%
   DIM fieldx2%
   DIM fieldy2%
+  DIM fieldSizeX%
   DIM highestx%
   DIM highesty%
 
@@ -2819,20 +2831,16 @@ SUB WinAutoSize (wid%)
 
   FOR fid% = 1 TO win(wid%).fields
  
-    '
-    ' Get the field size (default to text size if autosizing).
-    ' Size 0 means use text size; size -1 means use window size.
-    '
-    fieldx2% = fld(wid%, fid%).sizeX
-    IF fieldx2% = 0 OR fieldx2% = -1 THEN
-      fieldx2% = LEN(txt(wid%, fid%))
+    fieldSizeX% = fld(wid%, fid%).sizeX
+    IF fieldSizeX% < 1 THEN
+      fieldSizeX% = LEN(txt(wid%, fid%))
     END IF
 
     '
     ' Get the coordinates of the lower-right corner
     '
-    fieldx2% = fld(wid%, fid%).posX + fieldx2% - 1
-    fieldy2% = fld(wid%, fid%).posY
+    fieldx2% = fld(wid%, fid%).offsetX + fieldSizeX%
+    fieldy2% = fld(wid%, fid%).offsetY + 1
 
     IF fieldx2% > highestx% THEN highestx% = fieldx2%
     IF fieldy2% > highesty% THEN highesty% = fieldy2%
@@ -2849,7 +2857,7 @@ SUB WinAutoSize (wid%)
 
 END SUB
 
-FUNCTION WinClipText% (wid%, fid%, outposx%, outposy%, outsizeX%, outtext$)
+FUNCTION WinClipText% (wid%, fid%, outoffx%, outoffy%, outsizex%, outtext$)
   '
   ' Returns True if any portion of the field text is visible. If True,
   ' the starting position, clipped size, and clipped text is returned.
@@ -2857,27 +2865,28 @@ FUNCTION WinClipText% (wid%, fid%, outposx%, outposy%, outsizeX%, outtext$)
   '
 
   Assert wid% > 0, "WinClipText", "wid cannot be 0"
+  Assert fid% > 0, "WinClipText", "fid cannot be 0"
 
   '
   ' Get the size of the field
   '
-  outsizeX% = fld(wid%, fid%).sizeX
-  IF outsizeX% = -1 THEN
+  outsizex% = fld(wid%, fid%).sizeX
+  IF outsizex% = -1 THEN
     '
     ' A size of -1 means the window size
     '
-    outsizeX% = win(wid%).sizeX
+    outsizex% = win(wid%).sizeX
 
   ELSE
 
-    IF outsizeX% = 0 THEN
+    IF outsizex% = 0 THEN
       '
       ' A size of 0 means to use the size of the text
       '
-      outsizeX% = LEN(txt(wid%, fid%))
+      outsizex% = LEN(txt(wid%, fid%))
     END IF
 
-    IF outsizeX% > win(wid%).sizeX THEN
+    IF outsizex% > win(wid%).sizeX THEN
       '
       ' The field cannot be larger than the window
       '
@@ -2886,7 +2895,7 @@ FUNCTION WinClipText% (wid%, fid%, outposx%, outposy%, outsizeX%, outtext$)
 
   END IF
 
-  IF outsizeX% < 1 THEN
+  IF outsizex% < 1 THEN
     '
     ' No visible size
     '
@@ -2895,52 +2904,44 @@ FUNCTION WinClipText% (wid%, fid%, outposx%, outposy%, outsizeX%, outtext$)
   END IF
 
   '
-  ' Get the position of the field.
+  ' Get the offset of the field.
   '
-  outposx% = fld(wid%, fid%).posX
-  outposy% = fld(wid%, fid%).posY
-  IF outposx% = 0 THEN
-    '
-    ' Default to the first column
-    '
-    outposx% = 1
-  END IF
+  outoffx% = fld(wid%, fid%).offsetX
+  outoffy% = fld(wid%, fid%).offsetY
 
-  IF outposx% > win(wid%).sizeX THEN
+  IF outoffx% >= win(wid%).sizeX THEN
     '
     ' No portion visible
     '
     WinClipText% = False
     EXIT FUNCTION
  
-  ELSEIF outposx% > 0 THEN
+  ELSEIF outoffx% >= 0 THEN
     '
     ' The field starts within the window but might be clipped.
-    ' The value outposX + outsizeX is the index of the first
-    ' character after the field.
     '
-    DIM last%
-    LET last% = outposx% + outsizeX% - 1
+    DIM lastCharIndex%
+    LET lastCharIndex% = outoffx% + outsizex% - 1
 
-    IF last% > win(wid%).sizeX THEN
-      outsizeX% = last% - win(wid%).sizeX
+    IF lastCharIndex% > win(wid%).sizeX THEN
+      outsizex% = lastCharIndex% - win(wid%).sizeX
     END IF
 
     '
     ' Get the text value and pad/clip
     '
     outtext$ = txt(wid%, fid%)
-    IF LEN(outtext$) < outsizeX% THEN
+    IF LEN(outtext$) < outsizex% THEN
       '
       ' The text value is shorter than the field size
       '
-      outtext$ = outtext$ + STRING$(outsizeX% - LEN(outtext$), " ")
+      outtext$ = outtext$ + STRING$(outsizex% - LEN(outtext$), " ")
 
-    ELSEIF LEN(outtext$) > outsizeX% THEN
+    ELSEIF LEN(outtext$) > outsizex% THEN
       '
       ' The text value is longer than the field size
       '
-      outtext$ = LEFT$(outtext$, outsizeX%)
+      outtext$ = LEFT$(outtext$, outsizex%)
    
     END IF
 
@@ -3245,8 +3246,8 @@ SUB WinDrawFile (wid%, fid%)
     EXIT SUB
   END IF
 
-  sx = WinScreenX(wid%, fld(wid%, fid%).posX)
-  sy = WinScreenY(wid%, fld(wid%, fid%).posY)
+  sx = WinScreenX(wid%, fld(wid%, fid%).offsetX)
+  sy = WinScreenY(wid%, fld(wid%, fid%).offsetY)
 
   DrawFileAt filename, sx, sy
 
@@ -3363,23 +3364,23 @@ SUB WinDrawSeparator0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%)
 
   COLOR fc%, bc%
  
-  IF fld(wid%, fid%).posY > 0 THEN
+  IF fld(wid%, fid%).offsetY > 0 THEN
     '
     ' Horizontal separator
     '
     sx = win(wid%).posX + offsetX%
-    sy = win(wid%).posY + fld(wid%, fid%).posY - 1 + offsetY%
+    sy = win(wid%).posY + fld(wid%, fid%).offsetY + offsetY%
     LOCATE sy, sx
     PRINT STRING$(win(wid%).sizeX, 196);
 
   END IF
 
-  IF fld(wid%, fid%).posX > 0 THEN
+  IF fld(wid%, fid%).offsetX > 0 THEN
     '
     ' Vertical separator
     '
    
-    sx = win(wid%).posX + fld(wid%, fid%).posX - 1 + offsetX%
+    sx = win(wid%).posX + fld(wid%, fid%).offsetX + offsetX%
 
     FOR sy = 1 TO win(wid%).sizeY
       LOCATE sy + win(wid%).posY - 1 + offsetY%, sx
@@ -3388,12 +3389,12 @@ SUB WinDrawSeparator0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%)
 
   END IF
 
-  IF fld(wid%, fid%).posX > 0 AND fld(wid%, fid%).posY > 0 THEN
+  IF fld(wid%, fid%).offsetX > 0 AND fld(wid%, fid%).offsetY > 0 THEN
     '
     ' Intersection
     '
-    sx = win(wid%).posX + fld(wid%, fid%).posX - 1 + offsetX%
-    sy = win(wid%).posY + fld(wid%, fid%).posY - 1 + offsetY%
+    sx = win(wid%).posX + fld(wid%, fid%).offsetX + offsetX%
+    sy = win(wid%).posY + fld(wid%, fid%).offsetY + offsetY%
 
     LOCATE sy, sx
     PRINT CHR$(197);
@@ -3412,11 +3413,11 @@ SUB WinDrawSeparator1 (wid%, fid%, fc%, bc%)
 
   WinDrawSeparator0 wid%, fid%, 1, 1, fc%, bc%
 
-  IF fld(wid%, fid%).posX > 0 THEN
+  IF fld(wid%, fid%).offsetX > 0 THEN
     '
     ' Top border
     '
-    sx = win(wid%).posX + fld(wid%, fid%).posX
+    sx = win(wid%).posX + fld(wid%, fid%).offsetX + 1
     sy = win(wid%).posY
 
     LOCATE sy, sx
@@ -3431,12 +3432,12 @@ SUB WinDrawSeparator1 (wid%, fid%, fc%, bc%)
 
   END IF
 
-  IF fld(wid%, fid%).posY > 0 THEN
+  IF fld(wid%, fid%).offsetY > 0 THEN
     '
     ' Left border
     '
     sx = win(wid%).posX
-    sy = win(wid%).posY + fld(wid%, fid%).posY
+    sy = win(wid%).posY + fld(wid%, fid%).offsetY + 1
 
     LOCATE sy, sx
     PRINT CHR$(195);
@@ -3488,12 +3489,12 @@ SUB WinDrawText0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%, sfc%, sbc%)
   '
   ' Get the position of the field
   '
-  DIM outposx%
-  DIM outposy%
-  DIM outsizeX%
+  DIM outoffx%
+  DIM outoffy%
+  DIM outsizex%
   DIM outtext$
 
-  IF NOT WinClipText(wid%, fid%, outposx%, outposy%, outsizeX%, outtext$) THEN
+  IF NOT WinClipText(wid%, fid%, outoffx%, outoffy%, outsizex%, outtext$) THEN
     '
     ' The text is not visible
     '
@@ -3503,8 +3504,8 @@ SUB WinDrawText0 (wid%, fid%, offsetX%, offsetY%, fc%, bc%, sfc%, sbc%)
   '
   ' Calculate the screen coordinates of the field
   '
-  sx = outposx% + win(wid%).posX - 1 + offsetX%
-  sy = outposy% + win(wid%).posY - 1 + offsetY%
+  sx = outoffx% + win(wid%).posX + offsetX%
+  sy = outoffy% + win(wid%).posY + offsetY%
   LOCATE sy, sx
  
   IF win(wid%).selected = fid% THEN
@@ -3865,11 +3866,11 @@ FUNCTION WinLoadField% (wid%, kind%)
         READ block$
         fld(wid%, fid%).cid = WinParseCommand(block$)
 
-      CASE "PosX"
-        READ fld(wid%, fid%).posX
+      CASE "OffsetX"
+        READ fld(wid%, fid%).offsetX
 
-      CASE "PosY"
-        READ fld(wid%, fid%).posY
+      CASE "OffsetY"
+        READ fld(wid%, fid%).offsetY
 
       CASE "SizeX"
         READ fld(wid%, fid%).sizeX
@@ -3888,33 +3889,6 @@ FUNCTION WinLoadField% (wid%, kind%)
   LOOP
  
   fld(wid%, fid%).kind = kind%
-
-  IF fld(wid%, fid%).posX = 0 THEN
-    '
-    ' If no x position is specified, default to 1.
-    ' Expect for separators, in which x>0 indicates a
-    ' vertical separator at the specified x position.
-    '
-    IF kind% <> FieldKind.Separator THEN
-      fld(wid%, fid%).posX = 1
-    END IF
-
-  END IF
-
-  IF fld(wid%, fid%).posY = 0 THEN
-    '
-    ' If no y position is specified, stack under the last field.
-    '
-    IF kind% = FieldKind.Separator THEN
-      '
-      ' 0 is OK
-      '
-    ELSEIF fid% = 1 THEN
-      fld(wid%, fid%).posY = 1
-    ELSE
-      fld(wid%, fid%).posY = fld(wid%, fid% - 1).posY + 1
-    END IF
-  END IF
 
   IF fld(wid%, fid%).sizeX = 0 THEN
     '
@@ -3984,15 +3958,6 @@ SUB WinLoadWindow
       CASE "Boolean"
         fid% = WinLoadField(wid%, FieldKind.Boolean)
      
-      CASE "-"
-        fid% = WinCreateField%(wid%)
-        fld(wid%, fid%).kind = FieldKind.Separator
-        IF fid% = 1 THEN
-          fld(wid%, fid%).posY = 1
-        ELSE
-          fld(wid%, fid%).posY = fld(wid%, fid% - 1).posY + 1
-        END IF
-
       CASE ELSE
         AssertFail "WinLoadWindow", "Unexpected token: " + block$
 
@@ -4569,15 +4534,15 @@ SUB WinRunName (idname$)
 
 END SUB
 
-FUNCTION WinScreenX% (wid%, x%)
+FUNCTION WinScreenX% (wid%, offsetX%)
  
   SELECT CASE win(wid%).style
    
     CASE 0:
-      WinScreenX% = win(wid%).posX + x% - 1
+      WinScreenX% = win(wid%).posX + offsetX%
 
     CASE 1, 2:
-      WinScreenX% = win(wid%).posX + x%
+      WinScreenX% = win(wid%).posX + offsetX% + 1
 
     CASE ELSE
       AssertFail "WinScreenX", "Unknown style"
@@ -4586,14 +4551,14 @@ FUNCTION WinScreenX% (wid%, x%)
 
 END FUNCTION
 
-FUNCTION WinScreenY% (wid%, y%)
+FUNCTION WinScreenY% (wid%, offsetY%)
 
   SELECT CASE win(wid%).style
     CASE 0:
-      WinScreenY% = win(wid%).posY + y% - 1
+      WinScreenY% = win(wid%).posY + offsetY%
 
     CASE 1, 2:
-      WinScreenY% = win(wid%).posY + y%
+      WinScreenY% = win(wid%).posY + offsetY% + 1
 
     CASE ELSE
       AssertFail "WinScreenY", "Unknown style"
