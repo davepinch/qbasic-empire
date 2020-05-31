@@ -36,9 +36,11 @@ TYPE FieldType
   kind     AS INTEGER
   childWid AS INTEGER  ' TODO: add nparam and combine these two
   cid      AS INTEGER
+  flags    AS INTEGER
   posX     AS INTEGER
   posY     AS INTEGER
   sizeX    AS INTEGER
+  value    AS INTEGER
 END TYPE
 
 TYPE HabitatType
@@ -49,14 +51,6 @@ TYPE HabitatType
   UI       AS STRING * 3
   label    AS STRING * 20
   title    AS STRING * 20
-END TYPE
-
-TYPE MessageType
-  '
-  ' An inbox message.
-  '
-  opened  AS INTEGER
-  subject AS STRING * 20
 END TYPE
 
 TYPE WinResultType
@@ -133,7 +127,7 @@ DECLARE SUB ExecuteOptionAlerts ()
 '
 ' Inbox* subroutines
 '
-DECLARE SUB InboxAdd (subject AS STRING)
+DECLARE SUB InboxAdd (subject AS STRING, value AS INTEGER)
 DECLARE SUB InboxInit ()
 
 '
@@ -184,12 +178,14 @@ DECLARE FUNCTION UI.RunNebula% (aid AS INTEGER)
 ' screen. Note: due to lengthly parameters in some cases, the
 ' functions are defined with data type characters instead of "AS".
 '
-DECLARE FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$)
+DECLARE FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$, value%)
 DECLARE FUNCTION WinAddSeparator% (wid%, posX%, posY%)
 DECLARE FUNCTION WinClipText% (wid%, fid%, outposx%, outposy%, outsizeX%, outtext$)
+DECLARE FUNCTION WinGetText$ (wid%, fid%)
 DECLARE FUNCTION WinCreate% ()
 DECLARE FUNCTION WinCreateEx% (style%, posX%, posY%, sizeX%, sizeY%)
 DECLARE FUNCTION WinCreateField% (wid%)
+DECLARE FUNCTION WinExpandField$ (wid%, fid%)
 DECLARE FUNCTION WinGetOuterSizeX% (wid%)
 DECLARE FUNCTION WinGetOuterSizeY% (wid%)
 DECLARE FUNCTION WinGetWid% (wname$)
@@ -197,6 +193,10 @@ DECLARE FUNCTION WinIsSelectable% (wid%, fid%)
 DECLARE FUNCTION WinLoadField% (wid%, kind%)
 DECLARE FUNCTION WinMapKey% (wid%, pressed$)
 DECLARE FUNCTION WinParseCommand% (text$)
+DECLARE FUNCTION WinParseMacro% (value$, index1%, outsel$, outval$)
+DECLARE FUNCTION WinParseSelector% (wid%, fid%, sel$)
+DECLARE FUNCTION WinScreenX% (wid%, x%)
+DECLARE FUNCTION WinScreenY% (wid%, y%)
 
 DECLARE SUB WinAutoSize (wid%)
 DECLARE SUB WinClose (wid%)
@@ -331,16 +331,20 @@ CONST Control.O = 15
 CONST Control.S = 19
 CONST Control.X = 24
 
+CONST FieldFlag.None = 0
+CONST FieldFlag.Bound = 1
+
 '
 ' Field Kinds
 '
 CONST FieldKind.None = 0
 CONST FieldKind.Boolean = 1
 CONST FieldKind.Button = 2
-CONST FieldKind.Integer = 3
-CONST FieldKind.Label = 4
-CONST FieldKind.Popup = 5
-CONST FieldKind.Separator = 6
+CONST FieldKind.File = 3
+CONST FieldKind.Integer = 4
+CONST FieldKind.Label = 5
+CONST FieldKind.Popup = 6
+CONST FieldKind.Separator = 7
 
 '
 ' Habitat UIs
@@ -474,12 +478,6 @@ DIM SHARED habitats            AS INTEGER
 DIM SHARED atlasActive AS INTEGER
 DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS INTEGER
 DIM SHARED atlasItem(1 TO 30) AS AtlasItemType
-
-'
-' Global messaging variables
-'
-DIM SHARED msg(1 TO 10) AS MessageType
-DIM SHARED msgs AS INTEGER
 
 '
 ' Global UI variables
@@ -686,6 +684,12 @@ DATA   "Separator"
 DATA     "PosX", 21
 DATA     "PosY", 0
 DATA   "EndSeparator"
+DATA   "File"
+DATA     "PosX", 22
+DATA     "PosY", 1
+DATA     "SizeX", 38
+DATA     "BoundText", "MSG{sel:Value}.PCB"
+DATA   "EndFile"
 DATA "EndWindow"
 
 DATA "EndWindows"
@@ -1154,7 +1158,7 @@ SUB AtlasNextClustered (outcx AS INTEGER, outcy AS INTEGER)
 
   DIM rx AS INTEGER
   DIM ry AS INTEGER
-
+ 
   '
   ' Finds a clustered slot
   '
@@ -1738,7 +1742,10 @@ SUB DrawText (text AS STRING)
   DIM forecolor AS INTEGER
   DIM nextAt    AS INTEGER
   DIM startAt   AS INTEGER
- 
+
+  DIM batr AS INTEGER
+  DIM fatr AS INTEGER
+
   LET startAt = 1
 
   DO
@@ -1773,9 +1780,15 @@ SUB DrawText (text AS STRING)
       '
       ' Read the color values
       '
-      backcolor = VAL("&H" + MID$(text, nextAt + 2, 1))
-      forecolor = VAL("&H" + MID$(text, nextAt + 3, 1))
-      COLOR forecolor, backcolor
+      batr = ASC(MID$(text, nextAt + 2, 1)) - 48
+      fatr = ASC(MID$(text, nextAt + 3, 1)) - 48
+      IF batr > 16 THEN batr = batr - 7
+      IF fatr > 16 THEN fatr = fatr - 7
+      COLOR fatr, batr
+
+      'backcolor = VAL("&H" + MID$(text, nextAt + 2, 1))
+      'forecolor = VAL("&H" + MID$(text, nextAt + 3, 1))
+      'COLOR forecolor, backcolor
 
       '
       ' Continue with the next character in the text
@@ -1883,23 +1896,20 @@ FUNCTION GetKey$
 
 END FUNCTION
 
-SUB InboxAdd (subject AS STRING)
+SUB InboxAdd (subject AS STRING, value AS INTEGER)
   '
   ' Adds a new message to the inbox
   '
  
-  msgs = msgs + 1
-  msg(msgs).opened = False
-  msg(msgs).subject = subject
-
-  '
-  ' Make a button for the message
-  '
   DIM wid AS INTEGER
   DIM fid AS INTEGER
+ 
+  ' HACK: determine y position
+  SHARED posY AS INTEGER
+  posY = posY + 1
 
-  LET wid = WinGetWid("Inbox")
-  LET fid = WinAddButton(wid, 1, msgs, 20, " " + subject)
+  wid = WinGetWid("Inbox")
+  fid = WinAddButton(wid, 1, posY, 20, " " + subject, value)
 
 END SUB
 
@@ -1908,9 +1918,8 @@ SUB InboxInit
   ' Initializes the mailbox to its default state
   '
  
-  msgs = 0
-  InboxAdd "Welcome 1"
-  InboxAdd "Welcome 2"
+  InboxAdd "Violation", 1
+  'InboxAdd "Get out now", 2
 
 END SUB
 
@@ -2754,7 +2763,7 @@ SUB UI.SetPage (page AS INTEGER)
 
 END SUB
 
-FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$)
+FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$, value%)
 
   Assert wid% > 0, "WinAddButton", "wid cannot be 0"
 
@@ -2767,6 +2776,7 @@ FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$)
   fld(wid%, fid%).posX = posX%
   fld(wid%, fid%).posY = posY%
   fld(wid%, fid%).sizeX = sizeX%
+  fld(wid%, fid%).value = value%
   txt(wid%, fid%) = text$
 
   WinAddButton% = fid%
@@ -3205,6 +3215,9 @@ SUB WinDrawField (wid%, fid%)
     CASE FieldKind.Button
       WinDrawText wid%, fid%
 
+    CASE FieldKind.File
+      WinDrawFile wid%, fid%
+
     CASE FieldKind.Label
       WinDrawText wid%, fid%
 
@@ -3215,6 +3228,27 @@ SUB WinDrawField (wid%, fid%)
       WinDrawText wid%, fid%
 
   END SELECT
+
+END SUB
+
+SUB WinDrawFile (wid%, fid%)
+
+  Assert wid% > 0, "WinDrawFile", "wid cannot be 0"
+  Assert fid% > 0, "WinDrawFile", "fid cannot be 0"
+
+  DIM filename AS STRING
+  DIM sx AS INTEGER
+  DIM sy AS INTEGER
+
+  filename = WinGetText$(wid%, fid%)
+  IF LEN(filename) = 0 THEN
+    EXIT SUB
+  END IF
+
+  sx = WinScreenX(wid%, fld(wid%, fid%).posX)
+  sy = WinScreenY(wid%, fld(wid%, fid%).posY)
+
+  DrawFileAt filename, sx, sy
 
 END SUB
 
@@ -3499,6 +3533,77 @@ SUB WinDrawText2 (wid%, fid%)
 
 END SUB
 
+FUNCTION WinExpandField$ (wid%, fid%)
+
+  Assert wid% > 0, "WinExpandText", "wid cannot be 0"
+  Assert fid% > 0, "WinExpandText", "fid cannot be 0"
+
+  DIM build   AS STRING   ' Built from expanded macros
+  DIM nextidx AS INTEGER  ' Index of the next {
+  DIM thisidx AS INTEGER  ' Index being checked
+  DIM textlen AS INTEGER  ' Source text length
+  DIM textval AS STRING   ' Source text
+
+  thisidx = 1
+  textval = txt(wid%, fid%)
+  textlen = LEN(textval)
+ 
+  DO WHILE thisidx < textlen
+
+    '
+    ' Find opening bracket
+    '
+    nextidx = INSTR(thisidx, textval, "{")
+    IF nextidx = 0 THEN
+      '
+      ' Append the rest of the string
+      '
+      build = build + RIGHT$(textval, textlen - thisidx + 1)
+      EXIT DO
+    END IF
+
+    '
+    ' Append the chars up to the bracket
+    '
+    build = build + MID$(textval, thisidx, nextidx - thisidx)
+
+    '
+    ' Parse the macro
+    '
+    DIM outsel AS STRING
+    DIM outval AS STRING
+    thisidx = WinParseMacro(textval, nextidx, outsel, outval)
+
+    IF thisidx = 0 THEN
+      '
+      ' Not a macro, skip over the {
+      '
+      build = build + "{"
+      thisidx = nextidx + 1
+
+    ELSE
+      '
+      ' Parse the selector
+      '
+      DIM selfid AS INTEGER
+      LET selfid = WinParseSelector(wid%, fid%, outsel)
+      IF selfid > 0 THEN
+        SELECT CASE outval
+          CASE "Text", "text"
+            build = build + txt(wid%, selfid)
+          CASE "Value", "value"
+            build = build + LTRIM$(STR$(fld(wid%, selfid).value))
+        END SELECT
+      END IF
+
+    END IF
+
+  LOOP
+
+  WinExpandField = build
+
+END FUNCTION
+
 FUNCTION WinGetOuterSizeX% (wid%)
   '
   ' Returns the outer size of the window (including the border)
@@ -3530,6 +3635,16 @@ FUNCTION WinGetOuterSizeY% (wid%)
       WinGetOuterSizeY% = win(wid%).sizeY + 2
 
   END SELECT
+
+END FUNCTION
+
+FUNCTION WinGetText$ (wid%, fid%)
+
+  IF (fld(wid%, fid%).flags AND FieldFlag.Bound) > 0 THEN
+    WinGetText$ = WinExpandField$(wid%, fid%)
+  ELSE
+    WinGetText$ = txt(wid%, fid%)
+  END IF
 
 END FUNCTION
 
@@ -3709,6 +3824,9 @@ FUNCTION WinLoadField% (wid%, kind%)
     CASE FieldKind.Boolean
       endtag$ = "EndBoolean"
 
+    CASE FieldKind.File
+      endtag$ = "EndFile"
+
     CASE FieldKind.Integer
       endtag$ = "EndInteger"
 
@@ -3735,6 +3853,10 @@ FUNCTION WinLoadField% (wid%, kind%)
       CASE endtag$
         EXIT DO
 
+      CASE "BoundText"
+        READ txt(wid%, fid%)
+        fld(wid%, fid%).flags = fld(wid%, fid%).flags OR FieldFlag.Bound
+
       CASE "Child"
         READ block$
         fld(wid%, fid%).childWid = WinGetWid(block$)
@@ -3754,6 +3876,9 @@ FUNCTION WinLoadField% (wid%, kind%)
 
       CASE "Text"
         READ txt(wid%, fid%)
+
+      CASE "Value"
+        READ fld(wid%, fid%).value
 
       CASE ELSE
         AssertFail "WinLoadField", "Unexpected token " + block$
@@ -3825,6 +3950,9 @@ SUB WinLoadWindow
 
       CASE "EndWindow"
         EXIT DO
+
+      CASE "File"
+        fid% = WinLoadField(wid%, FieldKind.File)
 
       CASE "Label"
         fid% = WinLoadField(wid%, FieldKind.Label)
@@ -4082,11 +4210,83 @@ FUNCTION WinParseCommand% (text$)
 
 END FUNCTION
 
+FUNCTION WinParseMacro% (value$, index1%, outsel$, outval$)
+
+  '
+  ' Validate starting index
+  '
+  IF index1% < 1 OR index1% > LEN(value$) THEN
+    WinParseMacro% = 0
+    EXIT FUNCTION
+  ELSEIF MID$(value$, index1%, 1) <> "{" THEN
+    WinParseMacro% = 0
+    EXIT FUNCTION
+  END IF
+
+  '
+  ' Get index of :
+  '
+  DIM index2%
+  LET index2% = INSTR(index1% + 1, value$, ":")
+  IF index2% = 0 THEN
+    WinParseMacro% = 0
+    EXIT FUNCTION
+  END IF
+
+  '
+  ' Get index of }
+  '
+  DIM index3%
+  index3% = INSTR(index2% + 1, value$, "}")
+  IF index3% = 0 THEN
+    WinParseMacro% = 0
+    EXIT FUNCTION
+  END IF
+
+  ' Value: AB{C:D}E
+  ' Index: 12345678
+
+  outsel$ = MID$(value$, index1% + 1, index2% - index1% - 1)
+  outval$ = MID$(value$, index2% + 1, index3% - index2% - 1)
+ 
+  '
+  ' Return index of next character to start parsing
+  '
+  WinParseMacro = index3% + 1
+
+END FUNCTION
+
+FUNCTION WinParseSelector% (wid%, fid%, sel$)
+ 
+  DIM selected AS INTEGER
+
+  IF sel$ = "sel" THEN
+    selected = win(wid%).selected
+  ELSEIF LEN(sel$) = 0 THEN
+    selected = fid%
+  ELSE
+    selected = VAL(sel$)
+  END IF
+
+  WinParseSelector% = selected%
+
+END FUNCTION
+
 SUB WinRefreshField (wid%, fid%)
+
+  DIM n AS INTEGER
 
   IF winstacked > 0 THEN
     IF winstack(winstacked).wid = wid% THEN
+     
       WinDrawField wid%, fid%
+   
+      FOR n = 1 TO win(wid%).fields
+        IF (fld(wid%, n).flags AND FieldFlag.Bound) > 0 THEN
+          WinDrawField wid%, n
+        END IF
+      NEXT
+
     END IF
   END IF
 
@@ -4368,6 +4568,39 @@ SUB WinRunName (idname$)
   WinRun wid, result
 
 END SUB
+
+FUNCTION WinScreenX% (wid%, x%)
+ 
+  SELECT CASE win(wid%).style
+   
+    CASE 0:
+      WinScreenX% = win(wid%).posX + x% - 1
+
+    CASE 1, 2:
+      WinScreenX% = win(wid%).posX + x%
+
+    CASE ELSE
+      AssertFail "WinScreenX", "Unknown style"
+
+  END SELECT
+
+END FUNCTION
+
+FUNCTION WinScreenY% (wid%, y%)
+
+  SELECT CASE win(wid%).style
+    CASE 0:
+      WinScreenY% = win(wid%).posY + y% - 1
+
+    CASE 1, 2:
+      WinScreenY% = win(wid%).posY + y%
+
+    CASE ELSE
+      AssertFail "WinScreenY", "Unknown style"
+
+  END SELECT
+
+END FUNCTION
 
 SUB WinSelect (wid%, fid%)
   '
