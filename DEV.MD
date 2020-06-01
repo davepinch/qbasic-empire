@@ -1,14 +1,24 @@
 
-Note: moving comments from source code to reduce size. This file will contain development tips.
+This file contains development tips.
 
 ## Implemening Commands
 
-Every user action maps to a command defined in the Command.* constants. To create a new command:
+ExecCmd(text$) is the top-level subroutine for executing simple text commands such as "Atlas". Commands are used in the following ways:
 
-1. Review the Command.* global constants and add an entry for the new command. Command values must be unique.
-  
-2. Define Command.* constants alphabetically and renumber the values whenever a new command is added. This will intentionally cause problems when code improperly uses literal command values instead of their constants. Fix any such cases so the code is immune to future value changes.
+* A menu item can specify the command to execute when the item is selected.
+* The configuration file (EMPIRE.CFG) is implemented as a sequence of commands.
 
-3. Optional. If you want reference the command in the DATA window definitions, then update WinParseCommand to translate a string name into its constant value.
-  
-4. Add an entry to the SELECT statement in the Execute() subroutine. If the implementation is a one-liner, then call the code directly in Execute. Otherwise create a new subroutine named ExecuteXXX where XXX matches the constant command name. For example, Command.About is a one-liner executed directly in Execute() whereas Command.OptionsAlert is implemented in ExecuteOptionsAlert (which is called from Execute).
+To add a new command:
+
+1. If your command is more complex than a few lines, then create a subroutine with the logic.
+2. Determine the context of your command (most likely global):
+
+* ExecCmdGlobal .............. Default 
+* ExecCmdHabitat ............. Configuring habitat properties
+* ExecCmdWindow .............. Configuring window properties
+* ExecCmdField ............... Configuring field properties
+
+3. Add an entry for the new command in the SELECT statement of the applicable subroutine. If the command requires parameters, then examine the token() array that is passed to the subroutine. token(1) contains the command name and token (2+) contains the parameters.
+
+
+

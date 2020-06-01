@@ -35,7 +35,7 @@ TYPE FieldType
   '
   kind     AS INTEGER
   childWid AS INTEGER  ' TODO: add nparam and combine these two
-  cid      AS INTEGER
+  cmdrid   AS INTEGER
   flags    AS INTEGER
   offsetX  AS INTEGER
   offsetY  AS INTEGER
@@ -56,7 +56,7 @@ END TYPE
 TYPE WinResultType
   action   AS INTEGER
   canceled AS INTEGER
-  cid      AS INTEGER
+  cmdrid   AS INTEGER
   selected AS INTEGER
 END TYPE
 
@@ -119,16 +119,15 @@ DECLARE FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS I
 ' Execute* subroutines
 '
 ' Each subroutine executes a different menu command. Review the comments
-' in the Execute(cid) function to learn how to implement a command.
+' in the Execute() function to learn how to implement a command.
 '
-DECLARE SUB Execute (cid AS INTEGER)
-DECLARE SUB ExecuteOptionAlerts ()
 DECLARE SUB ExecCmd (text AS STRING)
 DECLARE SUB ExecCmdField (ctx AS INTEGER, token() AS STRING, wid AS ANY, fid AS INTEGER)
 DECLARE SUB ExecCmdGlobal (ctx AS INTEGER, token() AS STRING, hid AS INTEGER, wid AS INTEGER)
 DECLARE SUB ExecCmdHabitat (ctx AS INTEGER, token() AS STRING, hid AS INTEGER)
 DECLARE SUB ExecCmdWindow (ctx AS INTEGER, token() AS STRING, wid AS INTEGER, fid AS INTEGER)
 DECLARE SUB ExecFile (filename AS STRING)
+DECLARE SUB ExecResource (rid AS INTEGER)
 
 '
 ' Inbox* subroutines
@@ -144,6 +143,13 @@ DECLARE SUB NebulaCreateSeq (seq() AS INTEGER, y!)
 DECLARE SUB NebulaDraw (seq() AS INTEGER)
 DECLARE SUB NebulaHarvest (seq() AS INTEGER)
 DECLARE FUNCTION NebulaLabel$ (level AS INTEGER)
+
+'
+' Resource functions for saving general text data.
+'
+DECLARE FUNCTION ResourceCreate% (value AS STRING)
+DECLARE FUNCTION ResourceGet$ (rid AS INTEGER)
+DECLARE SUB ResourceSet (rid AS INTEGER, value AS STRING)
 
 '
 ' Status* subroutines
@@ -198,7 +204,6 @@ DECLARE FUNCTION WinGetWid% (wname$)
 DECLARE FUNCTION WinIsSelectable% (wid%, fid%)
 DECLARE FUNCTION WinLoadField% (wid%, kind%)
 DECLARE FUNCTION WinMapKey% (wid%, pressed$)
-DECLARE FUNCTION WinParseCommand% (text$)
 DECLARE FUNCTION WinParseMacro% (value$, index1%, outsel$, outval$)
 DECLARE FUNCTION WinParseSelector% (wid%, fid%, sel$)
 
@@ -296,27 +301,6 @@ CONST AtlasStyle.SelectBackcolor = 4
 '
 CONST True = -1
 CONST False = NOT True
-
-'
-' Command.* constants
-'
-' These constants assign a unique ID to each type of menu command.
-' To add a command, assign a unique value here and then update
-' the WinParseCommand function to translate a string to the value.
-'
-CONST Command.About = 1
-CONST Command.EndGame = 2
-CONST Command.FilterNone = 3
-CONST Command.FilterSelf = 4
-CONST Command.NewGame = 5
-CONST Command.OptionAlerts = 6
-CONST Command.ReplotBand = 7
-CONST Command.ReplotCluster = 8
-CONST Command.ReplotManual = 9
-CONST Command.ReplotRandom = 10
-CONST Command.ViewAtlas = 11
-CONST Command.ViewInbox = 12
-CONST Command.ViewTable = 13
 
 '
 ' ExecContexts
@@ -490,6 +474,9 @@ DIM SHARED txt(1 TO MaxWindows, 1 TO MaxFields) AS STRING
 DIM SHARED wincount         AS INTEGER
 DIM SHARED winstack(1 TO 3) AS WinStackItem
 DIM SHARED winstacked       AS INTEGER
+
+DIM SHARED resource(1 TO 100) AS STRING
+DIM SHARED resources AS INTEGER
 
 '
 ' Main
@@ -1622,6 +1609,8 @@ SUB ExecCmdField (ctx AS INTEGER, token() AS STRING, wid AS INTEGER, fid AS INTE
       endtag = "EndBoolean"
     CASE FieldKind.Integer
       endtag = "EndInteger"
+    CASE ELSE
+      AssertFail "ExecCmdField", "Unknown kind:" + STR$(fld(wid, fid).kind)
   END SELECT
 
   SELECT CASE token(1)
@@ -1638,7 +1627,7 @@ SUB ExecCmdField (ctx AS INTEGER, token() AS STRING, wid AS INTEGER, fid AS INTE
       fld(wid, fid).childWid = WinGetWid%(token(2))
 
     CASE "Command"
-      fld(wid, fid).cid = WinParseCommand(token(2))
+      fld(wid, fid).cmdrid = ResourceCreate(token(2))
 
     CASE "OffsetX"
       fld(wid, fid).offsetX = VAL(token(2))
@@ -1668,16 +1657,56 @@ SUB ExecCmdGlobal (ctx AS INTEGER, token() AS STRING, hid AS INTEGER, wid AS INT
 
   SELECT CASE token(1)
 
+    CASE "Window"
+      Assert wid = 0, "ExecCmdGlobal", "Window not completed"
+      ctx = ExecContext.Window
+      wid = WinCreate%
+
     CASE "Habitat"
       Assert hid = 0, "ExecCmdGlobal", "Habitat not completed"
       habitats = habitats + 1
       ctx = ExecContext.Habitat
       hid = habitats
 
-    CASE "Window"
-      Assert wid = 0, "ExecCmdGlobal", "Window not completed"
-      ctx = ExecContext.Window
-      wid = WinCreate%
+    CASE "About"
+      UI.SetPage UIPage.About
+
+    CASE "EndGame"
+      END
+
+    CASE "FilterNone"
+      UI.SetFilter UIFilter.None, True
+
+    CASE "FilterSelf"
+      UI.SetFilter UIFilter.Self, True
+
+    CASE "NewGame"
+      InboxInit
+      WorldInit 15
+
+    CASE "OptionAlerts"
+      WinRunName "DialogAlerts"
+      
+    CASE "ReplotBand"
+      AtlasPlotBanded
+
+    CASE "ReplotCluster"
+      AtlasPlotClustered
+
+    CASE "ReplotManual"
+      AtlasPlotManual
+
+    CASE "ReplotRandom"
+      AtlasPlotRandom
+
+    CASE "ViewAtlas"
+      UI.SetPage UIPage.Atlas
+    
+    CASE "ViewInbox"
+      UI.SetPage UIPage.Inbox
+
+    CASE "ViewTable"
+      UI.SetPage UIPage.Table
 
     CASE ELSE
       AssertFail "ExecCmdGlobal", "Not valid in global context:" + token(1)
@@ -1801,82 +1830,12 @@ SUB ExecFile (filename AS STRING)
 
 END SUB
 
-SUB Execute (cid AS INTEGER)
+SUB ExecResource (rid AS INTEGER)
 
-  ' Executes the specified command. Command ID values are defined
-  ' in the Command.* set of global constants, e.g., Command.About.
-  '
-  ' To create a new command:
-  '
-  ' 1. Define a unique integer value for the command. To do this,
-  '    review the Command.* global constants and add an entry for the
-  '    new command. Command values must be unique.
-  '
-  ' 2. Optional. If you want reference the command in the DATA window
-  '    definitions, then update WinParseCommand to translate a string
-  '    name into an integer value.
-  '
-  ' 3. Define a new subroutine to implement the command. As a best
-  '    practice, name the subroutine ExecuteXXX where XXX matches the
-  '    command constant name. For example, Command.About corresponds
-  '    to ExecuteAbout. This convention makes it easier to stay organized.
-  '
-  ' 4. Add an entry below to execute your command.
- 
-  SELECT CASE cid
-   
-    CASE Command.About
-      UI.SetPage UIPage.About
+  DIM cmd AS STRING
+  LET cmd = ResourceGet$(rid)
 
-    CASE Command.EndGame
-      END
-
-    CASE Command.FilterNone
-      UI.SetFilter UIFilter.None, True
-
-    CASE Command.FilterSelf
-      UI.SetFilter UIFilter.Self, True
-
-    CASE Command.OptionAlerts
-      ExecuteOptionAlerts
-       
-    CASE Command.ReplotBand
-      AtlasPlotBanded
-
-    CASE Command.ReplotCluster
-      AtlasPlotClustered
-
-    CASE Command.ReplotManual
-      AtlasPlotManual
-
-    CASE Command.ReplotRandom
-      AtlasPlotRandom
-
-    CASE Command.ViewAtlas
-      UI.SetPage UIPage.Atlas
-     
-    CASE Command.ViewInbox
-      UI.SetPage UIPage.Inbox
-
-    CASE Command.ViewTable
-      UI.SetPage UIPage.Table
-
-    CASE ELSE
-      StatusDebug "Execute(" + LTRIM$(STR$(cid)) + "): unrecognized cid"
-
-  END SELECT
-
-END SUB
-
-SUB ExecuteOptionAlerts
-
-  WinRunName "DialogAlerts"
-
-  'FOR x = 1 TO 3
-  '  FOR Y = 300 TO 60 STEP -10
-  '    SOUND Y, .2
-  '  NEXT
-  'NEXT
+  ExecCmd cmd
 
 END SUB
 
@@ -2179,6 +2138,32 @@ SUB PaintBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
 
 END SUB
 
+FUNCTION ResourceCreate% (value AS STRING)
+
+  IF resources = UBOUND(resource) THEN
+   
+    ResourceCreate% = 0
+
+  ELSE
+
+    resources = resources + 1
+    resource(resources) = value
+    ResourceCreate% = resources
+
+  END IF
+
+END FUNCTION
+
+FUNCTION ResourceGet$ (rid AS INTEGER)
+  ResourceGet$ = resource(rid)
+END FUNCTION
+
+SUB ResourceSet (rid AS INTEGER, value AS STRING)
+
+  resource(rid) = value
+
+END SUB
+
 SUB SetupGame
 
   SCREEN 0, 0, 0, 0: WIDTH 80: COLOR 7, 0: KEY OFF: CLS : RANDOMIZE TIMER
@@ -2204,11 +2189,8 @@ SUB SetupGame
   DIM result AS WinResultType
   WinRun WinGetWid("Start"), result
  
-  IF result.cid = Command.NewGame THEN
-    InboxInit
-    WorldInit 15
-  ELSE
-    END
+  IF result.action = WinAction.Execute THEN
+    ExecResource result.cmdrid
   END IF
 
 END SUB
@@ -2577,8 +2559,8 @@ SUB UI.Run
         '
        
         WinRun menuwid, wresult
-        IF wresult.cid > 0 THEN
-          Execute wresult.cid
+        IF wresult.action = WinAction.Execute THEN
+          ExecResource wresult.cmdrid
         END IF
 
     END SELECT
@@ -2839,7 +2821,7 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value%)
   LET fid% = WinCreateField(wid%, FieldKind.Button)
 
   fld(wid%, fid%).childWid = 0
-  fld(wid%, fid%).cid = 0
+  fld(wid%, fid%).cmdrid = 0
   fld(wid%, fid%).offsetX = offsetX%
   fld(wid%, fid%).offsetY = offsetY%
   fld(wid%, fid%).sizeX = sizeX%
@@ -2858,7 +2840,7 @@ FUNCTION WinAddSeparator% (wid%, offsetX%, offsetY%)
   LET fid% = WinCreateField(wid%, FieldKind.Separator)
 
   fld(wid%, fid%).childWid = 0
-  fld(wid%, fid%).cid = 0
+  fld(wid%, fid%).cmdrid = 0
   fld(wid%, fid%).flags = 0
   fld(wid%, fid%).offsetX = offsetX%
   fld(wid%, fid%).offsetY = offsetY%
@@ -3727,7 +3709,7 @@ END SUB
 FUNCTION WinMapKey% (wid%, pressed$)
 
   DIM childWid  AS INTEGER
-  DIM cid       AS INTEGER
+  DIM cmdrid    AS INTEGER
   DIM exitLeft  AS INTEGER
   DIM exitRight AS INTEGER
   DIM selected  AS INTEGER
@@ -3742,7 +3724,7 @@ FUNCTION WinMapKey% (wid%, pressed$)
   selected = win(wid%).selected
   IF selected > 0 THEN
     childWid = fld(wid%, selected).childWid
-    cid = fld(wid%, selected).cid
+    cmdrid = fld(wid%, selected).cmdrid
   END IF
 
   SELECT CASE pressed$
@@ -3750,7 +3732,7 @@ FUNCTION WinMapKey% (wid%, pressed$)
     CASE CHR$(ASCII.Return)
       IF childWid > 0 THEN
         WinMapKey% = WinAction.OpenPopup
-      ELSEIF cid > 0 THEN
+      ELSEIF cmdrid > 0 THEN
         WinMapKey% = WinAction.Execute
       ELSE
         WinMapKey% = WinAction.Complete
@@ -3847,63 +3829,6 @@ SUB WinOpen (wid%)
   SCREEN , , workpage, workpage
 
 END SUB
-
-FUNCTION WinParseCommand% (text$)
-  '
-  ' Translates a command name into a Command.* constant value.
-  '
-  DIM cid AS INTEGER
-
-  SELECT CASE text$
-   
-    CASE "About"
-      cid = Command.About
-
-    CASE "EndGame":
-      cid = Command.EndGame
-
-    CASE "FilterNone":
-      cid = Command.FilterNone
-
-    CASE "FilterSelf":
-      cid = Command.FilterSelf
-
-    CASE "NewGame":
-      cid = Command.NewGame
-
-    CASE "OptionAlerts":
-      cid = Command.OptionAlerts
-
-    CASE "ReplotBand":
-      cid = Command.ReplotBand
-
-    CASE "ReplotCluster":
-      cid = Command.ReplotCluster
-
-    CASE "ReplotManual":
-      cid = Command.ReplotManual
-
-    CASE "ReplotRandom":
-      cid = Command.ReplotRandom
-
-    CASE "ViewAtlas":
-      cid = Command.ViewAtlas
-
-    CASE "ViewInbox":
-      cid = Command.ViewInbox
-
-    CASE "ViewTable":
-      cid = Command.ViewTable
-
-    CASE ELSE
-      StatusDebug "WinParseCommand: " + text$ + " not recognized"
-      cid = 0
-
-  END SELECT
-
-  WinParseCommand = cid
-
-END FUNCTION
 
 FUNCTION WinParseMacro% (value$, index1%, outsel$, outval$)
 
@@ -4075,7 +4000,7 @@ SUB WinRun (wid%, result AS WinResultType)
       CASE WinAction.Cancel
         result.action = WinAction.Cancel
         result.canceled = True
-        result.cid = 0
+        result.cmdrid = 0
         result.selected = win(wid%).selected
         WinClose wid%
         EXIT SUB
@@ -4083,7 +4008,7 @@ SUB WinRun (wid%, result AS WinResultType)
       CASE WinAction.Complete
         result.action = WinAction.Complete
         result.canceled = False
-        result.cid = 0
+        result.cmdrid = 0
         result.selected = win(wid%).selected
         WinClose wid%
         EXIT SUB
@@ -4092,14 +4017,14 @@ SUB WinRun (wid%, result AS WinResultType)
         result.action = WinAction.Execute
         result.canceled = False
         result.selected = win(wid%).selected
-        result.cid = fld(wid%, result.selected).cid
+        result.cmdrid = fld(wid%, result.selected).cmdrid
         WinClose wid%
         EXIT SUB
 
       CASE WinAction.ExitLeft
         result.action = WinAction.ExitLeft
         result.canceled = True
-        result.cid = 0
+        result.cmdrid = 0
         result.selected = win(wid%).selected
         WinClose wid%
         EXIT SUB
@@ -4107,7 +4032,7 @@ SUB WinRun (wid%, result AS WinResultType)
       CASE WinAction.ExitRight
         result.action = WinAction.ExitRight
         result.canceled = True
-        result.cid = 0
+        result.cmdrid = 0
         result.selected = win(wid%).selected
         WinClose wid%
         EXIT SUB
