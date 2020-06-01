@@ -123,6 +123,8 @@ DECLARE FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS I
 '
 DECLARE SUB Execute (cid AS INTEGER)
 DECLARE SUB ExecuteOptionAlerts ()
+DECLARE SUB ExecuteFile (filename AS STRING)
+DECLARE SUB Exec (text AS STRING)
 
 '
 ' Inbox* subroutines
@@ -184,7 +186,7 @@ DECLARE FUNCTION WinClipText% (wid%, fid%, outposx%, outposy%, outsizex%, outtex
 DECLARE FUNCTION WinGetText$ (wid%, fid%)
 DECLARE FUNCTION WinCreate% ()
 DECLARE FUNCTION WinCreateEx% (style%, posX%, posY%, sizeX%, sizeY%)
-DECLARE FUNCTION WinCreateField% (wid%)
+DECLARE FUNCTION WinCreateField% (wid%, kind%)
 DECLARE FUNCTION WinExpandField$ (wid%, fid%)
 DECLARE FUNCTION WinGetOuterSizeX% (wid%)
 DECLARE FUNCTION WinGetOuterSizeY% (wid%)
@@ -214,8 +216,6 @@ DECLARE SUB WinDrawText0 (wid%, fid%, fc%, bc%, sfc%, sbc%)
 DECLARE SUB WinKey (wid%, fid%, keypress$)
 DECLARE SUB WinKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB WinKeyInteger (wid%, fid%, keypress$)
-DECLARE SUB WinLoad ()
-DECLARE SUB WinLoadWindow ()
 DECLARE SUB WinOpen (wid%)
 DECLARE SUB WinRefreshField (wid%, fid%)
 DECLARE SUB WinRefreshWindow (wid%)
@@ -253,6 +253,7 @@ DECLARE SUB DrawTableRows ()
 DECLARE SUB DrawText (text AS STRING)
 DECLARE SUB PaintBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
 DECLARE SUB SetupGame ()
+DECLARE FUNCTION Split% (text AS STRING, tokens() AS STRING)
 DECLARE FUNCTION GetKey$ ()
 DECLARE FUNCTION IsFiltered% (aid AS INTEGER)
 
@@ -484,240 +485,6 @@ DIM SHARED winstacked       AS INTEGER
 '
 SetupGame
 UI.Run
-
-'
-' Window Definitions
-'
-
-DATA "Windows"
- 
-DATA "Window"
-DATA   "Name", "Start"
-DATA   "PosY", 10
-DATA   "Label"
-DATA     "Text", " Select an option to get started... "
-DATA   "EndLabel"
-DATA   "Button"
-DATA     "Command", "NewGame"
-DATA     "OffsetX", 12
-DATA     "OffsetY", 2
-DATA     "Text", " New Game "
-DATA   "EndButton"
-DATA   "Button"
-DATA     "Command", "EndGame"
-DATA     "OffsetX", 12
-DATA     "OffsetY", 3
-DATA     "Text", " End Game "
-DATA   "EndButton"
-DATA "EndWindow"
-
-DATA "Window"
-DATA   "Name", "FileMenu"
-DATA   "ArrowExit", 3
-DATA   "PosX", 2
-DATA   "PosY", 3
-DATA   "Button"
-DATA     "Command", "About"
-DATA     "OffsetX", 0
-DATA     "OffsetY", 0
-DATA     "SizeX", -1
-DATA     "Text", " About... "
-DATA   "EndButton"
-DATA   "Button"
-DATA     "Command", "EndGame"
-DATA     "OffsetX", 0
-DATA     "OffsetY", 1
-DATA     "Text", " Exit Game "
-DATA   "EndButton"
-DATA "EndWindow"
-
-DATA "Window"
-DATA   "Name", "ViewMenu"
-DATA   "ArrowExit", 3
-DATA   "PosX", 7
-DATA   "PosY", 3
-DATA   "SizeX", 20
-DATA   "Button"
-DATA     "Command", "ViewAtlas"
-DATA     "OffsetY", 0
-DATA     "SizeX", -1
-DATA     "Text", " Show atlas "
-DATA   "EndButton"
-DATA   "Button"
-DATA     "Command", "ViewTable"
-DATA     "OffsetY", 1
-DATA     "SizeX", -1
-DATA     "Text", " Show table"
-DATA   "EndButton"
-DATA   "Button"
-DATA     "Command", "ViewInbox"
-DATA     "OffsetY", 2
-DATA     "SizeX", -1
-DATA     "Text", " Show inbox"
-DATA   "EndButton"
-DATA   "Separator"
-DATA     "OffsetY", 3
-DATA   "EndSeparator"
-DATA   "Button"
-DATA     "Command", "ReplotBand"
-DATA     "OffsetY", 4
-DATA     "SizeX", -1
-DATA     "Text", " Replot banded"
-DATA   "EndButton"
-DATA   "Button"
-DATA     "Command", "ReplotCluster"
-DATA     "OffsetY", 5
-DATA     "SizeX", -1
-DATA     "Text", " Replot clustered"
-DATA   "EndButton"
-DATA   "Button"
-DATA     "Command", "ReplotManual"
-DATA     "OffsetY", 6
-DATA     "SizeX", -1
-DATA     "Text", " Replot manually"
-DATA   "EndButton"
-DATA   "Button"
-DATA     "Command", "ReplotRandom"
-DATA     "OffsetY", 7
-DATA     "SizeX", -1
-DATA     "Text", " Replot randomly"
-DATA   "EndButton"
-DATA "EndWindow"
-
-DATA "Window"
-DATA   "Name", "OptionsMenu"
-DATA   "ArrowExit", 3
-DATA   "PosX", 13
-DATA   "PosY", 3
-DATA   "SizeX", 20
-DATA   "Button"
-DATA     "Command", "OptionAlerts"
-DATA     "OffsetX", 0
-DATA     "OffsetY", 0
-DATA     "SizeX", -1
-DATA     "Text", " Alerts"
-DATA   "EndButton"
-DATA "EndWindow"
-
-DATA "Window"
-DATA   "Name", "DialogAlerts"
-DATA   "PosX", 19
-DATA   "PosY", 9
-DATA   "Label"
-DATA     "OffsetX", 0
-DATA     "OffsetY", 0
-DATA     "Text", "Do you wish to sound alerts?"
-DATA   "EndLabel"
-DATA   "Boolean"
-DATA     "OffsetX", 0
-DATA     "OffsetY", 1
-DATA     "SizeX", -1
-DATA     "Text", "Yes"
-DATA   "EndBoolean"
-DATA "EndWindow"
-
-DATA "Window"
-DATA   "Name", "About"
-DATA   "PosX", 1
-DATA   "PosY", 5
-DATA   "Style", 2
-DATA   "Label"
-DATA     "OffsetY", 0
-DATA     "Text", "   The Galactic Empire   "
-DATA   "EndLabel"
-DATA   "Label"
-DATA     "OffsetY", 1
-DATA     "Text", " (C) 1992 David J Pinch "
-DATA   "EndLabel"
-DATA "EndWindow"
-
-DATA "Window"
-DATA   "Name", "Menu"
-DATA   "PosX", 1
-DATA   "PosY", 1
-DATA   "SizeX", 80
-DATA   "SizeY", 1
-DATA   "Style", 0
-DATA   "Popup"
-DATA     "Child", "FileMenu"
-DATA     "OffsetX", 0
-DATA     "OffsetY", 0
-DATA     "Text", " FILE "
-DATA   "EndPopup"
-DATA   "Popup"
-DATA     "Child", "ViewMenu"
-DATA     "OffsetX", 6
-DATA     "OffsetY", 0
-DATA     "Text", " VIEW "
-DATA   "EndPopup"
-DATA   "Popup"
-DATA     "Child", "OptionsMenu"
-DATA     "OffsetX", 12
-DATA     "OffsetY", 0
-DATA     "Text", " OPTIONS "
-DATA   "EndPopup"
-DATA   "Button"
-DATA     "OffsetX", 75
-DATA     "OffsetY", 0
-DATA     "Text", " END "
-DATA     "Command", "EndGame"
-DATA   "EndButton"
-DATA "EndWindow"
-
-DATA "Window"
-DATA   "Name", "Inbox"
-DATA   "PosX", 10
-DATA   "PosY", 4
-DATA   "SizeX", 61
-DATA   "SizeY", 19
-DATA   "Style", 2
-DATA   "Separator"
-DATA     "OffsetX", 20
-DATA     "OffsetY", 0
-DATA   "EndSeparator"
-DATA   "File"
-DATA     "OffsetX", 21
-DATA     "OffsetY", 0
-DATA     "SizeX", 38
-DATA     "BoundText", "MSG{sel:Value}.PCB"
-DATA   "EndFile"
-DATA "EndWindow"
-
-DATA "EndWindows"
-
-DATA "Habitats"
-DATA   "Habitat"
-DATA     "Backdrop", "HAB-CAVE.PCB"
-DATA     "Label", "@X01°±²±"
-DATA     "Title", "Cave"
-DATA   "End"
-DATA   "Habitat"
-DATA     "Backdrop", "HAB-DNEB.PCB"
-DATA     "Label", "@X08Ä@X0FÄ@X07Ä@X08Ä"
-DATA     "Title", "Dark Nebula"
-DATA     "UI", "NEB"
-DATA   "End"
-DATA   "Habitat"
-DATA     "Backdrop", "HAB-STRM.PCB"
-DATA     "Label", "@X04°±²±"
-DATA     "Title", "Electromagenic"
-DATA   "End"
-DATA   "Habitat"
-DATA     "Backdrop", "HAB-FRGE.PCB"
-DATA     "Label", "@X04ùÄ@X4EÅ@X04Ä"
-DATA     "Title", "Forge"
-DATA   "End"
-DATA   "Habitat"
-DATA     "Backdrop", "HAB-TOWR.PCB"
-DATA     "Label", "@X07ÛÜ@X08ÜÛ"
-DATA     "Title", "Tower"
-DATA   "End"
-DATA   "Habitat"
-DATA     "Backdrop", "HAB-RED.PCB"
-DATA     "Label", "@X06ùù@X0Eí@X06ù"
-DATA     "Title", "Red Ocean"
-DATA   "End"
-DATA "End"
 
 SUB Assert (truth AS INTEGER, where AS STRING, what AS STRING)
 
@@ -1791,6 +1558,261 @@ SUB DrawText (text AS STRING)
 
 END SUB
 
+SUB Exec (text AS STRING)
+
+  SHARED fid AS INTEGER
+  SHARED hid AS INTEGER
+  SHARED wid AS INTEGER
+
+  DIM token(1 TO 5) AS STRING
+  DIM tokens AS INTEGER
+
+  tokens = Split(text, token())
+  IF tokens = 0 THEN
+    EXIT SUB
+  END IF
+
+  SELECT CASE token(1)
+  
+    CASE "ArrowExit"
+      GOSUB CanChangeWindow
+      win(wid).arrowexit = VAL(token(2))
+
+    CASE "AtlasLabel"
+      GOSUB CanChangeHabitat
+      habitat(hid).label = token(2)
+
+    CASE "Backdrop"
+      GOSUB CanChangeHabitat
+      habitat(hid).backdrop = token(2)
+
+    CASE "Boolean"
+      GOSUB CanCreateField
+      fid = WinCreateField(wid, FieldKind.Boolean)
+
+    CASE "BoundText"
+      GOSUB CanChangeField
+      txt(wid, fid) = token(2)
+      fld(wid, fid).flags = fld(wid, fid).flags OR FieldFlag.Bound
+
+    CASE "Button"
+      GOSUB CanCreateField
+      fid = WinCreateField(wid, FieldKind.Button)
+
+    CASE "Child"
+      GOSUB CanChangeField
+      fld(wid, fid).childWid = WinGetWid(token(2))
+   
+    CASE "Command"
+      GOSUB CanChangeField
+      fld(wid, fid).cid = WinParseCommand(token(2))
+   
+    CASE "EndButton"
+      GOSUB CanEndButton
+      fid = 0
+
+    CASE "EndBoolean"
+      GOSUB CanEndBoolean
+      fid = 0
+
+    CASE "EndFile"
+      GOSUB CanEndFile
+      fid = 0
+
+    CASE "EndHabitat"
+      GOSUB CanEndHabitat
+      hid = 0
+
+    CASE "EndInteger"
+      GOSUB CanEndInteger
+      fid = 0
+
+    CASE "EndLabel"
+      GOSUB CanEndLabel
+      fid = 0
+
+    CASE "EndPopup"
+      GOSUB CanEndPopup
+      fid = 0
+
+    CASE "EndSeparator"
+      GOSUB CanEndSeparator
+      fid = 0
+
+    CASE "EndWindow"
+      GOSUB CanEndWindow
+      WinAutoSize wid
+      wid = 0
+
+    CASE "File"
+      GOSUB CanCreateField
+      fid = WinCreateField(wid, FieldKind.File)
+
+    CASE "Habitat"
+      GOSUB CanCreateHabitat
+      habitats = habitats + 1
+      hid = habitats
+
+    CASE "Label"
+      GOSUB CanCreateField
+      fid = WinCreateField(wid, FieldKind.Label)
+   
+    CASE "Name"
+      GOSUB CanChangeWindow
+      win(wid).wname = token(2)
+     
+    CASE "OffsetX"
+      GOSUB CanChangeField
+      fld(wid, fid).offsetX = VAL(token(2))
+
+    CASE "OffsetY"
+      GOSUB CanChangeField
+      fld(wid, fid).offsetY = VAL(token(2))
+
+    CASE "Popup"
+      GOSUB CanCreateField
+      fid = WinCreateField(wid, FieldKind.Popup)
+   
+    CASE "PosX"
+      GOSUB CanChangeWindow
+      win(wid).posX = VAL(token(2))
+
+    CASE "PosY"
+      GOSUB CanChangeWindow
+      win(wid).posY = VAL(token(2))
+
+    CASE "Separator"
+      GOSUB CanCreateField
+      fid = WinCreateField(wid, FieldKind.Separator)
+
+    CASE "SizeX"
+      IF fid > 0 THEN
+        fld(wid, fid).sizeX = VAL(token(2))
+      ELSE
+        GOSUB CanChangeWindow
+        win(wid).sizeX = VAL(token(2))
+      END IF
+
+    CASE "SizeY"
+      GOSUB CanChangeWindow
+      win(wid).sizeY = VAL(token(2))
+
+    CASE "Style"
+      GOSUB CanChangeWindow
+      win(wid%).style = VAL(token(2))
+
+    CASE "Text"
+      GOSUB CanChangeField
+      txt(wid, fid) = token(2)
+
+    CASE "Title"
+      GOSUB CanChangeHabitat
+      habitat(hid).title = token(2)
+
+    CASE "UI"
+      GOSUB CanChangeHabitat
+      habitat(hid).UI = token(2)
+
+    CASE "Value"
+      GOSUB CanChangeField
+      fld(wid, fid).value = VAL(token(2))
+
+    CASE "Window"
+      GOSUB CanCreateWindow
+      wid = WinCreate%
+
+  END SELECT
+
+  EXIT SUB
+
+CanChangeField:
+  IF fid = 0 THEN
+    AssertFail "Exec", "Requires field context"
+  END IF
+  RETURN
+
+CanChangeHabitat:
+  IF hid = 0 THEN
+    AssertFail "Exec", "Requires habitat context"
+  END IF
+  RETURN
+
+CanChangeWindow:
+  IF wid = 0 THEN
+    AssertFail "Exec", "Requires window context"
+  END IF
+  RETURN
+
+CanCreateField:
+  IF fid > 0 THEN
+    AssertFail "Exec", "Last field not completed"
+  END IF
+  GOSUB CanChangeWindow
+  RETURN
+
+CanCreateHabitat:
+  IF hid > 0 THEN
+    AssertFail "Exec", "Last habitat not completed"
+  END IF
+  RETURN
+
+CanCreateWindow:
+  IF wid > 0 THEN
+    AssertFail "Exec", "Last window not completed"
+  END IF
+  RETURN
+
+CanEndField:
+  DIM endtag AS STRING
+  GOSUB CanChangeField
+  IF token(1) <> endtag THEN
+    AssertFail "Exec", "Incorrect field endtag"
+  END IF
+  RETURN
+
+CanEndBoolean:
+  endtag = "EndBoolean"
+  GOTO CanEndField
+
+CanEndButton:
+  endtag = "EndButton"
+  GOTO CanEndField
+
+CanEndFile:
+  endtag = "EndFile"
+  GOTO CanEndField
+
+CanEndHabitat:
+  GOSUB CanChangeHabitat
+  RETURN
+
+CanEndInteger:
+  endtag = "EndInteger"
+  GOTO CanEndField
+
+CanEndLabel:
+  endtag = "EndLabel"
+  GOTO CanEndField
+
+CanEndPopup:
+  endtag = "EndPopup"
+  GOTO CanEndField
+
+CanEndSeparator:
+  endtag = "EndSeparator"
+  GOTO CanEndField
+
+CanEndWindow:
+  IF fid > 0 THEN
+    AssertFail "Exec", "Field not finished"
+  END IF
+  IF wid = 0 THEN
+    AssertFail "Exec", "No window to end"
+  END IF
+  RETURN
+
+END SUB
+
 SUB Execute (cid AS INTEGER)
 
   ' Executes the specified command. Command ID values are defined
@@ -1855,6 +1877,23 @@ SUB Execute (cid AS INTEGER)
       StatusDebug "Execute(" + LTRIM$(STR$(cid)) + "): unrecognized cid"
 
   END SELECT
+
+END SUB
+
+SUB ExecuteFile (filename AS STRING)
+
+  DIM handle AS INTEGER
+  DIM text AS STRING
+
+  handle = FREEFILE
+  OPEN filename FOR INPUT ACCESS READ AS #handle
+
+  DO WHILE NOT EOF(1)
+    LINE INPUT #handle, text
+    Exec text
+  LOOP
+
+  CLOSE #handle
 
 END SUB
 
@@ -2177,8 +2216,7 @@ SUB SetupGame
   ' Load menus and windows
   '
   StatusUpdate "Please wait..."
-  WinLoad
-  WorldLoadHabitats
+  ExecuteFile "EMPIRE.CFG"
 
   '
   ' Draw title screen
@@ -2203,6 +2241,75 @@ SUB SetupGame
   END IF
 
 END SUB
+
+FUNCTION Split% (text AS STRING, tokens() AS STRING)
+
+  DIM char  AS STRING * 1
+  DIM count AS INTEGER
+  DIM index AS INTEGER
+  DIM quote AS STRING
+  DIM state AS INTEGER
+
+  FOR index = 1 TO LEN(text)
+
+    char = MID$(text, index, 1)
+
+    SELECT CASE state
+      CASE 0:
+        '
+        ' No token being parsed
+        '
+        IF char = "," THEN
+          '
+          ' Empty token
+          '
+          count = count + 1
+          tokens(count) = ""
+
+        ELSEIF char = CHR$(34) THEN
+          '
+          ' Start quoted token
+          '
+          count = count + 1
+          quote = char
+          tokens(count) = ""
+          state = 1
+       
+        ELSEIF char <> " " THEN
+          '
+          ' Start non-quoted token
+          '
+          count = count + 1
+          quote = ""
+          tokens(count) = char
+          state = 1
+
+        END IF
+
+      CASE 1:
+        
+        IF char = " " THEN
+          IF quote = "" THEN
+            '
+            ' This is not a quoted token
+            '
+            state = 0
+          ELSE
+            tokens(count) = tokens(count) + char
+          END IF
+        ELSEIF char = quote THEN
+          state = 0
+        ELSE
+          tokens(count) = tokens(count) + char
+        END IF
+
+    END SELECT
+
+  NEXT
+
+  Split% = count
+
+END FUNCTION
 
 SUB StatusClear
   '
@@ -2758,11 +2865,10 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value%)
   Assert wid% > 0, "WinAddButton", "wid cannot be 0"
 
   DIM fid%
-  LET fid% = WinCreateField(wid%)
+  LET fid% = WinCreateField(wid%, FieldKind.Button)
 
   fld(wid%, fid%).childWid = 0
   fld(wid%, fid%).cid = 0
-  fld(wid%, fid%).kind = FieldKind.Button
   fld(wid%, fid%).offsetX = offsetX%
   fld(wid%, fid%).offsetY = offsetY%
   fld(wid%, fid%).sizeX = sizeX%
@@ -2778,9 +2884,8 @@ FUNCTION WinAddSeparator% (wid%, offsetX%, offsetY%)
   Assert wid% > 0, "WinAddSeparator", "wid cannot be 0"
 
   DIM fid%
-  LET fid% = WinCreateField(wid%)
+  LET fid% = WinCreateField(wid%, FieldKind.Separator)
 
-  fld(wid%, fid%).kind = FieldKind.Separator
   fld(wid%, fid%).childWid = 0
   fld(wid%, fid%).cid = 0
   fld(wid%, fid%).flags = 0
@@ -2991,7 +3096,7 @@ FUNCTION WinCreateEx% (style%, posX%, posY%, sizeX%, sizeY%)
 
 END FUNCTION
 
-FUNCTION WinCreateField% (wid%)
+FUNCTION WinCreateField% (wid%, kind%)
 
   Assert wid% > 0, "WinCreateField", "wid cannot be 0"
 
@@ -2999,6 +3104,7 @@ FUNCTION WinCreateField% (wid%)
   LET fid% = win(wid%).fields + 1
 
   win(wid%).fields = fid%
+  fld(wid%, fid%).kind = kind%
   WinCreateField% = fid%
 
 END FUNCTION
@@ -3644,212 +3750,6 @@ SUB WinKeyInteger (wid%, fid%, keypress$)
   END SELECT
 
   txt(wid%, fid%) = buf$
-
-END SUB
-
-SUB WinLoad
-  '
-  ' Loads Window definitions. This should only be called once.
-  '
- 
-  DIM block$
-
-  READ block$
-  Assert block$ = "Windows", "WinLoad", "Windows block expected"
-
-  DO
-    
-    READ block$
-
-    SELECT CASE block$
-     
-      CASE "Window"
-        WinLoadWindow
-
-      CASE "EndWindows"
-        EXIT DO
-
-      CASE ELSE
-        AssertFail "WinLoad", "Expected " + block$
-
-    END SELECT
-
-  LOOP
-
-END SUB
-
-FUNCTION WinLoadField% (wid%, kind%)
-
-  Assert wid% > 0, "WinLoadField", "wid cannot be 0"
-
-  DIM block$
-  DIM endtag$
-  DIM fid%
-
-  fid% = WinCreateField(wid%)
-
-  SELECT CASE kind%
-   
-    CASE FieldKind.Button
-      endtag$ = "EndButton"
-
-    CASE FieldKind.Boolean
-      endtag$ = "EndBoolean"
-
-    CASE FieldKind.File
-      endtag$ = "EndFile"
-
-    CASE FieldKind.Integer
-      endtag$ = "EndInteger"
-
-    CASE FieldKind.Label
-      endtag$ = "EndLabel"
-
-    CASE FieldKind.Popup
-      endtag$ = "EndPopup"
-
-    CASE FieldKind.Separator
-      endtag$ = "EndSeparator"
-
-    CASE ELSE
-      AssertFail "WinLoadField", "Unknown field type:" + STR$(kind%)
-
-  END SELECT
-
-  DO
-
-    READ block$
-
-    SELECT CASE block$
-   
-      CASE endtag$
-        EXIT DO
-
-      CASE "BoundText"
-        READ txt(wid%, fid%)
-        fld(wid%, fid%).flags = fld(wid%, fid%).flags OR FieldFlag.Bound
-
-      CASE "Child"
-        READ block$
-        fld(wid%, fid%).childWid = WinGetWid(block$)
-
-      CASE "Command"
-        READ block$
-        fld(wid%, fid%).cid = WinParseCommand(block$)
-
-      CASE "OffsetX"
-        READ fld(wid%, fid%).offsetX
-
-      CASE "OffsetY"
-        READ fld(wid%, fid%).offsetY
-
-      CASE "SizeX"
-        READ fld(wid%, fid%).sizeX
-
-      CASE "Text"
-        READ txt(wid%, fid%)
-
-      CASE "Value"
-        READ fld(wid%, fid%).value
-
-      CASE ELSE
-        AssertFail "WinLoadField", "Unexpected token " + block$
-
-    END SELECT
-
-  LOOP
- 
-  fld(wid%, fid%).kind = kind%
-
-  IF fld(wid%, fid%).sizeX = 0 THEN
-    '
-    ' If no size is specified, use the size of the text
-    '
-    fld(wid%, fid%).sizeX = LEN(txt(wid%, fid%))
-
-  END IF
-
-  WinLoadField% = fid%
-
-END FUNCTION
-
-SUB WinLoadWindow
-
-  DIM block$
-  DIM fid%
-  DIM wid%
-
-  LET wid% = WinCreate%
-
-  DO
-
-    READ block$
-  
-    SELECT CASE block$
-   
-      CASE "ArrowExit"
-        READ win(wid%).arrowexit
-
-      CASE "Button"
-        fid% = WinLoadField(wid%, FieldKind.Button)
-
-      CASE "EndWindow"
-        EXIT DO
-
-      CASE "File"
-        fid% = WinLoadField(wid%, FieldKind.File)
-
-      CASE "Label"
-        fid% = WinLoadField(wid%, FieldKind.Label)
-
-      CASE "Name"
-        READ win(wid%).wname
-
-      CASE "Popup"
-        fid% = WinLoadField(wid%, FieldKind.Popup)
-
-      CASE "PosX"
-        READ win(wid%).posX
-
-      CASE "PosY"
-        READ win(wid%).posY
-
-      CASE "Separator"
-        fid% = WinLoadField(wid%, FieldKind.Separator)
-
-      CASE "SizeX"
-        READ win(wid%).sizeX
-
-      CASE "SizeY"
-        READ win(wid%).sizeY
-
-      CASE "Style"
-        READ win(wid%).style
-
-      CASE "Boolean"
-        fid% = WinLoadField(wid%, FieldKind.Boolean)
-     
-      CASE ELSE
-        AssertFail "WinLoadWindow", "Unexpected token: " + block$
-
-    END SELECT
-  LOOP
-  
-  WinAutoSize wid%
-
-  IF win(wid%).posX = 0 THEN
-    '
-    ' Center horizontally
-    '
-    win(wid%).posX = INT((80 - win(wid%).sizeX) / 2) + 1
-  END IF
-
-  IF win(wid%).posY = 0 THEN
-    '
-    ' Center vertically
-    '
-    win(wid%).posY = INT((25 - win(wid%).sizeY) / 2) + 1
-  END IF
 
 END SUB
 
@@ -4589,68 +4489,6 @@ SUB WorldInit (areas AS INTEGER)
     aid = WorldAdd%(hid, cx, cy)
 
   NEXT
-
-END SUB
-
-SUB WorldLoadHabitats
-  '
-  ' Loads habitat information from DATA
-  '
- 
-  DIM block AS STRING
-
-  '
-  ' Verify this is the start of a data block
-  '
-  READ block
-  Assert block = "Habitats", "WorldLoadHabitats", "unexpected " + block
-
-  DO
- 
-    '
-    ' The next block can be "End" (end of data) or "Habitat" (new habitat)
-    '
-    READ block
-    IF block = "End" THEN
-      EXIT SUB
-    END IF
-   
-    Assert block = "Habitat", "WorldLoadHabitats", "unexpected " + block
-    habitats = habitats + 1
-    
-    DO
-   
-      READ block
-
-      SELECT CASE block
-       
-        CASE "End"
-          EXIT DO
-       
-        CASE "Backdrop"
-          READ block
-          habitat(habitats).backdrop = block
-
-        CASE "Label"
-          READ block
-          habitat(habitats).label = block
-
-        CASE "Title"
-          READ block
-          habitat(habitats).title = block
-
-        CASE "UI"
-          READ block
-          habitat(habitats).UI = block
-
-        CASE ELSE
-          AssertFail "WorldLoadHabitats", "unexpected " + block
-
-      END SELECT
-
-    LOOP
-
-  LOOP
 
 END SUB
 
