@@ -123,8 +123,12 @@ DECLARE FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS I
 '
 DECLARE SUB Execute (cid AS INTEGER)
 DECLARE SUB ExecuteOptionAlerts ()
-DECLARE SUB ExecuteFile (filename AS STRING)
-DECLARE SUB Exec (text AS STRING)
+DECLARE SUB ExecCmd (text AS STRING)
+DECLARE SUB ExecCmdField (ctx AS INTEGER, token() AS STRING, wid AS ANY, fid AS INTEGER)
+DECLARE SUB ExecCmdGlobal (ctx AS INTEGER, token() AS STRING, hid AS INTEGER, wid AS INTEGER)
+DECLARE SUB ExecCmdHabitat (ctx AS INTEGER, token() AS STRING, hid AS INTEGER)
+DECLARE SUB ExecCmdWindow (ctx AS INTEGER, token() AS STRING, wid AS INTEGER, fid AS INTEGER)
+DECLARE SUB ExecFile (filename AS STRING)
 
 '
 ' Inbox* subroutines
@@ -315,6 +319,14 @@ CONST Command.ViewInbox = 12
 CONST Command.ViewTable = 13
 
 '
+' ExecContexts
+'
+CONST ExecContext.Global = 0
+CONST ExecContext.Window = 1
+CONST ExecContext.Field = 2
+CONST ExecContext.Habitat = 3
+
+'
 ' Field Flags
 '
 CONST FieldFlag.None = 0
@@ -475,7 +487,6 @@ DIM SHARED uicy AS INTEGER
 DIM SHARED fld(1 TO MaxWindows, 1 TO MaxFields) AS FieldType
 DIM SHARED win(1 TO MaxWindows) AS WinType
 DIM SHARED txt(1 TO MaxWindows, 1 TO MaxFields) AS STRING
-
 DIM SHARED wincount         AS INTEGER
 DIM SHARED winstack(1 TO 3) AS WinStackItem
 DIM SHARED winstacked       AS INTEGER
@@ -1558,8 +1569,9 @@ SUB DrawText (text AS STRING)
 
 END SUB
 
-SUB Exec (text AS STRING)
+SUB ExecCmd (text AS STRING)
 
+  SHARED ctx AS INTEGER
   SHARED fid AS INTEGER
   SHARED hid AS INTEGER
   SHARED wid AS INTEGER
@@ -1572,244 +1584,220 @@ SUB Exec (text AS STRING)
     EXIT SUB
   END IF
 
-  SELECT CASE token(1)
-  
-    CASE "ArrowExit"
-      GOSUB CanChangeWindow
-      win(wid).arrowexit = VAL(token(2))
-
-    CASE "AtlasLabel"
-      GOSUB CanChangeHabitat
-      habitat(hid).label = token(2)
-
-    CASE "Backdrop"
-      GOSUB CanChangeHabitat
-      habitat(hid).backdrop = token(2)
-
-    CASE "Boolean"
-      GOSUB CanCreateField
-      fid = WinCreateField(wid, FieldKind.Boolean)
-
-    CASE "BoundText"
-      GOSUB CanChangeField
-      txt(wid, fid) = token(2)
-      fld(wid, fid).flags = fld(wid, fid).flags OR FieldFlag.Bound
-
-    CASE "Button"
-      GOSUB CanCreateField
-      fid = WinCreateField(wid, FieldKind.Button)
-
-    CASE "Child"
-      GOSUB CanChangeField
-      fld(wid, fid).childWid = WinGetWid(token(2))
+  SELECT CASE ctx
    
-    CASE "Command"
-      GOSUB CanChangeField
-      fld(wid, fid).cid = WinParseCommand(token(2))
-   
-    CASE "EndButton"
-      GOSUB CanEndButton
-      fid = 0
+    CASE ExecContext.Global:
+      ExecCmdGlobal ctx, token(), hid, wid
 
-    CASE "EndBoolean"
-      GOSUB CanEndBoolean
-      fid = 0
+    CASE ExecContext.Window
+      ExecCmdWindow ctx, token(), wid, fid
 
-    CASE "EndFile"
-      GOSUB CanEndFile
-      fid = 0
+    CASE ExecContext.Field
+      ExecCmdField ctx, token(), wid, fid
 
-    CASE "EndHabitat"
-      GOSUB CanEndHabitat
-      hid = 0
-
-    CASE "EndInteger"
-      GOSUB CanEndInteger
-      fid = 0
-
-    CASE "EndLabel"
-      GOSUB CanEndLabel
-      fid = 0
-
-    CASE "EndPopup"
-      GOSUB CanEndPopup
-      fid = 0
-
-    CASE "EndSeparator"
-      GOSUB CanEndSeparator
-      fid = 0
-
-    CASE "EndWindow"
-      GOSUB CanEndWindow
-      WinAutoSize wid
-      wid = 0
-
-    CASE "File"
-      GOSUB CanCreateField
-      fid = WinCreateField(wid, FieldKind.File)
-
-    CASE "Habitat"
-      GOSUB CanCreateHabitat
-      habitats = habitats + 1
-      hid = habitats
-
-    CASE "Label"
-      GOSUB CanCreateField
-      fid = WinCreateField(wid, FieldKind.Label)
-   
-    CASE "Name"
-      GOSUB CanChangeWindow
-      win(wid).wname = token(2)
-     
-    CASE "OffsetX"
-      GOSUB CanChangeField
-      fld(wid, fid).offsetX = VAL(token(2))
-
-    CASE "OffsetY"
-      GOSUB CanChangeField
-      fld(wid, fid).offsetY = VAL(token(2))
-
-    CASE "Popup"
-      GOSUB CanCreateField
-      fid = WinCreateField(wid, FieldKind.Popup)
-   
-    CASE "PosX"
-      GOSUB CanChangeWindow
-      win(wid).posX = VAL(token(2))
-
-    CASE "PosY"
-      GOSUB CanChangeWindow
-      win(wid).posY = VAL(token(2))
-
-    CASE "Separator"
-      GOSUB CanCreateField
-      fid = WinCreateField(wid, FieldKind.Separator)
-
-    CASE "SizeX"
-      IF fid > 0 THEN
-        fld(wid, fid).sizeX = VAL(token(2))
-      ELSE
-        GOSUB CanChangeWindow
-        win(wid).sizeX = VAL(token(2))
-      END IF
-
-    CASE "SizeY"
-      GOSUB CanChangeWindow
-      win(wid).sizeY = VAL(token(2))
-
-    CASE "Style"
-      GOSUB CanChangeWindow
-      win(wid%).style = VAL(token(2))
-
-    CASE "Text"
-      GOSUB CanChangeField
-      txt(wid, fid) = token(2)
-
-    CASE "Title"
-      GOSUB CanChangeHabitat
-      habitat(hid).title = token(2)
-
-    CASE "UI"
-      GOSUB CanChangeHabitat
-      habitat(hid).UI = token(2)
-
-    CASE "Value"
-      GOSUB CanChangeField
-      fld(wid, fid).value = VAL(token(2))
-
-    CASE "Window"
-      GOSUB CanCreateWindow
-      wid = WinCreate%
+    CASE ExecContext.Habitat
+      ExecCmdHabitat ctx, token(), hid
 
   END SELECT
 
-  EXIT SUB
+END SUB
 
-CanChangeField:
-  IF fid = 0 THEN
-    AssertFail "Exec", "Requires field context"
-  END IF
-  RETURN
+SUB ExecCmdField (ctx AS INTEGER, token() AS STRING, wid AS INTEGER, fid AS INTEGER)
 
-CanChangeHabitat:
-  IF hid = 0 THEN
-    AssertFail "Exec", "Requires habitat context"
-  END IF
-  RETURN
+  Assert ctx = ExecContext.Field, "ExecCmdField", "Unexpected context:" + STR$(ctx)
 
-CanChangeWindow:
-  IF wid = 0 THEN
-    AssertFail "Exec", "Requires window context"
-  END IF
-  RETURN
-
-CanCreateField:
-  IF fid > 0 THEN
-    AssertFail "Exec", "Last field not completed"
-  END IF
-  GOSUB CanChangeWindow
-  RETURN
-
-CanCreateHabitat:
-  IF hid > 0 THEN
-    AssertFail "Exec", "Last habitat not completed"
-  END IF
-  RETURN
-
-CanCreateWindow:
-  IF wid > 0 THEN
-    AssertFail "Exec", "Last window not completed"
-  END IF
-  RETURN
-
-CanEndField:
   DIM endtag AS STRING
-  GOSUB CanChangeField
-  IF token(1) <> endtag THEN
-    AssertFail "Exec", "Incorrect field endtag"
-  END IF
-  RETURN
+  SELECT CASE fld(wid, fid).kind
+    CASE FieldKind.Button
+      endtag = "EndButton"
+    CASE FieldKind.File
+      endtag = "EndFile"
+    CASE FieldKind.Label
+      endtag = "EndLabel"
+    CASE FieldKind.Popup
+      endtag = "EndPopup"
+    CASE FieldKind.Separator
+      endtag = "EndSeparator"
+    CASE FieldKind.Boolean
+      endtag = "EndBoolean"
+    CASE FieldKind.Integer
+      endtag = "EndInteger"
+  END SELECT
 
-CanEndBoolean:
-  endtag = "EndBoolean"
-  GOTO CanEndField
+  SELECT CASE token(1)
+ 
+    CASE endtag
+      fid = 0
+      ctx = ExecContext.Window
 
-CanEndButton:
-  endtag = "EndButton"
-  GOTO CanEndField
+    CASE "BoundText"
+      txt(wid, fid) = token(2)
+      fld(wid, fid).flags = fld(wid, fid).flags OR FieldFlag.Bound
 
-CanEndFile:
-  endtag = "EndFile"
-  GOTO CanEndField
+    CASE "Child"
+      fld(wid, fid).childWid = WinGetWid%(token(2))
 
-CanEndHabitat:
-  GOSUB CanChangeHabitat
-  RETURN
+    CASE "Command"
+      fld(wid, fid).cid = WinParseCommand(token(2))
 
-CanEndInteger:
-  endtag = "EndInteger"
-  GOTO CanEndField
+    CASE "OffsetX"
+      fld(wid, fid).offsetX = VAL(token(2))
 
-CanEndLabel:
-  endtag = "EndLabel"
-  GOTO CanEndField
+    CASE "OffsetY"
+      fld(wid, fid).offsetY = VAL(token(2))
 
-CanEndPopup:
-  endtag = "EndPopup"
-  GOTO CanEndField
+    CASE "SizeX"
+      fld(wid, fid).sizeX = VAL(token(2))
 
-CanEndSeparator:
-  endtag = "EndSeparator"
-  GOTO CanEndField
+    CASE "Text"
+      txt(wid, fid) = token(2)
 
-CanEndWindow:
-  IF fid > 0 THEN
-    AssertFail "Exec", "Field not finished"
-  END IF
-  IF wid = 0 THEN
-    AssertFail "Exec", "No window to end"
-  END IF
-  RETURN
+    CASE "Value"
+      fld(wid, fid).value = VAL(token(2))
+
+    CASE ELSE
+      AssertFail "ExecCmdField", "Not valid in field context: " + token(1)
+
+  END SELECT
+
+END SUB
+
+SUB ExecCmdGlobal (ctx AS INTEGER, token() AS STRING, hid AS INTEGER, wid AS INTEGER)
+
+  Assert ctx = 0, "ExecCmdGlobal", "Unexpected context:" + STR$(ctx)
+
+  SELECT CASE token(1)
+
+    CASE "Habitat"
+      Assert hid = 0, "ExecCmdGlobal", "Habitat not completed"
+      habitats = habitats + 1
+      ctx = ExecContext.Habitat
+      hid = habitats
+
+    CASE "Window"
+      Assert wid = 0, "ExecCmdGlobal", "Window not completed"
+      ctx = ExecContext.Window
+      wid = WinCreate%
+
+    CASE ELSE
+      AssertFail "ExecCmdGlobal", "Not valid in global context:" + token(1)
+
+  END SELECT
+
+END SUB
+
+SUB ExecCmdHabitat (ctx AS INTEGER, token() AS STRING, hid AS INTEGER)
+
+  Assert ctx = ExecContext.Habitat, "ExecCmdHabitat", "Unexpected context:" + STR$(ctx)
+  Assert hid > 0, "ExecCmdHabitat", "hid cannot be 0"
+
+  SELECT CASE token(1)
+
+    CASE "AtlasLabel"
+      habitat(hid).label = token(2)
+
+    CASE "Backdrop"
+      habitat(hid).backdrop = token(2)
+
+    CASE "EndHabitat"
+      hid = 0
+      ctx = ExecContext.Global
+
+    CASE "Title"
+      habitat(hid).title = token(2)
+
+    CASE "UI"
+      habitat(hid).UI = token(2)
+
+    CASE ELSE
+      AssertFail "ExecCmdHabitat", "Invalid in habitat context: " + token(1)
+
+  END SELECT
+
+END SUB
+
+SUB ExecCmdWindow (ctx AS INTEGER, token() AS STRING, wid AS INTEGER, fid AS INTEGER)
+
+  Assert ctx = ExecContext.Window, "ExecCmdWindow", "Unexpected context:" + STR$(ctx)
+  Assert wid > 0, "ExecCmdWindow", "wid cannot be 0"
+
+  SELECT CASE token(1)
+ 
+    CASE "ArrowExit"
+      win(wid).arrowexit = VAL(token(2))
+
+    CASE "Boolean"
+      fid = WinCreateField(wid, FieldKind.Boolean)
+      ctx = ExecContext.Field
+
+    CASE "Button"
+      fid = WinCreateField(wid, FieldKind.Button)
+      ctx = ExecContext.Field
+
+    CASE "EndWindow"
+      WinAutoSize wid
+      wid = 0
+      ctx = ExecContext.Global
+
+    CASE "File"
+      fid = WinCreateField(wid, FieldKind.File)
+      ctx = ExecContext.Field
+
+    CASE "Integer"
+      fid = WinCreateField(wid, FieldKind.Integer)
+      ctx = ExecContext.Field
+
+    CASE "Label"
+      fid = WinCreateField(wid, FieldKind.Label)
+      ctx = ExecContext.Field
+
+    CASE "Name"
+      win(wid).wname = token(2)
+    
+    CASE "Popup"
+      fid = WinCreateField(wid, FieldKind.Popup)
+      ctx = ExecContext.Field
+
+    CASE "PosX"
+      win(wid).posX = VAL(token(2))
+
+    CASE "PosY"
+      win(wid).posY = VAL(token(2))
+
+    CASE "Separator"
+      fid = WinCreateField(wid, FieldKind.Separator)
+      ctx = ExecContext.Field
+
+    CASE "SizeX"
+      win(wid).sizeX = VAL(token(2))
+
+    CASE "SizeY"
+      win(wid).sizeY = VAL(token(2))
+
+    CASE "Style"
+      win(wid).style = VAL(token(2))
+
+    CASE ELSE
+      AssertFail "ExecCmdWindow", "Not valid in window context: " + token(1)
+
+  END SELECT
+
+END SUB
+
+SUB ExecFile (filename AS STRING)
+
+  DIM handle AS INTEGER
+  DIM text AS STRING
+
+  handle = FREEFILE
+  OPEN filename FOR INPUT ACCESS READ AS #handle
+
+  DO WHILE NOT EOF(1)
+    LINE INPUT #handle, text
+    ExecCmd text
+  LOOP
+
+  CLOSE #handle
 
 END SUB
 
@@ -1877,23 +1865,6 @@ SUB Execute (cid AS INTEGER)
       StatusDebug "Execute(" + LTRIM$(STR$(cid)) + "): unrecognized cid"
 
   END SELECT
-
-END SUB
-
-SUB ExecuteFile (filename AS STRING)
-
-  DIM handle AS INTEGER
-  DIM text AS STRING
-
-  handle = FREEFILE
-  OPEN filename FOR INPUT ACCESS READ AS #handle
-
-  DO WHILE NOT EOF(1)
-    LINE INPUT #handle, text
-    Exec text
-  LOOP
-
-  CLOSE #handle
 
 END SUB
 
@@ -2216,7 +2187,7 @@ SUB SetupGame
   ' Load menus and windows
   '
   StatusUpdate "Please wait..."
-  ExecuteFile "EMPIRE.CFG"
+  ExecFile "EMPIRE.CFG"
 
   '
   ' Draw title screen
