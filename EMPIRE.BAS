@@ -48,7 +48,7 @@ TYPE HabitatType
   '
   ' A type of habitat such as an electromagnetic storm.
   '
-  backdrop AS STRING * 12
+  backdrop AS INTEGER
   UI       AS STRING * 3
   labelrid AS INTEGER
   titlerid AS INTEGER
@@ -519,8 +519,8 @@ SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, labelrid AS IN
   atlasItem(idx).allocated = -1
   atlasItem(idx).cx = cx
   atlasItem(idx).cy = cy
-  atlasItem(idx).value = value
   atlasItem(idx).labelrid = labelrid
+  atlasItem(idx).value = value
 
   '
   ' Reference the item in the grid
@@ -1642,7 +1642,7 @@ SUB ExecCmdHabitat (ctx AS INTEGER, token() AS STRING, hid AS INTEGER)
       habitat(hid).labelrid = ResourceCreate(token(2))
 
     CASE "Backdrop"
-      habitat(hid).backdrop = token(2)
+      habitat(hid).backdrop = ResourceCreate(token(2))
 
     CASE "EndHabitat"
       hid = 0
@@ -2381,8 +2381,8 @@ SUB UI.RedrawArea
   '
   ' Draw the backdrop file for this habitat
   '
-  IF RTRIM$(habitat(hid).backdrop) <> "" THEN
-    UI.RedrawFile habitat(hid).backdrop
+  IF habitat(hid).backdrop > 0 THEN
+    UI.RedrawFile ResourceGet(habitat(hid).backdrop)
   END IF
 
 END SUB
