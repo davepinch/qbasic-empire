@@ -26,7 +26,7 @@ TYPE AtlasItemType
   cx        AS INTEGER
   cy        AS INTEGER
   value     AS INTEGER
-  label     AS STRING * 20 ' 4 cells + color codes
+  labelrid  AS INTEGER
 END TYPE
 
 TYPE FieldType
@@ -40,6 +40,7 @@ TYPE FieldType
   offsetX  AS INTEGER
   offsetY  AS INTEGER
   sizeX    AS INTEGER
+  textrid  AS INTEGER
   value    AS INTEGER
 END TYPE
 
@@ -49,8 +50,8 @@ TYPE HabitatType
   '
   backdrop AS STRING * 12
   UI       AS STRING * 3
-  label    AS STRING * 20
-  title    AS STRING * 20
+  labelrid AS INTEGER
+  titlerid AS INTEGER
 END TYPE
 
 TYPE WinResultType
@@ -82,10 +83,7 @@ END TYPE
 '
 ' Atlas* declarations
 '
-DECLARE SUB AtlasAddBand (fromValue AS INTEGER, toValue AS INTEGER)
-DECLARE SUB AtlasAddCluster (fromValue AS INTEGER, toValue AS INTEGER)
-DECLARE SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, label AS STRING)
-DECLARE SUB AtlasAddRandom (fromValue AS INTEGER, toValue AS INTEGER)
+DECLARE SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, labelrid AS INTEGER)
 DECLARE SUB AtlasDisplayOff ()
 DECLARE SUB AtlasDisplayOn ()
 DECLARE SUB AtlasDraw ()
@@ -106,7 +104,7 @@ DECLARE SUB AtlasPlotManual ()
 DECLARE SUB AtlasPlotRandom ()
 DECLARE SUB AtlasRemoveItem (idx AS INTEGER)
 DECLARE SUB AtlasRemoveValue (value AS INTEGER)
-DECLARE SUB AtlasSetLabel (idx AS INTEGER, label AS STRING)
+DECLARE SUB AtlasSetLabel (idx AS INTEGER, labelrid AS INTEGER)
 DECLARE FUNCTION AtlasNextIndex% ()
 DECLARE FUNCTION AtlasCellFiltered% (cx AS INTEGER, cy AS INTEGER)
 DECLARE FUNCTION AtlasGetScreenX% (cx AS INTEGER)
@@ -143,12 +141,14 @@ DECLARE SUB NebulaCreateSeq (seq() AS INTEGER, y!)
 DECLARE SUB NebulaDraw (seq() AS INTEGER)
 DECLARE SUB NebulaHarvest (seq() AS INTEGER)
 DECLARE FUNCTION NebulaLabel$ (level AS INTEGER)
+DECLARE FUNCTION NebulaLabelRid% (level AS INTEGER)
 
 '
 ' Resource functions for saving general text data.
 '
 DECLARE FUNCTION ResourceCreate% (value AS STRING)
 DECLARE FUNCTION ResourceGet$ (rid AS INTEGER)
+DECLARE FUNCTION ResourceLength% (rid AS INTEGER)
 DECLARE SUB ResourceSet (rid AS INTEGER, value AS STRING)
 
 '
@@ -244,7 +244,7 @@ DECLARE SUB WorldAddCluster (hid AS INTEGER, size AS INTEGER)
 DECLARE SUB WorldAddNebula (size AS INTEGER)
 DECLARE SUB WorldInit (areas AS INTEGER)
 DECLARE SUB WorldRemove (aid AS INTEGER)
-DECLARE SUB WorldSetLabel (aid AS INTEGER, label AS STRING)
+DECLARE SUB WorldSetLabel (aid AS INTEGER, labelrid AS INTEGER)
 DECLARE SUB WorldLoadHabitats ()
 DECLARE FUNCTION WorldAdd% (hid AS INTEGER, cx AS INTEGER, cy AS INTEGER)
 DECLARE FUNCTION WorldNextId% ()
@@ -470,7 +470,6 @@ DIM SHARED uicy AS INTEGER
 '
 DIM SHARED fld(1 TO MaxWindows, 1 TO MaxFields) AS FieldType
 DIM SHARED win(1 TO MaxWindows) AS WinType
-DIM SHARED txt(1 TO MaxWindows, 1 TO MaxFields) AS STRING
 DIM SHARED wincount         AS INTEGER
 DIM SHARED winstack(1 TO 3) AS WinStackItem
 DIM SHARED winstacked       AS INTEGER
@@ -499,67 +498,7 @@ SUB AssertFail (where AS STRING, what AS STRING)
   Assert 0, where, what
 END SUB
 
-SUB AtlasAddBand (fromValue AS INTEGER, toValue AS INTEGER)
-  '
-  ' Adds a range of values organized into a horizontal orbital band.
-  '
-
-  DIM cx    AS INTEGER
-  DIM cy    AS INTEGER
-  DIM value AS INTEGER
-
-  '
-  ' Get random coordinates to seed the band
-  '
-  AtlasNextRandom cx, cy
-
-  FOR value = fromValue TO toValue
-
-    '
-    ' Find the next open cell in the same band
-    '
-    AtlasNextBanded cx, cy
-   
-    '
-    ' Save the item
-    '
-    AtlasAddItem cx, cy, value, STR$(value)
-
-  NEXT
-
-END SUB
-
-SUB AtlasAddCluster (fromValue AS INTEGER, toValue AS INTEGER)
-  '
-  ' Adds a range of values organized into a cluster.
-  '
-
-  DIM cx    AS INTEGER
-  DIM cy    AS INTEGER
-  DIM value AS INTEGER
-
-  '
-  ' Get random coordinates to seed the band
-  '
-  AtlasNextRandom cx, cy
-
-  FOR value = fromValue TO toValue
-
-    '
-    ' Find an open slot near the current one
-    '
-    AtlasNextClustered cx, cy
-  
-    '
-    ' Save the cell
-    '
-    AtlasAddItem cx, cy, value, STR$(value)
-
-  NEXT
-
-END SUB
-
-SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, label AS STRING)
+SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, labelrid AS INTEGER)
   '
   ' Adds an item to the atlas at the specified position.
   '
@@ -581,7 +520,7 @@ SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, label AS STRIN
   atlasItem(idx).cx = cx
   atlasItem(idx).cy = cy
   atlasItem(idx).value = value
-  atlasItem(idx).label = label
+  atlasItem(idx).labelrid = labelrid
 
   '
   ' Reference the item in the grid
@@ -591,31 +530,6 @@ SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, label AS STRIN
   IF atlasActive THEN
     AtlasDrawCell cx, cy
   END IF
-
-END SUB
-
-SUB AtlasAddRandom (fromValue AS INTEGER, toValue AS INTEGER)
-  '
-  ' Adds a range of values placed randomly around the atlas.
-  '
- 
-  DIM cx    AS INTEGER
-  DIM cy    AS INTEGER
-  DIM value AS INTEGER
-
-  FOR value = fromValue TO toValue
-
-    '
-    ' Find an open slot
-    '
-    AtlasNextRandom cx, cy
-   
-    '
-    ' Save the item
-    '
-    AtlasAddItem cx, cy, value, STR$(value)
-
-  NEXT
 
 END SUB
 
@@ -702,7 +616,9 @@ SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
   IF idx = 0 THEN
     PRINT STRING$(AtlasStyle.CellSizeX, " ");
   ELSE
-    DrawText RTRIM$(atlasItem(idx).label)
+    DIM label AS STRING
+    LET label = ResourceGet(atlasItem(idx).labelrid)
+    DrawText label
   END IF
 
 END SUB
@@ -1289,12 +1205,12 @@ SUB AtlasRemoveValue (value AS INTEGER)
 
 END SUB
 
-SUB AtlasSetLabel (idx AS INTEGER, label AS STRING)
+SUB AtlasSetLabel (idx AS INTEGER, labelrid AS INTEGER)
   '
   ' Sets the label for the specified item
   '
  
-  atlasItem(idx).label = label
+  atlasItem(idx).labelrid = labelrid
   IF atlasActive THEN
     AtlasDrawItem idx
   END IF
@@ -1460,7 +1376,7 @@ SUB DrawTableRow (row AS INTEGER, aid AS INTEGER)
   PRINT "  "; ' HACK
 
   ' Print the habitat label
-  DrawText habitat(area(aid).habitat).title
+  DrawText ResourceGet(habitat(area(aid).habitat).titlerid)
 
 END SUB
 
@@ -1620,7 +1536,7 @@ SUB ExecCmdField (ctx AS INTEGER, token() AS STRING, wid AS INTEGER, fid AS INTE
       ctx = ExecContext.Window
 
     CASE "BoundText"
-      txt(wid, fid) = token(2)
+      WinSetText wid, fid, token(2)
       fld(wid, fid).flags = fld(wid, fid).flags OR FieldFlag.Bound
 
     CASE "Child"
@@ -1639,7 +1555,7 @@ SUB ExecCmdField (ctx AS INTEGER, token() AS STRING, wid AS INTEGER, fid AS INTE
       fld(wid, fid).sizeX = VAL(token(2))
 
     CASE "Text"
-      txt(wid, fid) = token(2)
+      WinSetText wid, fid, token(2)
 
     CASE "Value"
       fld(wid, fid).value = VAL(token(2))
@@ -1723,7 +1639,7 @@ SUB ExecCmdHabitat (ctx AS INTEGER, token() AS STRING, hid AS INTEGER)
   SELECT CASE token(1)
 
     CASE "AtlasLabel"
-      habitat(hid).label = token(2)
+      habitat(hid).labelrid = ResourceCreate(token(2))
 
     CASE "Backdrop"
       habitat(hid).backdrop = token(2)
@@ -1733,7 +1649,7 @@ SUB ExecCmdHabitat (ctx AS INTEGER, token() AS STRING, hid AS INTEGER)
       ctx = ExecContext.Global
 
     CASE "Title"
-      habitat(hid).title = token(2)
+      habitat(hid).titlerid = ResourceCreate(token(2))
 
     CASE "UI"
       habitat(hid).UI = token(2)
@@ -2110,6 +2026,25 @@ FUNCTION NebulaLabel$ (level AS INTEGER)
 
 END FUNCTION
 
+FUNCTION NebulaLabelRid% (level AS INTEGER)
+
+  Assert level >= 0, "NebulaLabelRid", "level must be 0 or greater"
+  Assert level <= 3, "NebulaLabelRid", "level must be 3 or less"
+
+  STATIC created AS INTEGER
+  STATIC lrid() AS INTEGER
+
+  IF created = 0 THEN
+    REDIM lrid(0 TO 3)
+    FOR created = 0 TO 3
+      lrid(created) = ResourceCreate(NebulaLabel$(created))
+    NEXT
+  END IF
+
+  NebulaLabelRid% = lrid(level)
+
+END FUNCTION
+
 SUB PaintBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
   
    DIM at% ' Attribute
@@ -2156,6 +2091,14 @@ END FUNCTION
 
 FUNCTION ResourceGet$ (rid AS INTEGER)
   ResourceGet$ = resource(rid)
+END FUNCTION
+
+FUNCTION ResourceLength% (rid AS INTEGER)
+  IF rid = 0 THEN
+    ResourceLength = 0
+  ELSE
+    ResourceLength = LEN(resource(rid))
+  END IF
 END FUNCTION
 
 SUB ResourceSet (rid AS INTEGER, value AS STRING)
@@ -2370,7 +2313,7 @@ SUB UI.ActionNebula (aid AS INTEGER)
     '
     level = level - 1
     area(aid).level = level
-    WorldSetLabel aid, NebulaLabel$(level)
+    WorldSetLabel aid, NebulaLabelRid(level)
 
   END IF
 
@@ -2767,7 +2710,7 @@ FUNCTION UI.RunNebula% (aid AS INTEGER)
         IF area(aid).level = 0 THEN
           WorldRemove aid
         ELSE
-          WorldSetLabel aid, NebulaLabel$(area(aid).level)
+          WorldSetLabel aid, NebulaLabelRid(area(aid).level)
         END IF
 
     END SELECT
@@ -2825,8 +2768,8 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value%)
   fld(wid%, fid%).offsetX = offsetX%
   fld(wid%, fid%).offsetY = offsetY%
   fld(wid%, fid%).sizeX = sizeX%
+  fld(wid%, fid%).textrid = ResourceCreate(text$)
   fld(wid%, fid%).value = value%
-  txt(wid%, fid%) = text$
 
   WinAddButton% = fid%
 
@@ -2872,7 +2815,7 @@ SUB WinAutoSize (wid%)
  
     fieldSizeX% = fld(wid%, fid%).sizeX
     IF fieldSizeX% < 1 THEN
-      fieldSizeX% = LEN(txt(wid%, fid%))
+      fieldSizeX% = ResourceLength(fld(wid%, fid%).textrid)
     END IF
 
     '
@@ -2906,6 +2849,9 @@ FUNCTION WinClipText% (wid%, fid%, outoffx%, outoffy%, outsizex%, outtext$)
   Assert wid% > 0, "WinClipText", "wid cannot be 0"
   Assert fid% > 0, "WinClipText", "fid cannot be 0"
 
+  DIM text$
+  LET text$ = WinGetText(wid%, fid%)
+
   '
   ' Get the size of the field
   '
@@ -2922,7 +2868,7 @@ FUNCTION WinClipText% (wid%, fid%, outoffx%, outoffy%, outsizex%, outtext$)
       '
       ' A size of 0 means to use the size of the text
       '
-      outsizex% = LEN(txt(wid%, fid%))
+      outsizex% = LEN(text$)
     END IF
 
     IF outsizex% > win(wid%).sizeX THEN
@@ -2969,7 +2915,7 @@ FUNCTION WinClipText% (wid%, fid%, outoffx%, outoffy%, outsizex%, outtext$)
     '
     ' Get the text value and pad/clip
     '
-    outtext$ = txt(wid%, fid%)
+    outtext$ = text$
     IF LEN(outtext$) < outsizex% THEN
       '
       ' The text value is shorter than the field size
@@ -3476,7 +3422,7 @@ FUNCTION WinExpandField$ (wid%, fid%)
   DIM textval AS STRING   ' Source text
 
   thisidx = 1
-  textval = txt(wid%, fid%)
+  textval = ResourceGet(fld(wid%, fid%).textrid)
   textlen = LEN(textval)
  
   DO WHILE thisidx < textlen
@@ -3520,8 +3466,6 @@ FUNCTION WinExpandField$ (wid%, fid%)
       LET selfid = WinParseSelector(wid%, fid%, outsel)
       IF selfid > 0 THEN
         SELECT CASE outval
-          CASE "Text", "text"
-            build = build + txt(wid%, selfid)
           CASE "Value", "value"
             build = build + LTRIM$(STR$(fld(wid%, selfid).value))
         END SELECT
@@ -3574,7 +3518,7 @@ FUNCTION WinGetText$ (wid%, fid%)
   IF (fld(wid%, fid%).flags AND FieldFlag.Bound) > 0 THEN
     WinGetText$ = WinExpandField$(wid%, fid%)
   ELSE
-    WinGetText$ = txt(wid%, fid%)
+    WinGetText$ = ResourceGet(fld(wid%, fid%).textrid)
   END IF
 
 END FUNCTION
@@ -3658,10 +3602,13 @@ SUB WinKeyBoolean (wid%, fid%, keypress$)
   ' Sends a keystroke to a boolean field.
   '
  
+  DIM text AS STRING
+  LET text = WinGetText(wid%, fid%)
+
   SELECT CASE keypress$
 
     CASE " "
-      SELECT CASE txt(wid%, fid%)
+      SELECT CASE text
         CASE "No"
           WinSetText wid%, fid%, "Yes"
         CASE "Yes"
@@ -3684,7 +3631,7 @@ SUB WinKeyInteger (wid%, fid%, keypress$)
   '
 
   DIM buf$
-  LET buf$ = txt(wid%, fid%)
+  LET buf$ = WinGetText$(wid%, fid%)
 
   SELECT CASE keypress$
    
@@ -3702,7 +3649,7 @@ SUB WinKeyInteger (wid%, fid%, keypress$)
 
   END SELECT
 
-  txt(wid%, fid%) = buf$
+  WinSetText wid%, fid%, buf$
 
 END SUB
 
@@ -4292,7 +4239,15 @@ SUB WinSetText (wid%, fid%, text$)
   Assert wid% > 0, "WinSetText", "wid cannot be 0"
   Assert fid% > 0, "WinSetText", "fid cannot be 0"
 
-  txt(wid%, fid%) = text$
+  DIM textrid AS INTEGER
+  LET textrid = fld(wid%, fid%).textrid
+
+  IF textrid = 0 THEN
+    fld(wid%, fid%).textrid = ResourceCreate(text$)
+  ELSE
+    ResourceSet textrid, text$
+  END IF
+
   WinRefreshField wid%, fid%
 
 END SUB
@@ -4308,10 +4263,7 @@ FUNCTION WorldAdd% (hid AS INTEGER, cx AS INTEGER, cy AS INTEGER)
   area(aid).allocated = True
   area(aid).habitat = hid
 
-  '
-  ' Position on the atlas
-  '
-  AtlasAddItem cx, cy, aid, habitat(hid).label
+  AtlasAddItem cx, cy, aid, habitat(hid).labelrid
 
   WorldAdd% = aid
 
@@ -4442,16 +4394,17 @@ SUB WorldRemove (aid AS INTEGER)
 
 END SUB
 
-SUB WorldSetLabel (aid AS INTEGER, label AS STRING)
+SUB WorldSetLabel (aid AS INTEGER, labelrid AS INTEGER)
   '
   ' Updates the label for the specified area
   '
   Assert aid > 0, "WorldSetLabel", "aid cannot be 0"
+  Assert labelrid > 0, "WorldSetLabel", "labelrid cannot be 0"
 
   DIM idx AS INTEGER
   LET idx = AtlasIndexOf(aid)
   IF idx > 0 THEN
-    AtlasSetLabel idx, label
+    AtlasSetLabel idx, labelrid
   END IF
 
 END SUB
