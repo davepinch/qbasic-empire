@@ -34,7 +34,7 @@ TYPE FieldType
   ' Information about an input field in a window.
   '
   kind     AS INTEGER
-  childWid AS INTEGER  ' TODO: add nparam and combine these two
+  childwid AS INTEGER  ' TODO: add nparam and combine these two
   cmdrid   AS INTEGER
   flags    AS INTEGER
   offsetX  AS INTEGER
@@ -114,18 +114,64 @@ DECLARE FUNCTION AtlasIndexOf% (value AS INTEGER)
 DECLARE FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS INTEGER, outpress AS STRING)
 
 '
+' Command subroutine
+'
+DECLARE FUNCTION CmdEndGame% (ntoken%, stoken$())
+DECLARE FUNCTION CmdFieldEnd% (ntoken%, stoken$(), wid%, fid%)
+DECLARE FUNCTION CmdFieldValue% (ntoken%, stoken$(), wid%, fid%)
+DECLARE FUNCTION CmdFieldChild% (ntoken%, stoken$(), wid%, fid%)
+DECLARE FUNCTION CmdFieldBoundText% (ntoken%, stoken$(), wid%, wid%)
+DECLARE FUNCTION CmdFieldText% (ntoken%, stoken$(), wid%, fid%)
+DECLARE FUNCTION CmdFieldSizeX% (ntoken%, stoken$(), wid%, fid%)
+DECLARE FUNCTION CmdFieldOffsetX% (ntoken%, stoken$(), wid%, fid%)
+DECLARE FUNCTION CmdFieldOffsetY% (ntoken%, stoken$(), wid%, fid%)
+DECLARE FUNCTION CmdFieldCommand% (ntoken%, stoken$(), wid%, fid%)
+DECLARE FUNCTION CmdFilter% (ntoken%, stoken$())
+DECLARE FUNCTION CmdHabitat% (ntoken%, stoken$(), hid%)
+DECLARE FUNCTION CmdHabitatBackdrop% (ntoken%, stoken$(), hid%)
+DECLARE FUNCTION CmdHabitatEnd% (ntoken%, stoken$(), hid%)
+DECLARE FUNCTION CmdHabitatLabel% (ntoken%, stoken$(), hid%)
+DECLARE FUNCTION CmdHabitatTitle% (ntoken%, stoken$(), hid%)
+DECLARE FUNCTION CmdHabitatUI% (ntoken%, stoken$(), hid%)
+DECLARE FUNCTION CmdNewGame% (ntoken%, stoken$())
+DECLARE FUNCTION CmdOption% (ntoken%, stoken$())
+DECLARE FUNCTION CmdReplot% (ntoken%, stoken$())
+DECLARE FUNCTION CmdView% (ntoken%, stoken$())
+DECLARE FUNCTION CmdWindow% (ntoken%, stoken$(), wid%)
+DECLARE FUNCTION CmdWindowArrowExit% (ntoken%, stoken$(), wid%)
+DECLARE FUNCTION CmdWindowBoolean% (ntoken%, stoken$(), wid%, fid%)
+DECLARE FUNCTION CmdWindowButton% (ntoken%, stoken$(), wid%, fid%)
+DECLARE FUNCTION CmdWindowEnd% (ntoken%, stoken$(), wid%)
+DECLARE FUNCTION CmdWindowFile% (ntoken%, stoken$(), wid%, fid%)
+DECLARE FUNCTION CmdWindowInteger% (ntoken%, stoken$(), wid%, fid%)
+DECLARE FUNCTION CmdWindowLabel% (ntoken%, stoken$(), wid%, fid%)
+DECLARE FUNCTION CmdWindowName% (ntoken%, stoken$(), wid%)
+DECLARE FUNCTION CmdWindowPopup% (ntoken%, stoken$(), wid%, fid%)
+DECLARE FUNCTION CmdWindowPosX% (ntoken%, stoken$(), wid%)
+DECLARE FUNCTION CmdWindowPosY% (ntoken%, stoken$(), wid%)
+DECLARE FUNCTION CmdWindowSeparator% (ntoken%, stoken$(), wid%, fid%)
+DECLARE FUNCTION CmdWindowSizeX% (ntoken%, stoken$(), wid%)
+DECLARE FUNCTION CmdWindowSizeY% (ntoken%, stoken$(), wid%)
+DECLARE FUNCTION CmdWindowStyle% (ntoken%, stoken$(), wid%)
+
+'
 ' Execute* subroutines
 '
 ' Each subroutine executes a different menu command. Review the comments
 ' in the Execute() function to learn how to implement a command.
 '
-DECLARE SUB ExecCmd (text AS STRING)
-DECLARE SUB ExecCmdField (ctx AS INTEGER, token() AS STRING, wid AS ANY, fid AS INTEGER)
-DECLARE SUB ExecCmdGlobal (ctx AS INTEGER, token() AS STRING, hid AS INTEGER, wid AS INTEGER)
-DECLARE SUB ExecCmdHabitat (ctx AS INTEGER, token() AS STRING, hid AS INTEGER)
-DECLARE SUB ExecCmdWindow (ctx AS INTEGER, token() AS STRING, wid AS INTEGER, fid AS INTEGER)
-DECLARE SUB ExecFile (filename AS STRING)
-DECLARE SUB ExecResource (rid AS INTEGER)
+DECLARE FUNCTION ExecuteCommand% (text AS STRING)
+DECLARE FUNCTION ExecuteResource% (rid AS INTEGER)
+DECLARE SUB ExecuteFile (filename AS STRING)
+
+'
+' Habitats
+'
+DECLARE FUNCTION HabitatCreate% ()
+DECLARE SUB HabitatSetUI (hid%, UI$)
+DECLARE SUB HabitatSetLabel (hid%, label$)
+DECLARE SUB HabitatSetBackdrop (hid%, filename$)
+DECLARE SUB HabitatSetTitle (hid%, title$)
 
 '
 ' Inbox* subroutines
@@ -235,7 +281,11 @@ DECLARE SUB WinSelect (wid%, fid%)
 DECLARE SUB WinSelectPrevious (wid%)
 DECLARE SUB WinSelectFirst (wid%)
 DECLARE SUB WinSelectLast (wid%)
-DECLARE SUB WinSetText (wid%, fid%, text$)
+DECLARE SUB WinSetChild (wid%, fid%, wname$)
+DECLARE SUB WinSetCommand (wid%, fid%, cmd$)
+DECLARE SUB WinSetStyle (wid%, sid%)
+DECLARE SUB WinSetText (wid%, fid%, text$, hasMacros%)
+DECLARE SUB WinSetValue (wid%, fid%, value%)
 
 '
 ' World* subroutines
@@ -302,19 +352,14 @@ CONST AtlasStyle.SelectBackcolor = 4
 CONST True = -1
 CONST False = NOT True
 
-'
-' ExecContexts
-'
-CONST ExecContext.Global = 0
-CONST ExecContext.Window = 1
-CONST ExecContext.Field = 2
-CONST ExecContext.Habitat = 3
+CONST CmdResult.OK = 0
+CONST CmdResult.Malformed = 1
 
 '
 ' Field Flags
 '
 CONST FieldFlag.None = 0
-CONST FieldFlag.Bound = 1
+CONST FieldFlag.Macro = 1
 
 '
 ' Field Kinds
@@ -1217,6 +1262,598 @@ SUB AtlasSetLabel (idx AS INTEGER, labelrid AS INTEGER)
 
 END SUB
 
+FUNCTION CmdEndGame% (ntoken%, stoken$())
+
+  IF ntoken% = 1 THEN
+    '
+    ' TODO: prompt for confirmation
+    '
+    END
+  ELSE
+    CmdEnd% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdFieldChild% (ntoken%, stoken$(), wid%, fid%)
+ 
+  Assert wid% > 0, "CmdFieldChild", "wid context cannot be 0"
+  Assert fid% > 0, "CmdFieldChild", "fid context cannot be 0"
+
+  IF ntoken% = 2 THEN
+    WinSetChild wid%, fid%, stoken$(1)
+    CmdFieldChild% = CmdResult.OK
+  ELSE
+    CmdFieldChild% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdFieldCommand% (ntoken%, stoken$(), wid%, fid%)
+
+  Assert wid% > 0, "CmdFieldCommand", "wid context cannot be 0"
+  Assert fid% > 0, "CmdFieldCommand", "fid context cannot be 0"
+
+  IF ntoken% = 2 THEN
+    WinSetCommand wid%, fid%, stoken$(1)
+    CmdFieldCommand% = CmdResult.OK
+  ELSE
+    CmdFieldCommand% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdFieldEnd% (ntoken%, stoken$(), wid%, fid%)
+
+  Assert wid% > 0, "CmdFieldEnd", "wid context cannot be 0"
+  Assert fid% > 0, "CmdFieldEnd", "fid context cannot be 0"
+
+  DIM endtag AS STRING
+ 
+  SELECT CASE fld(wid%, fid%).kind
+    CASE FieldKind.Button
+      endtag = "endbutton"
+    CASE FieldKind.File
+      endtag = "endfile"
+    CASE FieldKind.Label
+      endtag = "endlabel"
+    CASE FieldKind.Popup
+      endtag = "endpopup"
+    CASE FieldKind.Separator
+      endtag = "endseparator"
+    CASE FieldKind.Boolean
+      endtag = "endboolean"
+    CASE FieldKind.Integer
+      endtag = "endinteger"
+    CASE ELSE
+      AssertFail "CmdFieldEnd", "Unknown kind:" + STR$(fld(wid%, fid%).kind)
+  END SELECT
+
+  IF LCASE$(stoken$(0)) = endtag THEN
+    fid% = 0
+    CmdFieldEnd% = CmdResult.OK
+  ELSE
+    CmdFieldEnd% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdFieldOffsetX% (ntoken%, stoken$(), wid%, fid%)
+
+  Assert wid% > 0, "CmdFieldOffsetX", "wid context cannot be 0"
+  Assert fid% > 0, "CmdFieldOffsetX", "fid context cannot be 0"
+
+  IF ntoken% = 2 THEN
+    fld(wid%, fid%).offsetX = VAL(stoken$(1))
+    CmdFieldOffsetX% = CmdResult.OK
+  ELSE
+    CmdFieldOffsetX% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdFieldOffsetY% (ntoken%, stoken$(), wid%, fid%)
+
+  Assert wid% > 0, "CmdFieldOffsetY", "wid context cannot be 0"
+  Assert fid% > 0, "CmdFieldOffsetY", "fid context cannot be 0"
+
+  IF ntoken% = 2 THEN
+    fld(wid%, fid%).offsetY = VAL(stoken$(1))
+    CmdFieldOffsetY% = CmdResult.OK
+  ELSE
+    CmdFieldOffsetY% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdFieldSizeX% (ntoken%, stoken$(), wid%, fid%)
+
+  Assert wid% > 0, "CmdFieldSizeX", "wid context cannot be 0"
+  Assert fid% > 0, "CmdFieldSizeX", "fid context cannot be 0"
+
+  IF ntoken% = 2 THEN
+    fld(wid%, fid%).sizeX = VAL(stoken$(1))
+    CmdFieldSizeX% = CmdResult.OK
+  ELSE
+    CmdFieldSizeX% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdFieldText% (ntoken%, stoken$(), wid%, fid%)
+
+  Assert wid% > 0, "CmdFieldText", "wid context cannot be 0"
+  Assert fid% > 0, "CmdFieldText", "fid context cannot be 0"
+
+  IF ntoken% = 2 THEN
+    '
+    ' Syntax: Text "string"
+    '
+    WinSetText wid%, fid%, stoken$(1), False
+    CmdFieldText% = CmdResult.OK
+ 
+  ELSEIF ntoken% = 3 THEN
+    '
+    ' Syntax: Text Macro "string"
+    '
+    IF LCASE$(stoken$(1)) = "macro" THEN
+      WinSetText wid%, fid%, stoken$(2), True
+      CmdFieldText% = CmdResult.OK
+    ELSE
+      CmdFieldText% = CmdResult.Malformed
+    END IF
+
+  ELSE
+    CmdFieldText% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdFieldValue% (ntoken%, stoken$(), wid%, fid%)
+
+  Assert wid% > 0, "CmdFieldValue", "wid context cannot be 0"
+  Assert fid% > 0, "CmdFieldValue", "fid context cannot be 0"
+
+  IF ntoken% = 2 THEN
+    WinSetValue wid%, fid%, VAL(stoken$(1))
+    CmdFieldValue% = CmdResult.OK
+  ELSE
+    CmdFieldValue% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdFilter% (ntoken%, stoken$())
+
+  IF ntoken% <> 2 THEN
+
+    CmdFilter% = CmdResult.Malformed
+
+  ELSE
+
+    SELECT CASE LCASE$(stoken$(1))
+     
+      CASE "none"
+        UI.SetFilter UIFilter.None, True
+        CmdFilter% = CmdResult.OK
+
+      CASE "self"
+        UI.SetFilter UIFilter.Self, True
+        CmdFilter% = CmdResult.OK
+
+      CASE ELSE
+        CmdFilter% = CmdResult.Malformed
+
+    END SELECT
+
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdHabitat% (ntoken%, stoken$(), hid%)
+
+  Assert hid% = 0, "CmdHabitat", "hid context must be 0"
+
+  IF ntoken% = 1 THEN
+
+    hid% = HabitatCreate%
+    CmdHabitat% = CmdResult.OK
+
+  ELSE
+
+    CmdHabitat% = CmdResult.Malformed
+
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdHabitatBackdrop% (ntoken%, stoken$(), hid%)
+
+  Assert hid% > 0, "CmdHabitatBackdrop", "hid context cannot be 0"
+
+  IF ntoken% = 2 THEN
+    HabitatSetBackdrop hid%, stoken$(1)
+    CmdHabitatBackdrop = CmdResult.OK
+  ELSE
+    CmdHabitatBackdrop = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdHabitatEnd% (ntoken%, stoken$(), hid%)
+ 
+  Assert hid% > 0, "CmdHabitatEnd", "hid context cannot be 0"
+
+  IF ntoken% = 1 THEN
+    hid% = 0
+    CmdHabitatEnd% = CmdResult.OK
+  ELSE
+    CmdHabitatEnd% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdHabitatLabel% (ntoken%, stoken$(), hid%)
+
+  Assert hid% > 0, "CmdHabitatLabel", "hid context cannot be 0"
+
+  IF ntoken% = 2 THEN
+    HabitatSetLabel hid%, stoken$(1)
+    CmdHabitatLabel% = CmdResult.OK
+  ELSE
+    CmdHabitatLabel% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdHabitatTitle% (ntoken%, stoken$(), hid%)
+
+  Assert hid% > 0, "CmdHabitatTitle", "hid context cannot be 0"
+
+  IF ntoken% = 2 THEN
+    HabitatSetTitle hid%, stoken$(1)
+    CmdHabitatTitle% = CmdResult.OK
+  ELSE
+    CmdHabitatTitle% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdHabitatUI% (ntoken%, stoken$(), hid%)
+
+  Assert hid% > 0, "CmdHabitatUI", "hid context cannot be 0"
+
+  IF ntoken% = 2 THEN
+    HabitatSetUI hid%, stoken$(1)
+    CmdHabitatUI% = CmdResult.OK
+  ELSE
+    CmdHabitatUI% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdNewGame% (ntoken%, stoken$())
+
+  IF ntoken% = 1 THEN
+    InboxInit
+    WorldInit 15
+    CmdNewGame% = CmdResult.OK
+  ELSE
+    CmdNewGame% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdOption% (ntoken%, stoken$())
+
+  IF ntoken% <> 2 THEN
+    CmdOption% = CmdResult.Malformed
+    EXIT FUNCTION
+  END IF
+
+  SELECT CASE LCASE$(stoken$(1))
+   
+    CASE "alerts"
+      WinRunName "DialogAlerts"
+      CmdOption% = CmdResult.OK
+
+    CASE ELSE
+      CmdOption% = CmdResult.Malformed
+
+  END SELECT
+
+END FUNCTION
+
+FUNCTION CmdReplot% (ntoken%, stoken$())
+
+  IF ntoken% <> 2 THEN
+
+    CmdReplot% = CmdResult.Malformed
+
+  ELSE
+
+    SELECT CASE LCASE$(stoken$(1))
+     
+      CASE "b", "band"
+        AtlasPlotBanded
+
+      CASE "c", "cluster"
+        AtlasPlotClustered
+
+      CASE "m", "manual"
+        AtlasPlotManual
+
+      CASE "r", "random"
+        AtlasPlotManual
+
+      CASE ELSE
+        CmdReplot = CmdResult.Malformed
+        EXIT FUNCTION
+
+    END SELECT
+
+    CmdReplot = CmdResult.OK
+
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdView% (ntoken%, stoken$())
+
+  DIM vname AS STRING
+
+  '
+  ' Get the view name; syntax is [VIEW] <NAME>
+  '
+  IF ntoken% = 1 THEN
+    vname = stoken$(0)
+  ELSEIF ntoken% = 2 THEN
+    vname = stoken$(1)
+  ELSE
+    CmdView% = CmdResult.Malformed
+    EXIT FUNCTION
+  END IF
+
+  SELECT CASE LCASE$(vname)
+   
+    CASE "about"
+      UI.SetPage UIPage.About
+
+    CASE "atlas"
+      UI.SetPage UIPage.Atlas
+
+    CASE "inbox"
+      UI.SetPage UIPage.Inbox
+
+    CASE "table"
+      UI.SetPage UIPage.Table
+
+    CASE ELSE
+      CmdView% = CmdResult.Malformed
+      EXIT FUNCTION
+
+  END SELECT
+
+  CmdView% = CmdResult.OK
+
+END FUNCTION
+
+FUNCTION CmdWindow% (ntoken%, stoken$(), wid%)
+
+  Assert wid% = 0, "CmdWindow", "wid context must be 0"
+
+  IF ntoken% = 1 THEN
+    wid% = WinCreate%
+    CmdWindow% = CmdResult.OK
+  ELSE
+    CmdWindow% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdWindowArrowExit% (ntoken%, stoken$(), wid%)
+
+  Assert wid% > 0, "CmdWindowArrowExit", "wid context cannot be 0"
+
+  IF ntoken% = 2 THEN
+    win(wid%).arrowexit = VAL(stoken$(1))
+    CmdWindowArrowExit% = CmdResult.OK
+  ELSE
+    CmdWindowArrowExit% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdWindowBoolean% (ntoken%, stoken$(), wid%, fid%)
+
+  Assert wid% > 0, "CmdWindowBoolean", "wid context cannot be 0"
+  Assert fid% = 0, "CmdWindowBoolean", "fid context must be 0"
+
+  IF ntoken% = 1 THEN
+    fid% = WinCreateField(wid%, FieldKind.Boolean)
+    CmdWindowBoolean% = CmdResult.OK
+  ELSE
+    CmdWindowBoolean% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdWindowButton% (ntoken%, stoken$(), wid%, fid%)
+ 
+  Assert wid% > 0, "CmdWindowButton", "wid context cannot be 0"
+  Assert fid% = 0, "CmdWindowButton", "fid context must be 0"
+
+  IF ntoken% = 1 THEN
+    fid% = WinCreateField(wid%, FieldKind.Button)
+    CmdWindowButton% = CmdResult.OK
+  ELSE
+    CmdWindowButton% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdWindowEnd% (ntoken%, stoken$(), wid%)
+
+  Assert wid% > 0, "CmdWindowEnd", "wid context cannot be 0"
+
+  IF ntoken% = 1 THEN
+    WinAutoSize wid%
+    wid% = 0
+    CmdWindowEnd% = CmdResult.OK
+  ELSE
+    CmdWindowEnd% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdWindowFile% (ntoken%, stoken$(), wid%, fid%)
+
+  Assert wid% > 0, "CmdWindowFile", "wid context cannot be 0"
+  Assert fid% = 0, "CmdWindowFile", "fid context must be 0"
+
+  IF ntoken% = 1 THEN
+    fid% = WinCreateField(wid%, FieldKind.File)
+    CmdWindowFile% = CmdResult.OK
+  ELSE
+    CmdWindowFile% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdWindowInteger% (ntoken%, stoken$(), wid%, fid%)
+
+  Assert wid% > 0, "CmdWindowInteger", "wid context cannot be 0"
+  Assert fid% = 0, "CmdWindowInteger", "fid context must be 0"
+
+  IF ntoken% = 1 THEN
+    fid% = WinCreateField(wid%, FieldKind.Integer)
+    CmdWindowInteger% = CmdResult.OK
+  ELSE
+    CmdWindowInteger% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdWindowLabel% (ntoken%, stoken$(), wid%, fid%)
+
+  Assert wid% > 0, "CmdWindowLabel", "wid context cannot be 0"
+  Assert fid% = 0, "CmdWindowLabel", "fid context must be 0"
+
+  IF ntoken% = 1 THEN
+    fid% = WinCreateField(wid%, FieldKind.Label)
+    CmdWindowLabel% = CmdResult.OK
+  ELSE
+    CmdWindowLabel% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdWindowName% (ntoken%, stoken$(), wid%)
+
+  Assert wid% > 0, "CmdWindowName", "wid context cannot be 0"
+
+  IF ntoken% = 2 THEN
+    win(wid%).wname = stoken$(1)
+    CmdWindowName% = CmdResult.OK
+  ELSE
+    CmdWindowName% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdWindowPopup% (ntoken%, stoken$(), wid%, fid%)
+
+  Assert wid% > 0, "CmdWindowPopup", "wid context cannot be 0"
+  Assert fid% = 0, "CmdWindowPopup", "fid context must be 0"
+
+  IF ntoken% = 1 THEN
+    fid% = WinCreateField(wid%, FieldKind.Popup)
+    CmdWindowPopup% = CmdResult.OK
+  ELSE
+    CmdWindowPopup% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdWindowPosX% (ntoken%, stoken$(), wid%)
+
+  Assert wid% > 0, "CmdWindowPosX", "wid context cannot be 0"
+
+  IF ntoken% = 2 THEN
+    win(wid%).posX = VAL(stoken$(1))
+    CmdWindowPosX% = CmdResult.OK
+  ELSE
+    CmdWindowPosX% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdWindowPosY% (ntoken%, stoken$(), wid%)
+
+  Assert wid% > 0, "CmdWindowPosY", "wid context cannot be 0"
+
+  IF ntoken% = 2 THEN
+    win(wid%).posY = VAL(stoken$(1))
+    CmdWindowPosY% = CmdResult.OK
+  ELSE
+    CmdWindowPosY% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdWindowSeparator% (ntoken%, stoken$(), wid%, fid%)
+
+  Assert wid% > 0, "CmdWindowSeparator", "wid context cannot be 0"
+  Assert fid% = 0, "CmdWindowSeparator", "fid context must be 0"
+
+  IF ntoken% = 1 THEN
+    fid% = WinCreateField(wid%, FieldKind.Separator)
+    CmdWindowSeparator% = CmdResult.OK
+  ELSE
+    CmdWindowSeparator% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdWindowSizeX% (ntoken%, stoken$(), wid%)
+
+  Assert wid% > 0, "CmdWindowSizeX", "wid context cannot be 0"
+
+  IF ntoken% = 2 THEN
+    win(wid%).sizeX = VAL(stoken$(1))
+    CmdWindowSizeX% = CmdResult.OK
+  ELSE
+    CmdWindowSizeX% = CmdResult.Malformed
+  END IF
+   
+END FUNCTION
+
+FUNCTION CmdWindowSizeY% (ntoken%, stoken$(), wid%)
+
+  Assert wid% > 0, "CmdWindowSizeY", "wid context cannot be 0"
+
+  IF ntoken% = 2 THEN
+    win(wid%).sizeY = VAL(stoken$(1))
+    CmdWindowSizeY% = CmdResult.OK
+  ELSE
+    CmdWindowSizeY% = CmdResult.Malformed
+  END IF
+
+END FUNCTION
+
+FUNCTION CmdWindowStyle% (ntoken%, stoken$(), wid%)
+
+  Assert wid% > 0, "CmdWindowStyle", "wid context cannot be 0"
+
+  IF ntoken% = 2 THEN
+    WinSetStyle wid%, VAL(stoken$(1))
+    CmdWindowStyle% = CmdResult.OK
+  ELSE
+    CmdWindowStyle% = CmdResult.Malformed
+  END IF
+   
+END FUNCTION
+
 SUB DrawFile (filename AS STRING)
   '
   ' Draws a PCB file containing embedded color codes
@@ -1472,288 +2109,263 @@ SUB DrawText (text AS STRING)
 
 END SUB
 
-SUB ExecCmd (text AS STRING)
+FUNCTION ExecuteCommand% (text AS STRING)
 
-  SHARED ctx AS INTEGER
-  SHARED fid AS INTEGER
-  SHARED hid AS INTEGER
-  SHARED wid AS INTEGER
+  SHARED fid%
+  SHARED hid%
+  SHARED wid%
 
-  DIM token(1 TO 5) AS STRING
-  DIM tokens AS INTEGER
+  DIM result         AS INTEGER
+  DIM stoken(0 TO 5) AS STRING
+  DIM ntoken%
 
-  tokens = Split(text, token())
-  IF tokens = 0 THEN
-    EXIT SUB
+  ntoken% = Split(text, stoken())
+  IF ntoken% = 0 THEN
+    ExecuteCommand% = CmdResult.OK
+    EXIT FUNCTION
+  ELSE
+    stoken(0) = LCASE$(stoken(0))
   END IF
 
-  SELECT CASE ctx
+  IF fid% > 0 THEN
+    GOSUB ExecuteFieldCommand
+  ELSEIF wid% > 0 THEN
+    GOSUB ExecuteWindowCommand
+  ELSEIF hid% > 0 THEN
+    GOSUB ExecuteHabitatCommand
+  ELSE
+    GOSUB ExecuteGlobalCommand
+  END IF
+
+  EXIT FUNCTION
+
+REM *** SUBROUTINES ***
+
+ExecuteFieldCommand:
+ 
+  Assert hid% = 0, "ExecuteCommand", "hid must be 0 in field context"
+  Assert fid% > 0, "ExecuteCommand", "fid cannot be 0 in field context"
+  Assert wid% > 0, "ExecuteCommand", "wid cannot be 0 in field context"
+
+  SELECT CASE stoken(0)
+
+    CASE "child"
+      result = CmdFieldChild%(ntoken%, stoken(), wid%, fid%)
+
+    CASE "command"
+      result = CmdFieldCommand%(ntoken%, stoken(), wid%, fid%)
+
+    CASE "endboolean"
+      result = CmdFieldEnd%(ntoken%, stoken(), wid%, fid%)
+
+    CASE "endbutton"
+      result = CmdFieldEnd%(ntoken%, stoken(), wid%, fid%)
+
+    CASE "endfile"
+      result = CmdFieldEnd%(ntoken%, stoken(), wid%, fid%)
+
+    CASE "endinteger"
+      result = CmdFieldEnd%(ntoken%, stoken(), wid%, fid%)
+
+    CASE "endlabel"
+      result = CmdFieldEnd%(ntoken%, stoken(), wid%, fid%)
+  
+    CASE "endpopup"
+      result = CmdFieldEnd%(ntoken%, stoken(), wid%, fid%)
+
+    CASE "endseparator"
+      result = CmdFieldEnd%(ntoken%, stoken(), wid%, fid%)
+
+    CASE "offsetx"
+      result = CmdFieldOffsetX%(ntoken%, stoken(), wid%, fid%)
+
+    CASE "offsety"
+      result = CmdFieldOffsetY%(ntoken%, stoken(), wid%, fid%)
+
+    CASE "sizex"
+      result = CmdFieldSizeX%(ntoken%, stoken(), wid%, fid%)
+
+    CASE "text"
+      result = CmdFieldText%(ntoken%, stoken(), wid%, fid%)
+
+    CASE "value"
+      result = CmdFieldValue%(ntoken%, stoken(), wid%, fid%)
+
+    CASE ELSE
+      result = CmdResult.Malformed
+
+  END SELECT
+ 
+  IF fid = 0 THEN
+    '
+    ' A command closed the field context
+    '
+    ctx = ContextWindow
+  END IF
+
+  RETURN
+
+ExecuteGlobalCommand:
+ 
+  SELECT CASE stoken(0)
+
+    CASE "window"
+      result = CmdWindow%(ntoken%, stoken(), wid%)
+
+    CASE "habitat"
+      result = CmdHabitat%(ntoken%, stoken(), hid%)
+
+    CASE "about"
+      result = CmdView%(ntoken%, stoken())
+
+    CASE "endgame"
+      result = CmdEndGame%(ntoken%, stoken())
+
+    CASE "filter"
+      result = CmdFilter%(ntoken%, stoken())
+
+    CASE "inbox"
+      result = CmdView%(ntoken%, stoken())
+
+    CASE "newgame"
+      result = CmdNewGame%(ntoken%, stoken())
+
+    CASE "option"
+      result = CmdOption%(ntoken%, stoken())
+     
+    CASE "replot"
+      result = CmdReplot%(ntoken%, stoken())
+
+    CASE "view"
+      result = CmdView%(ntoken%, stoken())
    
-    CASE ExecContext.Global:
-      ExecCmdGlobal ctx, token(), hid, wid
-
-    CASE ExecContext.Window
-      ExecCmdWindow ctx, token(), wid, fid
-
-    CASE ExecContext.Field
-      ExecCmdField ctx, token(), wid, fid
-
-    CASE ExecContext.Habitat
-      ExecCmdHabitat ctx, token(), hid
-
-  END SELECT
-
-END SUB
-
-SUB ExecCmdField (ctx AS INTEGER, token() AS STRING, wid AS INTEGER, fid AS INTEGER)
-
-  Assert ctx = ExecContext.Field, "ExecCmdField", "Unexpected context:" + STR$(ctx)
-
-  DIM endtag AS STRING
-  SELECT CASE fld(wid, fid).kind
-    CASE FieldKind.Button
-      endtag = "EndButton"
-    CASE FieldKind.File
-      endtag = "EndFile"
-    CASE FieldKind.Label
-      endtag = "EndLabel"
-    CASE FieldKind.Popup
-      endtag = "EndPopup"
-    CASE FieldKind.Separator
-      endtag = "EndSeparator"
-    CASE FieldKind.Boolean
-      endtag = "EndBoolean"
-    CASE FieldKind.Integer
-      endtag = "EndInteger"
     CASE ELSE
-      AssertFail "ExecCmdField", "Unknown kind:" + STR$(fld(wid, fid).kind)
-  END SELECT
+      result = CmdResult.Malformed
 
-  SELECT CASE token(1)
+  END SELECT
+  RETURN
+
+ExecuteHabitatCommand:
  
-    CASE endtag
-      fid = 0
-      ctx = ExecContext.Window
+  Assert hid% > 0, "ExecuteCommand", "hid cannot be 0 in habitat context"
+  Assert fid% = 0, "ExecuteCommand", "fid must be 0 in habitat context"
+  Assert wid% = 0, "ExecuteCommand", "wid must be 0 in habitat context"
 
-    CASE "BoundText"
-      WinSetText wid, fid, token(2)
-      fld(wid, fid).flags = fld(wid, fid).flags OR FieldFlag.Bound
+  SELECT CASE stoken(0)
 
-    CASE "Child"
-      fld(wid, fid).childWid = WinGetWid%(token(2))
+    CASE "label"
+      result = CmdHabitatLabel%(ntoken%, stoken(), hid%)
 
-    CASE "Command"
-      fld(wid, fid).cmdrid = ResourceCreate(token(2))
+    CASE "backdrop"
+      result = CmdHabitatBackdrop%(ntoken%, stoken(), hid%)
 
-    CASE "OffsetX"
-      fld(wid, fid).offsetX = VAL(token(2))
-
-    CASE "OffsetY"
-      fld(wid, fid).offsetY = VAL(token(2))
-
-    CASE "SizeX"
-      fld(wid, fid).sizeX = VAL(token(2))
-
-    CASE "Text"
-      WinSetText wid, fid, token(2)
-
-    CASE "Value"
-      fld(wid, fid).value = VAL(token(2))
-
-    CASE ELSE
-      AssertFail "ExecCmdField", "Not valid in field context: " + token(1)
-
-  END SELECT
-
-END SUB
-
-SUB ExecCmdGlobal (ctx AS INTEGER, token() AS STRING, hid AS INTEGER, wid AS INTEGER)
-
-  Assert ctx = 0, "ExecCmdGlobal", "Unexpected context:" + STR$(ctx)
-
-  SELECT CASE token(1)
-
-    CASE "Window"
-      Assert wid = 0, "ExecCmdGlobal", "Window not completed"
-      ctx = ExecContext.Window
-      wid = WinCreate%
-
-    CASE "Habitat"
-      Assert hid = 0, "ExecCmdGlobal", "Habitat not completed"
-      habitats = habitats + 1
-      ctx = ExecContext.Habitat
-      hid = habitats
-
-    CASE "About"
-      UI.SetPage UIPage.About
-
-    CASE "EndGame"
-      END
-
-    CASE "FilterNone"
-      UI.SetFilter UIFilter.None, True
-
-    CASE "FilterSelf"
-      UI.SetFilter UIFilter.Self, True
-
-    CASE "NewGame"
-      InboxInit
-      WorldInit 15
-
-    CASE "OptionAlerts"
-      WinRunName "DialogAlerts"
-      
-    CASE "ReplotBand"
-      AtlasPlotBanded
-
-    CASE "ReplotCluster"
-      AtlasPlotClustered
-
-    CASE "ReplotManual"
-      AtlasPlotManual
-
-    CASE "ReplotRandom"
-      AtlasPlotRandom
-
-    CASE "ViewAtlas"
-      UI.SetPage UIPage.Atlas
-    
-    CASE "ViewInbox"
-      UI.SetPage UIPage.Inbox
-
-    CASE "ViewTable"
-      UI.SetPage UIPage.Table
-
-    CASE ELSE
-      AssertFail "ExecCmdGlobal", "Not valid in global context:" + token(1)
-
-  END SELECT
-
-END SUB
-
-SUB ExecCmdHabitat (ctx AS INTEGER, token() AS STRING, hid AS INTEGER)
-
-  Assert ctx = ExecContext.Habitat, "ExecCmdHabitat", "Unexpected context:" + STR$(ctx)
-  Assert hid > 0, "ExecCmdHabitat", "hid cannot be 0"
-
-  SELECT CASE token(1)
-
-    CASE "AtlasLabel"
-      habitat(hid).labelrid = ResourceCreate(token(2))
-
-    CASE "Backdrop"
-      habitat(hid).backdrop = ResourceCreate(token(2))
-
-    CASE "EndHabitat"
-      hid = 0
+    CASE "endhabitat"
+      result = CmdHabitatEnd%(ntoken%, stoken(), hid%)
       ctx = ExecContext.Global
 
-    CASE "Title"
-      habitat(hid).titlerid = ResourceCreate(token(2))
+    CASE "title"
+      result = CmdHabitatTitle%(ntoken%, stoken(), hid%)
 
-    CASE "UI"
-      habitat(hid).UI = token(2)
-
-    CASE ELSE
-      AssertFail "ExecCmdHabitat", "Invalid in habitat context: " + token(1)
-
-  END SELECT
-
-END SUB
-
-SUB ExecCmdWindow (ctx AS INTEGER, token() AS STRING, wid AS INTEGER, fid AS INTEGER)
-
-  Assert ctx = ExecContext.Window, "ExecCmdWindow", "Unexpected context:" + STR$(ctx)
-  Assert wid > 0, "ExecCmdWindow", "wid cannot be 0"
-
-  SELECT CASE token(1)
- 
-    CASE "ArrowExit"
-      win(wid).arrowexit = VAL(token(2))
-
-    CASE "Boolean"
-      fid = WinCreateField(wid, FieldKind.Boolean)
-      ctx = ExecContext.Field
-
-    CASE "Button"
-      fid = WinCreateField(wid, FieldKind.Button)
-      ctx = ExecContext.Field
-
-    CASE "EndWindow"
-      WinAutoSize wid
-      wid = 0
-      ctx = ExecContext.Global
-
-    CASE "File"
-      fid = WinCreateField(wid, FieldKind.File)
-      ctx = ExecContext.Field
-
-    CASE "Integer"
-      fid = WinCreateField(wid, FieldKind.Integer)
-      ctx = ExecContext.Field
-
-    CASE "Label"
-      fid = WinCreateField(wid, FieldKind.Label)
-      ctx = ExecContext.Field
-
-    CASE "Name"
-      win(wid).wname = token(2)
-    
-    CASE "Popup"
-      fid = WinCreateField(wid, FieldKind.Popup)
-      ctx = ExecContext.Field
-
-    CASE "PosX"
-      win(wid).posX = VAL(token(2))
-
-    CASE "PosY"
-      win(wid).posY = VAL(token(2))
-
-    CASE "Separator"
-      fid = WinCreateField(wid, FieldKind.Separator)
-      ctx = ExecContext.Field
-
-    CASE "SizeX"
-      win(wid).sizeX = VAL(token(2))
-
-    CASE "SizeY"
-      win(wid).sizeY = VAL(token(2))
-
-    CASE "Style"
-      win(wid).style = VAL(token(2))
+    CASE "ui"
+      result = CmdHabitatUI%(ntoken%, stoken(), hid%)
 
     CASE ELSE
-      AssertFail "ExecCmdWindow", "Not valid in window context: " + token(1)
+      result = CmdResult.Malformed
 
   END SELECT
+  RETURN
 
-END SUB
+ExecuteWindowCommand:
 
-SUB ExecFile (filename AS STRING)
+  Assert hid% = 0, "ExecuteCommand", "hid must be 0 in window context"
+  Assert fid% = 0, "ExecuteCommand", "fid must be 0 in window context"
+  Assert wid% > 0, "ExecuteCommand", "wid cannot be 0 in window context"
+
+  SELECT CASE stoken(0)
+
+    CASE "arrowexit"
+      result = CmdWindowArrowExit%(ntoken%, stoken(), wid%)
+
+    CASE "boolean"
+      result = CmdWindowBoolean%(ntoken%, stoken(), wid%, fid%)
+
+    CASE "button"
+      result = CmdWindowButton%(ntoken%, stoken(), wid%, fid%)
+
+    CASE "endwindow"
+      result = CmdWindowEnd%(ntoken%, stoken(), wid%)
+
+    CASE "file"
+      result = CmdWindowFile%(ntoken%, stoken(), wid%, fid%)
+
+    CASE "integer"
+      result = CmdWindowInteger%(ntoken%, stoken(), wid%, fid%)
+
+    CASE "label"
+      result = CmdWindowLabel%(ntoken%, stoken(), wid%, fid%)
+
+    CASE "name"
+      result = CmdWindowName%(ntoken%, stoken(), wid%)
+   
+    CASE "popup"
+      result = CmdWindowPopup%(ntoken%, stoken(), wid%, fid%)
+
+    CASE "posx"
+      result = CmdWindowPosX%(ntoken%, stoken(), wid%)
+
+    CASE "posy"
+      result = CmdWindowPosY%(ntoken%, stoken(), wid%)
+
+    CASE "separator"
+      result = CmdWindowSeparator%(ntoken%, stoken(), wid%, fid%)
+
+    CASE "sizex"
+      result = CmdWindowSizeX%(ntoken%, stoken(), wid%)
+
+    CASE "sizey"
+      result = CmdWindowSizeY%(ntoken%, stoken(), wid%)
+
+    CASE "style"
+      result = CmdWindowStyle%(ntoken%, stoken(), wid%)
+
+    CASE ELSE
+      result = CmdResult.Malformed
+
+  END SELECT
+  RETURN
+
+END FUNCTION
+
+SUB ExecuteFile (filename AS STRING)
 
   DIM handle AS INTEGER
-  DIM text AS STRING
+  DIM result AS INTEGER
+  DIM text   AS STRING
 
   handle = FREEFILE
   OPEN filename FOR INPUT ACCESS READ AS #handle
 
   DO WHILE NOT EOF(1)
     LINE INPUT #handle, text
-    ExecCmd text
+    result = ExecuteCommand(text)
   LOOP
 
   CLOSE #handle
 
 END SUB
 
-SUB ExecResource (rid AS INTEGER)
+FUNCTION ExecuteResource% (rid AS INTEGER)
 
-  DIM cmd AS STRING
-  LET cmd = ResourceGet$(rid)
+  Assert rid > 0, "ExecuteResource", "rid cannot be 0"
 
-  ExecCmd cmd
+  DIM cmd$
+  LET cmd$ = ResourceGet$(rid)
 
-END SUB
+  IF LEN(cmd$) > 0 THEN
+    ExecuteResource% = ExecuteCommand%(cmd$)
+  END IF
+
+END FUNCTION
 
 FUNCTION GetKey$
   '
@@ -1771,6 +2383,52 @@ FUNCTION GetKey$
   GetKey$ = k
 
 END FUNCTION
+
+FUNCTION HabitatCreate%
+  habitats = habitats + 1
+  HabitatCreate% = habitats
+END FUNCTION
+
+SUB HabitatSetBackdrop (hid%, filename$)
+
+  Assert hid% > 0, "HabitatSetBackdrop", "hid cannot be 0"
+
+  IF habitat(hid%).backdrop = 0 THEN
+    habitat(hid%).backdrop = ResourceCreate%(filename$)
+  ELSE
+    ResourceSet habitat(hid%).backdrop, filename$
+  END IF
+
+END SUB
+
+SUB HabitatSetLabel (hid%, label$)
+
+  Assert hid% > 0, "HabitatSetLabel", "hid cannot be 0"
+
+  IF habitat(hid%).labelrid = 0 THEN
+    habitat(hid%).labelrid = ResourceCreate%(label$)
+  ELSE
+    ResourceSet habitat(hid%).labelrid, label$
+  END IF
+
+END SUB
+
+SUB HabitatSetTitle (hid%, title$)
+
+  Assert hid% > 0, "HabitatSetTitle", "hid cannot be 0"
+
+  IF habitat(hid%).titlerid = 0 THEN
+    habitat(hid%).titlerid = ResourceCreate(title$)
+  ELSE
+    ResourceSet habitat(hid%).titlerid, title$
+  END IF
+
+END SUB
+
+SUB HabitatSetUI (hid%, UI$)
+  Assert hid% > 0, "HabitatSetUI", "hid cannot be 0"
+  habitat(hid%).UI = UI$
+END SUB
 
 SUB InboxAdd (subject AS STRING, value AS INTEGER)
   '
@@ -2115,7 +2773,7 @@ SUB SetupGame
   ' Load menus and windows
   '
   StatusUpdate "Please wait..."
-  ExecFile "EMPIRE.CFG"
+  ExecuteFile "EMPIRE.CFG"
 
   '
   ' Draw title screen
@@ -2129,11 +2787,13 @@ SUB SetupGame
   '
   ' Show starting window #1
   '
-  DIM result AS WinResultType
-  WinRun WinGetWid("Start"), result
+  DIM cresult AS INTEGER
+  DIM wresult AS WinResultType
  
-  IF result.action = WinAction.Execute THEN
-    ExecResource result.cmdrid
+  WinRun WinGetWid("Start"), wresult
+ 
+  IF wresult.action = WinAction.Execute THEN
+    cresult = ExecuteResource%(wresult.cmdrid)
   END IF
 
 END SUB
@@ -2143,8 +2803,14 @@ FUNCTION Split% (text AS STRING, tokens() AS STRING)
   DIM char  AS STRING * 1
   DIM count AS INTEGER
   DIM index AS INTEGER
+  DIM lower AS INTEGER
   DIM quote AS STRING
   DIM state AS INTEGER
+
+  '
+  ' Calculate how to convert a count (1,2,3...) to an index element.
+  '
+  DIM offset: offset = LBOUND(tokens) - 1
 
   FOR index = 1 TO LEN(text)
 
@@ -2160,7 +2826,7 @@ FUNCTION Split% (text AS STRING, tokens() AS STRING)
           ' Empty token
           '
           count = count + 1
-          tokens(count) = ""
+          tokens(count + offset) = ""
 
         ELSEIF char = CHR$(34) THEN
           '
@@ -2168,7 +2834,7 @@ FUNCTION Split% (text AS STRING, tokens() AS STRING)
           '
           count = count + 1
           quote = char
-          tokens(count) = ""
+          tokens(count + offset) = ""
           state = 1
        
         ELSEIF char <> " " THEN
@@ -2177,7 +2843,7 @@ FUNCTION Split% (text AS STRING, tokens() AS STRING)
           '
           count = count + 1
           quote = ""
-          tokens(count) = char
+          tokens(count + offset) = char
           state = 1
 
         END IF
@@ -2191,12 +2857,12 @@ FUNCTION Split% (text AS STRING, tokens() AS STRING)
             '
             state = 0
           ELSE
-            tokens(count) = tokens(count) + char
+            tokens(count + offset) = tokens(count + offset) + char
           END IF
         ELSEIF char = quote THEN
           state = 0
         ELSE
-          tokens(count) = tokens(count) + char
+          tokens(count + offset) = tokens(count + offset) + char
         END IF
 
     END SELECT
@@ -2456,6 +3122,7 @@ SUB UI.Run
   '
  
   DIM menuwid AS INTEGER
+  DIM cresult AS INTEGER
   DIM uresult AS INTEGER
   DIM wresult AS WinResultType
 
@@ -2503,7 +3170,7 @@ SUB UI.Run
        
         WinRun menuwid, wresult
         IF wresult.action = WinAction.Execute THEN
-          ExecResource wresult.cmdrid
+          cresult = ExecuteResource%(wresult.cmdrid)
         END IF
 
     END SELECT
@@ -2763,7 +3430,7 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value%)
   DIM fid%
   LET fid% = WinCreateField(wid%, FieldKind.Button)
 
-  fld(wid%, fid%).childWid = 0
+  fld(wid%, fid%).childwid = 0
   fld(wid%, fid%).cmdrid = 0
   fld(wid%, fid%).offsetX = offsetX%
   fld(wid%, fid%).offsetY = offsetY%
@@ -2782,7 +3449,7 @@ FUNCTION WinAddSeparator% (wid%, offsetX%, offsetY%)
   DIM fid%
   LET fid% = WinCreateField(wid%, FieldKind.Separator)
 
-  fld(wid%, fid%).childWid = 0
+  fld(wid%, fid%).childwid = 0
   fld(wid%, fid%).cmdrid = 0
   fld(wid%, fid%).flags = 0
   fld(wid%, fid%).offsetX = offsetX%
@@ -3515,7 +4182,7 @@ END FUNCTION
 
 FUNCTION WinGetText$ (wid%, fid%)
 
-  IF (fld(wid%, fid%).flags AND FieldFlag.Bound) > 0 THEN
+  IF (fld(wid%, fid%).flags AND FieldFlag.Macro) > 0 THEN
     WinGetText$ = WinExpandField$(wid%, fid%)
   ELSE
     WinGetText$ = ResourceGet(fld(wid%, fid%).textrid)
@@ -3610,16 +4277,16 @@ SUB WinKeyBoolean (wid%, fid%, keypress$)
     CASE " "
       SELECT CASE text
         CASE "No"
-          WinSetText wid%, fid%, "Yes"
+          WinSetText wid%, fid%, "Yes", False
         CASE "Yes"
-          WinSetText wid%, fid%, "No"
+          WinSetText wid%, fid%, "No", False
       END SELECT
 
     CASE "n", "N"
-      WinSetText wid%, fid%, "No"
+      WinSetText wid%, fid%, "No", False
 
     CASE "y", "Y"
-      WinSetText wid%, fid%, "Yes"
+      WinSetText wid%, fid%, "Yes", False
 
   END SELECT
 
@@ -3649,13 +4316,13 @@ SUB WinKeyInteger (wid%, fid%, keypress$)
 
   END SELECT
 
-  WinSetText wid%, fid%, buf$
+  WinSetText wid%, fid%, buf$, False
 
 END SUB
 
 FUNCTION WinMapKey% (wid%, pressed$)
 
-  DIM childWid  AS INTEGER
+  DIM childwid  AS INTEGER
   DIM cmdrid    AS INTEGER
   DIM exitLeft  AS INTEGER
   DIM exitRight AS INTEGER
@@ -3670,14 +4337,14 @@ FUNCTION WinMapKey% (wid%, pressed$)
   exitRight = win(wid%).arrowexit AND &H2
   selected = win(wid%).selected
   IF selected > 0 THEN
-    childWid = fld(wid%, selected).childWid
+    childwid = fld(wid%, selected).childwid
     cmdrid = fld(wid%, selected).cmdrid
   END IF
 
   SELECT CASE pressed$
 
     CASE CHR$(ASCII.Return)
-      IF childWid > 0 THEN
+      IF childwid > 0 THEN
         WinMapKey% = WinAction.OpenPopup
       ELSEIF cmdrid > 0 THEN
         WinMapKey% = WinAction.Execute
@@ -3692,7 +4359,7 @@ FUNCTION WinMapKey% (wid%, pressed$)
       WinMapKey% = WinAction.SelectNext
 
     CASE CHR$(0) + CHR$(ScanCode.Down)
-      IF childWid > 0 THEN
+      IF childwid > 0 THEN
         WinMapKey% = WinAction.OpenPopup
       ELSE
         WinMapKey% = WinAction.SelectNext
@@ -3849,7 +4516,7 @@ SUB WinRefreshField (wid%, fid%)
       WinDrawField wid%, fid%
    
       FOR n = 1 TO win(wid%).fields
-        IF (fld(wid%, n).flags AND FieldFlag.Bound) > 0 THEN
+        IF (fld(wid%, n).flags AND FieldFlag.Macro) > 0 THEN
           WinDrawField wid%, n
         END IF
       NEXT
@@ -3899,13 +4566,13 @@ SUB WinRun (wid%, result AS WinResultType)
        
         EXIT DO
 
-      ELSEIF fld(wid%, win(wid%).selected).childWid = 0 THEN
+      ELSEIF fld(wid%, win(wid%).selected).childwid = 0 THEN
        
         EXIT DO
 
       ELSE
      
-        WinRun fld(wid%, win(wid%).selected).childWid, result
+        WinRun fld(wid%, win(wid%).selected).childwid, result
        
         SELECT CASE result.action
          
@@ -4231,7 +4898,37 @@ SUB WinSelectPrevious (wid%)
 
 END SUB
 
-SUB WinSetText (wid%, fid%, text$)
+SUB WinSetChild (wid%, fid%, wname$)
+
+  Assert wid% > 0, "WinSetChild", "wid cannot be 0"
+  Assert fid% > 0, "WinSetChild", "fid cannot be 0"
+
+  fld(wid%, fid%).childwid = WinGetWid%(wname$)
+
+END SUB
+
+SUB WinSetCommand (wid%, fid%, cmd$)
+
+  Assert wid% > 0, "WinSetCommand", "wid cannot be 0"
+  Assert fid% > 0, "WinSetCommand", "fid cannot be 0"
+
+  IF fld(wid%, fid%).cmdrid = 0 THEN
+    fld(wid%, fid%).cmdrid = ResourceCreate(cmd$)
+  ELSE
+    ResourceSet fld(wid%, fid%).cmdrid, cmd$
+  END IF
+
+END SUB
+
+SUB WinSetStyle (wid%, sid%)
+  
+  Assert wid% > 0, "WinSetStyle", "wid cannot be 0"
+
+  win(wid%).style = sid%
+
+END SUB
+
+SUB WinSetText (wid%, fid%, text$, hasMacros%)
   '
   ' Sets the text of the specified field.
   '
@@ -4239,16 +4936,33 @@ SUB WinSetText (wid%, fid%, text$)
   Assert wid% > 0, "WinSetText", "wid cannot be 0"
   Assert fid% > 0, "WinSetText", "fid cannot be 0"
 
-  DIM textrid AS INTEGER
-  LET textrid = fld(wid%, fid%).textrid
-
-  IF textrid = 0 THEN
+  '
+  ' Create or update the resource
+  '
+  DIM rid%
+  LET rid% = fld(wid%, fid%).textrid
+  IF rid% = 0 THEN
     fld(wid%, fid%).textrid = ResourceCreate(text$)
   ELSE
-    ResourceSet textrid, text$
+    ResourceSet rid%, text$
+  END IF
+
+  IF hasMacros% THEN
+    fld(wid%, fid%).flags = fld(wid%, fid%).flags OR FieldFlag.Macro
+  ELSE
+    fld(wid%, fid%).flags = fld(wid%, fid%).flags AND (NOT FieldFlag.Macro)
   END IF
 
   WinRefreshField wid%, fid%
+
+END SUB
+
+SUB WinSetValue (wid%, fid%, value%)
+
+  Assert wid% > 0, "WinSetValue", "wid cannot be 0"
+  Assert fid% > 0, "WinSetValue", "fid cannot be 0"
+
+  fld(wid%, fid%).value = value%
 
 END SUB
 
