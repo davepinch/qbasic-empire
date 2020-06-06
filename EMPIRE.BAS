@@ -364,12 +364,6 @@ CONST OpNone = 0
 CONST OpEquals = 1
 
 '
-' Maximum UI elements
-'
-CONST MaxFields = 13
-CONST MaxWindows = 15
-
-'
 ' NebulaIndex constants
 '
 CONST NebulaIndex.X = -2
@@ -451,44 +445,35 @@ CONST WinAction.SelectNext = 14
 CONST WinAction.SelectPrevious = 15
 
 '
-' Global world variables
-'
-DIM SHARED area(1 TO 30)       AS AreaType
-DIM SHARED habitat(1 TO 10)    AS HabitatType
-DIM SHARED habitats            AS INTEGER
-
-'
 ' Global atlas variables
 '
-DIM SHARED atlasActive AS INTEGER
-DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS INTEGER
+DIM SHARED atlasActive        AS INTEGER
 DIM SHARED atlasItem(1 TO 30) AS AtlasItemType
+DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS INTEGER
 
 '
-' Global UI variables
+' Globals
 '
-DIM SHARED uiCurrentFilter AS INTEGER
-DIM SHARED uiCurrentPage   AS INTEGER
-DIM SHARED uicx AS INTEGER
-DIM SHARED uicy AS INTEGER
-
-'
-' Global window variables
-'
-DIM SHARED fld(1 TO MaxWindows, 1 TO MaxFields) AS FieldType
-DIM SHARED win(1 TO MaxWindows) AS WinType
-
-DIM SHARED event(1 TO 5)     AS EventType
-DIM SHARED events            AS INTEGER
-DIM SHARED resource(1 TO 80) AS STRING
-DIM SHARED resources         AS INTEGER
-DIM SHARED trigger(1 TO 5)  AS TriggerType
-DIM SHARED triggers          AS INTEGER
-DIM SHARED wincount          AS INTEGER
-DIM SHARED winstack(1 TO 3)  AS WinStackItem
-DIM SHARED winstacked        AS INTEGER
-DIM SHARED winstyle(1 TO 5)  AS WinStyleType
-DIM SHARED winstyles         AS INTEGER
+DIM SHARED area(1 TO 30)         AS AreaType
+DIM SHARED event(1 TO 5)         AS EventType
+DIM SHARED events                AS INTEGER
+DIM SHARED fld(1 TO 15, 1 TO 13) AS FieldType
+DIM SHARED habitat(1 TO 10)      AS HabitatType
+DIM SHARED habitats              AS INTEGER
+DIM SHARED resource(1 TO 80)     AS STRING
+DIM SHARED resources             AS INTEGER
+DIM SHARED trigger(1 TO 5)       AS TriggerType
+DIM SHARED triggers              AS INTEGER
+DIM SHARED uiCurrentFilter       AS INTEGER
+DIM SHARED uiCurrentPage         AS INTEGER
+DIM SHARED uicx                  AS INTEGER
+DIM SHARED uicy                  AS INTEGER
+DIM SHARED win(1 TO 15)          AS WinType
+DIM SHARED wincount              AS INTEGER
+DIM SHARED winstack(1 TO 3)      AS WinStackItem
+DIM SHARED winstacked            AS INTEGER
+DIM SHARED winstyle(1 TO 5)      AS WinStyleType
+DIM SHARED winstyles             AS INTEGER
 
 SetupGame
 UI.Run
