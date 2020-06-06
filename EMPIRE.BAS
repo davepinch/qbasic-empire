@@ -478,7 +478,7 @@ DIM SHARED uicy AS INTEGER
 DIM SHARED fld(1 TO MaxWindows, 1 TO MaxFields) AS FieldType
 DIM SHARED win(1 TO MaxWindows) AS WinType
 
-DIM SHARED event(1 TO 10)    AS EventType
+DIM SHARED event(1 TO 5)     AS EventType
 DIM SHARED events            AS INTEGER
 DIM SHARED resource(1 TO 80) AS STRING
 DIM SHARED resources         AS INTEGER
@@ -2541,6 +2541,10 @@ END SUB
 
 FUNCTION Split% (text AS STRING, tokens() AS STRING)
 
+  CONST StateNone = 0
+  CONST StateToken = 1
+  CONST StateComment = 2
+
   DIM char  AS STRING * 1
   DIM count AS INTEGER
   DIM index AS INTEGER
@@ -2558,7 +2562,7 @@ FUNCTION Split% (text AS STRING, tokens() AS STRING)
     char = MID$(text, index, 1)
 
     SELECT CASE state
-      CASE 0:
+      CASE StateNone:
         '
         ' No token being parsed
         '
@@ -2576,8 +2580,14 @@ FUNCTION Split% (text AS STRING, tokens() AS STRING)
           count = count + 1
           quote = char
           tokens(count + offset) = ""
-          state = 1
+          state = StateToken
        
+        ELSEIF char = ";" THEN
+          '
+          ' Start comment
+          '
+          state = StateComment
+
         ELSEIF char <> " " THEN
           '
           ' Start non-quoted token
@@ -2585,11 +2595,11 @@ FUNCTION Split% (text AS STRING, tokens() AS STRING)
           count = count + 1
           quote = ""
           tokens(count + offset) = char
-          state = 1
+          state = StateToken
 
         END IF
 
-      CASE 1:
+      CASE StateToken:
         
         IF char = " " THEN
           IF quote = "" THEN
