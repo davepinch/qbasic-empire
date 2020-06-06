@@ -30,6 +30,7 @@ TYPE FieldType
   flags    AS INTEGER
   offsetX  AS INTEGER
   offsetY  AS INTEGER
+  sid      AS INTEGER
   sizeX    AS INTEGER
   textrid  AS INTEGER
   value    AS INTEGER
@@ -205,6 +206,7 @@ DECLARE FUNCTION WinCreateEx% (style%, posX%, posY%, sizeX%, sizeY%)
 DECLARE FUNCTION WinCreateField% (wid%, kind%)
 DECLARE FUNCTION WinExpandField$ (wid%, fid%)
 DECLARE FUNCTION WinFindSid% (stylename AS STRING)
+DECLARE FUNCTION WinGetStyle% (wid%, fid%)
 DECLARE FUNCTION WinGetWid% (wname$)
 DECLARE FUNCTION WinIsSelectable% (wid%, fid%)
 DECLARE FUNCTION WinMapKey% (wid%, pressed$)
@@ -1594,6 +1596,9 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
 
     CASE "sizex"
       fld(wid%, fid%).sizeX = VAL(stoken$(1))
+
+    CASE "style"
+      fld(wid%, fid%).sid = WinFindSid%(stoken$(1))
 
     CASE "text"
       WinSetText wid%, fid%, stoken$(1), False
@@ -3270,7 +3275,7 @@ SUB WinDrawBox0 (wid%)
   DIM row AS INTEGER
   DIM sid AS INTEGER
 
-  sid = win(wid%).style
+  sid = WinGetStyle(wid%, 0)
   DrawColor winstyle(sid).textcolor
  
   FOR row = 1 TO win(wid%).sizeY
@@ -3305,7 +3310,7 @@ SUB WinDrawBox1 (wid%)
   x2 = x1 + win(wid%).sizeX + 1
   y2 = y1 + win(wid%).sizeY + 1
 
-  sid = win(wid%).style
+  sid = WinGetStyle(wid%, 0)
 
   '
   ' Draw the top border
@@ -3587,13 +3592,11 @@ SUB WinDrawText (wid%, fid%)
   AssertIsPositive wid%, "WinDrawText", "wid"
   AssertIsPositive fid%, "WinDrawText", "fid"
 
-  '
-  ' Get the position of the field
-  '
   DIM outoffx%
   DIM outoffy%
   DIM outsizex%
   DIM outtext$
+  DIM sid%
 
   IF NOT WinClipText(wid%, fid%, outoffx%, outoffy%, outsizex%, outtext$) THEN
     '
@@ -3609,10 +3612,11 @@ SUB WinDrawText (wid%, fid%)
   sy = win(wid%).posY + outoffy%
   LOCATE sy, sx
 
+  sid% = WinGetStyle(wid%, fid%)
   IF win(wid%).selected = fid% THEN
-    DrawColor winstyle(win(wid%).style).selectedcolor
+    DrawColor winstyle(sid%).selectedcolor
   ELSE
-    DrawColor winstyle(win(wid%).style).textcolor
+    DrawColor winstyle(sid%).textcolor
   END IF
 
   PRINT outtext$;
@@ -3713,6 +3717,25 @@ FUNCTION WinFindSid% (stylename AS STRING)
 
   END IF
 
+END FUNCTION
+
+FUNCTION WinGetStyle% (wid%, fid%)
+
+  AssertIsPositive wid%, "WinGetStyle", "wid"
+
+  DIM sid%
+
+  IF fid% = 0 THEN
+    sid% = win(wid%).style
+  ELSE
+    sid% = fld(wid%, fid%).sid
+    IF sid% = 0 THEN
+      sid% = win(wid%).style
+    END IF
+  END IF
+
+  WinGetStyle% = sid%
+  
 END FUNCTION
 
 FUNCTION WinGetText$ (wid%, fid%)
