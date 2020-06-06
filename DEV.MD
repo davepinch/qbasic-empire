@@ -11,12 +11,12 @@ ExecCmd(text$) is the top-level subroutine for executing simple text commands su
 To add a new command:
 
 1. If your command is more complex than a few lines, then create a subroutine with the logic.
-2. Determine the context of your command (most likely global):
+2. Determine the context of your command (most likely root):
 
-* ExecCmdGlobal .............. Default 
-* ExecCmdHabitat ............. Configuring habitat properties
-* ExecCmdWindow .............. Configuring window properties
-* ExecCmdField ............... Configuring field properties
+* ExecCmdRoot ................ Root/global commands
+* ExecCmdFid ................. Configuring field properties
+* ExecCmdHid ................. Configuring habitat properties
+* ExecCmdWid ................. Configuring window properties
 
 3. Add an entry for the new command in the SELECT statement of the applicable subroutine. If the command requires parameters, then examine the token() array that is passed to the subroutine. token(1) contains the command name and token (2+) contains the parameters.
 
