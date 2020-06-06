@@ -194,7 +194,6 @@ DECLARE SUB StatusUpdateLevel (text AS STRING, level AS INTEGER)
 DECLARE SUB UI.Action ()
 DECLARE SUB UI.ActionNebula (aid AS INTEGER)
 DECLARE SUB UI.Redraw ()
-DECLARE SUB UI.RedrawAbout ()
 DECLARE SUB UI.RedrawArea ()
 DECLARE SUB UI.RedrawAtlas ()
 DECLARE SUB UI.RedrawFile (filename AS STRING)
@@ -204,7 +203,6 @@ DECLARE SUB UI.Run ()
 DECLARE SUB UI.SetFilter (filter AS INTEGER, refreshUI AS INTEGER)
 DECLARE SUB UI.SetPage (page AS INTEGER)
 
-DECLARE FUNCTION UI.RunAbout% ()
 DECLARE FUNCTION UI.RunArea% ()
 DECLARE FUNCTION UI.RunAtlas% ()
 DECLARE FUNCTION UI.RunInbox% ()
@@ -413,7 +411,6 @@ CONST UIFilter.Self = 1
 ' UIPage.* constants
 '
 CONST UIPage.None = 0
-CONST UIPage.About = 1
 CONST UIPage.Area = 2
 CONST UIPage.Atlas = 3
 CONST UIPage.Inbox = 4
@@ -458,9 +455,9 @@ DIM SHARED area(1 TO 30)         AS AreaType
 DIM SHARED event(1 TO 5)         AS EventType
 DIM SHARED events                AS INTEGER
 DIM SHARED fld(1 TO 15, 1 TO 13) AS FieldType
-DIM SHARED habitat(1 TO 10)      AS HabitatType
+DIM SHARED habitat(1 TO 8)       AS HabitatType
 DIM SHARED habitats              AS INTEGER
-DIM SHARED resource(1 TO 80)     AS STRING
+DIM SHARED resource(1 TO 70)     AS STRING
 DIM SHARED resources             AS INTEGER
 DIM SHARED trigger(1 TO 5)       AS TriggerType
 DIM SHARED triggers              AS INTEGER
@@ -1813,12 +1810,6 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, sid%, tid%, wid%)
     '
     SELECT CASE stoken$(0)
 
-      CASE "window"
-        wid% = WinCreate%
-
-      CASE "about"
-        UI.SetPage UIPage.About
-
       CASE "atlas"
         UI.SetPage UIPage.Atlas
   
@@ -1848,6 +1839,9 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, sid%, tid%, wid%)
       CASE "trigger"
         triggers = triggers + 1
         tid% = triggers
+
+      CASE "window"
+        wid% = WinCreate%
 
       CASE ELSE
         ExecCmdRoot% = CmdResult.Malformed
@@ -1895,6 +1889,9 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, sid%, tid%, wid%)
           CASE ELSE
             ExecCmdRoot% = CmdResult.Malformed
         END SELECT
+
+      CASE "winrun"
+        WinRunName stoken$(1)
 
       CASE ELSE
         ExecCmdRoot% = CmdResult.Malformed
@@ -2733,9 +2730,6 @@ SUB UI.Redraw
 
   SELECT CASE uiCurrentPage
  
-    CASE UIPage.About
-      UI.RedrawAbout
-
     CASE UIPage.Area
       UI.RedrawArea
 
@@ -2746,17 +2740,6 @@ SUB UI.Redraw
       UI.RedrawTable
 
   END SELECT
-
-END SUB
-
-SUB UI.RedrawAbout
-  '
-  ' Redraws the About page
-  '
-
-  Assert uiCurrentPage = UIPage.About, "UI.RedrawAbout", "Wrong UI page"
-
-  UI.RedrawFile "ABOUT.PCB"
 
 END SUB
 
@@ -2881,9 +2864,6 @@ SUB UI.Run
 
     SELECT CASE uiCurrentPage
     
-      CASE UIPage.About
-        uresult = UI.RunAbout%
-
       CASE UIPage.Area
         uresult = UI.RunArea%
 
@@ -2917,34 +2897,6 @@ SUB UI.Run
   LOOP
 
 END SUB
-
-FUNCTION UI.RunAbout%
-  '
-  ' Displays a screen showing information about the game.
-  '
-
-  Assert uiCurrentPage = UIPage.About, "UI.RunAbout", "Wrong UI page"
-
-  DIM aboutWid AS INTEGER
-  DIM result   AS WinResultType
-
-  '
-  ' Lookup the about window
-  '
-  aboutWid = WinGetWid("About")
-  Assert aboutWid <> 0, "UI.RunAbout", "About window not found"
-
-  WinRun aboutWid, result
-
-  IF result.canceled THEN
-    UI.RunAbout% = UIResult.Escape
-  ELSE
-    ' HACK: not sure which page to exit to
-    UI.SetPage UIPage.Atlas
-    UI.RunAbout% = UIResult.Exit
-  END IF
-
-END FUNCTION
 
 FUNCTION UI.RunArea%
 
@@ -3504,7 +3456,7 @@ SUB WinDrawBox1 (wid%)
   '
   LOCATE y1, x1
   DrawColor winstyle(sid).bordercolor
-  PRINT upperLeft; STRING$(win(wid%).sizeX, upperFlat); upperRight
+  PRINT upperLeft; STRING$(win(wid%).sizeX, upperFlat); upperRight;
 
   '
   ' Draw each row of the window
@@ -3524,7 +3476,7 @@ SUB WinDrawBox1 (wid%)
   ' Draw the lower border
   '
   LOCATE y2, x1
-  PRINT lowerLeft; STRING$(win(wid%).sizeX, lowerFlat); lowerRight
+  PRINT lowerLeft; STRING$(win(wid%).sizeX, lowerFlat); lowerRight;
 
 END SUB
 
