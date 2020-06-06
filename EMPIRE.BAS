@@ -23,6 +23,11 @@ TYPE AtlasItemType
   labelrid  AS INTEGER
 END TYPE
 
+TYPE EventType
+  namerid AS INTEGER
+  value   AS INTEGER
+END TYPE
+
 TYPE FieldType
   kind     AS INTEGER
   childwid AS INTEGER  ' TODO: add nparam and combine these two
@@ -41,6 +46,13 @@ TYPE HabitatType
   UI       AS STRING * 3
   labelrid AS INTEGER
   titlerid AS INTEGER
+END TYPE
+
+TYPE TriggerType
+  eid      AS INTEGER
+  operator AS INTEGER
+  operand  AS INTEGER
+  cmdrid   AS INTEGER
 END TYPE
 
 TYPE WinResultType
@@ -111,16 +123,25 @@ DECLARE FUNCTION AtlasIndexOf% (value AS INTEGER)
 DECLARE FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS INTEGER, outpress AS STRING)
 
 '
+' Events
+'
+DECLARE FUNCTION EventFind% (name$)
+DECLARE FUNCTION EventParseOperator% (opname$)
+DECLARE FUNCTION EventTriggers% (eid%, tid%)
+DECLARE SUB EventInc (eid%)
+DECLARE SUB EventIncName (ename$)
+DECLARE SUB EventFire (eid%)
+
+'
 ' Execute* subroutines
 '
-' Each subroutine executes a different menu command. Review the comments
-' in the Execute() function to learn how to implement a command.
-'
 DECLARE FUNCTION ExecCmd% (text AS STRING)
+DECLARE FUNCTION ExecCmdEid% (ntoken%, stoken$(), eid%)
 DECLARE FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
 DECLARE FUNCTION ExecCmdHid% (ntoken%, stoken$(), hid%)
+DECLARE FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
 DECLARE FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
-DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), hid%, sid%, wid%)
+DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, sid%, tid%, wid%)
 DECLARE FUNCTION ExecCmdSid% (ntoken%, stoken$(), sid%)
 DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 DECLARE SUB ExecFile (filename AS STRING)
@@ -135,13 +156,12 @@ DECLARE SUB HabitatSetBackdrop (hid%, filename$)
 DECLARE SUB HabitatSetTitle (hid%, title$)
 
 '
-' Inbox* subroutines
+' Inbox
 '
-DECLARE SUB InboxAdd (subject AS STRING, value AS INTEGER)
-DECLARE SUB InboxInit ()
+DECLARE SUB InboxAdd (subject AS STRING, filename AS STRING)
 
 '
-' Nebula* subroutines
+' Nebula
 '
 DECLARE SUB NebulaCreate (seq() AS INTEGER)
 DECLARE SUB NebulaCreateSeq (seq() AS INTEGER, y!)
@@ -151,7 +171,7 @@ DECLARE FUNCTION NebulaLabel$ (level AS INTEGER)
 DECLARE FUNCTION NebulaLabelRid% (level AS INTEGER)
 
 '
-' Resource functions for saving general text data.
+' Resources
 '
 DECLARE FUNCTION ResourceCreate% (value AS STRING)
 DECLARE FUNCTION ResourceGet$ (rid AS INTEGER)
@@ -191,11 +211,7 @@ DECLARE FUNCTION UI.RunInbox% ()
 DECLARE FUNCTION UI.RunNebula% (aid AS INTEGER)
 
 '
-' Win* declarations
-'
-' These functions are used to create and manipulate windows on the
-' screen. Note: due to lengthly parameters in some cases, the
-' functions are defined with data type characters instead of "AS".
+' Windows
 '
 DECLARE FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$, value%)
 DECLARE FUNCTION WinAddSeparator% (wid%, posX%, posY%)
@@ -342,6 +358,12 @@ CONST FieldKind.Separator = 7
 CONST HabitatUI.Nebula = "NEB"
 
 '
+' Operators
+'
+CONST OpNone = 0
+CONST OpEquals = 1
+
+'
 ' Maximum UI elements
 '
 CONST MaxFields = 13
@@ -409,11 +431,6 @@ CONST UIPage.Table = 5
 CONST UIResult.Exit = 0
 CONST UIResult.Escape = 1
 
-'
-' VideoPage.* constants
-'
-' These constants define how each video page is used.
-'
 CONST VideoPage.Display = 0
 CONST VideoPage.Working = 1
 
@@ -460,14 +477,18 @@ DIM SHARED uicy AS INTEGER
 '
 DIM SHARED fld(1 TO MaxWindows, 1 TO MaxFields) AS FieldType
 DIM SHARED win(1 TO MaxWindows) AS WinType
-DIM SHARED wincount         AS INTEGER
-DIM SHARED winstack(1 TO 3) AS WinStackItem
-DIM SHARED winstacked       AS INTEGER
-DIM SHARED winstyle(1 TO 5) AS WinStyleType
-DIM SHARED winstyles        AS INTEGER
 
+DIM SHARED event(1 TO 10)    AS EventType
+DIM SHARED events            AS INTEGER
 DIM SHARED resource(1 TO 80) AS STRING
 DIM SHARED resources         AS INTEGER
+DIM SHARED trigger(1 TO 5)  AS TriggerType
+DIM SHARED triggers          AS INTEGER
+DIM SHARED wincount          AS INTEGER
+DIM SHARED winstack(1 TO 3)  AS WinStackItem
+DIM SHARED winstacked        AS INTEGER
+DIM SHARED winstyle(1 TO 5)  AS WinStyleType
+DIM SHARED winstyles         AS INTEGER
 
 SetupGame
 UI.Run
@@ -477,8 +498,9 @@ SUB Assert (truth AS INTEGER, where AS STRING, what AS STRING)
   IF NOT truth THEN
     SCREEN , , 0, 0
     StatusDebug where + ": " + what
-    DIM s$: s$ = GetKey$
-    END
+    IF GetKey$ <> CHR$(ASCII.Escape) THEN
+      END
+    END IF
   END IF
 
 END SUB
@@ -1475,11 +1497,101 @@ SUB DrawText (text AS STRING)
 
 END SUB
 
+FUNCTION EventFind% (name$)
+
+  DIM eid%
+  DIM ename$
+
+  FOR eid% = 1 TO events
+   
+    ename$ = ResourceGet(event(eid%).namerid)
+
+    IF name$ = ename$ THEN
+      EventFind% = eid%
+      EXIT FUNCTION
+    END IF
+
+  NEXT
+
+  EventFind% = 0
+
+END FUNCTION
+
+SUB EventFire (eid%)
+
+  DIM result%
+  DIM tid%
+ 
+  FOR tid% = 1 TO triggers
+    IF EventTriggers%(eid%, tid%) THEN
+      result% = ExecResource(trigger(tid%).cmdrid)
+    END IF
+  NEXT
+
+END SUB
+
+SUB EventInc (eid%)
+  AssertIsPositive eid%, "EventIncrement", "eid"
+  event(eid%).value = event(eid%).value + 1
+  EventFire eid%
+END SUB
+
+SUB EventIncName (ename$)
+  EventInc EventFind(ename$)
+END SUB
+
+FUNCTION EventParseOperator% (opname$)
+
+  SELECT CASE opname$
+    CASE "="
+      EventParseOperator% = OpEquals
+
+    CASE ELSE
+      EventParseOperator% = OpNone
+  END SELECT
+
+END FUNCTION
+
+SUB EventSet (eid%, value%)
+
+  AssertIsPositive eid%, "EventFire", "eid"
+
+  event(eid%).value = value%
+
+  EventFire eid%
+
+END SUB
+
+FUNCTION EventTriggers% (eid%, tid%)
+
+  AssertIsPositive eid%, "EventTriggers", "eid"
+  AssertIsPositive eid%, "EventTriggers", "tid"
+
+  IF trigger(tid%).eid <> eid% THEN
+   
+    EventTriggers = False
+
+  ELSE
+
+    SELECT CASE trigger(tid%).operator
+      CASE OpEquals
+        EventTriggers = trigger(tid%).operand = event(eid%).value
+
+      CASE ELSE
+        EventTriggers = False
+    END SELECT
+
+  END IF
+
+END FUNCTION
+
 FUNCTION ExecCmd% (text AS STRING)
 
+  SHARED eid%
   SHARED fid%
   SHARED hid%
   SHARED sid%
+  SHARED tid%
   SHARED wid%
 
   DIM result         AS INTEGER
@@ -1499,15 +1611,57 @@ FUNCTION ExecCmd% (text AS STRING)
     result = ExecCmdFid%(ntoken%, stoken$(), wid%, fid%)
   ELSEIF wid% > 0 THEN
     result = ExecCmdWid%(ntoken%, stoken$(), wid%, fid%)
+  ELSEIF eid% > 0 THEN
+    result = ExecCmdEid%(ntoken%, stoken$(), eid%)
   ELSEIF hid% > 0 THEN
     result = ExecCmdHid%(ntoken%, stoken$(), hid%)
   ELSEIF sid% > 0 THEN
     result = ExecCmdSid%(ntoken%, stoken$(), sid%)
+  ELSEIF tid% > 0 THEN
+    result = ExecCmdTid%(ntoken%, stoken$(), tid%)
   ELSE
-    result = ExecCmdRoot%(ntoken%, stoken$(), hid%, sid%, wid%)
+    result = ExecCmdRoot%(ntoken%, stoken$(), eid%, hid%, sid%, tid%, wid%)
   END IF
 
-  Assert result = CmdResult.OK, "ExecCmd", "Malformed command"
+  Assert result = CmdResult.OK, "ExecCmd", "Malformed: " + text
+
+END FUNCTION
+
+FUNCTION ExecCmdEid% (ntoken%, stoken$(), eid%)
+
+  AssertIsPositive eid%, "ExecCmdEid", "eid"
+
+  IF ntoken% = 1 THEN
+
+    IF LCASE$(stoken$(0)) = "endevent" THEN
+      eid% = 0
+      ExecCmdEid% = CmdResult.OK
+    ELSE
+      ExecCmdEid% = CmdResult.Malformed
+    END IF
+
+  ELSEIF ntoken% <> 2 THEN
+
+    ExecCmdEid% = CmdResult.Malformed
+
+  ELSE
+
+    ExecCmdEid% = CmdResult.OK
+
+    SELECT CASE stoken$(0)
+   
+      CASE "name"
+        event(eid%).namerid = ResourceCreate(stoken$(1))
+
+      CASE "value"
+        event(eid%).value = VAL(stoken$(1))
+
+      CASE ELSE
+        ExecCmdEid% = CmdResult.Malformed
+
+    END SELECT
+
+  END IF
 
 END FUNCTION
 
@@ -1658,11 +1812,13 @@ FUNCTION ExecCmdHid% (ntoken%, stoken$(), hid%)
 
 END FUNCTION
 
-FUNCTION ExecCmdRoot% (ntoken%, stoken$(), hid%, sid%, wid%)
+FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, sid%, tid%, wid%)
 
-  Assert hid% = 0, "ExecCmdRoot", "hid context must be 0"
-  Assert sid% = 0, "ExecCmdRoot", "sid context must be 0"
-  Assert wid% = 0, "ExecCmdRoot", "wid context must be 0"
+  AssertIsZero eid%, "ExecCmdRoot", "eid"
+  AssertIsZero hid%, "ExecCmdRoot", "hid"
+  AssertIsZero sid%, "ExecCmdRoot", "sid"
+  AssertIsZero tid%, "ExecCmdRoot", "tid"
+  AssertIsZero wid%, "ExecCmdRoot", "wid"
 
   ExecCmdRoot% = CmdResult.OK
 
@@ -1684,6 +1840,10 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), hid%, sid%, wid%)
       CASE "endgame"
         END
 
+      CASE "event"
+        events = events + 1
+        eid% = events
+
       CASE "habitat"
         hid% = HabitatCreate%
 
@@ -1691,7 +1851,6 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), hid%, sid%, wid%)
         UI.SetPage UIPage.Inbox
 
       CASE "newgame"
-        InboxInit
         WorldInit 15
 
       CASE "style"
@@ -1700,6 +1859,10 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), hid%, sid%, wid%)
 
       CASE "table"
         UI.SetPage UIPage.Table
+
+      CASE "trigger"
+        triggers = triggers + 1
+        tid% = triggers
 
       CASE ELSE
         ExecCmdRoot% = CmdResult.Malformed
@@ -1746,9 +1909,20 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), hid%, sid%, wid%)
             AtlasPlotRandom
           CASE ELSE
             ExecCmdRoot% = CmdResult.Malformed
-            EXIT FUNCTION
         END SELECT
 
+      CASE ELSE
+        ExecCmdRoot% = CmdResult.Malformed
+
+    END SELECT
+
+  ELSEIF ntoken% = 3 THEN
+
+    SELECT CASE stoken$(0)
+      CASE "mail"
+        InboxAdd stoken$(1), stoken$(2)
+      CASE ELSE
+        ExecCmdRoot% = CmdResult.Malformed
     END SELECT
 
   ELSE
@@ -1808,6 +1982,30 @@ FUNCTION ExecCmdSid% (ntoken%, stoken$(), sid%)
 
   END SELECT
   
+END FUNCTION
+
+FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
+
+  AssertIsPositive tid%, "ExecCmdTid", "tid"
+
+  SELECT CASE LCASE$(stoken$(0))
+
+    CASE "command"
+      trigger(tid%).cmdrid = ResourceCreate(stoken$(1))
+
+    CASE "endtrigger"
+      tid% = 0
+
+    CASE "when"
+      trigger(tid%).eid = EventFind(stoken$(1))
+      trigger(tid%).operator = EventParseOperator(stoken$(2))
+      trigger(tid%).operand = VAL(stoken$(3))
+
+    CASE ELSE
+      ExecCmdTid% = CmdResult.Malformed
+
+  END SELECT
+
 END FUNCTION
 
 FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
@@ -1983,29 +2181,19 @@ SUB HabitatSetUI (hid%, UI$)
   habitat(hid%).UI = UI$
 END SUB
 
-SUB InboxAdd (subject AS STRING, value AS INTEGER)
-  '
-  ' Adds a new message to the inbox
-  '
+SUB InboxAdd (subject AS STRING, filename AS STRING)
  
-  DIM wid AS INTEGER
-  DIM fid AS INTEGER
+  DIM fid%
+  DIM rid%
+  DIM wid%
  
   SHARED posY AS INTEGER
 
-  wid = WinGetWid("Inbox")
-  fid = WinAddButton(wid, 0, posY, 20, " " + subject, value)
-  posY = posY + 1
-
-END SUB
-
-SUB InboxInit
-  '
-  ' Initializes the mailbox to its default state
-  '
+  rid% = ResourceCreate(filename)
+  wid% = WinGetWid("Inbox")
+  fid% = WinAddButton(wid%, 0, posY, 20, " " + subject, rid%)
  
-  InboxAdd "Violation", 1
-  'InboxAdd "Get out now", 2
+  posY = posY + 1
 
 END SUB
 
@@ -2524,7 +2712,8 @@ SUB UI.ActionNebula (aid AS INTEGER)
     ' This is the last extraction
     '
     WorldRemove aid
- 
+    EventIncName "NebulaDepleted"
+
   ELSE
    
     '
@@ -2929,6 +3118,7 @@ FUNCTION UI.RunNebula% (aid AS INTEGER)
         '
         IF area(aid).level = 0 THEN
           WorldRemove aid
+          EventIncName "NebulaDepleted"
         ELSE
           WorldSetLabel aid, NebulaLabelRid(area(aid).level)
         END IF
@@ -3625,15 +3815,18 @@ END SUB
 
 FUNCTION WinExpandField$ (wid%, fid%)
 
-  AssertIsPositive wid%, "WinExpandText", "wid"
-  AssertIsPositive fid%, "WinExpandText", "fid"
+  AssertIsPositive wid%, "WinExpandField", "wid"
+  AssertIsPositive fid%, "WinExpandField", "fid"
 
-  DIM build   AS STRING   ' Built from expanded macros
+  DIM build   AS STRING   ' Accumulated from expanded macros
   DIM nextidx AS INTEGER  ' Index of the next {
   DIM thisidx AS INTEGER  ' Index being checked
-  DIM textlen AS INTEGER  ' Source text length
-  DIM textval AS STRING   ' Source text
+  DIM textlen AS INTEGER  ' Macro text length
+  DIM textval AS STRING   ' Macro text
 
+  '
+  ' Get the macro text and length
+  '
   thisidx = 1
   textval = ResourceGet(fld(wid%, fid%).textrid)
   textlen = LEN(textval)
@@ -3646,7 +3839,7 @@ FUNCTION WinExpandField$ (wid%, fid%)
     nextidx = INSTR(thisidx, textval, "{")
     IF nextidx = 0 THEN
       '
-      ' Append the rest of the string
+      ' No more; append the rest of the string
       '
       build = build + RIGHT$(textval, textlen - thisidx + 1)
       EXIT DO
@@ -3678,9 +3871,11 @@ FUNCTION WinExpandField$ (wid%, fid%)
       DIM selfid AS INTEGER
       LET selfid = WinParseSelector(wid%, fid%, outsel)
       IF selfid > 0 THEN
-        SELECT CASE outval
-          CASE "Value", "value"
+        SELECT CASE LCASE$(outval)
+          CASE "value"
             build = build + LTRIM$(STR$(fld(wid%, selfid).value))
+          CASE "$value"
+            build = build + ResourceGet(fld(wid%, selfid).value)
         END SELECT
       END IF
 
