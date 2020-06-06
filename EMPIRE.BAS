@@ -2180,6 +2180,8 @@ SUB InboxAdd (subject AS STRING, filename AS STRING)
  
   posY = posY + 1
 
+  StatusUpdate "Mail arrived"
+
 END SUB
 
 FUNCTION IsFiltered% (aid AS INTEGER)
