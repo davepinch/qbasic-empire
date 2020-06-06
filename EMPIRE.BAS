@@ -1862,17 +1862,6 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, sid%, tid%, wid%)
             ExecCmdRoot% = CmdResult.Malformed
         END SELECT
 
-      CASE "option"
-        '
-        ' Option <Alerts>
-        '
-        SELECT CASE LCASE$(stoken$(1))
-          CASE "alerts"
-            WinRunName "DialogAlerts"
-          CASE ELSE
-            ExecCmdRoot% = CmdResult.Malformed
-        END SELECT
-
       CASE "replot"
         '
         ' Replot <band | cluster | manual | random>
