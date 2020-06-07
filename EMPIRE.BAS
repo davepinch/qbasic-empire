@@ -219,8 +219,8 @@ DECLARE FUNCTION WinCreateEx% (style%, posX%, posY%, sizeX%, sizeY%)
 DECLARE FUNCTION WinCreateField% (wid%, kind%)
 DECLARE FUNCTION WinExpandField$ (wid%, fid%)
 DECLARE FUNCTION WinFindSid% (stylename AS STRING)
+DECLARE FUNCTION WinFindWid% (wname$)
 DECLARE FUNCTION WinGetStyle% (wid%, fid%)
-DECLARE FUNCTION WinGetWid% (wname$)
 DECLARE FUNCTION WinIsSelectable% (wid%, fid%)
 DECLARE FUNCTION WinMapKey% (wid%, pressed$)
 DECLARE FUNCTION WinParseMacro% (value$, index1%, outsel$, outval$)
@@ -2156,7 +2156,7 @@ SUB InboxAdd (subject AS STRING, filename AS STRING)
   SHARED posY AS INTEGER
 
   rid% = ResourceCreate(filename)
-  wid% = WinGetWid("Inbox")
+  wid% = WinFindWid("Inbox")
   fid% = WinAddButton(wid%, 0, posY, 20, " " + subject, rid%)
  
   posY = posY + 1
@@ -2499,7 +2499,7 @@ SUB SetupGame
   DIM cresult AS INTEGER
   DIM wresult AS WinResultType
  
-  WinRun WinGetWid("Start"), wresult
+  WinRun WinFindWid("Start"), wresult
  
   IF wresult.action = WinAction.Execute THEN
     cresult = ExecResource%(wresult.cmdrid)
@@ -2840,7 +2840,7 @@ SUB UI.Run
   '
   ' Find the main menu
   '
-  menuwid = WinGetWid("Menu")
+  menuwid = WinFindWid("Menu")
 
   DO
     
@@ -3825,6 +3825,24 @@ FUNCTION WinFindSid% (stylename AS STRING)
 
 END FUNCTION
 
+FUNCTION WinFindWid% (wname$)
+  '
+  ' Returns the ID of the window with the specified name.
+  '
+ 
+  DIM wid AS INTEGER
+
+  FOR wid = 1 TO wincount
+    IF RTRIM$(win(wid).wname) = wname$ THEN
+      WinFindWid% = wid
+      EXIT FUNCTION
+    END IF
+  NEXT
+
+  WinFindWid% = 0
+
+END FUNCTION
+
 FUNCTION WinGetStyle% (wid%, fid%)
 
   AssertIsPositive wid%, "WinGetStyle", "wid"
@@ -3851,24 +3869,6 @@ FUNCTION WinGetText$ (wid%, fid%)
   ELSE
     WinGetText$ = ResourceGet(fld(wid%, fid%).textrid)
   END IF
-
-END FUNCTION
-
-FUNCTION WinGetWid% (wname$)
-  '
-  ' Returns the ID of the window with the specified name.
-  '
- 
-  DIM wid AS INTEGER
-
-  FOR wid = 1 TO wincount
-    IF RTRIM$(win(wid).wname) = wname$ THEN
-      WinGetWid% = wid
-      EXIT FUNCTION
-    END IF
-  NEXT
-
-  WinGetWid% = 0
 
 END FUNCTION
 
@@ -4351,7 +4351,7 @@ SUB WinRunName (idname$)
   DIM wid AS INTEGER
   DIM result AS WinResultType
 
-  wid = WinGetWid(idname$)
+  wid = WinFindWid(idname$)
   Assert wid <> 0, "WinRunName", "wid cannot be 0"
 
   WinRun wid, result
@@ -4569,7 +4569,7 @@ SUB WinSetChild (wid%, fid%, wname$)
   AssertIsPositive wid%, "WinSetChild", "wid"
   AssertIsPositive fid%, "WinSetChild", "fid"
 
-  fld(wid%, fid%).childwid = WinGetWid%(wname$)
+  fld(wid%, fid%).childwid = WinFindWid%(wname$)
 
 END SUB
 
