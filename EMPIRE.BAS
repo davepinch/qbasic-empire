@@ -115,7 +115,6 @@ DECLARE SUB AtlasRemoveItem (idx AS INTEGER)
 DECLARE SUB AtlasRemoveValue (value AS INTEGER)
 DECLARE SUB AtlasSetLabel (idx AS INTEGER, labelrid AS INTEGER)
 DECLARE FUNCTION AtlasNextIndex% ()
-DECLARE FUNCTION AtlasCellFiltered% (cx AS INTEGER, cy AS INTEGER)
 DECLARE FUNCTION AtlasGetScreenX% (cx AS INTEGER)
 DECLARE FUNCTION AtlasGetScreenY% (cy AS INTEGER)
 DECLARE FUNCTION AtlasGetValue% (cx AS INTEGER, cy AS INTEGER, default AS INTEGER)
@@ -200,7 +199,6 @@ DECLARE SUB UI.RedrawFile (filename AS STRING)
 DECLARE SUB UI.RedrawTable ()
 DECLARE SUB UI.Refresh ()
 DECLARE SUB UI.Run ()
-DECLARE SUB UI.SetFilter (filter AS INTEGER, refreshUI AS INTEGER)
 DECLARE SUB UI.SetPage (page AS INTEGER)
 
 DECLARE FUNCTION UI.RunArea% ()
@@ -288,7 +286,6 @@ DECLARE SUB DrawText (text AS STRING)
 DECLARE SUB PaintBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
 DECLARE SUB SetupGame ()
 DECLARE FUNCTION GetKey$ ()
-DECLARE FUNCTION IsFiltered% (aid AS INTEGER)
 DECLARE FUNCTION Split% (text AS STRING, tokens() AS STRING)
 DECLARE FUNCTION StyleCreate% ()
 
@@ -316,8 +313,6 @@ CONST AtlasStyle.CellBackcolor = 0
 CONST AtlasStyle.CellForecolor = 7
 CONST AtlasStyle.CellSizeX = 4
 CONST AtlasStyle.CellSizeY = 1
-CONST AtlasStyle.FilterBackcolor = 7
-CONST AtlasStyle.FilterForecolor = 15
 CONST AtlasStyle.GridSizeX = 15
 CONST AtlasStyle.GridSizeY = 11
 CONST AtlasStyle.SelectBackcolor = 4
@@ -392,19 +387,11 @@ CONST StatusLevel.Debug = 1
 '
 CONST TableStyle.Backcolor = 0
 CONST TableStyle.Border = 2
-CONST TableStyle.FilterBackcolor = 7
-CONST TableStyle.FilterForecolor = 15
 CONST TableStyle.HeaderBackcolor = 0
 CONST TableStyle.HeaderForecolor = 7
 CONST TableStyle.RowBackcolor = 0
 CONST TableStyle.RowForecolor = 7
 CONST TableStyle.Forecolor = 1
-
-'
-' UIFilter.* constants
-'
-CONST UIFilter.None = 0
-CONST UIFilter.Self = 1
 
 '
 ' UIPage.* constants
@@ -459,7 +446,6 @@ DIM SHARED resource(1 TO 70)     AS STRING
 DIM SHARED resources             AS INTEGER
 DIM SHARED trigger(1 TO 5)       AS TriggerType
 DIM SHARED triggers              AS INTEGER
-DIM SHARED uiCurrentFilter       AS INTEGER
 DIM SHARED uiCurrentPage         AS INTEGER
 DIM SHARED uicx                  AS INTEGER
 DIM SHARED uicy                  AS INTEGER
@@ -534,29 +520,6 @@ SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, labelrid AS IN
 
 END SUB
 
-FUNCTION AtlasCellFiltered% (cx AS INTEGER, cy AS INTEGER)
-  '
-  ' Returns True if the specified atlas cell is filtered.
-  '
- 
-  '
-  ' Get the index of the item referenced by the cell
-  '
-  DIM idx AS INTEGER
-  LET idx = atlasGrid(cx, cy)
- 
-  IF idx = 0 THEN
-    '
-    ' This cell does not contain anything
-    '
-    AtlasCellFiltered% = False
- 
-  ELSE
-    AtlasCellFiltered% = IsFiltered(atlasItem(idx).value)
-  END IF
-
-END FUNCTION
-
 SUB AtlasDisplayOff
   '
   ' Turns off active updates to the atlas.
@@ -604,11 +567,7 @@ SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
   '
   ' Set the color of the cell contents
   '
-  IF AtlasCellFiltered(cx, cy) THEN
-    COLOR AtlasStyle.FilterForecolor, AtlasStyle.FilterBackcolor
-  ELSE
-    COLOR AtlasStyle.CellForecolor, AtlasStyle.CellBackcolor
-  END IF
+  COLOR AtlasStyle.CellForecolor, AtlasStyle.CellBackcolor
 
   '
   ' Write the cell contents
@@ -701,7 +660,6 @@ SUB AtlasDrawUnselect (cx AS INTEGER, cy AS INTEGER)
 
   PaintBackground sx1, sy1, sx1 + AtlasStyle.CellSizeX + 1, sy1 + 2, 0
 
-  ' HACK: filtering conflicts with selection (e.g., different background)
   AtlasDrawCell cx, cy
 
 END SUB
@@ -1365,14 +1323,7 @@ SUB DrawTableRow (row AS INTEGER, aid AS INTEGER)
 
   LOCATE row + 4, 3
 
-  '
-  ' Determine whether this area is being filtered
-  '
-  IF IsFiltered(aid) THEN
-    COLOR TableStyle.FilterForecolor, TableStyle.FilterBackcolor
-  ELSE
-    COLOR TableStyle.RowForecolor, TableStyle.RowBackcolor
-  END IF
+  COLOR TableStyle.RowForecolor, TableStyle.RowBackcolor
  
   '
   ' Print the area ID
@@ -1846,17 +1797,6 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, sid%, tid%, wid%)
   ELSEIF ntoken% = 2 THEN
 
     SELECT CASE stoken$(0)
-      CASE "filter"
-        '
-        ' Filder <none | self>
-        '
-        SELECT CASE LCASE$(stoken$(1))
-          CASE "none": UI.SetFilter UIFilter.None, True
-          CASE "self": UI.SetFilter UIFilter.Self, True
-          CASE ELSE
-            ExecCmdRoot% = CmdResult.Malformed
-        END SELECT
-
       CASE "replot"
         '
         ' Replot <band | cluster | manual | random>
@@ -2164,38 +2104,6 @@ SUB InboxAdd (subject AS STRING, filename AS STRING)
   StatusUpdate "Mail arrived"
 
 END SUB
-
-FUNCTION IsFiltered% (aid AS INTEGER)
-
-  DIM filtering AS INTEGER
-
-  IF aid < 1 OR aid > UBOUND(area) THEN
-    '
-    ' Invalid area
-    '
-    IsFiltered% = False
- 
-  ELSEIF NOT area(aid).allocated THEN
-
-    IsFiltered% = False
-
-  END IF
-
-  IF filtering = UIFilter.None THEN
-   
-    IsFiltered = False
-
-  ELSEIF filtering = UIFilter.Self THEN
-   
-    IsFiltered = False ' Not supported yet HACK
-
-  ELSE
-
-    IsFiltered = False
-
-  END IF
-
-END FUNCTION
 
 SUB NebulaCreate (seq() AS INTEGER)
 
@@ -3039,19 +2947,6 @@ FUNCTION UI.RunNebula% (aid AS INTEGER)
   LOOP
 
 END FUNCTION
-
-SUB UI.SetFilter (filter AS INTEGER, refreshUI AS INTEGER)
-  '
-  ' Applies a filter to emphasize items and optionally refreshes the screen.
-  '
-
-  uiCurrentFilter = filter
-
-  IF refreshUI THEN
-    UI.Refresh
-  END IF
-
-END SUB
 
 SUB UI.SetPage (page AS INTEGER)
   '
