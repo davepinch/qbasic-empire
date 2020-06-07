@@ -205,7 +205,6 @@ DECLARE SUB UI.SetPage (page AS INTEGER)
 
 DECLARE FUNCTION UI.RunArea% ()
 DECLARE FUNCTION UI.RunAtlas% ()
-DECLARE FUNCTION UI.RunInbox% ()
 DECLARE FUNCTION UI.RunNebula% (aid AS INTEGER)
 
 '
@@ -413,7 +412,6 @@ CONST UIFilter.Self = 1
 CONST UIPage.None = 0
 CONST UIPage.Area = 2
 CONST UIPage.Atlas = 3
-CONST UIPage.Inbox = 4
 CONST UIPage.Table = 5
 
 '
@@ -1823,9 +1821,6 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, sid%, tid%, wid%)
       CASE "habitat"
         hid% = HabitatCreate%
 
-      CASE "inbox"
-        UI.SetPage UIPage.Inbox
-
       CASE "newgame"
         WorldInit 15
 
@@ -2859,9 +2854,6 @@ SUB UI.Run
       CASE UIPage.Atlas
         uresult = UI.RunAtlas%
 
-      CASE UIPage.Inbox
-        uresult = UI.RunInbox%
-
     END SELECT
 
     SELECT CASE uresult
@@ -2964,25 +2956,6 @@ PromptAgain:
     '
     UI.RunAtlas% = UIResult.Escape
 
-  END IF
-
-END FUNCTION
-
-FUNCTION UI.RunInbox%
-
-  Assert uiCurrentPage = UIPage.Inbox, "UI.RunInbox", "Wrong UI page"
-  
-  DIM result AS WinResultType
-  DIM wid    AS INTEGER
-
-  wid = WinGetWid("Inbox")
-  WinRun wid, result
- 
-  IF result.canceled THEN
-    UI.RunInbox% = UIResult.Escape
-  ELSE
-    UI.SetPage UIPage.Atlas
-    UI.RunInbox% = UIResult.Exit
   END IF
 
 END FUNCTION
