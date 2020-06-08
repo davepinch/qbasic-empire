@@ -42,10 +42,9 @@ TYPE FieldType
 END TYPE
 
 TYPE HabitatType
-  backdrop AS INTEGER
-  UI       AS STRING * 3
   labelrid AS INTEGER
-  titlerid AS INTEGER
+  namerid  AS INTEGER
+  wid      AS INTEGER
 END TYPE
 
 TYPE TriggerType
@@ -149,10 +148,8 @@ DECLARE SUB ExecFile (filename AS STRING)
 ' Habitats
 '
 DECLARE FUNCTION HabitatCreate% ()
-DECLARE SUB HabitatSetUI (hid%, UI$)
 DECLARE SUB HabitatSetLabel (hid%, label$)
-DECLARE SUB HabitatSetBackdrop (hid%, filename$)
-DECLARE SUB HabitatSetTitle (hid%, title$)
+DECLARE SUB HabitatSetName (hid%, hname$)
 
 '
 ' Inbox
@@ -193,15 +190,12 @@ DECLARE SUB StatusUpdateLevel (text AS STRING, level AS INTEGER)
 DECLARE SUB UI.Action ()
 DECLARE SUB UI.ActionNebula (aid AS INTEGER)
 DECLARE SUB UI.Redraw ()
-DECLARE SUB UI.RedrawArea ()
 DECLARE SUB UI.RedrawAtlas ()
-DECLARE SUB UI.RedrawFile (filename AS STRING)
 DECLARE SUB UI.RedrawTable ()
 DECLARE SUB UI.Refresh ()
 DECLARE SUB UI.Run ()
 DECLARE SUB UI.SetPage (page AS INTEGER)
 
-DECLARE FUNCTION UI.RunArea% ()
 DECLARE FUNCTION UI.RunAtlas% ()
 DECLARE FUNCTION UI.RunNebula% (aid AS INTEGER)
 
@@ -397,7 +391,6 @@ CONST TableStyle.Forecolor = 1
 ' UIPage.* constants
 '
 CONST UIPage.None = 0
-CONST UIPage.Area = 2
 CONST UIPage.Atlas = 3
 CONST UIPage.Table = 5
 
@@ -453,7 +446,7 @@ DIM SHARED win(1 TO 15)          AS WinType
 DIM SHARED wincount              AS INTEGER
 DIM SHARED winstack(1 TO 3)      AS WinStackItem
 DIM SHARED winstacked            AS INTEGER
-DIM SHARED winstyle(1 TO 5)      AS WinStyleType
+DIM SHARED winstyle(1 TO 10)     AS WinStyleType
 DIM SHARED winstyles             AS INTEGER
 
 SetupGame
@@ -1332,7 +1325,7 @@ SUB DrawTableRow (row AS INTEGER, aid AS INTEGER)
   PRINT "  "; ' HACK
 
   ' Print the habitat label
-  DrawText ResourceGet(habitat(area(aid).habitat).titlerid)
+  DrawText ResourceGet(habitat(area(aid).habitat).namerid)
 
 END SUB
 
@@ -1724,17 +1717,14 @@ FUNCTION ExecCmdHid% (ntoken%, stoken$(), hid%)
 
   SELECT CASE stoken$(0)
 
-    CASE "backdrop"
-      HabitatSetBackdrop hid%, stoken$(1)
-
     CASE "label"
       HabitatSetLabel hid%, stoken$(1)
 
-    CASE "title"
-      HabitatSetTitle hid%, stoken$(1)
+    CASE "name"
+      HabitatSetName hid%, stoken$(1)
 
-    CASE "ui"
-      HabitatSetUI hid%, stoken$(1)
+    CASE "window"
+      habitat(hid%).wid = WinFindWid(stoken$(1))
 
     CASE ELSE
       ExecCmdHid = CmdResult.Malformed
@@ -2046,18 +2036,6 @@ FUNCTION HabitatCreate%
   HabitatCreate% = habitats
 END FUNCTION
 
-SUB HabitatSetBackdrop (hid%, filename$)
-
-  AssertIsPositive hid%, "HabitatSetBackdrop", "hid"
-
-  IF habitat(hid%).backdrop = 0 THEN
-    habitat(hid%).backdrop = ResourceCreate%(filename$)
-  ELSE
-    ResourceSet habitat(hid%).backdrop, filename$
-  END IF
-
-END SUB
-
 SUB HabitatSetLabel (hid%, label$)
 
   AssertIsPositive hid%, "HabitatSetLabel", "hid"
@@ -2070,21 +2048,16 @@ SUB HabitatSetLabel (hid%, label$)
 
 END SUB
 
-SUB HabitatSetTitle (hid%, title$)
+SUB HabitatSetName (hid%, hname$)
 
-  AssertIsPositive hid%, "HabitatSetTitle", "hid"
+  AssertIsPositive hid%, "HabitatSetName", "hid"
 
-  IF habitat(hid%).titlerid = 0 THEN
-    habitat(hid%).titlerid = ResourceCreate(title$)
+  IF habitat(hid%).namerid = 0 THEN
+    habitat(hid%).namerid = ResourceCreate(hname$)
   ELSE
-    ResourceSet habitat(hid%).titlerid, title$
+    ResourceSet habitat(hid%).namerid, hname$
   END IF
 
-END SUB
-
-SUB HabitatSetUI (hid%, UI$)
-  AssertIsPositive hid%, "HabitatSetUI", "hid"
-  habitat(hid%).UI = UI$
 END SUB
 
 SUB InboxAdd (subject AS STRING, filename AS STRING)
@@ -2567,12 +2540,11 @@ SUB UI.Action
     ' Get the habitat of the area
     '
     hid = area(aid).habitat
-    Assert hid <> 0, "UI.RunArea", "hit cannot be 0"
 
-    SELECT CASE habitat(hid).UI
-      CASE "NEB"
-        UI.ActionNebula aid
-    END SELECT
+    'SELECT CASE habitat(hid).UI
+    '  CASE "NEB"
+    '    UI.ActionNebula aid
+    'END SELECT
 
   END IF
 
@@ -2622,9 +2594,6 @@ SUB UI.Redraw
 
   SELECT CASE uiCurrentPage
  
-    CASE UIPage.Area
-      UI.RedrawArea
-
     CASE UIPage.Atlas
       UI.RedrawAtlas
 
@@ -2635,62 +2604,12 @@ SUB UI.Redraw
 
 END SUB
 
-SUB UI.RedrawArea
-  '
-  ' Redraws the current area
-  '
-
-  Assert uicx <> 0, "UI.RedrawArea", "uicx cannot be 0"
-  Assert uicy <> 0, "UI.RedrawArea", "uicy cannot be 0"
-
-  DIM aid AS INTEGER
-  DIM hid AS INTEGER
-
-  '
-  ' Get the current area
-  '
-  aid = AtlasGetValue(uicx, uicy, 0)
-  Assert aid <> 0, "UI.RedrawArea", "aid cannot be 0"
-
-  '
-  ' Get the habitat of the area
-  '
-  hid = area(aid).habitat
-  Assert hid <> 0, "UI.RedrawArea", "hid cannot be 0"
-  
-  '
-  ' Draw the backdrop file for this habitat
-  '
-  IF habitat(hid).backdrop > 0 THEN
-    UI.RedrawFile ResourceGet(habitat(hid).backdrop)
-  END IF
-
-END SUB
-
 SUB UI.RedrawAtlas
 
   SCREEN , , VideoPage.Working, VideoPage.Display
   CLS
   AtlasDraw
   SCREEN , , VideoPage.Working, VideoPage.Working
-  PCOPY VideoPage.Working, VideoPage.Display
-  SCREEN , , VideoPage.Display, VideoPage.Display
-
-END SUB
-
-SUB UI.RedrawFile (filename AS STRING)
-  '
-  ' Loads and redraws the specified file on the display page
-  '
- 
-  SCREEN , , VideoPage.Working, VideoPage.Display
-  CLS
- 
-  '
-  ' Draw the file on second row (leaving space for the menu bar)
-  '
-  DrawFileAt filename, 1, 2
- 
   PCOPY VideoPage.Working, VideoPage.Display
   SCREEN , , VideoPage.Display, VideoPage.Display
 
@@ -2756,9 +2675,6 @@ SUB UI.Run
 
     SELECT CASE uiCurrentPage
     
-      CASE UIPage.Area
-        uresult = UI.RunArea%
-
       CASE UIPage.Atlas
         uresult = UI.RunAtlas%
 
@@ -2787,50 +2703,15 @@ SUB UI.Run
 
 END SUB
 
-FUNCTION UI.RunArea%
-
-  Assert uiCurrentPage = UIPage.Area, "UI.RunArea", "Wrong UI page"
-
-  DIM aid AS INTEGER
-  DIM hid AS INTEGER
-
-  '
-  ' Get the current area
-  '
-  aid = AtlasGetValue(uicx, uicy, 0)
-  Assert aid <> 0, "UI.RunArea", "aid cannot be 0"
-  
-  '
-  ' Get the habitat of the area
-  '
-  hid = area(aid).habitat
-  Assert hid <> 0, "UI.RunArea", "hit cannot be 0"
-
-  SELECT CASE habitat(hid).UI
-  
-    CASE "NEB":
-      UI.RunArea% = UI.RunNebula(aid)
-
-    CASE ELSE
-     
-      SELECT CASE GetKey$
-        CASE CHR$(ASCII.Escape)
-          UI.RunArea% = UIResult.Escape
-        CASE ELSE
-          UI.SetPage UIPage.Atlas
-          UI.RunArea% = UIResult.Exit
-      END SELECT
-
-  END SELECT
-
-END FUNCTION
-
 FUNCTION UI.RunAtlas%
  
   Assert uiCurrentPage = UIPage.Atlas, "UI.RunAtlas", "Wrong UI page"
 
+  DIM aid      AS INTEGER
+  DIM hid      AS INTEGER
   DIM outpress AS STRING
-
+  DIM wresult  AS WinResultType
+ 
   '
   ' Set the default position if this is the first run
   '
@@ -2844,19 +2725,33 @@ PromptAgain:
     SELECT CASE outpress
      
       CASE CHR$(ASCII.Return)
-        UI.SetPage UIPage.Area
-        UI.RunAtlas% = UIResult.Exit
+      
+        '
+        ' Get the current area
+        '
+        aid = AtlasGetValue(uicx, uicy, 0)
+ 
+        '
+        ' Get the habitat of the area
+        '
+        hid = area(aid).habitat
+       
+        '
+        ' Get the window name handling this habitat
+        '
+        IF habitat(hid).wid > 0 THEN
+          WinRun habitat(hid).wid, wresult
+        END IF
 
       CASE " "
-       
         UI.Action
-        
-        '
-        ' Keep one GOTO in this code just to break the rules.
-        '
-        GOTO PromptAgain
 
     END SELECT
+
+    '
+    ' Keep one GOTO in this code just to break the rules.
+    '
+    GOTO PromptAgain
 
   ELSE
     '
@@ -3808,18 +3703,24 @@ END FUNCTION
 
 SUB WinKey (wid%, fid%, keypress$)
   '
-  ' Sends a keystroke to a field in the window
+  ' Sends a keystroke to a field
   '
  
-  SELECT CASE fld(wid%, fid%).kind
+  AssertIsPositive wid%, "WinKey", "wid"
+
+  IF fid% > 0 THEN
+
+    SELECT CASE fld(wid%, fid%).kind
   
-    CASE FieldKind.Boolean
-      WinKeyBoolean wid%, fid%, keypress$
+      CASE FieldKind.Boolean
+        WinKeyBoolean wid%, fid%, keypress$
 
-    CASE FieldKind.Integer
-      WinKeyInteger wid%, fid%, keypress$
+      CASE FieldKind.Integer
+        WinKeyInteger wid%, fid%, keypress$
 
-  END SELECT
+    END SELECT
+ 
+  END IF
 
 END SUB
 
@@ -4560,25 +4461,24 @@ END SUB
 
 SUB WorldAddNebula (size AS INTEGER)
 
-  DIM hid AS INTEGER
-  DIM i   AS INTEGER
+  DIM hid   AS INTEGER
+  DIM hname AS STRING
 
   '
   ' Find the nebula habitat
   '
-  FOR i = 1 TO habitats
-    IF habitat(i).UI = HabitatUI.Nebula THEN
-      hid = i
-      EXIT FOR
+  FOR hid = 1 TO habitats
+   
+    IF habitat(hid).namerid > 0 THEN
+      hname = ResourceGet(habitat(hid).namerid)
+      IF hname = "Nebula" THEN
+        WorldAddCluster hid, size
+        EXIT SUB
+      END IF
     END IF
+
   NEXT
-  IF hid = 0 THEN
-    StatusDebug "WorldAddNebula: unable to find nebula habitat"
-    EXIT SUB
-  END IF
-
-  WorldAddCluster hid, size
-
+ 
 END SUB
 
 SUB WorldInit (areas AS INTEGER)
