@@ -153,6 +153,7 @@ DECLARE SUB ExecFile (filename AS STRING)
 
 DECLARE SUB FieldBindText (wid%, fid%, expr$)
 DECLARE SUB FieldBindValue (wid%, fid%, expr$)
+DECLARE SUB FieldDrawNebula (wid%, fid%)
 DECLARE SUB FieldKey (wid%, fid%, keypress$)
 DECLARE SUB FieldKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB FieldKeyInteger (wid%, fid%, keypress$)
@@ -196,11 +197,6 @@ DECLARE SUB InboxAdd (subject AS STRING, filename AS STRING)
 '
 ' Nebula
 '
-DECLARE SUB NebulaCreate (seq() AS INTEGER, sizeX AS INTEGER)
-DECLARE SUB NebulaCreateSeq (seq() AS INTEGER, y AS INTEGER)
-DECLARE SUB NebulaDraw (seq() AS INTEGER, sx AS INTEGER, sy AS INTEGER)
-DECLARE SUB NebulaFieldDraw (wid%, fid%)
-DECLARE SUB NebulaHarvest (seq() AS INTEGER)
 DECLARE FUNCTION NebulaLabel$ (energy AS INTEGER)
 DECLARE FUNCTION NebulaLabelRid% (energy AS INTEGER)
 
@@ -361,13 +357,6 @@ CONST FieldKind.Nebula = 100
 '
 CONST OpNone = 0
 CONST OpEquals = 1
-
-'
-' NebulaIndex constants
-'
-CONST NebulaIndex.X = -2
-CONST NebulaIndex.Y = -1
-CONST NebulaIndex.Size = 0
 
 '
 ' ScanCode constants
@@ -2066,6 +2055,113 @@ SUB FieldBindValue (wid%, fid%, expr$)
 
 END SUB
 
+SUB FieldDrawNebula (wid%, fid%)
+
+  DIM p  AS INTEGER
+  DIM sx AS INTEGER
+  DIM sy AS INTEGER
+  DIM x  AS INTEGER
+  DIM y  AS INTEGER
+
+  COLOR 7, 0
+
+  FOR y = 1 TO fld(wid%, fid%).sizeY
+ 
+    p = -1
+    x = INT(RND * fld(wid%, fid%).sizeX) + 1
+
+    sx = win(wid%).posX + fld(wid%, fid%).offsetX + x - 1
+    sy = win(wid%).posY + fld(wid%, fid%).offsetY + y - 1
+    LOCATE sy, sx
+
+    DO
+    
+      '
+      ' Calculate the next p value. -1=stop, 0=space, or 1,2,3
+      '
+      GOSUB NextP
+      IF p = -1 THEN
+        EXIT DO
+      END IF
+     
+      '
+      ' Draw the p value
+      '
+      SELECT CASE p
+        CASE 1
+          COLOR 8
+          PRINT "Ä";
+        CASE 2
+          COLOR 7
+          PRINT "Ä";
+        CASE 3
+          COLOR 15
+          PRINT "Ä";
+        CASE 0
+          PRINT " ";
+      END SELECT
+   
+      x = x + 1
+      IF x > fld(wid%, fid%).sizeX THEN
+        EXIT DO
+      END IF
+
+    LOOP
+
+  NEXT
+
+  EXIT SUB
+
+REM ** SUBROUTINES **
+
+NextP:
+
+  SELECT CASE p
+   
+    CASE -1
+      p = 1
+
+    CASE 0
+      SELECT CASE INT(RND * 3)
+        CASE 0:
+          p = 1
+        CASE ELSE
+          p = -1
+      END SELECT
+   
+    CASE 1
+      SELECT CASE INT(RND * 4)
+        CASE 0
+          p = 0
+        CASE 1
+          p = 2
+        CASE ELSE
+          p = 1
+      END SELECT
+   
+    CASE 2
+      SELECT CASE INT(RND * 4)
+        CASE 0
+          p = 1
+        CASE 1
+          p = 3
+        CASE ELSE
+          p = 2
+      END SELECT
+   
+    CASE 3
+      SELECT CASE INT(RND * 4)
+        CASE 0
+          p = 3
+        CASE ELSE
+          p = 2
+      END SELECT
+
+  END SELECT
+  RETURN
+
+END SUB
+
 FUNCTION FieldGetBound$ (wid%, fid%, b AS BindingType)
 
   IF b.xrid = 0 THEN
@@ -2469,218 +2565,6 @@ SUB InboxAdd (subject AS STRING, filename AS STRING)
   posY = posY + 1
 
   StatusUpdate "Mail arrived"
-
-END SUB
-
-SUB NebulaCreate (seq() AS INTEGER, sizeX AS INTEGER)
-
-  DIM i AS INTEGER
-  DIM j AS INTEGER
-  DIM y AS INTEGER
-
-  '
-  ' Initialize y positions of each sequence
-  '
-  FOR i = LBOUND(seq, 1) TO UBOUND(seq, 1)
-    seq(i, NebulaIndex.Y) = i
-  NEXT
-
-  FOR i = LBOUND(seq, 1) TO UBOUND(seq, 1)
-    '
-    ' Get a random index to swap
-    '
-    j = INT(RND * (UBOUND(seq, 1) - LBOUND(seq, 1) + 1)) + LBOUND(seq, 1)
-  
-    '
-    ' Swap values
-    '
-    tmp = seq(i, NebulaIndex.Y)
-    seq(i, NebulaIndex.Y) = seq(j, NebulaIndex.Y)
-    seq(j, NebulaIndex.Y) = tmp
-
-  NEXT
-
-  FOR y = LBOUND(seq, 1) TO UBOUND(seq, 1)
-   
-    NebulaCreateSeq seq(), y
- 
-    '
-    ' Randomly assign x position
-    '
-    seq(y, NebulaIndex.X) = INT(RND * (sizeX - seq(y, NebulaIndex.Size))) + 1
-
-  NEXT
-  
-END SUB
-
-SUB NebulaCreateSeq (seq() AS INTEGER, y AS INTEGER)
-
-  DIM i AS INTEGER ' Index being generated
-  DIM p AS INTEGER ' Previous value
-  
-  '
-  ' seq(y, 0)   = size
-  ' seq(y, 1..) = 0 (empty), 1 (dark), 2 (medium), 3 (bright)
-  '
-  seq(y, 1) = 1
-  p = 1
-
-  FOR i = 2 TO UBOUND(seq, 2)
-    SELECT CASE p
-    
-      CASE 0:
-        SELECT CASE INT(RND * 3)
-        
-          CASE 0:
-            p = 1
-
-          CASE ELSE
-            seq(y, NebulaIndex.Size) = i - 1
-            EXIT SUB
-      
-        END SELECT
-    
-      CASE 1:
-        SELECT CASE INT(RND * 4)
-          CASE 0
-            p = 0
-          CASE 1
-            p = 2
-          CASE ELSE
-            p = 1
-        END SELECT
-      CASE 2:
-        SELECT CASE INT(RND * 4)
-          CASE 0
-            p = 1
-          CASE 1
-            p = 3
-          CASE ELSE
-            p = 2
-        END SELECT
-    
-      CASE 3:
-      
-        SELECT CASE INT(RND * 4)
-          CASE 0
-            p = 3
-          CASE ELSE
-            p = 2
-        END SELECT
-
-    END SELECT
-  
-    seq(y, i) = p
-
-  NEXT
-
-  seq(y, NebulaIndex.Size) = UBOUND(seq, 2)
-
-END SUB
-
-SUB NebulaDraw (seq() AS INTEGER, sx AS INTEGER, sy AS INTEGER)
-
-  DIM i AS INTEGER
-  DIM j AS INTEGER
-
-  COLOR 7, 0
-
-  FOR i = LBOUND(seq, 1) TO UBOUND(seq, 1)
- 
-    LOCATE seq(i, NebulaIndex.Y) + sy - 1, seq(i, NebulaIndex.X) + sx - 1
-
-    FOR j = 1 TO seq(i, NebulaIndex.Size)
-     
-      SELECT CASE seq(i, j)
-        CASE 1:
-          COLOR 8
-          PRINT "Ä";
-
-        CASE 2:
-          COLOR 7
-          PRINT "Ä";
-
-        CASE 3:
-          COLOR 15
-          PRINT "Ä";
-
-        CASE 0:
-          PRINT " ";
-
-      END SELECT
-   
-    NEXT
-
-  NEXT
-
-END SUB
-
-SUB NebulaFieldDraw (wid%, fid%)
-
-  AssertIsPositive wid%, "WinDrawNebula", "wid"
-  AssertIsPositive fid%, "WinDrawNebula", "fid"
-
-  DIM energy%
-  DIM sizeX%
-  DIM sizeY%
-  DIM sx%
-  DIM sy%
- 
-  '
-  ' Get the current energy
-  '
-  energy% = VAL(FieldGetValue$(wid%, fid%))
-  sizeX% = fld(wid%, fid%).sizeX
-  sizeY% = fld(wid%, fid%).sizeY
-
-  IF sizeX% < 1 OR sizeY% < 1 THEN
-    EXIT SUB
-  END IF
-
-  '
-  ' Create the nebula data structure
-  '
-  DIM seq(1 TO sizeY%, -2 TO 30) AS INTEGER
-  NebulaCreate seq(), sizeX%
-
-  '
-  ' HACK for now: update sequence to reflect the energy
-  '
-  SELECT CASE energy%
-    CASE 0:
-      energy% = 3
-      FieldSetValue wid%, fid%, STR$(energy%)
-    CASE 1:
-      NebulaHarvest seq()
-      NebulaHarvest seq()
-    CASE 2:
-      NebulaHarvest seq()
-  END SELECT
-
-  sx% = win(wid%).posX + fld(wid%, fid%).offsetX
-  sy% = win(wid%).posY + fld(wid%, fid%).offsetY
-
-  NebulaDraw seq(), sx%, sy%
-
-END SUB
-
-SUB NebulaHarvest (seq() AS INTEGER)
-
-  DIM v AS INTEGER
-  DIM y AS INTEGER
-
-  FOR y = LBOUND(seq, 1) TO UBOUND(seq, 1)
- 
-    FOR x = 1 TO seq(y, NebulaIndex.Size)
-       
-      v = seq(y, x)
-      IF v > 0 THEN
-        seq(y, x) = v - 1
-      END IF
-
-    NEXT
-
-  NEXT
 
 END SUB
 
@@ -3717,7 +3601,7 @@ SUB WinDrawField (wid%, fid%)
       WinDrawSeparator wid%, fid%
 
     CASE FieldKind.Nebula
-      NebulaFieldDraw wid%, fid%
+      FieldDrawNebula wid%, fid%
 
     CASE ELSE
       WinDrawText wid%, fid%
