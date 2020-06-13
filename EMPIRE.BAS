@@ -12,7 +12,7 @@
 TYPE AreaType
   allocated AS INTEGER
   habitat   AS INTEGER
-  level     AS INTEGER
+  energy    AS INTEGER
 END TYPE
 
 TYPE AtlasItemType
@@ -23,28 +23,35 @@ TYPE AtlasItemType
   labelrid  AS INTEGER
 END TYPE
 
+TYPE BindingType
+  vrid AS INTEGER ' Resource of the value
+  xrid AS INTEGER ' Resource of the expression; 0=no binding
+END TYPE
+
 TYPE EventType
   namerid AS INTEGER
   value   AS INTEGER
 END TYPE
 
 TYPE FieldType
-  kind     AS INTEGER
-  childwid AS INTEGER  ' TODO: add nparam and combine these two
-  cmdrid   AS INTEGER
-  flags    AS INTEGER
-  offsetX  AS INTEGER
-  offsetY  AS INTEGER
-  sid      AS INTEGER
-  sizeX    AS INTEGER
-  textrid  AS INTEGER
-  value    AS INTEGER
+  kind      AS INTEGER
+  childwid  AS INTEGER  ' TODO: add nparam and combine these two
+  cmdrid    AS INTEGER
+  offsetX   AS INTEGER
+  offsetY   AS INTEGER
+  sid       AS INTEGER
+  sizeX     AS INTEGER
+  sizeY     AS INTEGER
+  text      AS BindingType
+  value     AS BindingType
 END TYPE
 
 TYPE HabitatType
-  labelrid AS INTEGER
-  namerid  AS INTEGER
-  wid      AS INTEGER
+  actionrid AS INTEGER
+  backdrop  AS INTEGER
+  labelrid  AS INTEGER
+  namerid   AS INTEGER
+  wid       AS INTEGER
 END TYPE
 
 TYPE TriggerType
@@ -144,10 +151,40 @@ DECLARE FUNCTION ExecCmdSid% (ntoken%, stoken$(), sid%)
 DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 DECLARE SUB ExecFile (filename AS STRING)
 
+DECLARE SUB FieldBindText (wid%, fid%, expr$)
+DECLARE SUB FieldBindValue (wid%, fid%, expr$)
+DECLARE SUB FieldKey (wid%, fid%, keypress$)
+DECLARE SUB FieldKeyBoolean (wid%, fid%, keypress$)
+DECLARE SUB FieldKeyInteger (wid%, fid%, keypress$)
+DECLARE SUB FieldSetBound (wid%, fid%, b AS BindingType, value$)
+DECLARE SUB FieldSetChild (wid%, fid%, wname$)
+DECLARE SUB FieldSetCommand (wid%, fid%, cmd$)
+DECLARE SUB FieldSetStyle (wid%, fid%, sid%)
+DECLARE SUB FieldSetText (wid%, fid%, value$)
+DECLARE SUB FieldSetValue (wid%, fid%, value$)
+DECLARE FUNCTION FieldGetBound$ (wid%, fid%, b AS BindingType)
+DECLARE FUNCTION FieldGetStyle% (wid%, fid%)
+DECLARE FUNCTION FieldGetText$ (wid%, fid%)
+DECLARE FUNCTION FieldGetValue$ (wid%, fid%)
+DECLARE FUNCTION FieldIsBound% (wid%, fid%)
+DECLARE FUNCTION FieldIsSelectable% (wid%, fid%)
+
+'
+' Top-level game methods
+'
+DECLARE SUB GameHarvest ()
+DECLARE FUNCTION GameAreaEnergy% ()
+DECLARE FUNCTION GameArea% ()
+DECLARE FUNCTION GameHabitat% ()
+
 '
 ' Habitats
 '
 DECLARE FUNCTION HabitatCreate% ()
+DECLARE FUNCTION HabitatGetBackdrop$ (hid%)
+DECLARE FUNCTION HabitatGetName$ (hid%)
+DECLARE SUB HabitatSetAction (hid%, cmd$)
+DECLARE SUB HabitatSetBackdrop (hid%, backdrop$)
 DECLARE SUB HabitatSetLabel (hid%, label$)
 DECLARE SUB HabitatSetName (hid%, hname$)
 
@@ -159,19 +196,19 @@ DECLARE SUB InboxAdd (subject AS STRING, filename AS STRING)
 '
 ' Nebula
 '
-DECLARE SUB NebulaCreate (seq() AS INTEGER)
-DECLARE SUB NebulaCreateSeq (seq() AS INTEGER, y!)
-DECLARE SUB NebulaDraw (seq() AS INTEGER)
+DECLARE SUB NebulaCreate (seq() AS INTEGER, sizeX AS INTEGER)
+DECLARE SUB NebulaCreateSeq (seq() AS INTEGER, y AS INTEGER)
+DECLARE SUB NebulaDraw (seq() AS INTEGER, sx AS INTEGER, sy AS INTEGER)
+DECLARE SUB NebulaFieldDraw (wid%, fid%)
 DECLARE SUB NebulaHarvest (seq() AS INTEGER)
-DECLARE FUNCTION NebulaLabel$ (level AS INTEGER)
-DECLARE FUNCTION NebulaLabelRid% (level AS INTEGER)
+DECLARE FUNCTION NebulaLabel$ (energy AS INTEGER)
+DECLARE FUNCTION NebulaLabelRid% (energy AS INTEGER)
 
 '
 ' Resources
 '
 DECLARE FUNCTION ResourceCreate% (value AS STRING)
 DECLARE FUNCTION ResourceGet$ (rid AS INTEGER)
-DECLARE FUNCTION ResourceLength% (rid AS INTEGER)
 DECLARE SUB ResourceSet (rid AS INTEGER, value AS STRING)
 
 '
@@ -195,9 +232,7 @@ DECLARE SUB UI.RedrawTable ()
 DECLARE SUB UI.Refresh ()
 DECLARE SUB UI.Run ()
 DECLARE SUB UI.SetPage (page AS INTEGER)
-
 DECLARE FUNCTION UI.RunAtlas% ()
-DECLARE FUNCTION UI.RunNebula% (aid AS INTEGER)
 
 '
 ' Windows
@@ -205,18 +240,13 @@ DECLARE FUNCTION UI.RunNebula% (aid AS INTEGER)
 DECLARE FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$, value%)
 DECLARE FUNCTION WinAddSeparator% (wid%, posX%, posY%)
 DECLARE FUNCTION WinClipText% (wid%, fid%, outposx%, outposy%, outsizex%, outtext$)
-DECLARE FUNCTION WinGetText$ (wid%, fid%)
 DECLARE FUNCTION WinCreate% ()
 DECLARE FUNCTION WinCreateEx% (style%, posX%, posY%, sizeX%, sizeY%)
 DECLARE FUNCTION WinCreateField% (wid%, kind%)
-DECLARE FUNCTION WinExpandField$ (wid%, fid%)
 DECLARE FUNCTION WinFindSid% (stylename AS STRING)
 DECLARE FUNCTION WinFindWid% (wname$)
-DECLARE FUNCTION WinGetStyle% (wid%, fid%)
-DECLARE FUNCTION WinIsSelectable% (wid%, fid%)
+DECLARE FUNCTION WinGetStyle% (wid%)
 DECLARE FUNCTION WinMapKey% (wid%, pressed$)
-DECLARE FUNCTION WinParseMacro% (value$, index1%, outsel$, outval$)
-DECLARE FUNCTION WinParseSelector% (wid%, fid%, sel$)
 
 DECLARE SUB WinAutoSize (wid%)
 DECLARE SUB WinClose (wid%)
@@ -232,9 +262,6 @@ DECLARE SUB WinDrawSeparator0 (wid%, fid%)
 DECLARE SUB WinDrawSeparator1 (wid%, fid%)
 DECLARE SUB WinDrawSeparator2 (wid%, fid%)
 DECLARE SUB WinDrawText (wid%, fid%)
-DECLARE SUB WinKey (wid%, fid%, keypress$)
-DECLARE SUB WinKeyBoolean (wid%, fid%, keypress$)
-DECLARE SUB WinKeyInteger (wid%, fid%, keypress$)
 DECLARE SUB WinOpen (wid%)
 DECLARE SUB WinRefreshField (wid%, fid%)
 DECLARE SUB WinRefreshWindow (wid%)
@@ -245,17 +272,14 @@ DECLARE SUB WinSelectNext (wid%)
 DECLARE SUB WinSelectFirst (wid%)
 DECLARE SUB WinSelectLast (wid%)
 DECLARE SUB WinSelectPrevious (wid%)
-DECLARE SUB WinSetChild (wid%, fid%, wname$)
-DECLARE SUB WinSetCommand (wid%, fid%, cmd$)
 DECLARE SUB WinSetStyle (wid%, sid%)
-DECLARE SUB WinSetText (wid%, fid%, text$, hasMacros%)
-DECLARE SUB WinSetValue (wid%, fid%, value%)
 
 '
 ' World* subroutines
 '
 DECLARE SUB WorldAddCluster (hid AS INTEGER, size AS INTEGER)
 DECLARE SUB WorldAddNebula (size AS INTEGER)
+DECLARE SUB WorldHarvest (aid%)
 DECLARE SUB WorldInit (areas AS INTEGER)
 DECLARE SUB WorldRemove (aid AS INTEGER)
 DECLARE SUB WorldSetLabel (aid AS INTEGER, labelrid AS INTEGER)
@@ -281,7 +305,6 @@ DECLARE SUB PaintBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
 DECLARE SUB SetupGame ()
 DECLARE FUNCTION GetKey$ ()
 DECLARE FUNCTION Split% (text AS STRING, tokens() AS STRING)
-DECLARE FUNCTION StyleCreate% ()
 
 '
 ' ASCII character constants
@@ -321,12 +344,6 @@ CONST CmdResult.OK = 0
 CONST CmdResult.Malformed = 1
 
 '
-' Field Flags
-'
-CONST FieldFlag.None = 0
-CONST FieldFlag.Macro = 1
-
-'
 ' Field Kinds
 '
 CONST FieldKind.None = 0
@@ -337,11 +354,7 @@ CONST FieldKind.Integer = 4
 CONST FieldKind.Label = 5
 CONST FieldKind.Popup = 6
 CONST FieldKind.Separator = 7
-
-'
-' Habitat UIs
-'
-CONST HabitatUI.Nebula = "NEB"
+CONST FieldKind.Nebula = 100
 
 '
 ' Operators
@@ -1616,6 +1629,8 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
         endtag = "endboolean"
       CASE FieldKind.Integer
         endtag = "endinteger"
+      CASE FieldKind.Nebula
+        endtag = "endnebula"
       CASE ELSE
         AssertFail "ExecCmdFid", "Unknown kind:" + STR$(fld(wid%, fid%).kind)
     END SELECT
@@ -1630,18 +1645,22 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
     EXIT FUNCTION
 
   ELSEIF ntoken% = 3 THEN
+    
     '
-    ' Three tokens: only the TEXT MACRO <STRING> command is valid.
+    ' Possible commands are VALUE BIND <VALUE> or TEXT BIND <VALUE>
     '
-    IF LCASE$(stoken$(0)) = "text" THEN
-      IF LCASE$(stoken$(1)) = "macro" THEN
-        WinSetText wid%, fid%, stoken$(2), True
-        ExecCmdFid% = CmdResult.OK
-        EXIT FUNCTION
-      END IF
+    IF LCASE$(stoken$(1)) <> "bind" THEN
+      ExecCmdFid% = CmdResult.Malformed
+    ELSEIF stoken$(0) = "text" THEN
+      FieldBindText wid%, fid%, stoken$(2)
+      ExecCmdFid% = CmdResult.OK
+    ELSEIF stoken$(0) = "value" THEN
+      FieldBindValue wid%, fid%, stoken$(2)
+      ExecCmdFid% = CmdResult.OK
+    ELSE
+      ExecCmdFid% = CmdResult.Malformed
     END IF
 
-    ExecCmdFid% = CmdResult.Malformed
     EXIT FUNCTION
   END IF
 
@@ -1661,10 +1680,10 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       fid% = 0
 
     CASE "child"
-      WinSetChild wid%, fid%, stoken$(1)
+      FieldSetChild wid%, fid%, stoken$(1)
 
     CASE "command"
-      WinSetCommand wid%, fid%, stoken$(1)
+      FieldSetCommand wid%, fid%, stoken$(1)
 
     CASE "offsetx"
       fld(wid%, fid%).offsetX = VAL(stoken$(1))
@@ -1675,14 +1694,17 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
     CASE "sizex"
       fld(wid%, fid%).sizeX = VAL(stoken$(1))
 
+    CASE "sizey"
+      fld(wid%, fid%).sizeY = VAL(stoken$(1))
+
     CASE "style"
-      fld(wid%, fid%).sid = WinFindSid%(stoken$(1))
+      FieldSetStyle wid%, fid%, WinFindSid%(stoken$(1))
 
     CASE "text"
-      WinSetText wid%, fid%, stoken$(1), False
+      FieldSetText wid%, fid%, stoken$(1)
 
     CASE "value"
-      WinSetValue wid%, fid%, VAL(stoken$(1))
+      FieldSetValue wid%, fid%, stoken$(1)
 
     CASE ELSE
       ExecCmdFid% = CmdResult.Malformed
@@ -1716,6 +1738,12 @@ FUNCTION ExecCmdHid% (ntoken%, stoken$(), hid%)
   ExecCmdHid% = CmdResult.OK
 
   SELECT CASE stoken$(0)
+
+    CASE "action"
+      HabitatSetAction hid%, stoken$(1)
+     
+    CASE "backdrop"
+      HabitatSetBackdrop hid%, stoken$(1)
 
     CASE "label"
       HabitatSetLabel hid%, stoken$(1)
@@ -1761,6 +1789,9 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, sid%, tid%, wid%)
 
       CASE "habitat"
         hid% = HabitatCreate%
+
+      CASE "harvest"
+        GameHarvest
 
       CASE "newgame"
         WorldInit 15
@@ -1934,6 +1965,9 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
       CASE "label"
         fid% = WinCreateField(wid%, FieldKind.Label)
    
+      CASE "nebula"
+        fid% = WinCreateField(wid%, FieldKind.Nebula)
+
       CASE "popup"
         fid% = WinCreateField(wid%, FieldKind.Popup)
 
@@ -2014,6 +2048,362 @@ FUNCTION ExecResource% (rid AS INTEGER)
 
 END FUNCTION
 
+SUB FieldBindText (wid%, fid%, expr$)
+
+  AssertIsPositive wid%, "FieldBindText", "wid"
+  AssertIsPositive fid%, "FieldBindText", "fid"
+
+  ResourceSet fld(wid%, fid%).text.xrid, expr$
+
+END SUB
+
+SUB FieldBindValue (wid%, fid%, expr$)
+
+  AssertIsPositive wid%, "FieldBindValue", "wid"
+  AssertIsPositive fid%, "FieldBindValue", "fid"
+
+  ResourceSet fld(wid%, fid%).value.xrid, expr$
+
+END SUB
+
+FUNCTION FieldGetBound$ (wid%, fid%, b AS BindingType)
+
+  IF b.xrid = 0 THEN
+    '
+    ' No expression, return value
+    '
+    FieldGetBound$ = ResourceGet(b.vrid)
+    EXIT FUNCTION
+
+  END IF
+
+  '
+  ' Get the context of the binding
+  '
+  DIM aid%: aid% = GameArea%
+  DIM hid%: hid% = GameHabitat%
+
+  DIM text$: xtext$ = LCASE$(ResourceGet(b.xrid))
+
+  SELECT CASE xtext$
+
+    CASE "area.energy"
+      FieldGetBound$ = STR$(GameAreaEnergy%)
+      EXIT FUNCTION
+
+    CASE "habitat.backdrop"
+      FieldGetBound$ = HabitatGetBackdrop$(hid%)
+      EXIT FUNCTION
+
+    CASE "habitat.title"
+      FieldGetBound$ = HabitatGetName$(hid%)
+      EXIT FUNCTION
+
+    CASE "sel:value"
+
+      DIM sel%
+      LET sel% = win(wid%).selected
+
+      IF sel% = 0 THEN
+        '
+        ' No selected field to get a value
+        '
+        FieldGetBound$ = ""
+       
+      ELSEIF sel% = fid% THEN
+        '
+        ' Infinite recursion
+        '
+        FieldGetBound$ = ""
+       
+      ELSE
+        FieldGetBound$ = FieldGetValue(wid%, win(wid%).selected)
+
+      END IF
+
+    CASE ELSE
+      AssertFail "FieldGetBound", "Invalid binding: " + xtext$
+
+  END SELECT
+
+END FUNCTION
+
+FUNCTION FieldGetStyle% (wid%, fid%)
+
+  AssertIsPositive wid%, "FieldGetStyle", "wid"
+  AssertIsPositive fid%, "FieldGetStyle", "fid"
+
+  DIM sid%
+
+  sid% = fld(wid%, fid%).sid
+  IF sid% = 0 THEN
+    sid% = win(wid%).style
+  END IF
+
+  FieldGetStyle% = sid%
+  
+END FUNCTION
+
+FUNCTION FieldGetText$ (wid%, fid%)
+
+  FieldGetText$ = FieldGetBound$(wid%, fid%, fld(wid%, fid%).text)
+
+END FUNCTION
+
+FUNCTION FieldGetValue$ (wid%, fid%)
+
+  AssertIsPositive wid%, "FieldGetValue", "wid"
+  AssertIsPositive fid%, "FieldGetValue", "fid"
+
+  FieldGetValue$ = FieldGetBound(wid%, fid%, fld(wid%, fid%).value)
+
+END FUNCTION
+
+FUNCTION FieldIsBound% (wid%, fid%)
+
+  IF fld(wid%, fid%).text.xrid > 0 THEN
+    FieldIsBound% = True
+  ELSEIF fld(wid%, fid%).value.xrid > 0 THEN
+    FieldIsBound% = True
+  ELSE
+    FieldIsBound = False
+  END IF
+
+END FUNCTION
+
+FUNCTION FieldIsSelectable% (wid%, fid%)
+  '
+  ' Returns True or False depending on whether the specified
+  ' field is selectable (i.e., can receive focus for input or
+  ' selection).
+  '
+  
+  IF wid% < 0 OR fid% <= 0 THEN
+
+    FieldIsSelectable = False
+
+  ELSEIF fid% > win(wid%).fields THEN
+   
+    FieldIsSelectable% = False
+ 
+  ELSE
+
+    SELECT CASE fld(wid%, fid%).kind
+      CASE FieldKind.Button
+        FieldIsSelectable = True
+
+      CASE FieldKind.Boolean
+        FieldIsSelectable = True
+
+      CASE FieldKind.Integer
+        FieldIsSelectable = True
+
+      CASE FieldKind.Popup
+        FieldIsSelectable = True
+
+      CASE ELSE
+        FieldIsSelectable = False
+
+    END SELECT
+
+  END IF
+
+END FUNCTION
+
+SUB FieldKey (wid%, fid%, keypress$)
+  '
+  ' Sends a keystroke to a field
+  '
+ 
+  AssertIsPositive wid%, "FieldKey", "wid"
+
+  IF fid% > 0 THEN
+
+    SELECT CASE fld(wid%, fid%).kind
+  
+      CASE FieldKind.Boolean
+        FieldKeyBoolean wid%, fid%, keypress$
+
+      CASE FieldKind.Integer
+        FieldKeyInteger wid%, fid%, keypress$
+
+    END SELECT
+ 
+  END IF
+
+END SUB
+
+SUB FieldKeyBoolean (wid%, fid%, keypress$)
+  '
+  ' Sends a keystroke to a boolean field.
+  '
+ 
+  DIM text AS STRING
+  LET text = FieldGetText$(wid%, fid%)
+
+  SELECT CASE keypress$
+
+    CASE " "
+      SELECT CASE text
+        CASE "No"
+          FieldSetText wid%, fid%, "Yes"
+        CASE "Yes"
+          FieldSetText wid%, fid%, "No"
+      END SELECT
+
+    CASE "n", "N"
+      FieldSetText wid%, fid%, "No"
+
+    CASE "y", "Y"
+      FieldSetText wid%, fid%, "Yes"
+
+  END SELECT
+
+END SUB
+
+SUB FieldKeyInteger (wid%, fid%, keypress$)
+  '
+  ' Sends a key to an integer field
+  '
+
+  DIM buf$
+  LET buf$ = FieldGetText$(wid%, fid%)
+
+  SELECT CASE keypress$
+   
+    CASE CHR$(ASCII.Backspace)
+
+      IF LEN(buf$) > 0 THEN
+        buf$ = LEFT$(buf$, LEN(buf$) - 1)
+      END IF
+
+    CASE "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
+
+      IF LEN(buf$) < fld(wid%, fid%).sizeX THEN
+        buf$ = buf$ + keypress$
+      END IF
+
+  END SELECT
+
+  FieldSetText wid%, fid%, buf$
+
+END SUB
+
+SUB FieldSetBound (wid%, fid%, b AS BindingType, value$)
+
+  AssertIsPositive wid%, "FieldSetBound", "wid"
+  AssertIsPositive fid%, "FieldSetBound", "fid"
+
+  IF b.xrid = 0 THEN
+    '
+    ' No expression, set value directly
+    '
+    ResourceSet b.vrid, value$
+  ELSE
+    
+    DIM xtext$
+    LET xtext$ = ResourceGet(b.xrid)
+
+    SELECT CASE xtext$
+     
+      CASE "area.energy"
+        DIM aid%
+        LET aid% = AtlasGetValue(uicx, uicy, 0)
+        IF aid% > 0 THEN
+          area(aid%).energy = VAL(value$)
+        END IF
+
+      CASE ELSE
+        AssertFail "FieldSetBound", "Unknown binding: " + xtext$
+
+    END SELECT
+
+  END IF
+
+END SUB
+
+SUB FieldSetChild (wid%, fid%, wname$)
+
+  AssertIsPositive wid%, "FieldSetChild", "wid"
+  AssertIsPositive fid%, "FieldSetChild", "fid"
+
+  fld(wid%, fid%).childwid = WinFindWid%(wname$)
+
+END SUB
+
+SUB FieldSetCommand (wid%, fid%, cmd$)
+
+  AssertIsPositive wid%, "FieldSetCommand", "wid"
+  AssertIsPositive fid%, "FieldSetCommand", "fid"
+
+  ResourceSet fld(wid%, fid%).cmdrid, cmd$
+
+END SUB
+
+SUB FieldSetStyle (wid%, fid%, sid%)
+  fld(wid%, fid%).sid = sid%
+END SUB
+
+SUB FieldSetText (wid%, fid%, value$)
+  '
+  ' Sets the text of the specified field.
+  '
+
+  AssertIsPositive wid%, "FieldSetText", "wid"
+  AssertIsPositive fid%, "FieldSetText", "fid"
+
+  FieldSetBound wid%, fid%, fld(wid%, fid%).text, value$
+
+END SUB
+
+SUB FieldSetValue (wid%, fid%, value$)
+
+  AssertIsPositive wid%, "FieldSetValue", "wid"
+  AssertIsPositive fid%, "FieldSetValue", "fid"
+
+  FieldSetBound wid%, fid%, fld(wid%, fid%).value, value$
+
+END SUB
+
+FUNCTION GameArea%
+
+  IF (uicx > 0) AND (uicy > 0) THEN
+    GameArea% = AtlasGetValue(uicx, uicy, 0)
+  END IF
+
+END FUNCTION
+
+FUNCTION GameAreaEnergy%
+ 
+  DIM aid%
+  aid% = GameArea
+  IF aid% > 0 THEN
+    GameAreaEnergy = area(aid%).energy
+  END IF
+
+END FUNCTION
+
+FUNCTION GameHabitat%
+
+  DIM aid%: aid% = GameArea%
+  IF aid% > 0 THEN
+    GameHabitat% = area(aid%).habitat
+  END IF
+
+END FUNCTION
+
+SUB GameHarvest
+
+  DIM aid%
+  DIM energy%
+
+  aid% = GameArea%
+  IF aid% > 0 THEN
+    WorldHarvest aid%
+  END IF
+
+END SUB
+
 FUNCTION GetKey$
   '
   ' Waits for a key to be pressed and returns the string representing
@@ -2036,28 +2426,32 @@ FUNCTION HabitatCreate%
   HabitatCreate% = habitats
 END FUNCTION
 
-SUB HabitatSetLabel (hid%, label$)
-
-  AssertIsPositive hid%, "HabitatSetLabel", "hid"
-
-  IF habitat(hid%).labelrid = 0 THEN
-    habitat(hid%).labelrid = ResourceCreate%(label$)
-  ELSE
-    ResourceSet habitat(hid%).labelrid, label$
+FUNCTION HabitatGetBackdrop$ (hid%)
+  IF hid% > 0 THEN
+    HabitatGetBackdrop$ = ResourceGet(habitat(hid%).backdrop)
   END IF
+END FUNCTION
 
+FUNCTION HabitatGetName$ (hid%)
+  IF hid% > 0 THEN
+    HabitatGetName$ = ResourceGet(habitat(hid%).namerid)
+  END IF
+END FUNCTION
+
+SUB HabitatSetAction (hid%, cmd$)
+  ResourceSet habitat(hid%).actionrid, cmd$
+END SUB
+
+SUB HabitatSetBackdrop (hid%, backdrop$)
+  ResourceSet habitat(hid%).backdrop, backdrop$
+END SUB
+
+SUB HabitatSetLabel (hid%, label$)
+  ResourceSet habitat(hid%).labelrid, label$
 END SUB
 
 SUB HabitatSetName (hid%, hname$)
-
-  AssertIsPositive hid%, "HabitatSetName", "hid"
-
-  IF habitat(hid%).namerid = 0 THEN
-    habitat(hid%).namerid = ResourceCreate(hname$)
-  ELSE
-    ResourceSet habitat(hid%).namerid, hname$
-  END IF
-
+  ResourceSet habitat(hid%).namerid, hname$
 END SUB
 
 SUB InboxAdd (subject AS STRING, filename AS STRING)
@@ -2078,9 +2472,11 @@ SUB InboxAdd (subject AS STRING, filename AS STRING)
 
 END SUB
 
-SUB NebulaCreate (seq() AS INTEGER)
+SUB NebulaCreate (seq() AS INTEGER, sizeX AS INTEGER)
 
   DIM i AS INTEGER
+  DIM j AS INTEGER
+  DIM y AS INTEGER
 
   '
   ' Initialize y positions of each sequence
@@ -2111,17 +2507,21 @@ SUB NebulaCreate (seq() AS INTEGER)
     '
     ' Randomly assign x position
     '
-    seq(y, NebulaIndex.X) = INT(RND * (80 - seq(y, NebulaIndex.Size))) + 1
+    seq(y, NebulaIndex.X) = INT(RND * (sizeX - seq(y, NebulaIndex.Size))) + 1
 
   NEXT
   
 END SUB
 
-SUB NebulaCreateSeq (seq() AS INTEGER, y)
+SUB NebulaCreateSeq (seq() AS INTEGER, y AS INTEGER)
 
-  DIM i AS INTEGER
-  DIM p AS INTEGER
-
+  DIM i AS INTEGER ' Index being generated
+  DIM p AS INTEGER ' Previous value
+  
+  '
+  ' seq(y, 0)   = size
+  ' seq(y, 1..) = 0 (empty), 1 (dark), 2 (medium), 3 (bright)
+  '
   seq(y, 1) = 1
   p = 1
 
@@ -2178,14 +2578,16 @@ SUB NebulaCreateSeq (seq() AS INTEGER, y)
 
 END SUB
 
-SUB NebulaDraw (seq() AS INTEGER)
+SUB NebulaDraw (seq() AS INTEGER, sx AS INTEGER, sy AS INTEGER)
 
   DIM i AS INTEGER
   DIM j AS INTEGER
 
+  COLOR 7, 0
+
   FOR i = LBOUND(seq, 1) TO UBOUND(seq, 1)
  
-    LOCATE seq(i, NebulaIndex.Y), seq(i, NebulaIndex.X)
+    LOCATE seq(i, NebulaIndex.Y) + sy - 1, seq(i, NebulaIndex.X) + sx - 1
 
     FOR j = 1 TO seq(i, NebulaIndex.Size)
      
@@ -2213,6 +2615,55 @@ SUB NebulaDraw (seq() AS INTEGER)
 
 END SUB
 
+SUB NebulaFieldDraw (wid%, fid%)
+
+  AssertIsPositive wid%, "WinDrawNebula", "wid"
+  AssertIsPositive fid%, "WinDrawNebula", "fid"
+
+  DIM energy%
+  DIM sizeX%
+  DIM sizeY%
+  DIM sx%
+  DIM sy%
+ 
+  '
+  ' Get the current energy
+  '
+  energy% = VAL(FieldGetValue$(wid%, fid%))
+  sizeX% = fld(wid%, fid%).sizeX
+  sizeY% = fld(wid%, fid%).sizeY
+
+  IF sizeX% < 1 OR sizeY% < 1 THEN
+    EXIT SUB
+  END IF
+
+  '
+  ' Create the nebula data structure
+  '
+  DIM seq(1 TO sizeY%, -2 TO 30) AS INTEGER
+  NebulaCreate seq(), sizeX%
+
+  '
+  ' HACK for now: update sequence to reflect the energy
+  '
+  SELECT CASE energy%
+    CASE 0:
+      energy% = 3
+      FieldSetValue wid%, fid%, STR$(energy%)
+    CASE 1:
+      NebulaHarvest seq()
+      NebulaHarvest seq()
+    CASE 2:
+      NebulaHarvest seq()
+  END SELECT
+
+  sx% = win(wid%).posX + fld(wid%, fid%).offsetX
+  sy% = win(wid%).posY + fld(wid%, fid%).offsetY
+
+  NebulaDraw seq(), sx%, sy%
+
+END SUB
+
 SUB NebulaHarvest (seq() AS INTEGER)
 
   DIM v AS INTEGER
@@ -2233,11 +2684,11 @@ SUB NebulaHarvest (seq() AS INTEGER)
 
 END SUB
 
-FUNCTION NebulaLabel$ (level AS INTEGER)
+FUNCTION NebulaLabel$ (energy AS INTEGER)
 
   DIM label AS STRING
 
-  SELECT CASE level
+  SELECT CASE energy
 
     CASE 0:
       label = " @X08Ä  "
@@ -2274,10 +2725,10 @@ FUNCTION NebulaLabel$ (level AS INTEGER)
 
 END FUNCTION
 
-FUNCTION NebulaLabelRid% (level AS INTEGER)
+FUNCTION NebulaLabelRid% (energy AS INTEGER)
 
-  Assert level >= 0, "NebulaLabelRid", "level must be 0 or greater"
-  Assert level <= 3, "NebulaLabelRid", "level must be 3 or less"
+  Assert energy >= 0, "NebulaLabelRid", "energy must be 0 or greater"
+  Assert energy <= 3, "NebulaLabelRid", "energy must be 3 or less"
 
   STATIC created AS INTEGER
   STATIC lrid() AS INTEGER
@@ -2289,7 +2740,7 @@ FUNCTION NebulaLabelRid% (level AS INTEGER)
     NEXT
   END IF
 
-  NebulaLabelRid% = lrid(level)
+  NebulaLabelRid% = lrid(energy)
 
 END FUNCTION
 
@@ -2338,20 +2789,23 @@ FUNCTION ResourceCreate% (value AS STRING)
 END FUNCTION
 
 FUNCTION ResourceGet$ (rid AS INTEGER)
-  ResourceGet$ = resource(rid)
-END FUNCTION
-
-FUNCTION ResourceLength% (rid AS INTEGER)
   IF rid = 0 THEN
-    ResourceLength = 0
+    '
+    ' Resource 0 is always an empty string
+    '
+    ResourceGet$ = ""
   ELSE
-    ResourceLength = LEN(resource(rid))
+    ResourceGet$ = resource(rid)
   END IF
 END FUNCTION
 
-SUB ResourceSet (rid AS INTEGER, value AS STRING)
+SUB ResourceSet (outrid AS INTEGER, value AS STRING)
 
-  resource(rid) = value
+  IF outrid = 0 THEN
+    outrid = ResourceCreate(value)
+  ELSE
+    resource(outrid) = value
+  END IF
 
 END SUB
 
@@ -2554,17 +3008,17 @@ SUB UI.ActionNebula (aid AS INTEGER)
 
   AssertIsPositive aid, "UI.ActionNebula", "aid"
 
-  DIM level AS INTEGER
-  LET level = area(aid).level
+  DIM energy AS INTEGER
+  LET energy = area(aid).energy
 
   '
-  ' Set the default level
+  ' Set the default energy
   '
-  IF level = 0 THEN
-    level = 3
+  IF energy = 0 THEN
+    energy = 3
   END IF
 
-  IF level = 1 THEN
+  IF energy = 1 THEN
    
     '
     ' This is the last extraction
@@ -2575,11 +3029,11 @@ SUB UI.ActionNebula (aid AS INTEGER)
   ELSE
    
     '
-    ' Extract one level
+    ' Extract one energy
     '
-    level = level - 1
-    area(aid).level = level
-    WorldSetLabel aid, NebulaLabelRid(level)
+    energy = energy - 1
+    area(aid).energy = energy
+    WorldSetLabel aid, NebulaLabelRid(energy)
 
   END IF
 
@@ -2708,6 +3162,7 @@ FUNCTION UI.RunAtlas%
   Assert uiCurrentPage = UIPage.Atlas, "UI.RunAtlas", "Wrong UI page"
 
   DIM aid      AS INTEGER
+  DIM cresult  AS INTEGER
   DIM hid      AS INTEGER
   DIM outpress AS STRING
   DIM wresult  AS WinResultType
@@ -2737,10 +3192,13 @@ PromptAgain:
         hid = area(aid).habitat
        
         '
-        ' Get the window name handling this habitat
+        ' Run the window name handling this habitat
         '
         IF habitat(hid).wid > 0 THEN
           WinRun habitat(hid).wid, wresult
+          IF wresult.action = WinAction.Execute THEN
+            cresult = ExecResource%(wresult.cmdrid)
+          END IF
         END IF
 
       CASE " "
@@ -2760,86 +3218,6 @@ PromptAgain:
     UI.RunAtlas% = UIResult.Escape
 
   END IF
-
-END FUNCTION
-
-FUNCTION UI.RunNebula% (aid AS INTEGER)
-
-  Assert aid <> 0, "UI.RunNebula", "aid cannot be 0"
-
-  DIM keypress AS STRING
-  DIM seq(2 TO 24, -2 TO 30) AS INTEGER
-
-  CLS
-
-  '
-  ' Create the nebula data structure
-  '
-  NebulaCreate seq()
- 
-  '
-  ' HACK for now: update sequence to reflect the level
-  '
-  SELECT CASE area(aid).level
-    CASE 0:
-      area(aid).level = 3
-    CASE 1:
-      NebulaHarvest seq()
-      NebulaHarvest seq()
-    CASE 2:
-      NebulaHarvest seq()
-  END SELECT
-
-  DO
-   
-    NebulaDraw seq()
-   
-    SELECT CASE area(aid).level
-      CASE 3: StatusUpdate "@X07[@X0FSpace@X07] [@X0FESC@X07]"
-      CASE 2: StatusUpdate "@X07[@X07Space@X07] [@X0FESC@X07]"
-      CASE 1: StatusUpdate "@X07[@X08Space@X07] [@X0FESC@X07]"
-      CASE 0: StatusUpdate "@X07[@X04Empty@X07] [@X0FESC@X07]"
-    END SELECT
-
-    keypress = GetKey$
-
-    SELECT CASE keypress
-     
-      CASE CHR$(ASCII.Return), CHR$(ASCII.Backspace)
-        UI.SetPage UIPage.Atlas
-        UI.RunNebula% = UIResult.Exit
-        EXIT FUNCTION
-
-      CASE CHR$(ASCII.Escape)
-        UI.RunNebula% = UIResult.Escape
-        EXIT FUNCTION
-    
-      CASE " "
-       
-        IF area(aid).level = 0 THEN
-          UI.RunNebula% = UIResult.Exit
-          EXIT FUNCTION
-        END IF
-
-        '
-        ' Perform the harvest
-        '
-        area(aid).level = area(aid).level - 1
-        NebulaHarvest seq()
-       
-        '
-        ' Update or remove the label
-        '
-        IF area(aid).level = 0 THEN
-          WorldRemove aid
-          EventIncName "NebulaDepleted"
-        ELSE
-          WorldSetLabel aid, NebulaLabelRid(area(aid).level)
-        END IF
-
-    END SELECT
-
-  LOOP
 
 END FUNCTION
 
@@ -2879,8 +3257,10 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value%)
   fld(wid%, fid%).offsetX = offsetX%
   fld(wid%, fid%).offsetY = offsetY%
   fld(wid%, fid%).sizeX = sizeX%
-  fld(wid%, fid%).textrid = ResourceCreate(text$)
-  fld(wid%, fid%).value = value%
+  fld(wid%, fid%).text.vrid = ResourceCreate(text$)
+  fld(wid%, fid%).text.xrid = 0
+  fld(wid%, fid%).value.vrid = value%
+  fld(wid%, fid%).value.xrid = 0
 
   WinAddButton% = fid%
 
@@ -2895,11 +3275,13 @@ FUNCTION WinAddSeparator% (wid%, offsetX%, offsetY%)
 
   fld(wid%, fid%).childwid = 0
   fld(wid%, fid%).cmdrid = 0
-  fld(wid%, fid%).flags = 0
   fld(wid%, fid%).offsetX = offsetX%
   fld(wid%, fid%).offsetY = offsetY%
   fld(wid%, fid%).sizeX = 0
-  fld(wid%, fid%).value = 0
+  fld(wid%, fid%).text.vrid = 0
+  fld(wid%, fid%).text.xrid = 0
+  fld(wid%, fid%).value.vrid = 0
+  fld(wid%, fid%).value.xrid = 0
 
   WinAddSeparator% = fid%
 
@@ -2926,7 +3308,7 @@ SUB WinAutoSize (wid%)
  
     fieldSizeX% = fld(wid%, fid%).sizeX
     IF fieldSizeX% < 1 THEN
-      fieldSizeX% = ResourceLength(fld(wid%, fid%).textrid)
+      fieldSizeX% = LEN(FieldGetText(wid%, fid%))
     END IF
 
     '
@@ -2961,7 +3343,7 @@ FUNCTION WinClipText% (wid%, fid%, outoffx%, outoffy%, outsizex%, outtext$)
   AssertIsPositive fid%, "WinClipText", "fid"
 
   DIM text$
-  LET text$ = WinGetText(wid%, fid%)
+  LET text$ = FieldGetText$(wid%, fid%)
 
   '
   ' Get the size of the field
@@ -3166,7 +3548,7 @@ SUB WinDrawBox0 (wid%)
   DIM row AS INTEGER
   DIM sid AS INTEGER
 
-  sid = WinGetStyle(wid%, 0)
+  sid = WinGetStyle(wid%)
   DrawColor winstyle(sid).textcolor
  
   FOR row = 1 TO win(wid%).sizeY
@@ -3201,7 +3583,7 @@ SUB WinDrawBox1 (wid%)
   x2 = x1 + win(wid%).sizeX + 1
   y2 = y1 + win(wid%).sizeY + 1
 
-  sid = WinGetStyle(wid%, 0)
+  sid = WinGetStyle(wid%)
 
   '
   ' Draw the top border
@@ -3328,11 +3710,14 @@ SUB WinDrawField (wid%, fid%)
     CASE FieldKind.Label
       WinDrawText wid%, fid%
 
+    CASE FieldKind.File
+      WinDrawFile wid%, fid%
+
     CASE FieldKind.Separator
       WinDrawSeparator wid%, fid%
 
-    CASE FieldKind.File
-      WinDrawFile wid%, fid%
+    CASE FieldKind.Nebula
+      NebulaFieldDraw wid%, fid%
 
     CASE ELSE
       WinDrawText wid%, fid%
@@ -3350,7 +3735,7 @@ SUB WinDrawFile (wid%, fid%)
   DIM sx AS INTEGER
   DIM sy AS INTEGER
 
-  filename = WinGetText$(wid%, fid%)
+  filename = FieldGetValue$(wid%, fid%)
   IF LEN(filename) = 0 THEN
     EXIT SUB
   END IF
@@ -3503,7 +3888,7 @@ SUB WinDrawText (wid%, fid%)
   sy = win(wid%).posY + outoffy%
   LOCATE sy, sx
 
-  sid% = WinGetStyle(wid%, fid%)
+  sid% = FieldGetStyle(wid%, fid%)
   IF win(wid%).selected = fid% THEN
     DrawColor winstyle(sid%).selectedcolor
   ELSE
@@ -3513,80 +3898,6 @@ SUB WinDrawText (wid%, fid%)
   PRINT outtext$;
 
 END SUB
-
-FUNCTION WinExpandField$ (wid%, fid%)
-
-  AssertIsPositive wid%, "WinExpandField", "wid"
-  AssertIsPositive fid%, "WinExpandField", "fid"
-
-  DIM build   AS STRING   ' Accumulated from expanded macros
-  DIM nextidx AS INTEGER  ' Index of the next {
-  DIM thisidx AS INTEGER  ' Index being checked
-  DIM textlen AS INTEGER  ' Macro text length
-  DIM textval AS STRING   ' Macro text
-
-  '
-  ' Get the macro text and length
-  '
-  thisidx = 1
-  textval = ResourceGet(fld(wid%, fid%).textrid)
-  textlen = LEN(textval)
- 
-  DO WHILE thisidx < textlen
-
-    '
-    ' Find opening bracket
-    '
-    nextidx = INSTR(thisidx, textval, "{")
-    IF nextidx = 0 THEN
-      '
-      ' No more; append the rest of the string
-      '
-      build = build + RIGHT$(textval, textlen - thisidx + 1)
-      EXIT DO
-    END IF
-
-    '
-    ' Append the chars up to the bracket
-    '
-    build = build + MID$(textval, thisidx, nextidx - thisidx)
-
-    '
-    ' Parse the macro
-    '
-    DIM outsel AS STRING
-    DIM outval AS STRING
-    thisidx = WinParseMacro(textval, nextidx, outsel, outval)
-
-    IF thisidx = 0 THEN
-      '
-      ' Not a macro, skip over the {
-      '
-      build = build + "{"
-      thisidx = nextidx + 1
-
-    ELSE
-      '
-      ' Parse the selector
-      '
-      DIM selfid AS INTEGER
-      LET selfid = WinParseSelector(wid%, fid%, outsel)
-      IF selfid > 0 THEN
-        SELECT CASE LCASE$(outval)
-          CASE "value"
-            build = build + LTRIM$(STR$(fld(wid%, selfid).value))
-          CASE "$value"
-            build = build + ResourceGet(fld(wid%, selfid).value)
-        END SELECT
-      END IF
-
-    END IF
-
-  LOOP
-
-  WinExpandField = build
-
-END FUNCTION
 
 FUNCTION WinFindSid% (stylename AS STRING)
 
@@ -3633,152 +3944,13 @@ FUNCTION WinFindWid% (wname$)
 
 END FUNCTION
 
-FUNCTION WinGetStyle% (wid%, fid%)
+FUNCTION WinGetStyle% (wid%)
 
   AssertIsPositive wid%, "WinGetStyle", "wid"
 
-  DIM sid%
-
-  IF fid% = 0 THEN
-    sid% = win(wid%).style
-  ELSE
-    sid% = fld(wid%, fid%).sid
-    IF sid% = 0 THEN
-      sid% = win(wid%).style
-    END IF
-  END IF
-
-  WinGetStyle% = sid%
-  
-END FUNCTION
-
-FUNCTION WinGetText$ (wid%, fid%)
-
-  IF (fld(wid%, fid%).flags AND FieldFlag.Macro) > 0 THEN
-    WinGetText$ = WinExpandField$(wid%, fid%)
-  ELSE
-    WinGetText$ = ResourceGet(fld(wid%, fid%).textrid)
-  END IF
+  WinGetStyle% = win(wid%).style
 
 END FUNCTION
-
-FUNCTION WinIsSelectable% (wid%, fid%)
-  '
-  ' Returns True or False depending on whether the specified
-  ' field is selectable (i.e., can receive focus for input or
-  ' selection).
-  '
-  
-  IF wid% < 0 OR fid% <= 0 THEN
-
-    WinIsSelectable = False
-
-  ELSEIF fid% > win(wid%).fields THEN
-   
-    WinIsSelectable% = False
- 
-  ELSE
-
-    SELECT CASE fld(wid%, fid%).kind
-      CASE FieldKind.Button
-        WinIsSelectable = True
-
-      CASE FieldKind.Boolean
-        WinIsSelectable = True
-
-      CASE FieldKind.Integer
-        WinIsSelectable = True
-
-      CASE FieldKind.Popup
-        WinIsSelectable = True
-
-      CASE ELSE
-        WinIsSelectable = False
-
-    END SELECT
-
-  END IF
-
-END FUNCTION
-
-SUB WinKey (wid%, fid%, keypress$)
-  '
-  ' Sends a keystroke to a field
-  '
- 
-  AssertIsPositive wid%, "WinKey", "wid"
-
-  IF fid% > 0 THEN
-
-    SELECT CASE fld(wid%, fid%).kind
-  
-      CASE FieldKind.Boolean
-        WinKeyBoolean wid%, fid%, keypress$
-
-      CASE FieldKind.Integer
-        WinKeyInteger wid%, fid%, keypress$
-
-    END SELECT
- 
-  END IF
-
-END SUB
-
-SUB WinKeyBoolean (wid%, fid%, keypress$)
-  '
-  ' Sends a keystroke to a boolean field.
-  '
- 
-  DIM text AS STRING
-  LET text = WinGetText(wid%, fid%)
-
-  SELECT CASE keypress$
-
-    CASE " "
-      SELECT CASE text
-        CASE "No"
-          WinSetText wid%, fid%, "Yes", False
-        CASE "Yes"
-          WinSetText wid%, fid%, "No", False
-      END SELECT
-
-    CASE "n", "N"
-      WinSetText wid%, fid%, "No", False
-
-    CASE "y", "Y"
-      WinSetText wid%, fid%, "Yes", False
-
-  END SELECT
-
-END SUB
-
-SUB WinKeyInteger (wid%, fid%, keypress$)
-  '
-  ' Sends a key to an integer field
-  '
-
-  DIM buf$
-  LET buf$ = WinGetText$(wid%, fid%)
-
-  SELECT CASE keypress$
-   
-    CASE CHR$(ASCII.Backspace)
-
-      IF LEN(buf$) > 0 THEN
-        buf$ = LEFT$(buf$, LEN(buf$) - 1)
-      END IF
-
-    CASE "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
-
-      IF LEN(buf$) < fld(wid%, fid%).sizeX THEN
-        buf$ = buf$ + keypress$
-      END IF
-
-  END SELECT
-
-  WinSetText wid%, fid%, buf$, False
-
-END SUB
 
 FUNCTION WinMapKey% (wid%, pressed$)
 
@@ -3904,68 +4076,6 @@ SUB WinOpen (wid%)
 
 END SUB
 
-FUNCTION WinParseMacro% (value$, index1%, outsel$, outval$)
-
-  '
-  ' Validate starting index
-  '
-  IF index1% < 1 OR index1% > LEN(value$) THEN
-    WinParseMacro% = 0
-    EXIT FUNCTION
-  ELSEIF MID$(value$, index1%, 1) <> "{" THEN
-    WinParseMacro% = 0
-    EXIT FUNCTION
-  END IF
-
-  '
-  ' Get index of :
-  '
-  DIM index2%
-  LET index2% = INSTR(index1% + 1, value$, ":")
-  IF index2% = 0 THEN
-    WinParseMacro% = 0
-    EXIT FUNCTION
-  END IF
-
-  '
-  ' Get index of }
-  '
-  DIM index3%
-  index3% = INSTR(index2% + 1, value$, "}")
-  IF index3% = 0 THEN
-    WinParseMacro% = 0
-    EXIT FUNCTION
-  END IF
-
-  ' Value: AB{C:D}E
-  ' Index: 12345678
-
-  outsel$ = MID$(value$, index1% + 1, index2% - index1% - 1)
-  outval$ = MID$(value$, index2% + 1, index3% - index2% - 1)
- 
-  '
-  ' Return index of next character to start parsing
-  '
-  WinParseMacro = index3% + 1
-
-END FUNCTION
-
-FUNCTION WinParseSelector% (wid%, fid%, sel$)
- 
-  DIM selected AS INTEGER
-
-  IF sel$ = "sel" THEN
-    selected = win(wid%).selected
-  ELSEIF LEN(sel$) = 0 THEN
-    selected = fid%
-  ELSE
-    selected = VAL(sel$)
-  END IF
-
-  WinParseSelector% = selected%
-
-END FUNCTION
-
 SUB WinRefreshField (wid%, fid%)
 
   DIM n AS INTEGER
@@ -3976,8 +4086,13 @@ SUB WinRefreshField (wid%, fid%)
       WinDrawField wid%, fid%
    
       FOR n = 1 TO win(wid%).fields
-        IF (fld(wid%, n).flags AND FieldFlag.Macro) > 0 THEN
-          WinDrawField wid%, n
+        '
+        ' Look for bound fields, but don't redraw the same field
+        '
+        IF n <> fid% THEN
+          IF FieldIsBound%(wid%, n) THEN
+            WinDrawField wid%, n
+          END IF
         END IF
       NEXT
 
@@ -4134,7 +4249,7 @@ SUB WinRun (wid%, result AS WinResultType)
         WinSelectPrevious wid%
 
       CASE ELSE
-        WinKey wid%, (win(wid%).selected), pressed
+        FieldKey wid%, (win(wid%).selected), pressed
 
     END SELECT
 
@@ -4201,7 +4316,7 @@ SUB WinSelectFirst (wid%)
  
     DIM fid%
     FOR fid% = 1 TO win(wid%).fields
-      IF WinIsSelectable(wid%, fid%) THEN
+      IF FieldIsSelectable(wid%, fid%) THEN
         WinSelect wid%, fid%
         EXIT SUB
       END IF
@@ -4233,7 +4348,7 @@ SUB WinSelectLast (wid%)
 
     DIM fid%
     FOR fid% = win(wid%).fields TO 1 STEP -1
-      IF WinIsSelectable(wid%, fid%) THEN
+      IF FieldIsSelectable(wid%, fid%) THEN
         WinSelect wid%, fid%
         EXIT SUB
       END IF
@@ -4284,7 +4399,7 @@ SUB WinSelectNext (wid%)
         fid% = 1
       END IF
 
-      IF WinIsSelectable(wid%, fid%) THEN
+      IF FieldIsSelectable(wid%, fid%) THEN
         EXIT DO
       END IF
 
@@ -4340,7 +4455,7 @@ SUB WinSelectPrevious (wid%)
         fid% = win(wid%).fields
       END IF
 
-      IF WinIsSelectable(wid%, fid%) THEN
+      IF FieldIsSelectable(wid%, fid%) THEN
         EXIT DO
       END IF
 
@@ -4360,72 +4475,9 @@ SUB WinSelectPrevious (wid%)
 
 END SUB
 
-SUB WinSetChild (wid%, fid%, wname$)
-
-  AssertIsPositive wid%, "WinSetChild", "wid"
-  AssertIsPositive fid%, "WinSetChild", "fid"
-
-  fld(wid%, fid%).childwid = WinFindWid%(wname$)
-
-END SUB
-
-SUB WinSetCommand (wid%, fid%, cmd$)
-
-  AssertIsPositive wid%, "WinSetCommand", "wid"
-  AssertIsPositive fid%, "WinSetCommand", "fid"
-
-  IF fld(wid%, fid%).cmdrid = 0 THEN
-    fld(wid%, fid%).cmdrid = ResourceCreate(cmd$)
-  ELSE
-    ResourceSet fld(wid%, fid%).cmdrid, cmd$
-  END IF
-
-END SUB
-
 SUB WinSetStyle (wid%, sid%)
-  
   AssertIsPositive wid%, "WinSetStyle", "wid"
-
   win(wid%).style = sid%
-
-END SUB
-
-SUB WinSetText (wid%, fid%, text$, hasMacros%)
-  '
-  ' Sets the text of the specified field.
-  '
-
-  AssertIsPositive wid%, "WinSetText", "wid"
-  AssertIsPositive fid%, "WinSetText", "fid"
-
-  '
-  ' Create or update the resource
-  '
-  DIM rid%
-  LET rid% = fld(wid%, fid%).textrid
-  IF rid% = 0 THEN
-    fld(wid%, fid%).textrid = ResourceCreate(text$)
-  ELSE
-    ResourceSet rid%, text$
-  END IF
-
-  IF hasMacros% THEN
-    fld(wid%, fid%).flags = fld(wid%, fid%).flags OR FieldFlag.Macro
-  ELSE
-    fld(wid%, fid%).flags = fld(wid%, fid%).flags AND (NOT FieldFlag.Macro)
-  END IF
-
-  WinRefreshField wid%, fid%
-
-END SUB
-
-SUB WinSetValue (wid%, fid%, value%)
-
-  AssertIsPositive wid%, "WinSetValue", "wid"
-  AssertIsPositive fid%, "WinSetValue", "fid"
-
-  fld(wid%, fid%).value = value%
-
 END SUB
 
 FUNCTION WorldAdd% (hid AS INTEGER, cx AS INTEGER, cy AS INTEGER)
@@ -4438,6 +4490,7 @@ FUNCTION WorldAdd% (hid AS INTEGER, cx AS INTEGER, cy AS INTEGER)
   LET aid = WorldNextId%
   area(aid).allocated = True
   area(aid).habitat = hid
+  area(aid).energy = 3
 
   AtlasAddItem cx, cy, aid, habitat(hid).labelrid
 
@@ -4445,16 +4498,16 @@ FUNCTION WorldAdd% (hid AS INTEGER, cx AS INTEGER, cy AS INTEGER)
 
 END FUNCTION
 
-SUB WorldAddCluster (hid AS INTEGER, size AS INTEGER)
+SUB WorldAddCluster (hid AS INTEGER, count AS INTEGER)
 
-  DIM aid AS INTEGER
-  DIM cx  AS INTEGER
-  DIM cy  AS INTEGER
-  DIM i   AS INTEGER
+  DIM aid   AS INTEGER
+  DIM outcx AS INTEGER
+  DIM outcy AS INTEGER
+  DIM n     AS INTEGER
  
-  FOR i = 1 TO size
-    AtlasNextClustered cx, cy
-    aid = WorldAdd%(hid, cx, cy)
+  FOR n = 1 TO count
+    AtlasNextClustered outcx, outcy
+    aid = WorldAdd%(hid, outcx, outcy)
   NEXT
   
 END SUB
@@ -4479,6 +4532,24 @@ SUB WorldAddNebula (size AS INTEGER)
 
   NEXT
  
+END SUB
+
+SUB WorldHarvest (aid%)
+
+  AssertIsPositive aid%, "WorldHarvest", "aid"
+
+  DIM energy%
+  LET energy% = area(aid%).energy
+
+  IF energy% > 0 THEN
+    energy% = energy% - 1
+    area(aid%).energy = energy%
+  END IF
+
+  IF energy% = 0 THEN
+    WorldRemove aid%
+  END IF
+
 END SUB
 
 SUB WorldInit (areas AS INTEGER)
