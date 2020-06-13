@@ -2067,8 +2067,8 @@ SUB FieldDrawNebula (wid%, fid%)
 
   FOR y = 1 TO fld(wid%, fid%).sizeY
  
-    p = -1
     x = INT(RND * fld(wid%, fid%).sizeX) + 1
+    p = 1
 
     sx = win(wid%).posX + fld(wid%, fid%).offsetX + x - 1
     sy = win(wid%).posY + fld(wid%, fid%).offsetY + y - 1
@@ -2079,10 +2079,45 @@ SUB FieldDrawNebula (wid%, fid%)
       '
       ' Calculate the next p value. -1=stop, 0=space, or 1,2,3
       '
-      GOSUB NextP
-      IF p = -1 THEN
-        EXIT DO
-      END IF
+      SELECT CASE p
+  
+        CASE 0
+          SELECT CASE INT(RND * 3)
+            CASE 0
+              p = 1
+            CASE ELSE
+              EXIT DO
+          END SELECT
+  
+        CASE 1
+          SELECT CASE INT(RND * 4)
+            CASE 0
+              p = 0
+            CASE 1
+              p = 2
+            CASE ELSE
+              p = 1
+          END SELECT
+  
+        CASE 2
+          SELECT CASE INT(RND * 4)
+            CASE 0
+              p = 1
+            CASE 1
+              p = 3
+            CASE ELSE
+              p = 2
+          END SELECT
+  
+        CASE 3
+          SELECT CASE INT(RND * 4)
+            CASE 0
+              p = 3
+            CASE ELSE
+              p = 2
+          END SELECT
+
+      END SELECT
      
       '
       ' Draw the p value
@@ -2109,56 +2144,6 @@ SUB FieldDrawNebula (wid%, fid%)
     LOOP
 
   NEXT
-
-  EXIT SUB
-
-REM ** SUBROUTINES **
-
-NextP:
-
-  SELECT CASE p
-   
-    CASE -1
-      p = 1
-
-    CASE 0
-      SELECT CASE INT(RND * 3)
-        CASE 0:
-          p = 1
-        CASE ELSE
-          p = -1
-      END SELECT
-   
-    CASE 1
-      SELECT CASE INT(RND * 4)
-        CASE 0
-          p = 0
-        CASE 1
-          p = 2
-        CASE ELSE
-          p = 1
-      END SELECT
-   
-    CASE 2
-      SELECT CASE INT(RND * 4)
-        CASE 0
-          p = 1
-        CASE 1
-          p = 3
-        CASE ELSE
-          p = 2
-      END SELECT
-   
-    CASE 3
-      SELECT CASE INT(RND * 4)
-        CASE 0
-          p = 3
-        CASE ELSE
-          p = 2
-      END SELECT
-
-  END SELECT
-  RETURN
 
 END SUB
 
