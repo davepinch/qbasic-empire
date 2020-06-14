@@ -130,7 +130,7 @@ DECLARE FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS I
 '
 DECLARE FUNCTION EventFind% (name$)
 DECLARE FUNCTION EventParseOperator% (opname$)
-DECLARE FUNCTION EventTriggers% (eid%, tid%)
+DECLARE FUNCTION EventTestTrigger% (eid%, tid%)
 DECLARE SUB EventInc (eid%)
 DECLARE SUB EventIncName (ename$)
 DECLARE SUB EventFire (eid%)
@@ -1478,7 +1478,7 @@ SUB EventFire (eid%)
   DIM tid%
  
   FOR tid% = 1 TO triggers
-    IF EventTriggers%(eid%, tid%) THEN
+    IF EventTestTrigger%(eid%, tid%) THEN
       result% = ExecResource(trigger(tid%).cmdrid)
     END IF
   NEXT
@@ -1510,30 +1510,28 @@ END FUNCTION
 SUB EventSet (eid%, value%)
 
   AssertIsPositive eid%, "EventFire", "eid"
-
   event(eid%).value = value%
-
   EventFire eid%
 
 END SUB
 
-FUNCTION EventTriggers% (eid%, tid%)
+FUNCTION EventTestTrigger% (eid%, tid%)
 
-  AssertIsPositive eid%, "EventTriggers", "eid"
-  AssertIsPositive eid%, "EventTriggers", "tid"
+  AssertIsPositive eid%, "EventTestTrigger", "eid"
+  AssertIsPositive eid%, "EventTestTrigger", "tid"
 
   IF trigger(tid%).eid <> eid% THEN
    
-    EventTriggers = False
+    EventTestTrigger = False
 
   ELSE
 
     SELECT CASE trigger(tid%).operator
       CASE OpEquals
-        EventTriggers = trigger(tid%).operand = event(eid%).value
+        EventTestTrigger = trigger(tid%).operand = event(eid%).value
 
       CASE ELSE
-        EventTriggers = False
+        EventTestTrigger = False
     END SELECT
 
   END IF
