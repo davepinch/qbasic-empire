@@ -1105,6 +1105,8 @@ FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS INTEGER, 
 
     END SELECT
 
+    EventIncName "AtlasMoves"
+
   LOOP
 
 END FUNCTION
