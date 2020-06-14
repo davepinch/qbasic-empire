@@ -1164,7 +1164,7 @@ SUB AtlasSetLabel (idx AS INTEGER, labelrid AS INTEGER)
 END SUB
 
 SUB DrawColor (attr%)
-  COLOR attr% AND &HF, (attr% AND &HF0) / 16
+  COLOR (attr% AND &HF) + (attr% AND &H80) / 8, (attr% AND &H70) / 16
 END SUB
 
 SUB DrawFile (filename AS STRING)
@@ -1425,25 +1425,17 @@ SUB DrawText (text AS STRING)
 
     ELSE
       '
-      ' Code found; print characters up to the character code.
+      ' Code found; print characters up to the color code.
       '
       PRINT MID$(text, startAt, nextAt - startAt);
 
       '
       ' Read the color values
       '
-      batr = ASC(MID$(text, nextAt + 2, 1)) - 48
-      fatr = ASC(MID$(text, nextAt + 3, 1)) - 48
-      IF batr > 16 THEN batr = batr - 7
-      IF fatr > 16 THEN fatr = fatr - 7
-      COLOR fatr, batr
-
-      'backcolor = VAL("&H" + MID$(text, nextAt + 2, 1))
-      'forecolor = VAL("&H" + MID$(text, nextAt + 3, 1))
-      'COLOR forecolor, backcolor
+      DrawColor VAL("&H" + MID$(text, nextAt + 2, 2))
 
       '
-      ' Continue with the next character in the text
+      ' Continue with the next character after the code
       '
       startAt = nextAt + 4
     END IF
