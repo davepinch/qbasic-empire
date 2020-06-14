@@ -3153,6 +3153,7 @@ FUNCTION Split% (text AS STRING, tokens() AS STRING)
           ' Start comment
           '
           state = StateComment
+          EXIT FOR
 
         ELSEIF char <> " " THEN
           '
