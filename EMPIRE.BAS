@@ -89,8 +89,6 @@ TYPE WinType
   posX      AS INTEGER
   posY      AS INTEGER
   selected  AS INTEGER
-  sizeX     AS INTEGER
-  sizeY     AS INTEGER
   style     AS INTEGER
   wname     AS STRING * 20
 END TYPE
@@ -153,7 +151,15 @@ DECLARE SUB ExecFile (filename AS STRING)
 
 DECLARE SUB FieldBindText (wid%, fid%, expr$)
 DECLARE SUB FieldBindValue (wid%, fid%, expr$)
+DECLARE SUB FieldDraw (wid%, fid%)
+DECLARE SUB FieldDrawBox (wid%, fid%)
+DECLARE SUB FieldDrawBox0 (wid%, fid%)
+DECLARE SUB FieldDrawBox1 (wid%, fid%)
+DECLARE SUB FieldDrawBox2 (wid%, fid%)
+DECLARE SUB FieldDrawFile (wid%, fid%)
 DECLARE SUB FieldDrawNebula (wid%, fid%)
+DECLARE SUB FieldDrawSeparator (wid%, fid%)
+DECLARE SUB FieldDrawText (wid%, fid%)
 DECLARE SUB FieldKey (wid%, fid%, keypress$)
 DECLARE SUB FieldKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB FieldKeyInteger (wid%, fid%, keypress$)
@@ -234,30 +240,15 @@ DECLARE FUNCTION UI.RunAtlas% ()
 ' Windows
 '
 DECLARE FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$, value%)
-DECLARE FUNCTION WinAddSeparator% (wid%, posX%, posY%)
-DECLARE FUNCTION WinClipText% (wid%, fid%, outposx%, outposy%, outsizex%, outtext$)
 DECLARE FUNCTION WinCreate% ()
-DECLARE FUNCTION WinCreateEx% (style%, posX%, posY%, sizeX%, sizeY%)
 DECLARE FUNCTION WinCreateField% (wid%, kind%)
 DECLARE FUNCTION WinFindSid% (stylename AS STRING)
 DECLARE FUNCTION WinFindWid% (wname$)
 DECLARE FUNCTION WinGetStyle% (wid%)
 DECLARE FUNCTION WinMapKey% (wid%, pressed$)
 
-DECLARE SUB WinAutoSize (wid%)
 DECLARE SUB WinClose (wid%)
 DECLARE SUB WinDraw (wid%)
-DECLARE SUB WinDrawBox (wid%)
-DECLARE SUB WinDrawBox0 (wid%)
-DECLARE SUB WinDrawBox1 (wid%)
-DECLARE SUB WinDrawBox2 (wid%)
-DECLARE SUB WinDrawField (wid%, fid%)
-DECLARE SUB WinDrawFile (wid%, fid%)
-DECLARE SUB WinDrawSeparator (wid%, fid%)
-DECLARE SUB WinDrawSeparator0 (wid%, fid%)
-DECLARE SUB WinDrawSeparator1 (wid%, fid%)
-DECLARE SUB WinDrawSeparator2 (wid%, fid%)
-DECLARE SUB WinDrawText (wid%, fid%)
 DECLARE SUB WinOpen (wid%)
 DECLARE SUB WinRefreshField (wid%, fid%)
 DECLARE SUB WinRefreshWindow (wid%)
@@ -344,12 +335,13 @@ CONST CmdResult.Malformed = 1
 '
 CONST FieldKind.None = 0
 CONST FieldKind.Boolean = 1
-CONST FieldKind.Button = 2
-CONST FieldKind.File = 3
-CONST FieldKind.Integer = 4
-CONST FieldKind.Label = 5
-CONST FieldKind.Popup = 6
-CONST FieldKind.Separator = 7
+CONST FieldKind.Box = 2
+CONST FieldKind.Button = 3
+CONST FieldKind.File = 4
+CONST FieldKind.Integer = 5
+CONST FieldKind.Label = 6
+CONST FieldKind.Popup = 7
+CONST FieldKind.Separator = 8
 CONST FieldKind.Nebula = 100
 
 '
@@ -1228,6 +1220,43 @@ SUB DrawFileAt (filename AS STRING, sx AS INTEGER, sy AS INTEGER)
 
 END SUB
 
+SUB DrawMerged (sx AS INTEGER, sy AS INTEGER, mergeWith AS INTEGER)
+
+  ' 00000000
+  ' ||||||||
+  ' ||||||++-- Up
+  ' ||||++---- Down
+  ' ||++------ Left
+  ' ++-------- Right
+
+
+  
+'  172 ¬   186 º   200 È   214 Ö   228 ä   242 ò
+'  159 Ÿ   173 ­   187 »   201 É   215 ×   229 å   243 ó
+'  160     174 ®   188 ¼   202 Ê   216 Ø   230 æ   244 ô
+'  161 ¡   175 ¯   189 ½   203 Ë   217 Ù   231 ç   245 õ
+'  162 ¢   176 °   190 ¾   204 Ì   218 Ú   232 è   246 ö
+'  163 £   177 ±   191 ¿   205 Í   219 Û   233 é   247 ÷
+'  164 ¤   178 ²   192 À   206 Î   220 Ü   234 ê   248 ø
+'  165 ¥   179 ³   193 Á   207 Ï   221 Ý   235 ë   249 ù
+'  166 ¦   180 ´   194 Â   208 Ð   222 Þ   236 ì   250 ú
+'  167 §   181 µ   195 Ã   209 Ñ   223 ß   237 í   251 û
+'  168 ¨   182 ¶   196 Ä   210 Ò   224 à   238 î   252 ü
+'  169 ©   183 ·   197 Å   211 Ó   225 á   239 ï   253 ý
+'  170 ª   184 ¸   198 Æ   212 Ô   226 â   240 ð   254 þ
+'  171 «   185 ¹   199 Ç   213 Õ   227 ã   241 ñ   255
+
+
+DIM ch AS INTEGER
+  LET ch = SCREEN(sy, sx)
+
+  SELECT CASE SCREEN(sy, sx)
+    CASE 196
+      ' chr$
+  END SELECT
+
+END SUB
+
 SUB DrawTable
 
   DIM divideLine AS STRING * 1
@@ -1606,6 +1635,8 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
     SELECT CASE fld(wid%, fid%).kind
       CASE FieldKind.Button
         endtag = "endbutton"
+      CASE FieldKind.Box
+        endtag = "endbox"
       CASE FieldKind.File
         endtag = "endfile"
       CASE FieldKind.Label
@@ -1824,6 +1855,9 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, sid%, tid%, wid%)
             ExecCmdRoot% = CmdResult.Malformed
         END SELECT
 
+      CASE "run"
+        ExecFile stoken$(1)
+
       CASE "winrun"
         WinRunName stoken$(1)
 
@@ -1936,11 +1970,13 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
     SELECT CASE stoken$(0)
      
       CASE "endwindow"
-        WinAutoSize wid%
         wid% = 0
      
       CASE "boolean"
         fid% = WinCreateField(wid%, FieldKind.Boolean)
+
+      CASE "box"
+        fid% = WinCreateField(wid%, FieldKind.Box)
 
       CASE "button"
         fid% = WinCreateField(wid%, FieldKind.Button)
@@ -1990,12 +2026,6 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
     CASE "posy"
       win(wid%).posY = VAL(stoken$(1))
 
-    CASE "sizex"
-      win(wid%).sizeX = VAL(stoken$(1))
-
-    CASE "sizey"
-      win(wid%).sizeY = VAL(stoken$(1))
-
     CASE "style"
       WinSetStyle wid%, WinFindSid%(stoken$(1))
 
@@ -2015,7 +2045,7 @@ SUB ExecFile (filename AS STRING)
   handle = FREEFILE
   OPEN filename FOR INPUT ACCESS READ AS #handle
 
-  DO WHILE NOT EOF(1)
+  DO WHILE NOT EOF(handle)
     LINE INPUT #handle, text
     result = ExecCmd(text)
   LOOP
@@ -2052,6 +2082,259 @@ SUB FieldBindValue (wid%, fid%, expr$)
   AssertIsPositive fid%, "FieldBindValue", "fid"
 
   ResourceSet fld(wid%, fid%).value.xrid, expr$
+
+END SUB
+
+SUB FieldDraw (wid%, fid%)
+
+  AssertIsPositive wid%, "FieldDraw", "wid"
+  AssertIsPositive wid%, "FieldDraw", "fid"
+
+  SELECT CASE fld(wid%, fid%).kind
+    '
+    ' Check the most common kinds first
+    '
+    CASE FieldKind.Button
+      FieldDrawText wid%, fid%
+
+    CASE FieldKind.Box
+      FieldDrawBox wid%, fid%
+
+    CASE FieldKind.Label
+      FieldDrawText wid%, fid%
+
+    CASE FieldKind.File
+      FieldDrawFile wid%, fid%
+
+    CASE FieldKind.Separator
+      FieldDrawSeparator wid%, fid%
+
+    CASE FieldKind.Nebula
+      FieldDrawNebula wid%, fid%
+
+    CASE ELSE
+      FieldDrawText wid%, fid%
+
+  END SELECT
+
+END SUB
+
+SUB FieldDrawBox (wid%, fid%)
+
+  AssertIsPositive wid%, "FieldDrawBox", "wid"
+  AssertIsPositive fid%, "FieldDrawBox", "fid"
+
+  DIM sid%
+  LET sid% = win(wid%).style
+
+  SELECT CASE winstyle(sid%).bordertype
+ 
+    CASE 0:
+      FieldDrawBox0 wid%, fid%
+
+    CASE 1:
+      FieldDrawBox1 wid%, fid%
+
+    CASE 2:
+      FieldDrawBox2 wid%, fid%
+
+  END SELECT
+
+END SUB
+
+SUB FieldDrawBox0 (wid%, fid%)
+
+  AssertIsPositive wid%, "FieldDrawBox0", "wid"
+  AssertIsPositive fid%, "FieldDrawBox0", "fid"
+
+  DIM row AS INTEGER
+  DIM sid AS INTEGER
+  DIM sx  AS INTEGER
+  DIM sy  AS INTEGER
+
+  sid = WinGetStyle(wid%)
+  DrawColor winstyle(sid).textcolor
+ 
+  FOR row = 1 TO fld(wid%, fid%).sizeY
+   
+    sx = win(wid%).posX + fld(wid%, fid%).offsetX
+    sy = win(wid%).posY + fld(wid%, fid%).offsetY + row - 1
+
+    LOCATE sy, sx
+    PRINT STRING$(fld(wid%, fid%).sizeX, " ");
+ 
+  NEXT
+
+END SUB
+
+SUB FieldDrawBox1 (wid%, fid%)
+
+  AssertIsPositive wid%, "FieldDrawBox1", "wid"
+  AssertIsPositive fid%, "FieldDrawBox1", "fid"
+
+  CONST lowerFlat = "Ä"   ' CHR$(196)
+  CONST lowerLeft = "À"   ' CHR$(192)
+  CONST lowerRight = "Ù"  ' CHR$(217)
+  CONST sideLeft = "³"    ' CHR$(179)
+  CONST sideRight = "³"   ' CHR$(179)
+  CONST upperLeft = "Ú"   ' CHR$(218)
+  CONST upperFlat = "Ä"   ' CHR$(196)
+  CONST upperRight = "¿"  ' CHR$(191)
+
+  DIM r    AS INTEGER
+  DIM sid  AS INTEGER
+  DIM sx1  AS INTEGER ' Upper-left x-coord
+  DIM sy1  AS INTEGER ' Upper-left y-coord
+  DIM sx2  AS INTEGER ' Lower-right x-coord
+  DIM sy2  AS INTEGER ' Lower-right y-coord
+
+  '
+  ' Calculate screen coordinates
+  '
+  sx1 = win(wid%).posX + fld(wid%, fid%).offsetX
+  sy1 = win(wid%).posY + fld(wid%, fid%).offsetY
+  sx2 = sx1 + fld(wid%, fid%).sizeX - 1
+  sy2 = sy1 + fld(wid%, fid%).sizeY - 1
+
+  sid = WinGetStyle(wid%)
+
+  '
+  ' Draw the top border
+  '
+  LOCATE sy1, sx1
+  DrawColor winstyle(sid).bordercolor
+  PRINT upperLeft; STRING$(fld(wid%, fid%).sizeX - 2, upperFlat); upperRight;
+
+  '
+  ' Draw each row of the border
+  '
+  FOR r = sy1 + 1 TO sy2 - 1
+    LOCATE r, sx1
+    PRINT sideLeft;
+  
+    DrawColor winstyle(sid).textcolor
+    PRINT STRING$(fld(wid%, fid%).sizeX - 2, " ");
+  
+    DrawColor winstyle(sid).bordercolor
+    PRINT sideRight;
+  NEXT
+ 
+  '
+  ' Draw the lower border
+  '
+  LOCATE sy2, sx1
+  PRINT lowerLeft; STRING$(fld(wid%, fid%).sizeX - 2, lowerFlat); lowerRight;
+
+END SUB
+
+SUB FieldDrawBox2 (wid%, fid%)
+
+  AssertIsPositive wid%, "FieldDrawBox2", "wid"
+  AssertIsPositive fid%, "FieldDrawBox2", "fid"
+
+  DIM idx AS INTEGER
+  DIM row AS INTEGER
+  DIM sx  AS INTEGER
+  DIM sy  AS INTEGER
+
+  '
+  ' Initialize special border characters
+  '
+  DIM ch(0 TO 8) AS STRING * 1  ' Character
+  DIM fc(0 TO 8) AS INTEGER     ' Forecolor
+  DIM bc(0 TO 8) AS INTEGER     ' Backcolor
+
+  ch(0) = CHR$(179): bc(0) = 0: fc(0) = 13
+  ch(1) = CHR$(219): bc(1) = 5: fc(1) = 13
+  ch(2) = CHR$(178): bc(2) = 5: fc(2) = 13
+  ch(3) = CHR$(177): bc(3) = 5: fc(3) = 13
+  ch(4) = CHR$(176): bc(4) = 5: fc(4) = 13
+  ch(5) = CHR$(219): bc(5) = 0: fc(5) = 5
+  ch(6) = CHR$(178): bc(6) = 0: fc(6) = 5
+  ch(7) = CHR$(177): bc(7) = 0: fc(7) = 5
+  ch(8) = CHR$(176): bc(8) = 0: fc(8) = 5
+
+  '
+  ' Top border
+  '
+  sx = win(wid%).posX + fld(wid%, fid%).offsetX
+  sy = win(wid%).posY + fld(wid%, fid%).offsetY
+  LOCATE sy, sx
+  COLOR fc(0), bc(0)
+  PRINT CHR$(220);
+  PRINT STRING$(fld(wid%, fid%).sizeX - 2, 196);
+  PRINT CHR$(191);
+
+  FOR row = 1 TO fld(wid%, fid%).sizeY - 2
+
+    '
+    ' Get the index of the left border character
+    '
+    idx = row
+    IF idx > UBOUND(ch) THEN
+      idx = 0
+    END IF
+
+    '
+    ' Left border
+    '
+    sx = win(wid%).posX + fld(wid%, fid%).offsetX
+    sy = win(wid%).posY + fld(wid%, fid%).offsetY + row
+    LOCATE sy, sx
+    COLOR fc(idx), bc(idx)
+    PRINT ch(idx);
+
+    '
+    ' Inner space
+    '
+    COLOR fc(0), bc(0)
+    PRINT STRING$(fld(wid%, fid%).sizeX - 2, " ");
+
+    '
+    ' Get the index of the right border char
+    '
+    idx = fld(wid%, fid%).sizeY - row - 1
+
+    IF idx > UBOUND(ch) THEN idx = 0
+
+    '
+    ' Right border
+    '
+    COLOR fc(idx), bc(idx)
+    PRINT ch(idx);
+
+  NEXT
+
+  '
+  ' Bottom border
+  '
+  sy = win(wid%).posY + fld(wid%, fid%).sizeY - 1
+  LOCATE sy, sx
+  COLOR fc(0), bc(0)
+  PRINT CHR$(192);
+  PRINT STRING$(fld(wid%, fid%).sizeX - 2, 196);
+  PRINT CHR$(223);
+
+END SUB
+
+SUB FieldDrawFile (wid%, fid%)
+
+  AssertIsPositive wid%, "FieldDrawFile", "wid"
+  AssertIsPositive fid%, "FieldDrawFile", "fid"
+
+  DIM filename AS STRING
+  DIM sx AS INTEGER
+  DIM sy AS INTEGER
+
+  filename = FieldGetValue$(wid%, fid%)
+  IF LEN(filename) = 0 THEN
+    EXIT SUB
+  END IF
+
+  sx = win(wid%).posX + fld(wid%, fid%).offsetX
+  sy = win(wid%).posY + fld(wid%, fid%).offsetY
+
+  DrawFileAt filename, sx, sy
 
 END SUB
 
@@ -2144,6 +2427,131 @@ SUB FieldDrawNebula (wid%, fid%)
     LOOP
 
   NEXT
+
+END SUB
+
+SUB FieldDrawSeparator (wid%, fid%)
+
+  AssertIsPositive wid%, "FieldDrawSeparator", "wid"
+  AssertIsPositive fid%, "FieldDrawSeparator", "fid"
+
+  DIM row AS INTEGER
+  DIM sx  AS INTEGER
+  DIM sy  AS INTEGER
+
+  sx = win(wid%).posX + fld(wid%, fid%).offsetX
+  sy = win(wid%).posY + fld(wid%, fid%).offsetY
+
+  LOCATE sy, sx
+  DrawColor winstyle(win(wid%).style).bordercolor
+
+  IF fld(wid%, fid%).sizeX > 0 THEN
+    '
+    ' Left edge
+    '
+    SELECT CASE SCREEN(sy, sx)
+      CASE 179            ' ³
+        PRINT CHR$(195);  ' Ã
+      CASE 186            ' º
+        PRINT CHR$(199);  ' Ç
+      CASE ELSE           '
+        PRINT CHR$(196);  ' Ä
+    END SELECT
+   
+    '
+    ' Inner separator
+    '
+    PRINT STRING$(fld(wid%, fid%).sizeX - 2, 196);
+
+    '
+    ' Right edge
+    '
+    SELECT CASE SCREEN(sy, sx + fld(wid%, fid%).sizeX - 1)
+      CASE 179            ' ³
+        PRINT CHR$(180);  ' ´
+      CASE 186            ' º
+        PRINT CHR$(182);  ' ¶
+      CASE ELSE           '
+        PRINT CHR$(196);  ' Ä
+    END SELECT
+
+  ELSEIF fld(wid%, fid%).sizeY > 0 THEN
+   
+    '
+    ' Top edge
+    '
+    SELECT CASE SCREEN(sy, sx)
+      CASE 196            ' Ä
+        PRINT CHR$(194);  ' Â
+      CASE 205            ' Í
+        PRINT CHR$(209);  ' Ñ
+      CASE ELSE           '
+        PRINT CHR$(179);  ' ³
+    END SELECT
+
+    FOR row = sy + 1 TO sy + fld(wid%, fid%).sizeY - 2
+      LOCATE row, sx
+      PRINT CHR$(179);
+    NEXT
+
+    '
+    ' Bottom edge
+    '
+    LOCATE sy + fld(wid%, fid%).sizeY - 1, sx
+    SELECT CASE SCREEN(sy + fld(wid%, fid%).sizeY - 1, sx)
+      CASE 196            ' Ä
+        PRINT CHR$(193);  ' Á
+      CASE 205            ' Í
+        PRINT CHR$(207);  ' Ï
+      CASE ELSE           '
+        PRINT CHR$(179);  ' ³
+    END SELECT
+
+  END IF
+
+END SUB
+
+SUB FieldDrawText (wid%, fid%)
+
+  AssertIsPositive wid%, "FieldDrawText", "wid"
+  AssertIsPositive fid%, "FieldDrawText", "fid"
+ 
+  DIM sid  AS INTEGER
+  DIM size AS INTEGER
+  DIM sx   AS INTEGER
+  DIM sy   AS INTEGER
+  DIM text AS STRING
+
+  '
+  ' Get field position
+  '
+  sx = win(wid%).posX + fld(wid%, fid%).offsetX
+  sy = win(wid%).posY + fld(wid%, fid%).offsetY
+  LOCATE sy, sx
+
+  '
+  ' Set style of text
+  '
+  sid% = FieldGetStyle(wid%, fid%)
+  IF win(wid%).selected = fid% THEN
+    DrawColor winstyle(sid%).selectedcolor
+  ELSE
+    DrawColor winstyle(sid%).textcolor
+  END IF
+
+  '
+  ' Print text clipped to size
+  '
+  text = FieldGetText(wid%, fid%)
+  size = fld(wid%, fid%).sizeX
+  IF size < 1 THEN
+    PRINT text;
+  ELSE
+    PRINT LEFT$(text, size);
+    IF LEN(text) < size THEN
+      PRINT STRING$(size - LEN(text), " ");
+    END IF
+  END IF
 
 END SUB
 
@@ -2541,13 +2949,13 @@ SUB InboxAdd (subject AS STRING, filename AS STRING)
   DIM rid%
   DIM wid%
  
-  SHARED posY AS INTEGER
+  SHARED count AS INTEGER
+
+  count = count + 1
 
   rid% = ResourceCreate(filename)
   wid% = WinFindWid("Inbox")
-  fid% = WinAddButton(wid%, 0, posY, 20, " " + subject, rid%)
- 
-  posY = posY + 1
+  fid% = WinAddButton(wid%, 1, count, 20, " " + subject, rid%)
 
   StatusUpdate "Mail arrived"
 
@@ -2647,6 +3055,10 @@ FUNCTION ResourceCreate% (value AS STRING)
    
     ResourceCreate% = 0
 
+  ELSEIF value = "" THEN
+
+    ResourceCreate% = 0
+
   ELSE
 
     resources = resources + 1
@@ -2687,14 +3099,6 @@ SUB SetupGame
   '
   StatusUpdate "Please wait..."
   ExecFile "EMPIRE.CFG"
-
-  '
-  ' Draw title screen
-  '
-  SCREEN , , VideoPage.Working, VideoPage.Display
-  DrawFile "TITLE.PCB"
-  PCOPY VideoPage.Working, VideoPage.Display
-  SCREEN , , VideoPage.Display, VideoPage.Display
   StatusClear
 
   '
@@ -3135,178 +3539,6 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value%)
 
 END FUNCTION
 
-FUNCTION WinAddSeparator% (wid%, offsetX%, offsetY%)
-
-  AssertIsPositive wid%, "WinAddSeparator", "wid"
-
-  DIM fid%
-  LET fid% = WinCreateField(wid%, FieldKind.Separator)
-
-  fld(wid%, fid%).childwid = 0
-  fld(wid%, fid%).cmdrid = 0
-  fld(wid%, fid%).offsetX = offsetX%
-  fld(wid%, fid%).offsetY = offsetY%
-  fld(wid%, fid%).sizeX = 0
-  fld(wid%, fid%).text.vrid = 0
-  fld(wid%, fid%).text.xrid = 0
-  fld(wid%, fid%).value.vrid = 0
-  fld(wid%, fid%).value.xrid = 0
-
-  WinAddSeparator% = fid%
-
-END FUNCTION
-
-SUB WinAutoSize (wid%)
-  '
-  ' Expands the size of the window based on field sizes and positions.
-  '
- 
-  AssertIsPositive wid%, "WinAutoSize", "wid"
-
-  DIM fid%
-  DIM fieldx2%
-  DIM fieldy2%
-  DIM fieldSizeX%
-  DIM highestx%
-  DIM highesty%
-
-  highestx% = win(wid%).sizeX
-  highesty% = win(wid%).sizeY
-
-  FOR fid% = 1 TO win(wid%).fields
- 
-    fieldSizeX% = fld(wid%, fid%).sizeX
-    IF fieldSizeX% < 1 THEN
-      fieldSizeX% = LEN(FieldGetText(wid%, fid%))
-    END IF
-
-    '
-    ' Get the coordinates of the lower-right corner
-    '
-    fieldx2% = fld(wid%, fid%).offsetX + fieldSizeX%
-    fieldy2% = fld(wid%, fid%).offsetY + 1
-
-    IF fieldx2% > highestx% THEN highestx% = fieldx2%
-    IF fieldy2% > highesty% THEN highesty% = fieldy2%
-
-  NEXT
-
-  IF highestx% > win(wid%).sizeX THEN
-    win(wid%).sizeX = highestx%
-  END IF
-
-  IF highesty% > win(wid%).sizeY THEN
-    win(wid%).sizeY = highesty%
-  END IF
-
-END SUB
-
-FUNCTION WinClipText% (wid%, fid%, outoffx%, outoffy%, outsizex%, outtext$)
-  '
-  ' Returns True if any portion of the field text is visible. If True,
-  ' the starting position, clipped size, and clipped text is returned.
-  ' The clipped text is filled with spaces to match the clipped size.
-  '
-
-  AssertIsPositive wid%, "WinClipText", "wid"
-  AssertIsPositive fid%, "WinClipText", "fid"
-
-  DIM text$
-  LET text$ = FieldGetText$(wid%, fid%)
-
-  '
-  ' Get the size of the field
-  '
-  outsizex% = fld(wid%, fid%).sizeX
-  IF outsizex% = -1 THEN
-    '
-    ' A size of -1 means the window size
-    '
-    outsizex% = win(wid%).sizeX
-
-  ELSE
-
-    IF outsizex% = 0 THEN
-      '
-      ' A size of 0 means to use the size of the text
-      '
-      outsizex% = LEN(text$)
-    END IF
-
-    IF outsizex% > win(wid%).sizeX THEN
-      '
-      ' The field cannot be larger than the window
-      '
-      outsideX% = win(wid%).sizeX
-    END IF
-
-  END IF
-
-  IF outsizex% < 1 THEN
-    '
-    ' No visible size
-    '
-    WinClipText% = False
-    EXIT FUNCTION
-  END IF
-
-  '
-  ' Get the offset of the field.
-  '
-  outoffx% = fld(wid%, fid%).offsetX
-  outoffy% = fld(wid%, fid%).offsetY
-
-  IF outoffx% >= win(wid%).sizeX THEN
-    '
-    ' No portion visible
-    '
-    WinClipText% = False
-    EXIT FUNCTION
- 
-  ELSEIF outoffx% >= 0 THEN
-    '
-    ' The field starts within the window but might be clipped.
-    '
-    DIM lastCharIndex%
-    LET lastCharIndex% = outoffx% + outsizex% - 1
-
-    IF lastCharIndex% > win(wid%).sizeX THEN
-      outsizex% = lastCharIndex% - win(wid%).sizeX
-    END IF
-
-    '
-    ' Get the text value and pad/clip
-    '
-    outtext$ = text$
-    IF LEN(outtext$) < outsizex% THEN
-      '
-      ' The text value is shorter than the field size
-      '
-      outtext$ = outtext$ + STRING$(outsizex% - LEN(outtext$), " ")
-
-    ELSEIF LEN(outtext$) > outsizex% THEN
-      '
-      ' The text value is longer than the field size
-      '
-      outtext$ = LEFT$(outtext$, outsizex%)
-   
-    END IF
-
-    WinClipText% = True
-    EXIT FUNCTION
-
-  ELSE
-    '
-    ' The field is to the left of the window (not supported)
-    '
-    AssertFail "WinClipText", "Negative position not supported."
-    WinClipText% = False
-    EXIT FUNCTION
-
-  END IF
-
-END FUNCTION
-
 SUB WinClose (wid%)
 
   AssertIsPositive wid%, "WinClose", "wid"
@@ -3341,24 +3573,6 @@ FUNCTION WinCreate%
 
 END FUNCTION
 
-FUNCTION WinCreateEx% (style%, posX%, posY%, sizeX%, sizeY%)
-  '
-  ' Allocates a new window
-  '
- 
-  DIM wid AS INTEGER
-  LET wid = WinCreate%
- 
-  win(wid).posX = posX%
-  win(wid).posY = posY%
-  win(wid).style = style%
-  win(wid).sizeX = sizeX%
-  win(wid).sizeY = sizeY%
-
-  WinCreateEx% = wid
-
-END FUNCTION
-
 FUNCTION WinCreateField% (wid%, kind%)
 
   Assert wid% > 0, "WinCreateField", "wid cannot be 0"
@@ -3375,396 +3589,11 @@ END FUNCTION
 SUB WinDraw (wid%)
 
   AssertIsPositive wid%, "WinDraw", "wid"
-  WinDrawBox wid%
 
   DIM fid%
   FOR fid% = 1 TO win(wid%).fields
-    WinDrawField wid%, fid%
+    FieldDraw wid%, fid%
   NEXT
-
-END SUB
-
-SUB WinDrawBox (wid%)
-
-  AssertIsPositive wid%, "WinDrawBorder", "wid"
-  AssertIsPositive win(wid%).posX, "WinDraw", "posX"
-  AssertIsPositive win(wid%).posY, "WinDraw", "posY"
-  AssertIsPositive win(wid%).sizeX, "WinDraw", "sizeX"
-  AssertIsPositive win(wid%).sizeY, "WinDraw", "sizeY"
-
-  DIM sid%
-  LET sid% = win(wid%).style
-
-  SELECT CASE winstyle(sid%).bordertype
- 
-    CASE 0:
-      WinDrawBox0 wid%
-
-    CASE 1:
-      WinDrawBox1 wid%
-
-    CASE 2:
-      WinDrawBox2 wid%
-
-  END SELECT
-
-END SUB
-
-SUB WinDrawBox0 (wid%)
-
-  Assert wid% > 0, "WinDrawBox0", "wid cannot be 0"
-
-  DIM row AS INTEGER
-  DIM sid AS INTEGER
-
-  sid = WinGetStyle(wid%)
-  DrawColor winstyle(sid).textcolor
- 
-  FOR row = 1 TO win(wid%).sizeY
-    LOCATE win(wid%).posY + row - 1, win(wid%).posX
-    PRINT STRING$(win(wid%).sizeX, " ");
-  NEXT
-
-END SUB
-
-SUB WinDrawBox1 (wid%)
-
-  Assert wid% > 0, "WinDrawBox1", "wid cannot be 0"
-
-  CONST lowerFlat = "Ä"   ' CHR$(196)
-  CONST lowerLeft = "À"   ' CHR$(192)
-  CONST lowerRight = "Ù"  ' CHR$(217)
-  CONST sideLeft = "³"    ' CHR$(179)
-  CONST sideRight = "³"   ' CHR$(179)
-  CONST upperLeft = "Ú"   ' CHR$(218)
-  CONST upperFlat = "Ä"   ' CHR$(196)
-  CONST upperRight = "¿"  ' CHR$(191)
-
-  DIM r   AS INTEGER
-  DIM sid AS INTEGER
-  DIM x1  AS INTEGER ' Upper-left x-coord
-  DIM y1  AS INTEGER ' Upper-left y-coord
-  DIM x2  AS INTEGER ' Lower-right x-coord
-  DIM y2  AS INTEGER ' Lower-right y-coord
-
-  x1 = win(wid%).posX - 1
-  y1 = win(wid%).posY - 1
-  x2 = x1 + win(wid%).sizeX + 1
-  y2 = y1 + win(wid%).sizeY + 1
-
-  sid = WinGetStyle(wid%)
-
-  '
-  ' Draw the top border
-  '
-  LOCATE y1, x1
-  DrawColor winstyle(sid).bordercolor
-  PRINT upperLeft; STRING$(win(wid%).sizeX, upperFlat); upperRight;
-
-  '
-  ' Draw each row of the window
-  '
-  FOR r = y1 + 1 TO y2 - 1
-    LOCATE r, x1
-    PRINT sideLeft;
-   
-    DrawColor winstyle(sid).textcolor
-    PRINT STRING$(win(wid%).sizeX, " ");
-   
-    DrawColor winstyle(sid).bordercolor
-    PRINT sideRight;
-  NEXT
-  
-  '
-  ' Draw the lower border
-  '
-  LOCATE y2, x1
-  PRINT lowerLeft; STRING$(win(wid%).sizeX, lowerFlat); lowerRight;
-
-END SUB
-
-SUB WinDrawBox2 (wid%)
-
-  Assert wid% > 0, "WinDrawBox2", "wid cannot be 0"
-
-  DIM idx AS INTEGER
-  DIM row AS INTEGER
-
-  '
-  ' Initialize special border characters
-  '
-  DIM ch(0 TO 8) AS STRING * 1  ' Character
-  DIM fc(0 TO 8) AS INTEGER     ' Forecolor
-  DIM bc(0 TO 8) AS INTEGER     ' Backcolor
-
-  ch(0) = CHR$(179): bc(0) = 0: fc(0) = 13
-  ch(1) = CHR$(219): bc(1) = 5: fc(1) = 13
-  ch(2) = CHR$(178): bc(2) = 5: fc(2) = 13
-  ch(3) = CHR$(177): bc(3) = 5: fc(3) = 13
-  ch(4) = CHR$(176): bc(4) = 5: fc(4) = 13
-  ch(5) = CHR$(219): bc(5) = 0: fc(5) = 5
-  ch(6) = CHR$(178): bc(6) = 0: fc(6) = 5
-  ch(7) = CHR$(177): bc(7) = 0: fc(7) = 5
-  ch(8) = CHR$(176): bc(8) = 0: fc(8) = 5
-
-  '
-  ' Top border of the window
-  '
-  LOCATE win(wid%).posY - 1, win(wid%).posX - 1
-  COLOR fc(0), bc(0)
-  PRINT CHR$(220);
-  PRINT STRING$(win(wid%).sizeX, 196);
-  PRINT CHR$(191);
-
-  FOR row = 1 TO win(wid%).sizeY
-
-    '
-    ' Get the index of the left border character
-    '
-    idx = row
-    IF idx > UBOUND(ch) THEN
-      idx = 0
-    END IF
-
-    '
-    ' Left border
-    '
-    LOCATE win(wid%).posY + row - 1, win(wid%).posX - 1
-    COLOR fc(idx), bc(idx)
-    PRINT ch(idx);
-
-    '
-    ' Inner space
-    '
-    COLOR fc(0), bc(0)
-    PRINT STRING$(win(wid%).sizeX, " ");
-
-    '
-    ' Get the index of the right border char
-    '
-    idx = win(wid%).sizeY - row + 1
-    IF idx > UBOUND(ch) THEN idx = 0
-
-    '
-    ' Right border
-    '
-    COLOR fc(idx), bc(idx)
-    PRINT ch(idx);
-
-  NEXT
-
-  '
-  ' Bottom border
-  '
-  LOCATE win(wid%).posY + win(wid%).sizeY, win(wid%).posX - 1
-  COLOR fc(0), bc(0)
-  PRINT CHR$(192);
-  PRINT STRING$(win(wid%).sizeX, 196);
-  PRINT CHR$(223);
-
-END SUB
-
-SUB WinDrawField (wid%, fid%)
-
-  AssertIsPositive wid%, "WinDrawField", "wid"
-  AssertIsPositive wid%, "WinDrawField", "fid"
-
-  SELECT CASE fld(wid%, fid%).kind
-    '
-    ' Check the most common kinds first
-    '
-    CASE FieldKind.Button
-      WinDrawText wid%, fid%
-
-    CASE FieldKind.Label
-      WinDrawText wid%, fid%
-
-    CASE FieldKind.File
-      WinDrawFile wid%, fid%
-
-    CASE FieldKind.Separator
-      WinDrawSeparator wid%, fid%
-
-    CASE FieldKind.Nebula
-      FieldDrawNebula wid%, fid%
-
-    CASE ELSE
-      WinDrawText wid%, fid%
-
-  END SELECT
-
-END SUB
-
-SUB WinDrawFile (wid%, fid%)
-
-  AssertIsPositive wid%, "WinDrawFile", "wid"
-  AssertIsPositive fid%, "WinDrawFile", "fid"
-
-  DIM filename AS STRING
-  DIM sx AS INTEGER
-  DIM sy AS INTEGER
-
-  filename = FieldGetValue$(wid%, fid%)
-  IF LEN(filename) = 0 THEN
-    EXIT SUB
-  END IF
-
-  sx = win(wid%).posX + fld(wid%, fid%).offsetX
-  sy = win(wid%).posY + fld(wid%, fid%).offsetY
-
-  DrawFileAt filename, sx, sy
-
-END SUB
-
-SUB WinDrawSeparator (wid%, fid%)
-
-  SELECT CASE winstyle(win(wid%).style).bordertype
-    CASE 0
-      WinDrawSeparator0 wid%, fid%
-    CASE 1
-      WinDrawSeparator1 wid%, fid%
-    CASE 2
-      WinDrawSeparator2 wid%, fid%
-  END SELECT
-
-END SUB
-
-SUB WinDrawSeparator0 (wid%, fid%)
-
-  AssertIsPositive wid%, "WinDrawSeparator0", "wid"
-  AssertIsPositive fid%, "WinDrawSeparator0", "fid"
-
-  DIM sx AS INTEGER
-  DIM sy AS INTEGER
-
-  DrawColor winstyle(win(wid%).style).bordercolor
- 
-  IF fld(wid%, fid%).offsetY > 0 THEN
-    '
-    ' Horizontal separator
-    '
-    sx = win(wid%).posX
-    sy = win(wid%).posY + fld(wid%, fid%).offsetY
-    LOCATE sy, sx
-    PRINT STRING$(win(wid%).sizeX, 196);
-
-  END IF
-
-  IF fld(wid%, fid%).offsetX > 0 THEN
-    '
-    ' Vertical separator
-    '
-   
-    sx = win(wid%).posX + fld(wid%, fid%).offsetX
-
-    FOR sy = 1 TO win(wid%).sizeY
-      LOCATE sy + win(wid%).posY - 1, sx
-      PRINT CHR$(179);
-    NEXT
-
-  END IF
-
-  IF fld(wid%, fid%).offsetX > 0 AND fld(wid%, fid%).offsetY > 0 THEN
-    '
-    ' Intersection
-    '
-    sx = win(wid%).posX + fld(wid%, fid%).offsetX
-    sy = win(wid%).posY + fld(wid%, fid%).offsetY
-
-    LOCATE sy, sx
-    PRINT CHR$(197);
-
-  END IF
-
-END SUB
-
-SUB WinDrawSeparator1 (wid%, fid%)
-  '
-  ' Draws the specified separator field based on a single-line border.
-  '
-
-  DIM sx AS INTEGER
-  DIM sy AS INTEGER
-
-  WinDrawSeparator0 wid%, fid%
-
-  IF fld(wid%, fid%).offsetX > 0 THEN
-    '
-    ' Top border
-    '
-    sx = win(wid%).posX + fld(wid%, fid%).offsetX
-    sy = win(wid%).posY - 1
-
-    LOCATE sy, sx
-    PRINT CHR$(194);
-
-    '
-    ' Bottom border
-    '
-    sy = win(wid%).posY + win(wid%).sizeY
-    LOCATE sy, sx
-    PRINT CHR$(193);
-
-  END IF
-
-  IF fld(wid%, fid%).offsetY > 0 THEN
-    '
-    ' Left border
-    '
-    sx = win(wid%).posX - 1
-    sy = win(wid%).posY + fld(wid%, fid%).offsetY
-
-    LOCATE sy, sx
-    PRINT CHR$(195);
-   
-    '
-    ' Right border
-    '
-    sx = win(wid%).posX + win(wid%).sizeX
-    LOCATE sy, sx
-    PRINT CHR$(180);
-
-  END IF
-
-END SUB
-
-SUB WinDrawSeparator2 (wid%, fid%)
-  WinDrawSeparator1 wid%, fid%
-END SUB
-
-SUB WinDrawText (wid%, fid%)
- 
-  AssertIsPositive wid%, "WinDrawText", "wid"
-  AssertIsPositive fid%, "WinDrawText", "fid"
-
-  DIM outoffx%
-  DIM outoffy%
-  DIM outsizex%
-  DIM outtext$
-  DIM sid%
-
-  IF NOT WinClipText(wid%, fid%, outoffx%, outoffy%, outsizex%, outtext$) THEN
-    '
-    ' The text is not visible
-    '
-    EXIT SUB
-  END IF
-
-  '
-  ' Calculate the screen coordinates of the field
-  '
-  sx = win(wid%).posX + outoffx%
-  sy = win(wid%).posY + outoffy%
-  LOCATE sy, sx
-
-  sid% = FieldGetStyle(wid%, fid%)
-  IF win(wid%).selected = fid% THEN
-    DrawColor winstyle(sid%).selectedcolor
-  ELSE
-    DrawColor winstyle(sid%).textcolor
-  END IF
-
-  PRINT outtext$;
 
 END SUB
 
@@ -3952,7 +3781,7 @@ SUB WinRefreshField (wid%, fid%)
   IF winstacked > 0 THEN
     IF winstack(winstacked).wid = wid% THEN
      
-      WinDrawField wid%, fid%
+      FieldDraw wid%, fid%
    
       FOR n = 1 TO win(wid%).fields
         '
@@ -3960,7 +3789,7 @@ SUB WinRefreshField (wid%, fid%)
         '
         IF n <> fid% THEN
           IF FieldIsBound%(wid%, n) THEN
-            WinDrawField wid%, n
+            FieldDraw wid%, n
           END IF
         END IF
       NEXT
@@ -4119,6 +3948,7 @@ SUB WinRun (wid%, result AS WinResultType)
 
       CASE ELSE
         FieldKey wid%, (win(wid%).selected), pressed
+        WinRefreshField wid%, win(wid%).selected
 
     END SELECT
 
@@ -4417,6 +4247,7 @@ SUB WorldHarvest (aid%)
 
   IF energy% = 0 THEN
     WorldRemove aid%
+    EventIncName "NebulaDepleted"
   END IF
 
 END SUB
