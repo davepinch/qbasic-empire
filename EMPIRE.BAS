@@ -2152,7 +2152,7 @@ SUB FieldDrawBox0 (wid%, fid%)
   DIM sx  AS INTEGER
   DIM sy  AS INTEGER
 
-  sid = WinGetStyle(wid%)
+  sid = FieldGetStyle(wid%, fid%)
   DrawColor winstyle(sid).textcolor
  
   FOR row = 1 TO fld(wid%, fid%).sizeY
@@ -2196,7 +2196,7 @@ SUB FieldDrawBox1 (wid%, fid%)
   sx2 = sx1 + fld(wid%, fid%).sizeX - 1
   sy2 = sy1 + fld(wid%, fid%).sizeY - 1
 
-  sid = WinGetStyle(wid%)
+  sid = FieldGetStyle(wid%, fid%)
 
   '
   ' Draw the top border
