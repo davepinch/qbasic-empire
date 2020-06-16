@@ -231,15 +231,23 @@ DECLARE SUB UI.ActionNebula (aid AS INTEGER)
 DECLARE SUB UI.Redraw ()
 DECLARE SUB UI.RedrawAtlas ()
 DECLARE SUB UI.RedrawTable ()
-DECLARE SUB UI.Refresh ()
 DECLARE SUB UI.Run ()
 DECLARE SUB UI.SetPage (page AS INTEGER)
 DECLARE FUNCTION UI.RunAtlas% ()
 
 '
+' Video page management
+'
+DECLARE SUB VideoFree (pagenum%)
+DECLARE SUB VideoPop ()
+DECLARE SUB VideoPushActive (active%)
+DECLARE SUB VideoScreen (activepage%, displaypage%)
+DECLARE FUNCTION VideoAlloc% ()
+
+'
 ' Windows
 '
-DECLARE FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$, value%)
+DECLARE FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$, value$)
 DECLARE FUNCTION WinCreate% ()
 DECLARE FUNCTION WinCreateField% (wid%, kind%)
 DECLARE FUNCTION WinFindSid% (stylename AS STRING)
@@ -385,7 +393,7 @@ CONST TableStyle.Forecolor = 1
 ' UIPage.* constants
 '
 CONST UIPage.None = 0
-CONST UIPage.Atlas = 3
+CONST UIPage.Atlas = 1
 CONST UIPage.Table = 5
 
 '
@@ -395,7 +403,6 @@ CONST UIResult.Exit = 0
 CONST UIResult.Escape = 1
 
 CONST VideoPage.Display = 0
-CONST VideoPage.Working = 1
 
 '
 ' WinAction* constants
@@ -429,13 +436,16 @@ DIM SHARED events                AS INTEGER
 DIM SHARED fld(1 TO 15, 1 TO 13) AS FieldType
 DIM SHARED habitat(1 TO 8)       AS HabitatType
 DIM SHARED habitats              AS INTEGER
-DIM SHARED resource(1 TO 70)     AS STRING
+DIM SHARED resource(1 TO 100)    AS STRING
 DIM SHARED resources             AS INTEGER
 DIM SHARED trigger(1 TO 5)       AS TriggerType
 DIM SHARED triggers              AS INTEGER
 DIM SHARED uiCurrentPage         AS INTEGER
 DIM SHARED uicx                  AS INTEGER
 DIM SHARED uicy                  AS INTEGER
+DIM SHARED vallocated            AS INTEGER
+DIM SHARED vstack(0 TO 5)        AS INTEGER
+DIM SHARED vstacked              AS INTEGER
 DIM SHARED win(1 TO 15)          AS WinType
 DIM SHARED wincount              AS INTEGER
 DIM SHARED winstack(1 TO 3)      AS WinStackItem
@@ -449,7 +459,7 @@ UI.Run
 SUB Assert (truth AS INTEGER, where AS STRING, what AS STRING)
 
   IF NOT truth THEN
-    SCREEN , , 0, 0
+    VideoScreen 0, 0
     StatusDebug where + ": " + what
     IF GetKey$ <> CHR$(ASCII.Escape) THEN
       END
@@ -1219,43 +1229,6 @@ SUB DrawFileAt (filename AS STRING, sx AS INTEGER, sy AS INTEGER)
   LOOP
 
   CLOSE #1
-
-END SUB
-
-SUB DrawMerged (sx AS INTEGER, sy AS INTEGER, mergeWith AS INTEGER)
-
-  ' 00000000
-  ' ||||||||
-  ' ||||||++-- Up
-  ' ||||++---- Down
-  ' ||++------ Left
-  ' ++-------- Right
-
-
-  
-'  172 ¬   186 º   200 È   214 Ö   228 ä   242 ò
-'  159 Ÿ   173 ­   187 »   201 É   215 ×   229 å   243 ó
-'  160     174 ®   188 ¼   202 Ê   216 Ø   230 æ   244 ô
-'  161 ¡   175 ¯   189 ½   203 Ë   217 Ù   231 ç   245 õ
-'  162 ¢   176 °   190 ¾   204 Ì   218 Ú   232 è   246 ö
-'  163 £   177 ±   191 ¿   205 Í   219 Û   233 é   247 ÷
-'  164 ¤   178 ²   192 À   206 Î   220 Ü   234 ê   248 ø
-'  165 ¥   179 ³   193 Á   207 Ï   221 Ý   235 ë   249 ù
-'  166 ¦   180 ´   194 Â   208 Ð   222 Þ   236 ì   250 ú
-'  167 §   181 µ   195 Ã   209 Ñ   223 ß   237 í   251 û
-'  168 ¨   182 ¶   196 Ä   210 Ò   224 à   238 î   252 ü
-'  169 ©   183 ·   197 Å   211 Ó   225 á   239 ï   253 ý
-'  170 ª   184 ¸   198 Æ   212 Ô   226 â   240 ð   254 þ
-'  171 «   185 ¹   199 Ç   213 Õ   227 ã   241 ñ   255
-
-
-DIM ch AS INTEGER
-  LET ch = SCREEN(sy, sx)
-
-  SELECT CASE SCREEN(sy, sx)
-    CASE 196
-      ' chr$
-  END SELECT
 
 END SUB
 
@@ -2895,6 +2868,7 @@ FUNCTION GetKey$
   DIM k AS STRING
 
   DO
+    'SLEEP (0)
     k = INKEY$
   LOOP UNTIL LEN(k)
 
@@ -2938,16 +2912,14 @@ END SUB
 SUB InboxAdd (subject AS STRING, filename AS STRING)
  
   DIM fid%
-  DIM rid%
   DIM wid%
  
   SHARED count AS INTEGER
 
   count = count + 1
 
-  rid% = ResourceCreate(filename)
   wid% = WinFindWid("Inbox")
-  fid% = WinAddButton(wid%, 1, count, 20, " " + subject, rid%)
+  fid% = WinAddButton(wid%, 1, count, 20, " " + subject, filename)
 
   StatusUpdate "Mail arrived"
 
@@ -3045,6 +3017,7 @@ FUNCTION ResourceCreate% (value AS STRING)
 
   IF resources = UBOUND(resource) THEN
    
+    AssertFail "ResourceCreate", "Out of resource space"
     ResourceCreate% = 0
 
   ELSEIF value = "" THEN
@@ -3326,19 +3299,35 @@ END SUB
 
 SUB UI.RedrawAtlas
 
-  SCREEN , , VideoPage.Working, VideoPage.Display
+  DIM workingPage AS INTEGER
+
+  '
+  ' Get a video page for background drawing
+  '
+  workingPage = VideoAlloc%
+
+  VideoScreen workingPage, VideoPage.Display
   CLS
   AtlasDraw
-  SCREEN , , VideoPage.Working, VideoPage.Working
-  PCOPY VideoPage.Working, VideoPage.Display
-  SCREEN , , VideoPage.Display, VideoPage.Display
+ 
+  VideoScreen workingPage, workingPage
+  PCOPY workingPage, VideoPage.Display
+  VideoScreen VideoPage.Display, VideoPage.Display
+
+  VideoFree workingPage
 
 END SUB
 
 SUB UI.RedrawTable
 
-  SCREEN , , VideoPage.Working, VideoPage.Display
+  '
+  ' Draw on background video page
+  '
+  DIM workingPage AS INTEGER
+  LET workingPage = VideoAlloc%
  
+  VideoScreen workingPage, VideoPage.Display
+
   CLS
   DrawTable
   DrawTableRows
@@ -3346,26 +3335,10 @@ SUB UI.RedrawTable
   '
   ' Restore the display page
   '
-  SCREEN , , VideoPage.Working, VideoPage.Working
-  PCOPY VideoPage.Working, VideoPage.Display
-  SCREEN , , VideoPage.Display, VideoPage.Display
-
-END SUB
-
-SUB UI.Refresh
-  '
-  ' Refreshes data fields (rather than entire UI)
-  '
-
-  SELECT CASE uiCurrentPage
-  
-    CASE UIPage.Atlas
-      AtlasDrawItems
-
-    CASE UIPage.Table
-      DrawTableRows
-
-  END SELECT
+  VideoScreen workingPage, workingPage
+  PCOPY workingPage, VideoPage.Display
+  VideoScreen VideoPage.Display, VideoPage.Display
+  VideoFree workingPage
 
 END SUB
 
@@ -3488,9 +3461,6 @@ PromptAgain:
 END FUNCTION
 
 SUB UI.SetPage (page AS INTEGER)
-  '
-  ' Sets the current page shown in the UI
-  '
  
   Assert page <> UIPage.None, "UI.SetPage", "page cannot be 0"
 
@@ -3500,18 +3470,86 @@ SUB UI.SetPage (page AS INTEGER)
   uiCurrentPage = page
   UI.Redraw
 
-  '
-  ' Turn on the atlas
-  '
-  IF page = UIPage.Atlas THEN
-    AtlasDisplayOn
+  SELECT CASE page
+    CASE UIPage.Atlas
+      AtlasDisplayOn
+    CASE ELSE
+      AtlasDisplayOff
+  END SELECT
+
+END SUB
+
+FUNCTION VideoAlloc%
+
+  DIM bit  AS INTEGER
+  DIM mask AS INTEGER
+
+  FOR bit = 1 TO 7
+   
+    mask = 2 ^ bit
+
+    IF (vallocated AND mask) = 0 THEN
+      vallocated = vallocated OR mask
+      VideoAlloc% = bit
+      EXIT FUNCTION
+    END IF
+
+  NEXT
+
+  VideoAlloc% = 0
+
+END FUNCTION
+
+SUB VideoFree (pagenum%)
+
+  DIM mask%
+  LET mask% = NOT (2 ^ pagenum%)
+  vallocated = vallocated AND mask%
+
+END SUB
+
+SUB VideoPop
+
+  IF vstacked = 0 THEN
+   
+    AssertFail "VideoPop", "No page stack to pop"
+
   ELSE
-    AtlasDisplayOff
+
+    vstacked = vstacked - 1
+   
+    DIM p%: p% = vstack(vstacked)
+
+    SCREEN , , (p% AND &HF0) / 16, (p% AND &HF)
+
   END IF
 
 END SUB
 
-FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value%)
+SUB VideoPushActive (active%)
+  '
+  ' Use this to temporarily write to a specific video
+  ' page and then call VideoPop to restore the current
+  ' active and display pages.
+  '
+  DIM newpages AS INTEGER
+ 
+  newpages = (vstack(vstacked) AND &HF) + (active% * 16)
+  vstacked = vstacked + 1
+  vstack(vstacked) = newpages
+
+  SCREEN , , active%
+
+END SUB
+
+SUB VideoScreen (activepage%, displaypage%)
+
+  vstack(vstacked) = (activepage% * 16) + displaypage%
+  SCREEN , , activepage%, displaypage%
+  
+END SUB
+
+FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
 
   AssertIsPositive wid%, "WinAddButton", "wid"
 
@@ -3525,7 +3563,7 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value%)
   fld(wid%, fid%).sizeX = sizeX%
   fld(wid%, fid%).text.vrid = ResourceCreate(text$)
   fld(wid%, fid%).text.xrid = 0
-  fld(wid%, fid%).value.vrid = value%
+  fld(wid%, fid%).value.vrid = ResourceCreate(value$)
   fld(wid%, fid%).value.xrid = 0
 
   WinAddButton% = fid%
@@ -3549,7 +3587,8 @@ SUB WinClose (wid%)
     '
     ' Change active and visual display to the backpage
     '
-    SCREEN , , winstack(winstacked).backpage, winstack(winstacked).backpage
+    VideoScreen winstack(winstacked).backpage, winstack(winstacked).backpage
+    VideoFree winstack(winstacked).workpage
     winstacked = winstacked - 1
 
   END IF
@@ -3735,13 +3774,18 @@ SUB WinOpen (wid%)
   DIM backpage AS INTEGER
   DIM workpage AS INTEGER
 
+  '
+  ' Allocate video page
+  '
+  workpage = VideoAlloc%
+  IF winstacked = 0 THEN
+    backpage = 0
+  ELSE
+    backpage = winstack(winstacked).workpage
+  END IF
+
   winstacked = winstacked + 1
  
-  '
-  ' Assign video pages and update stack
-  '
-  backpage = winstacked - 1
-  workpage = winstacked
   winstack(winstacked).wid = wid%
   winstack(winstacked).backpage = backpage
   winstack(winstacked).workpage = workpage
@@ -3749,7 +3793,7 @@ SUB WinOpen (wid%)
   '
   ' Draw the window
   '
-  SCREEN , , workpage, backpage
+  VideoScreen workpage, backpage
   PCOPY backpage, workpage
   WinDraw wid%
   
@@ -3763,7 +3807,7 @@ SUB WinOpen (wid%)
   '
   ' Set the working page as the visual page
   '
-  SCREEN , , workpage, workpage
+  VideoScreen workpage, workpage
 
 END SUB
 
@@ -3798,10 +3842,10 @@ SUB WinRefreshWindow (wid%)
   AssertIsPositive winstacked, "WinRefreshWindow", "winstacked"
   Assert winstack(winstacked).wid = wid%, "WinRefreshWindow", "top win only"
 
-  SCREEN , , winstack(winstacked).workpage, winstack(winstacked).backpage
+  VideoScreen winstack(winstacked).workpage, winstack(winstacked).backpage
   PCOPY winstack(winstacked).backpage, winstack(winstacked).workpage
   WinDraw wid%
-  SCREEN , , winstack(winstacked).workpage, winstack(winstacked).workpage
+  VideoScreen winstack(winstacked).workpage, winstack(winstacked).workpage
 
 END SUB
 
