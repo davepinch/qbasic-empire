@@ -100,7 +100,9 @@ DECLARE SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, labelr
 DECLARE SUB AtlasDisplayOff ()
 DECLARE SUB AtlasDisplayOn ()
 DECLARE SUB AtlasDraw ()
+DECLARE SUB AtlasDrawBegin ()
 DECLARE SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
+DECLARE SUB AtlasDrawEnd ()
 DECLARE SUB AtlasDrawGrid ()
 DECLARE SUB AtlasDrawItem (idx AS INTEGER)
 DECLARE SUB AtlasDrawItems ()
@@ -228,9 +230,6 @@ DECLARE SUB StatusUpdateLevel (text AS STRING, level AS INTEGER)
 '
 DECLARE SUB UI.Action ()
 DECLARE SUB UI.ActionNebula (aid AS INTEGER)
-DECLARE SUB UI.Redraw ()
-DECLARE SUB UI.RedrawAtlas ()
-DECLARE SUB UI.RedrawTable ()
 DECLARE SUB UI.Run ()
 DECLARE SUB UI.SetPage (page AS INTEGER)
 DECLARE FUNCTION UI.RunAtlas% ()
@@ -241,8 +240,10 @@ DECLARE FUNCTION UI.RunAtlas% ()
 DECLARE SUB VideoFree (pagenum%)
 DECLARE SUB VideoPop ()
 DECLARE SUB VideoPushActive (active%)
-DECLARE SUB VideoScreen (activepage%, displaypage%)
+DECLARE SUB VideoScreen (activepage%, visualpage%)
 DECLARE FUNCTION VideoAlloc% ()
+DECLARE FUNCTION VideoGetActive% ()
+DECLARE FUNCTION VideoGetVisual% ()
 
 '
 ' Windows
@@ -292,9 +293,6 @@ DECLARE SUB AssertIsZero (value%, where$, what$)
 DECLARE SUB DrawColor (attr%)
 DECLARE SUB DrawFile (filename AS STRING)
 DECLARE SUB DrawFileAt (filename AS STRING, offsetX AS INTEGER, offsetY AS INTEGER)
-DECLARE SUB DrawTable ()
-DECLARE SUB DrawTableRow (row AS INTEGER, aid AS INTEGER)
-DECLARE SUB DrawTableRows ()
 DECLARE SUB DrawText (text AS STRING)
 DECLARE SUB PaintBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
 DECLARE SUB SetupGame ()
@@ -377,32 +375,16 @@ CONST StatusLevel.Normal = 0
 CONST StatusLevel.Debug = 1
 
 '
-' TableStyle.* constants
-'
-' These constants define the style of the data table.
-'
-CONST TableStyle.Backcolor = 0
-CONST TableStyle.Border = 2
-CONST TableStyle.HeaderBackcolor = 0
-CONST TableStyle.HeaderForecolor = 7
-CONST TableStyle.RowBackcolor = 0
-CONST TableStyle.RowForecolor = 7
-CONST TableStyle.Forecolor = 1
-
-'
 ' UIPage.* constants
 '
 CONST UIPage.None = 0
 CONST UIPage.Atlas = 1
-CONST UIPage.Table = 5
 
 '
 ' UIResult.* constants
 '
 CONST UIResult.Exit = 0
 CONST UIResult.Escape = 1
-
-CONST VideoPage.Display = 0
 
 '
 ' WinAction* constants
@@ -431,6 +413,7 @@ DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS IN
 ' Globals
 '
 DIM SHARED area(1 TO 30)         AS AreaType
+DIM SHARED atlaspage             AS INTEGER
 DIM SHARED event(1 TO 5)         AS EventType
 DIM SHARED events                AS INTEGER
 DIM SHARED fld(1 TO 15, 1 TO 13) AS FieldType
@@ -544,6 +527,14 @@ SUB AtlasDraw
 
 END SUB
 
+SUB AtlasDrawBegin
+
+  IF atlaspage <> 0 THEN
+    VideoPushActive atlaspage
+  END IF
+
+END SUB
+
 SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
   '
   ' Draws the specified atlas cell onto the active video page
@@ -553,6 +544,8 @@ SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
   DIM sx    AS INTEGER
   DIM sy    AS INTEGER
   DIM value AS INTEGER
+
+  AtlasDrawBegin
 
   '
   ' Get the screen coordinates of the cell
@@ -578,13 +571,25 @@ SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
     DrawText label
   END IF
 
+  AtlasDrawEnd
+
+END SUB
+
+SUB AtlasDrawEnd
+
+  IF atlaspage <> 0 THEN
+    VideoPop
+  END IF
+
 END SUB
 
 SUB AtlasDrawGrid
   '
   ' Draws the grid of the atlas onto the active video page
   '
+  AtlasDrawBegin
   DrawFileAt "GRID.PCB", 1, 2
+  AtlasDrawEnd
 
 END SUB
 
@@ -622,6 +627,8 @@ SUB AtlasDrawSelect (cx AS INTEGER, cy AS INTEGER, valid AS INTEGER)
   DIM sx1 AS INTEGER
   DIM sy1 AS INTEGER
 
+  AtlasDrawBegin
+
   '
   ' Get the upper-left screen coordinates of the outer cell
   '
@@ -639,6 +646,8 @@ SUB AtlasDrawSelect (cx AS INTEGER, cy AS INTEGER, valid AS INTEGER)
 
   PaintBackground sx1, sy1, sx1 + AtlasStyle.CellSizeX + 1, sy1 + 2, col
 
+  AtlasDrawEnd
+
 END SUB
 
 SUB AtlasDrawUnselect (cx AS INTEGER, cy AS INTEGER)
@@ -649,6 +658,8 @@ SUB AtlasDrawUnselect (cx AS INTEGER, cy AS INTEGER)
   DIM sx1 AS INTEGER
   DIM sy1 AS INTEGER
 
+  AtlasDrawBegin
+
   '
   ' Get the upper-left screen coordinates of the outer cell
   '
@@ -658,6 +669,7 @@ SUB AtlasDrawUnselect (cx AS INTEGER, cy AS INTEGER)
   PaintBackground sx1, sy1, sx1 + AtlasStyle.CellSizeX + 1, sy1 + 2, 0
 
   AtlasDrawCell cx, cy
+  AtlasDrawEnd
 
 END SUB
 
@@ -1232,128 +1244,6 @@ SUB DrawFileAt (filename AS STRING, sx AS INTEGER, sy AS INTEGER)
 
 END SUB
 
-SUB DrawTable
-
-  DIM divideLine AS STRING * 1
-  DIM divideLeft AS STRING * 1
-  DIM divideRight AS STRING * 1
-  DIM lowerLeft AS STRING * 1
-  DIM lowerRight AS STRING * 1
-  DIM upperLeft AS STRING * 1
-  DIM upperRight AS STRING * 1
-  DIM horizontal AS STRING * 1
-  DIM vertical AS STRING * 1
-
-  '
-  ' Select the border characters based on the border style
-  '
-  SELECT CASE TableStyle.Border
-    CASE 1
-      divideLeft = CHR$(195)
-      divideLine = CHR$(196)
-      divideRight = CHR$(180)
-      lowerLeft = CHR$(192)
-      lowerRight = CHR$(217)
-      upperLeft = CHR$(218)
-      upperRight = CHR$(191)
-      horizontal = CHR$(196)
-      vertical = CHR$(179)
-    CASE 2
-      divideLeft = CHR$(199)
-      divideLine = CHR$(196)
-      divideRight = CHR$(182)
-      lowerLeft = CHR$(200)
-      lowerRight = CHR$(188)
-      upperLeft = CHR$(201)
-      upperRight = CHR$(187)
-      horizontal = CHR$(205)
-      vertical = CHR$(186)
-  END SELECT
-
-  '
-  ' Draw the top border of the table
-  '
-  LOCATE 2, 1
-  COLOR TableStyle.Forecolor, TableStyle.Backcolor
-  PRINT upperLeft; STRING$(77, horizontal); upperRight
-
-  '
-  ' Draw the header names
-  '
-  PRINT vertical;
-  COLOR TableStyle.HeaderForecolor, TableStyle.HeaderBackcolor
-  PRINT " Id  Habitat "
-
-  '
-  ' Draw the heading separator
-  '
-  COLOR TableStyle.Forecolor, TableStyle.Backcolor
-  PRINT divideLeft; STRING$(77, divideLine); divideRight
-
-  '
-  ' Draw each row
-  '
-  DIM x AS INTEGER
-  FOR x = 3 TO 23
-    LOCATE x, 1: PRINT vertical
-    LOCATE x, 79: PRINT vertical;
-  NEXT
-
-  '
-  ' Draw the bottom border
-  '
-  LOCATE 24, 1
-  PRINT lowerLeft; STRING$(77, horizontal); lowerRight;
-
-  DrawTableRows
-
-END SUB
-
-SUB DrawTableRow (row AS INTEGER, aid AS INTEGER)
-
-  '
-  ' Move to the first character of the row (inside border)
-  '
-  ' HACK: supress error caused by too many rows - fix later.
-  IF row < 1 OR row > 19 THEN
-    StatusDebug "DrawRowTable row=" + STR$(row)
-    EXIT SUB
-  END IF
-
-  LOCATE row + 4, 3
-
-  COLOR TableStyle.RowForecolor, TableStyle.RowBackcolor
- 
-  '
-  ' Print the area ID
-  '
-  PRINT USING "##"; aid;
-  PRINT "  "; ' HACK
-
-  ' Print the habitat label
-  DrawText ResourceGet(habitat(area(aid).habitat).namerid)
-
-END SUB
-
-SUB DrawTableRows
-  '
-  ' Draws the rows of the table
-  '
- 
-  DIM aid AS INTEGER
-  DIM row AS INTEGER
-
-  FOR aid = LBOUND(area) TO UBOUND(area)
-  
-    IF area(aid).allocated THEN
-      row = row + 1
-      DrawTableRow row, aid
-    END IF
-
-  NEXT
-
-END SUB
-
 SUB DrawText (text AS STRING)
 
   ' A PCBoard color code has the following format:
@@ -1784,9 +1674,6 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, sid%, tid%, wid%)
       CASE "style"
         winstyles = winstyles + 1
         sid% = winstyles
-
-      CASE "table"
-        UI.SetPage UIPage.Table
 
       CASE "trigger"
         triggers = triggers + 1
@@ -3278,74 +3165,7 @@ SUB UI.ActionNebula (aid AS INTEGER)
 
 END SUB
 
-SUB UI.Redraw
-  '
-  ' Redraws the UI.
-  '
-
-  Assert uiCurrentPage <> UIPage.None, "UI.Redraw", "UI page must be set."
-
-  SELECT CASE uiCurrentPage
- 
-    CASE UIPage.Atlas
-      UI.RedrawAtlas
-
-    CASE UIPage.Table
-      UI.RedrawTable
-
-  END SELECT
-
-END SUB
-
-SUB UI.RedrawAtlas
-
-  DIM workingPage AS INTEGER
-
-  '
-  ' Get a video page for background drawing
-  '
-  workingPage = VideoAlloc%
-
-  VideoScreen workingPage, VideoPage.Display
-  CLS
-  AtlasDraw
- 
-  VideoScreen workingPage, workingPage
-  PCOPY workingPage, VideoPage.Display
-  VideoScreen VideoPage.Display, VideoPage.Display
-
-  VideoFree workingPage
-
-END SUB
-
-SUB UI.RedrawTable
-
-  '
-  ' Draw on background video page
-  '
-  DIM workingPage AS INTEGER
-  LET workingPage = VideoAlloc%
- 
-  VideoScreen workingPage, VideoPage.Display
-
-  CLS
-  DrawTable
-  DrawTableRows
-
-  '
-  ' Restore the display page
-  '
-  VideoScreen workingPage, workingPage
-  PCOPY workingPage, VideoPage.Display
-  VideoScreen VideoPage.Display, VideoPage.Display
-  VideoFree workingPage
-
-END SUB
-
 SUB UI.Run
-  '
-  ' Runs the user interface
-  '
  
   DIM menuwid AS INTEGER
   DIM cresult AS INTEGER
@@ -3464,19 +3284,25 @@ SUB UI.SetPage (page AS INTEGER)
  
   Assert page <> UIPage.None, "UI.SetPage", "page cannot be 0"
 
-  '
-  ' Switch to the specified page and redraw
-  '
-  uiCurrentPage = page
-  UI.Redraw
-
   SELECT CASE page
+   
     CASE UIPage.Atlas
-      AtlasDisplayOn
+     
+      IF atlaspage = 0 THEN
+        atlaspage = VideoAlloc%
+        AtlasDraw
+        AtlasDisplayOn
+      END IF
+ 
+      VideoScreen atlaspage, atlaspage
+
     CASE ELSE
-      AtlasDisplayOff
+      VideoScreen 0, 0
+
   END SELECT
 
+  uiCurrentPage = page
+ 
 END SUB
 
 FUNCTION VideoAlloc%
@@ -3508,6 +3334,16 @@ SUB VideoFree (pagenum%)
 
 END SUB
 
+FUNCTION VideoGetActive%
+
+  VideoGetActive = (vstack(vstacked) AND &HF0) / 16
+
+END FUNCTION
+
+FUNCTION VideoGetVisual%
+  VideoGetVisual% = vstack(vstacked) AND &HF
+END FUNCTION
+
 SUB VideoPop
 
   IF vstacked = 0 THEN
@@ -3538,14 +3374,14 @@ SUB VideoPushActive (active%)
   vstacked = vstacked + 1
   vstack(vstacked) = newpages
 
-  SCREEN , , active%
+  SCREEN , , active%, vstack(vstacked) AND &HF
 
 END SUB
 
-SUB VideoScreen (activepage%, displaypage%)
+SUB VideoScreen (activepage%, visualpage%)
 
-  vstack(vstacked) = (activepage% * 16) + displaypage%
-  SCREEN , , activepage%, displaypage%
+  vstack(vstacked) = (activepage% * 16) + visualpage%
+  SCREEN , , activepage%, visualpage%
   
 END SUB
 
@@ -3779,7 +3615,7 @@ SUB WinOpen (wid%)
   '
   workpage = VideoAlloc%
   IF winstacked = 0 THEN
-    backpage = 0
+    backpage = VideoGetActive%
   ELSE
     backpage = winstack(winstacked).workpage
   END IF
