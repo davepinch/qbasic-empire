@@ -27,6 +27,8 @@ The video API manages the text video pages used by the windowing system and othe
 
 * Call **VideoAlloc** to reserve the next available video page and call **VideoFree** to release the reservation. These methods are typically used to create a temporary page for background drawing.
 
+* Call **VideoGetActive** and **VideoGetVisual** to get the current active and visual video pages.
+
 ## Implemening Commands
 
 ExecCmd(text$) is the top-level subroutine for executing simple text commands such as "Atlas". Commands are used in the following ways:

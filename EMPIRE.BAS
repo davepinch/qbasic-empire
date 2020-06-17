@@ -1,3 +1,4 @@
+DECLARE FUNCTION UI.RunConsole% ()
 
 ' The Galactic Empire
 ' By David Pinch, 1991-2020
@@ -379,6 +380,7 @@ CONST StatusLevel.Debug = 1
 '
 CONST UIPage.None = 0
 CONST UIPage.Atlas = 1
+CONST UIPage.Console = 2
 
 '
 ' UIResult.* constants
@@ -1655,6 +1657,9 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, sid%, tid%, wid%)
       CASE "atlas"
         UI.SetPage UIPage.Atlas
   
+      CASE "console"
+        UI.SetPage UIPage.Console
+
       CASE "endgame"
         END
 
@@ -3191,6 +3196,9 @@ SUB UI.Run
       CASE UIPage.Atlas
         uresult = UI.RunAtlas%
 
+      CASE UIPage.Console
+        uresult = UI.RunConsole%
+
     END SELECT
 
     SELECT CASE uresult
@@ -3280,6 +3288,16 @@ PromptAgain:
 
 END FUNCTION
 
+FUNCTION UI.RunConsole%
+
+  Assert uiCurrentPage = UIPage.Console, "UI.RunConsole", "Wrong UI page"
+
+  DIM keypress$: keypress$ = GetKey$
+
+  UI.RunConsole% = UIResult.Escape
+
+END FUNCTION
+
 SUB UI.SetPage (page AS INTEGER)
  
   Assert page <> UIPage.None, "UI.SetPage", "page cannot be 0"
@@ -3295,6 +3313,9 @@ SUB UI.SetPage (page AS INTEGER)
       END IF
  
       VideoScreen atlaspage, atlaspage
+
+    CASE UIPage.Console
+      VideoScreen 0, 0
 
     CASE ELSE
       VideoScreen 0, 0
