@@ -1,4 +1,3 @@
-DECLARE FUNCTION UI.RunConsole% ()
 
 ' The Galactic Empire
 ' By David Pinch, 1991-2020
@@ -129,6 +128,15 @@ DECLARE FUNCTION AtlasIndexOf% (value AS INTEGER)
 DECLARE FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS INTEGER, outpress AS STRING)
 
 '
+' Console
+'
+DECLARE SUB ConsoleBegin ()
+DECLARE SUB ConsoleClear ()
+DECLARE SUB ConsoleEnd ()
+DECLARE SUB ConsoleFile (filename$)
+DECLARE SUB ConsolePrint (text$)
+
+'
 ' Events
 '
 DECLARE FUNCTION EventFind% (name$)
@@ -234,6 +242,7 @@ DECLARE SUB UI.ActionNebula (aid AS INTEGER)
 DECLARE SUB UI.Run ()
 DECLARE SUB UI.SetPage (page AS INTEGER)
 DECLARE FUNCTION UI.RunAtlas% ()
+DECLARE FUNCTION UI.RunConsole% ()
 
 '
 ' Video page management
@@ -1189,6 +1198,45 @@ SUB AtlasSetLabel (idx AS INTEGER, labelrid AS INTEGER)
 
 END SUB
 
+SUB ConsoleBegin
+  VideoPushActive 0
+END SUB
+
+SUB ConsoleClear
+  ConsoleBegin
+  CLS
+  ConsoleEnd
+END SUB
+
+SUB ConsoleEnd
+  VideoPop
+END SUB
+
+SUB ConsoleFile (filename$)
+  ConsoleBegin
+  LOCATE 24, 1
+  DrawFile filename$
+  PRINT
+  ConsoleEnd
+END SUB
+
+SUB ConsolePrint (text$)
+
+  DIM x AS INTEGER
+  DIM y AS INTEGER
+
+  ConsoleBegin
+  x = POS(0)
+  y = CSRLIN
+ 
+  LOCATE 24, 1
+  DrawText text$
+  PRINT
+  LOCATE y, x
+  ConsoleEnd
+
+END SUB
+
 SUB DrawColor (attr%)
   COLOR (attr% AND &HF) + (attr% AND &H80) / 8, (attr% AND &H70) / 16
 END SUB
@@ -1198,16 +1246,18 @@ SUB DrawFile (filename AS STRING)
   ' Draws a PCB file containing embedded color codes
   '
 
+  DIM handle AS INTEGER
   DIM text AS STRING
 
-  OPEN filename FOR INPUT ACCESS READ AS #1
+  handle = FREEFILE
+  OPEN filename FOR INPUT ACCESS READ AS #handle
 
-  DO WHILE NOT EOF(1)
-    LINE INPUT #1, text
+  DO WHILE NOT EOF(handle)
+    LINE INPUT #handle, text
     DrawText text + CHR$(ASCII.Return)
   LOOP
 
-  CLOSE #1
+  CLOSE #handle
 
 END SUB
 
@@ -1657,6 +1707,9 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, sid%, tid%, wid%)
       CASE "atlas"
         UI.SetPage UIPage.Atlas
   
+      CASE "cls"
+        ConsoleClear
+
       CASE "console"
         UI.SetPage UIPage.Console
 
@@ -1695,10 +1748,18 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, sid%, tid%, wid%)
   ELSEIF ntoken% = 2 THEN
 
     SELECT CASE stoken$(0)
+     
+      CASE "print"
+        ConsolePrint stoken$(1)
+
+      CASE "printfile"
+        ConsoleFile stoken$(1)
+
       CASE "replot"
         '
         ' Replot <band | cluster | manual | random>
         '
+        UI.SetPage UIPage.Atlas
         SELECT CASE LCASE$(stoken$(1))
           CASE "b", "band"
             AtlasPlotBanded
@@ -2814,6 +2875,7 @@ SUB InboxAdd (subject AS STRING, filename AS STRING)
   fid% = WinAddButton(wid%, 1, count, 20, " " + subject, filename)
 
   StatusUpdate "Mail arrived"
+  ConsoleFile "NEWMAIL.PCB"
 
 END SUB
 
@@ -2954,9 +3016,9 @@ SUB SetupGame
   '
   ' Load menus and windows
   '
-  StatusUpdate "Please wait..."
+  'StatusUpdate "Please wait..."
   ExecFile "EMPIRE.CFG"
-  StatusClear
+  'StatusClear
 
   '
   ' Show starting window #1

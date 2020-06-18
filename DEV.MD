@@ -17,6 +17,18 @@ If the assertion is met, nothing happens. If the assertion fails, the location a
 
 The assertion subroutines are designed to be subroutines, never functions. Once code is stable, the assertions can be disabled by globally replacing **Assert** with **'Assert** (converting them to comments).
 
+## String Resources
+
+Most strings in the game are referenced as "resources".
+
+* Call **ResourceCreate(text$)** to to save a string as a new resource. The function returns the ID of the resource for later reference.
+
+* Call **ResourceGet(rid%)** to fetch the string using the ID value returned by ResourceCreate.
+
+* Call **ResourceSet(rid%, text$)** to update a resource. If the specified resource ID is zero, then a new resource is created and the rid% parameter will be populated with the new resource ID.
+
+Resource ID #0 is reserved for the empty string. If you fetch resource 0, an empty string is returned. If you set resource 0, an error occurs.
+
 ## Video Page Management
 
 The video API manages the text video pages used by the windowing system and other UI components.
