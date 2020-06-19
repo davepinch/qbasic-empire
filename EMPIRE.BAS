@@ -1,3 +1,7 @@
+DECLARE SUB DialogNext (outwho$, outtext$)
+DECLARE SUB DialogPrint (who$, text$)
+DECLARE SUB DialogTimer ()
+DECLARE FUNCTION DialogGarble$ (text$, percent!)
 
 ' The Galactic Empire
 ' By David Pinch, 1991-2020
@@ -120,6 +124,8 @@ DECLARE SUB AtlasPlotRandom ()
 DECLARE SUB AtlasRemoveItem (idx AS INTEGER)
 DECLARE SUB AtlasRemoveValue (value AS INTEGER)
 DECLARE SUB AtlasSetLabel (idx AS INTEGER, labelrid AS INTEGER)
+DECLARE SUB AtlasSetStatus (text$)
+DECLARE SUB AtlasSetStatusEx (text$, attr%)
 DECLARE FUNCTION AtlasNextIndex% ()
 DECLARE FUNCTION AtlasGetScreenX% (cx AS INTEGER)
 DECLARE FUNCTION AtlasGetScreenY% (cy AS INTEGER)
@@ -223,16 +229,6 @@ DECLARE FUNCTION NebulaLabelRid% (energy AS INTEGER)
 DECLARE FUNCTION ResourceCreate% (value AS STRING)
 DECLARE FUNCTION ResourceGet$ (rid AS INTEGER)
 DECLARE SUB ResourceSet (rid AS INTEGER, value AS STRING)
-
-'
-' Status* subroutines
-'
-' These subroutines change the status on the bottom of the page.
-'
-DECLARE SUB StatusClear ()
-DECLARE SUB StatusDebug (text AS STRING)
-DECLARE SUB StatusUpdate (text AS STRING)
-DECLARE SUB StatusUpdateLevel (text AS STRING, level AS INTEGER)
 
 '
 ' UI subroutines
@@ -379,12 +375,6 @@ CONST ScanCode.Down = 80
 CONST ScanCode.PageDown = 81
 
 '
-' StatusLevel constants
-'
-CONST StatusLevel.Normal = 0
-CONST StatusLevel.Debug = 1
-
-'
 ' UIPage.* constants
 '
 CONST UIPage.None = 0
@@ -447,17 +437,33 @@ DIM SHARED winstacked            AS INTEGER
 DIM SHARED winstyle(1 TO 10)     AS WinStyleType
 DIM SHARED winstyles             AS INTEGER
 
+ON TIMER(1) GOSUB HandleTimer
+
 SetupGame
 UI.Run
+END
+
+HandleTimer:
+  '
+  ' Executed when the game needs to perform periodic tasks
+  '
+  DialogTimer
+  RETURN
 
 SUB Assert (truth AS INTEGER, where AS STRING, what AS STRING)
 
   IF NOT truth THEN
-    VideoScreen 0, 0
-    StatusDebug where + ": " + what
+   
+    DIM message AS STRING
+    LET message = where + ": " + what
+
+    AtlasSetStatusEx message, &H4F
+    ConsolePrint "@X4F" + message + "@X07"
+
     IF GetKey$ <> CHR$(ASCII.Escape) THEN
       END
     END IF
+ 
   END IF
 
 END SUB
@@ -473,7 +479,7 @@ SUB AssertIsPositive (value%, where$, what$)
 END SUB
 
 SUB AssertIsZero (value%, where$, what$)
-  Assert value% = 0, where$, what$ + " cannot be 0 but value =" + STR$(value%)
+  Assert value% = 0, where$, what$ + " must be 0 but value =" + STR$(value%)
 END SUB
 
 SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, labelrid AS INTEGER)
@@ -487,7 +493,6 @@ SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, labelrid AS IN
   '
   idx = AtlasNextIndex%
   IF idx = 0 THEN
-    StatusDebug "AtlasAddItem: no index available"
     EXIT SUB
   END IF
 
@@ -1198,6 +1203,24 @@ SUB AtlasSetLabel (idx AS INTEGER, labelrid AS INTEGER)
 
 END SUB
 
+SUB AtlasSetStatus (text$)
+  AtlasSetStatusEx text$, 7
+END SUB
+
+SUB AtlasSetStatusEx (text$, attr%)
+
+  AtlasDrawBegin
+ 
+  VIEW PRINT 25 TO 25
+  DrawColor attr%
+  CLS
+  DrawText text$
+  VIEW PRINT
+ 
+  AtlasDrawEnd
+
+END SUB
+
 SUB ConsoleBegin
   VideoPushActive 0
 END SUB
@@ -1234,6 +1257,168 @@ SUB ConsolePrint (text$)
   PRINT
   LOCATE y, x
   ConsoleEnd
+
+END SUB
+
+FUNCTION DialogGarble$ (text$, percent!)
+
+  CONST GarbleCode = 250
+  CONST InSpaces = 0
+  CONST InWord = 1
+  CONST InGarble = 2
+
+  DIM c AS STRING * 1
+  DIM g AS STRING
+  DIM i AS INTEGER
+  DIM s AS INTEGER
+
+  FOR i = 1 TO LEN(text$)
+
+    c = MID$(text$, i, 1)
+
+    SELECT CASE s
+      CASE InSpaces
+        IF c <> " " THEN
+          IF RND <= percent! THEN
+            g = g + "@X08" + CHR$(GarbleCode)
+            s = InGarble
+          ELSE
+            g = g + c
+            s = InWord
+          END IF
+        ELSE
+          g = g + " "
+        END IF
+      CASE InWord
+        IF c = " " THEN
+          g = g + " "
+          s = InSpaces
+        ELSE
+          g = g + c
+        END IF
+      CASE InGarble
+        IF c = " " THEN
+          g = g + "@X07 "
+          s = InSpaces
+        ELSE
+          g = g + CHR$(GarbleCode)
+        END IF
+    END SELECT
+
+  NEXT
+
+  DialogGarble$ = g + "@X07"
+
+END FUNCTION
+
+SUB DialogNext (outwho$, outtext$)
+
+  DIM handle AS INTEGER
+  DIM text   AS STRING
+
+  handle = FREEFILE
+  OPEN "EMPIRE.DLG" FOR INPUT ACCESS READ AS #handle
+
+  '
+  ' Start on a random line
+  '
+  SEEK #handle, INT(RND * LOF(handle)) + 1
+  LINE INPUT #handle, text
+  IF EOF(handle) THEN
+    SEEK #handle, 1
+  END IF
+ 
+  '
+  ' Read the line
+  '
+  LINE INPUT #handle, text
+  CLOSE #handle
+
+  outtext$ = text
+
+  SELECT CASE INT(RND * 9)
+
+    CASE 0: outwho$ = "Old Man"
+    CASE 1: outwho$ = "Middle-Age Man"
+    CASE 2: outwho$ = "Bearded Miner"
+    CASE 3: outwho$ = "Young Man"
+    CASE 4: outwho$ = "Bartender"
+    CASE 5: outwho$ = "Guard"
+    CASE 6: outwho$ = "Wiry man"
+    CASE 7: outwho$ = "Young Woman"
+    CASE 8: outwho$ = "Student"
+
+  END SELECT
+
+END SUB
+
+SUB DialogPrint (who$, text$)
+
+  IF LEFT$(text$, 1) = "(" THEN
+
+    ConsolePrint STRING$((80 - LEN(text$)) / 2, " ") + "@X04" + text$ + "@X07"
+    ConsolePrint ""
+
+  ELSE
+
+    DIM q$
+  
+    SELECT CASE INT(RND * 2)
+      CASE 0:
+        '
+        ' Left justified
+        '
+        q$ = DialogGarble(text$, .2)
+
+        ConsolePrint "@X1F " + who$ + " @X07"
+        ConsolePrint "@X07" + text$ + "@X07"
+        ConsolePrint ""
+
+      CASE 1:
+        '
+        ' Right justified
+        '
+        q$ = DialogGarble(text$, .7)
+      
+        ConsolePrint STRING$(78 - LEN(who$), " ") + "@X1F " + who$ + " @X07"
+        ConsolePrint STRING$(78 - LEN(text$), " ") + "@X07" + q$ + "@X07"
+        ConsolePrint ""
+
+    END SELECT
+
+    AtlasSetStatus "@X1F " + who$ + " @X07 " + q$
+
+  END IF
+
+END SUB
+
+SUB DialogTimer
+  '
+  ' Executed periodically
+  '
+
+  IF RND > .5 THEN
+    EXIT SUB
+  END IF
+
+  DIM aid%
+  DIM who$
+  DIM text$
+
+  aid% = GameArea%
+  IF aid% = 0 THEN
+    EXIT SUB
+  END IF
+
+  '
+  ' Grab the next dialog
+  '
+  DialogNext who$, text$
+
+  '
+  ' Print the dialog to the console
+  '
+  DialogPrint who$, text$
 
 END SUB
 
@@ -2874,7 +3059,7 @@ SUB InboxAdd (subject AS STRING, filename AS STRING)
   wid% = WinFindWid("Inbox")
   fid% = WinAddButton(wid%, 1, count, 20, " " + subject, filename)
 
-  StatusUpdate "Mail arrived"
+  AtlasSetStatus "Mail arrived"
   ConsoleFile "NEWMAIL.PCB"
 
 END SUB
@@ -3016,9 +3201,7 @@ SUB SetupGame
   '
   ' Load menus and windows
   '
-  'StatusUpdate "Please wait..."
   ExecFile "EMPIRE.CFG"
-  'StatusClear
 
   '
   ' Show starting window #1
@@ -3031,6 +3214,8 @@ SUB SetupGame
   IF wresult.action = WinAction.Execute THEN
     cresult = ExecResource%(wresult.cmdrid)
   END IF
+
+  TIMER ON
 
 END SUB
 
@@ -3119,55 +3304,6 @@ FUNCTION Split% (text AS STRING, tokens() AS STRING)
   Split% = count
 
 END FUNCTION
-
-SUB StatusClear
-  '
-  ' Clears the status
-  '
-  StatusUpdateLevel "", StatusLevel.Normal
-
-END SUB
-
-SUB StatusDebug (text AS STRING)
-  '
-  ' Writes a debug message to the status
-  '
-  StatusUpdateLevel text, StatusLevel.Debug
-
-  ' TODO: set page to ensure debug message is visible to developer
-  ' who is on a breakpoint when the active page may not be the
-  ' same as the display page.
-
-END SUB
-
-SUB StatusUpdate (text AS STRING)
-  '
-  ' Writes text to the status
-  '
-  StatusUpdateLevel text, StatusLevel.Normal
-
-END SUB
-
-SUB StatusUpdateLevel (text AS STRING, level AS INTEGER)
-
-  CONST NormalForecolor = 15
-  CONST NormalBackcolor = 0
-  CONST DebugBackcolor = 4
-  CONST DebugForecolor = 15
-
-  SELECT CASE level
-    CASE StatusLevel.Debug:
-      COLOR DebugForecolor, DebugBackcolor
-    CASE ELSE
-      COLOR NormalForecolor, NormalBackcolor
-  END SELECT
- 
-  VIEW PRINT 25 TO 25
-  CLS
-  DrawText text
-  VIEW PRINT
-  
-END SUB
 
 SUB UI.Action
   '
