@@ -1,3 +1,7 @@
+DECLARE SUB PersonaSetName (pid%, text$)
+DECLARE FUNCTION ExecCmdPid% (ntoken%, stoken$(), pid%)
+DECLARE FUNCTION PersonaCreate% ()
+DECLARE FUNCTION PersonaGetName$ (pid%)
 DECLARE SUB DialogNext (outwho$, outtext$)
 DECLARE SUB DialogPrint (who$, text$)
 DECLARE SUB DialogTimer ()
@@ -56,6 +60,10 @@ TYPE HabitatType
   labelrid  AS INTEGER
   namerid   AS INTEGER
   wid       AS INTEGER
+END TYPE
+
+TYPE PersonaType
+  namerid AS INTEGER
 END TYPE
 
 TYPE TriggerType
@@ -161,7 +169,7 @@ DECLARE FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
 DECLARE FUNCTION ExecCmdHid% (ntoken%, stoken$(), hid%)
 DECLARE FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
 DECLARE FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
-DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, sid%, tid%, wid%)
+DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
 DECLARE FUNCTION ExecCmdSid% (ntoken%, stoken$(), sid%)
 DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 DECLARE SUB ExecFile (filename AS STRING)
@@ -420,6 +428,8 @@ DIM SHARED events                AS INTEGER
 DIM SHARED fld(1 TO 15, 1 TO 13) AS FieldType
 DIM SHARED habitat(1 TO 8)       AS HabitatType
 DIM SHARED habitats              AS INTEGER
+DIM SHARED persona(1 TO 10)      AS PersonaType
+DIM SHARED personas              AS INTEGER
 DIM SHARED resource(1 TO 100)    AS STRING
 DIM SHARED resources             AS INTEGER
 DIM SHARED trigger(1 TO 5)       AS TriggerType
@@ -1336,19 +1346,9 @@ SUB DialogNext (outwho$, outtext$)
 
   outtext$ = text
 
-  SELECT CASE INT(RND * 9)
-
-    CASE 0: outwho$ = "Old Man"
-    CASE 1: outwho$ = "Middle-Age Man"
-    CASE 2: outwho$ = "Bearded Miner"
-    CASE 3: outwho$ = "Young Man"
-    CASE 4: outwho$ = "Bartender"
-    CASE 5: outwho$ = "Guard"
-    CASE 6: outwho$ = "Wiry man"
-    CASE 7: outwho$ = "Young Woman"
-    CASE 8: outwho$ = "Student"
-
-  END SELECT
+  DIM rpid%
+  LET rpid% = INT(RND * personas) + 1
+  outwho$ = PersonaGetName$(rpid%)
 
 END SUB
 
@@ -1386,7 +1386,7 @@ SUB DialogPrint (who$, text$)
 
     END SELECT
 
-    AtlasSetStatus "@X1F " + who$ + " @X07 " + q$
+    AtlasSetStatus "@X1F " + who$ + " @X07 " + CHR$(34) + q$ + CHR$(34)
 
   END IF
 
@@ -1637,6 +1637,7 @@ FUNCTION ExecCmd% (text AS STRING)
   SHARED eid%
   SHARED fid%
   SHARED hid%
+  SHARED pid%
   SHARED sid%
   SHARED tid%
   SHARED wid%
@@ -1662,12 +1663,14 @@ FUNCTION ExecCmd% (text AS STRING)
     result = ExecCmdEid%(ntoken%, stoken$(), eid%)
   ELSEIF hid% > 0 THEN
     result = ExecCmdHid%(ntoken%, stoken$(), hid%)
+  ELSEIF pid% > 0 THEN
+    result = ExecCmdPid%(ntoken%, stoken$(), pid%)
   ELSEIF sid% > 0 THEN
     result = ExecCmdSid%(ntoken%, stoken$(), sid%)
   ELSEIF tid% > 0 THEN
     result = ExecCmdTid%(ntoken%, stoken$(), tid%)
   ELSE
-    result = ExecCmdRoot%(ntoken%, stoken$(), eid%, hid%, sid%, tid%, wid%)
+    result = ExecCmdRoot%(ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
   END IF
 
   Assert result = CmdResult.OK, "ExecCmd", "Malformed: " + text
@@ -1873,7 +1876,23 @@ FUNCTION ExecCmdHid% (ntoken%, stoken$(), hid%)
 
 END FUNCTION
 
-FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, sid%, tid%, wid%)
+FUNCTION ExecCmdPid% (ntoken%, stoken$(), pid%)
+
+  AssertIsPositive pid%, "ExecCmdPid", "pid"
+
+  SELECT CASE stoken$(0)
+   
+    CASE "endpersona"
+      pid% = 0
+
+    CASE "name"
+      PersonaSetName pid%, stoken$(1)
+
+  END SELECT
+  
+END FUNCTION
+
+FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
 
   AssertIsZero eid%, "ExecCmdRoot", "eid"
   AssertIsZero hid%, "ExecCmdRoot", "hid"
@@ -1913,6 +1932,9 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, sid%, tid%, wid%)
 
       CASE "newgame"
         WorldInit 15
+
+      CASE "persona"
+        pid% = PersonaCreate%
 
       CASE "style"
         winstyles = winstyles + 1
@@ -3150,6 +3172,19 @@ SUB PaintBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
   
    NEXT
 
+END SUB
+
+FUNCTION PersonaCreate%
+  personas = personas + 1
+  PersonaCreate% = personas
+END FUNCTION
+
+FUNCTION PersonaGetName$ (pid%)
+  PersonaGetName$ = ResourceGet$(persona(pid%).namerid)
+END FUNCTION
+
+SUB PersonaSetName (pid%, text$)
+  ResourceSet persona(pid%).namerid, text$
 END SUB
 
 FUNCTION ResourceCreate% (value AS STRING)
