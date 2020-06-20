@@ -117,6 +117,7 @@ DECLARE SUB AtlasDrawEnd ()
 DECLARE SUB AtlasDrawGrid ()
 DECLARE SUB AtlasDrawItem (idx AS INTEGER)
 DECLARE SUB AtlasDrawItems ()
+DECLARE SUB AtlasDrawPainted (cx AS INTEGER, cy AS INTEGER, backcolor AS INTEGER)
 DECLARE SUB AtlasDrawSelect (cx AS INTEGER, cy AS INTEGER, valid AS INTEGER)
 DECLARE SUB AtlasDrawUnselect (cx AS INTEGER, cy AS INTEGER)
 DECLARE SUB AtlasMoveItem (idx AS INTEGER, nx AS INTEGER, ny AS INTEGER)
@@ -358,7 +359,6 @@ CONST AtlasStyle.CellSizeX = 4
 CONST AtlasStyle.CellSizeY = 1
 CONST AtlasStyle.GridSizeX = 15
 CONST AtlasStyle.GridSizeY = 11
-CONST AtlasStyle.SelectBackcolor = 4
 
 '
 ' Boolean constants
@@ -431,7 +431,7 @@ CONST WinAction.SelectPrevious = 15
 ' Global atlas variables
 '
 DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS INTEGER
-
+                 
 '
 ' Globals
 '
@@ -615,10 +615,7 @@ SUB AtlasDrawItems
 
 END SUB
 
-SUB AtlasDrawSelect (cx AS INTEGER, cy AS INTEGER, valid AS INTEGER)
-  '
-  ' Draws the current selection indicator onto the grid
-  '
+SUB AtlasDrawPainted (cx AS INTEGER, cy AS INTEGER, backcolor AS INTEGER)
 
   DIM col AS INTEGER
   DIM sx1 AS INTEGER
@@ -632,42 +629,31 @@ SUB AtlasDrawSelect (cx AS INTEGER, cy AS INTEGER, valid AS INTEGER)
   sx1 = AtlasGetScreenX(cx) - 1
   sy1 = AtlasGetScreenY(cy) - 1
 
-  '
-  ' Determine the painting color
-  '
-  IF valid THEN
-    col = 2
-  ELSE
-    col = 4
-  END IF
-
-  DrawBackground sx1, sy1, sx1 + AtlasStyle.CellSizeX + 1, sy1 + 2, col
+  DrawBackground sx1, sy1, sx1 + AtlasStyle.CellSizeX + 1, sy1 + 2, backcolor
 
   AtlasDrawEnd
 
 END SUB
 
+SUB AtlasDrawSelect (cx AS INTEGER, cy AS INTEGER, valid AS INTEGER)
+  '
+  ' Draws the current selection indicator onto the grid
+  '
+
+  DIM backcolor AS INTEGER
+  IF valid THEN
+    backcolor = 2
+  ELSE
+    backcolor = 4
+  END IF
+
+  AtlasDrawPainted cx, cy, backcolor
+
+END SUB
+
 SUB AtlasDrawUnselect (cx AS INTEGER, cy AS INTEGER)
-  '
-  ' Draws the cell to reflect no selection.
-  '
-
-  DIM sx1 AS INTEGER
-  DIM sy1 AS INTEGER
-
-  AtlasDrawBegin
-
-  '
-  ' Get the upper-left screen coordinates of the outer cell
-  '
-  sx1 = AtlasGetScreenX(cx) - 1
-  sy1 = AtlasGetScreenY(cy) - 1
-
-  DrawBackground sx1, sy1, sx1 + AtlasStyle.CellSizeX + 1, sy1 + 2, 0
-
+  AtlasDrawPainted cx, cy, 0
   AtlasDrawCell cx, cy
-  AtlasDrawEnd
-
 END SUB
 
 FUNCTION AtlasGetScreenX% (cx AS INTEGER)
