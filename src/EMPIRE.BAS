@@ -223,6 +223,7 @@ DECLARE SUB FieldSetValue (wid%, fid%, value$)
 DECLARE FUNCTION FieldCreate% (wid%, kind%)
 DECLARE FUNCTION FieldGetBound$ (wid%, fid%, b AS BindingType)
 DECLARE FUNCTION FieldGetKind% (wid%, fid%)
+DECLARE FUNCTION FieldGetSizeX% (wid%, fid%)
 DECLARE FUNCTION FieldGetSizeY% (wid%, fid%)
 DECLARE FUNCTION FieldGetStyle% (wid%, fid%)
 DECLARE FUNCTION FieldGetText$ (wid%, fid%)
@@ -2227,7 +2228,7 @@ SUB FieldDrawBox0 (wid%, fid%)
     sy = win(wid%).posY + fld(wid%, fid%).offsetY + row - 1
 
     LOCATE sy, sx
-    PRINT STRING$(fld(wid%, fid%).sizeX, " ");
+    PRINT STRING$(FieldGetSizeX%(wid%, fid%), " ");
  
   NEXT
 
@@ -2247,19 +2248,21 @@ SUB FieldDrawBox1 (wid%, fid%)
   CONST upperFlat = "Ä"   ' CHR$(196)
   CONST upperRight = "¿"  ' CHR$(191)
 
-  DIM r    AS INTEGER
-  DIM sid  AS INTEGER
-  DIM sx1  AS INTEGER ' Upper-left x-coord
-  DIM sy1  AS INTEGER ' Upper-left y-coord
-  DIM sx2  AS INTEGER ' Lower-right x-coord
-  DIM sy2  AS INTEGER ' Lower-right y-coord
+  DIM r     AS INTEGER
+  DIM sid   AS INTEGER
+  DIM sizeX AS INTEGER
+  DIM sx1   AS INTEGER ' Upper-left x-coord
+  DIM sy1   AS INTEGER ' Upper-left y-coord
+  DIM sx2   AS INTEGER ' Lower-right x-coord
+  DIM sy2   AS INTEGER ' Lower-right y-coord
 
   '
   ' Calculate screen coordinates
   '
+  sizeX = FieldGetSizeX%(wid%, fid%)
   sx1 = win(wid%).posX + fld(wid%, fid%).offsetX
   sy1 = win(wid%).posY + fld(wid%, fid%).offsetY
-  sx2 = sx1 + fld(wid%, fid%).sizeX - 1
+  sx2 = sx1 + sizeX - 1
   sy2 = sy1 + FieldGetSizeY%(wid%, fid%) - 1
 
   sid = FieldGetStyle(wid%, fid%)
@@ -2269,7 +2272,7 @@ SUB FieldDrawBox1 (wid%, fid%)
   '
   LOCATE sy1, sx1
   DrawColor winstyle(sid).bordercolor
-  PRINT upperLeft; STRING$(fld(wid%, fid%).sizeX - 2, upperFlat); upperRight;
+  PRINT upperLeft; STRING$(sizeX - 2, upperFlat); upperRight;
 
   '
   ' Draw each row of the border
@@ -2279,7 +2282,7 @@ SUB FieldDrawBox1 (wid%, fid%)
     PRINT sideLeft;
   
     DrawColor winstyle(sid).textcolor
-    PRINT STRING$(fld(wid%, fid%).sizeX - 2, " ");
+    PRINT STRING$(sizeX - 2, " ");
   
     DrawColor winstyle(sid).bordercolor
     PRINT sideRight;
@@ -2289,7 +2292,7 @@ SUB FieldDrawBox1 (wid%, fid%)
   ' Draw the lower border
   '
   LOCATE sy2, sx1
-  PRINT lowerLeft; STRING$(fld(wid%, fid%).sizeX - 2, lowerFlat); lowerRight;
+  PRINT lowerLeft; STRING$(sizeX - 2, lowerFlat); lowerRight;
 
 END SUB
 
@@ -2300,10 +2303,12 @@ SUB FieldDrawBox2 (wid%, fid%)
 
   DIM idx   AS INTEGER
   DIM row   AS INTEGER
+  DIM sizeX AS INTEGER
   DIM sizeY AS INTEGER
   DIM sx    AS INTEGER
   DIM sy    AS INTEGER
 
+  sizeX = FieldGetSizeX%(wid%, fid%)
   sizeY = FieldGetSizeY%(wid%, fid%)
 
   '
@@ -2331,7 +2336,7 @@ SUB FieldDrawBox2 (wid%, fid%)
   LOCATE sy, sx
   COLOR fc(0), bc(0)
   PRINT CHR$(220);
-  PRINT STRING$(fld(wid%, fid%).sizeX - 2, 196);
+  PRINT STRING$(sizeX - 2, 196);
   PRINT CHR$(191);
 
   FOR row = 1 TO sizeY - 2
@@ -2357,7 +2362,7 @@ SUB FieldDrawBox2 (wid%, fid%)
     ' Inner space
     '
     COLOR fc(0), bc(0)
-    PRINT STRING$(fld(wid%, fid%).sizeX - 2, " ");
+    PRINT STRING$(sizeX - 2, " ");
 
     '
     ' Get the index of the right border char
@@ -2381,7 +2386,7 @@ SUB FieldDrawBox2 (wid%, fid%)
   LOCATE sy, sx
   COLOR fc(0), bc(0)
   PRINT CHR$(192);
-  PRINT STRING$(fld(wid%, fid%).sizeX - 2, 196);
+  PRINT STRING$(sizeX - 2, 196);
   PRINT CHR$(223);
 
 END SUB
@@ -2409,17 +2414,20 @@ END SUB
 
 SUB FieldDrawNebula (wid%, fid%)
 
-  DIM p  AS INTEGER
-  DIM sx AS INTEGER
-  DIM sy AS INTEGER
-  DIM x  AS INTEGER
-  DIM y  AS INTEGER
+  DIM p     AS INTEGER
+  DIM sizeX AS INTEGER
+  DIM sx    AS INTEGER
+  DIM sy    AS INTEGER
+  DIM x     AS INTEGER
+  DIM y     AS INTEGER
+
+  sizeX = FieldGetSizeX%(wid%, fid%)
 
   COLOR 7, 0
 
   FOR y = 1 TO FieldGetSizeY%(wid%, fid%)
  
-    x = INT(RND * fld(wid%, fid%).sizeX) + 1
+    x = INT(RND * sizeX) + 1
     p = 1
 
     sx = win(wid%).posX + fld(wid%, fid%).offsetX + x - 1
@@ -2489,7 +2497,7 @@ SUB FieldDrawNebula (wid%, fid%)
       END SELECT
    
       x = x + 1
-      IF x > fld(wid%, fid%).sizeX THEN
+      IF x > sizeX THEN
         EXIT DO
       END IF
 
@@ -2506,11 +2514,13 @@ SUB FieldDrawSeparator (wid%, fid%)
 
   DIM row   AS INTEGER
   DIM sid   AS INTEGER
+  DIM sizeX AS INTEGER
   DIM sizeY AS INTEGER
   DIM sx    AS INTEGER
   DIM sy    AS INTEGER
 
   sid = FieldGetStyle(wid%, fid%)
+  sizeX = FieldGetSizeX%(wid%, fid%)
   sizeY = FieldGetSizeY%(wid%, fid%)
   sx = win(wid%).posX + fld(wid%, fid%).offsetX
   sy = win(wid%).posY + fld(wid%, fid%).offsetY
@@ -2518,7 +2528,7 @@ SUB FieldDrawSeparator (wid%, fid%)
   LOCATE sy, sx
   DrawColor winstyle(sid).bordercolor
 
-  IF fld(wid%, fid%).sizeX > 0 THEN
+  IF sizeX > 0 THEN
     '
     ' Left edge
     '
@@ -2534,12 +2544,12 @@ SUB FieldDrawSeparator (wid%, fid%)
     '
     ' Inner separator
     '
-    PRINT STRING$(fld(wid%, fid%).sizeX - 2, 196);
+    PRINT STRING$(sizeX - 2, 196);
 
     '
     ' Right edge
     '
-    SELECT CASE SCREEN(sy, sx + fld(wid%, fid%).sizeX - 1)
+    SELECT CASE SCREEN(sy, sx + sizeX - 1)
       CASE 179            ' ³
         PRINT CHR$(180);  ' ´
       CASE 186            ' º
@@ -2616,7 +2626,7 @@ SUB FieldDrawText (wid%, fid%)
   ' Print text clipped to size
   '
   text = FieldGetText(wid%, fid%)
-  size = fld(wid%, fid%).sizeX
+  size = FieldGetSizeX%(wid%, fid%)
   IF size < 1 THEN
     PRINT text;
   ELSE
@@ -2692,6 +2702,10 @@ END FUNCTION
 
 FUNCTION FieldGetKind% (wid%, fid%)
   FieldGetKind% = fld(wid%, fid%).kind
+END FUNCTION
+
+FUNCTION FieldGetSizeX% (wid%, fid%)
+  FieldGetSizeX% = fld(wid%, fid%).sizeX
 END FUNCTION
 
 FUNCTION FieldGetSizeY% (wid%, fid%)
@@ -2849,7 +2863,7 @@ SUB FieldKeyInteger (wid%, fid%, keypress$)
 
     CASE "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
 
-      IF LEN(buf$) < fld(wid%, fid%).sizeX THEN
+      IF LEN(buf$) < FieldGetSizeX%(wid%, fid%) THEN
         buf$ = buf$ + keypress$
       END IF
 
