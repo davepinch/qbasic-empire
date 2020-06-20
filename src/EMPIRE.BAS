@@ -90,11 +90,11 @@ TYPE WinType
   arrowexit AS INTEGER
   fields    AS INTEGER
   helpWid   AS INTEGER
+  namerid   AS INTEGER
   posX      AS INTEGER
   posY      AS INTEGER
   selected  AS INTEGER
   sid       AS INTEGER
-  wname     AS STRING * 20
 END TYPE
 
 '
@@ -312,6 +312,7 @@ DECLARE SUB WinSelectNext (wid%)
 DECLARE SUB WinSelectFirst (wid%)
 DECLARE SUB WinSelectLast (wid%)
 DECLARE SUB WinSelectPrevious (wid%)
+DECLARE SUB WinSetName (wid%, wname$)
 DECLARE SUB WinSetStyle (wid%, sid%)
 DECLARE FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$, value$)
 DECLARE FUNCTION WinCreate% ()
@@ -2071,7 +2072,7 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
       win(wid%).arrowexit = VAL(stoken$(1))
 
     CASE "name"
-      win(wid%).wname = stoken$(1)
+      WinSetName wid%, stoken$(1)
  
     CASE "posx"
       win(wid%).posX = VAL(stoken$(1))
@@ -3676,7 +3677,7 @@ FUNCTION WinFindWid% (wname$)
   DIM wid%
 
   FOR wid% = 1 TO wincount
-    IF RTRIM$(win(wid%).wname) = wname$ THEN
+    IF ResourceGet(win(wid%).namerid) = wname$ THEN
       WinFindWid% = wid%
       EXIT FUNCTION
     END IF
@@ -4218,6 +4219,10 @@ SUB WinSelectPrevious (wid%)
 
   WinSelect wid%, fid%
 
+END SUB
+
+SUB WinSetName (wid%, wname$)
+  ResourceSet win(wid%).namerid, wname$
 END SUB
 
 SUB WinSetStyle (wid%, sid%)
