@@ -40,8 +40,7 @@ TYPE FieldType
   offsetX   AS INTEGER
   offsetY   AS INTEGER
   sid       AS INTEGER
-  sizeX     AS INTEGER
-  sizeY     AS INTEGER
+  sizeYX    AS INTEGER
   text      AS BindingType
   value     AS BindingType
 END TYPE
@@ -2705,11 +2704,11 @@ FUNCTION FieldGetKind% (wid%, fid%)
 END FUNCTION
 
 FUNCTION FieldGetSizeX% (wid%, fid%)
-  FieldGetSizeX% = fld(wid%, fid%).sizeX
+  FieldGetSizeX% = fld(wid%, fid%).sizeYX AND &HFF
 END FUNCTION
 
 FUNCTION FieldGetSizeY% (wid%, fid%)
-  FieldGetSizeY% = fld(wid%, fid%).sizeY
+  FieldGetSizeY% = (fld(wid%, fid%).sizeYX AND &HFF00) \ 256
 END FUNCTION
 
 FUNCTION FieldGetStyle% (wid%, fid%)
@@ -2933,11 +2932,11 @@ SUB FieldSetOffsetY (wid%, fid%, offsetY%)
 END SUB
 
 SUB FieldSetSizeX (wid%, fid%, sizeX%)
-  fld(wid%, fid%).sizeX = sizeX%
+  fld(wid%, fid%).sizeYX = (fld(wid%, fid%).sizeYX AND &HFF00) OR sizeX%
 END SUB
 
 SUB FieldSetSizeY (wid%, fid%, sizeY%)
-  fld(wid%, fid%).sizeY = sizeY%
+  fld(wid%, fid%).sizeYX = (fld(wid%, fid%).sizeYX% AND &HFF) OR (sizeY% * 256)
 END SUB
 
 SUB FieldSetStyle (wid%, fid%, sid%)
@@ -3195,11 +3194,15 @@ END SUB
 SUB SetupGame
 
   SCREEN 0, 0, 0, 0: WIDTH 80: COLOR 7, 0: KEY OFF: CLS : RANDOMIZE TIMER
- 
+
   '
   ' Load menus and windows
   '
   ExecFile "EMPIRE.CFG"
+ 
+  ConsolePrint "String Space:" + STR$(FRE(""))
+  ConsolePrint "Unused Stack Space:" + STR$(FRE(-2))
+  ConsolePrint "Array Space:" + STR$(FRE(-1))
 
   '
   ' Setup atlas
@@ -3588,7 +3591,7 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
   fld(wid%, fid%).cmdrid = 0
   fld(wid%, fid%).offsetX = offsetX%
   fld(wid%, fid%).offsetY = offsetY%
-  fld(wid%, fid%).sizeX = sizeX%
+  fld(wid%, fid%).sizeYX = sizeX%
   fld(wid%, fid%).text.vrid = ResourceCreate(text$)
   fld(wid%, fid%).text.xrid = 0
   fld(wid%, fid%).value.vrid = ResourceCreate(value$)
