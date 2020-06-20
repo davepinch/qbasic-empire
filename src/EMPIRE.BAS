@@ -213,6 +213,10 @@ DECLARE SUB FieldKeyInteger (wid%, fid%, keypress$)
 DECLARE SUB FieldSetBound (wid%, fid%, b AS BindingType, value$)
 DECLARE SUB FieldSetChild (wid%, fid%, wname$)
 DECLARE SUB FieldSetCommand (wid%, fid%, cmd$)
+DECLARE SUB FieldSetOffsetX (wid%, fid%, offsetX%)
+DECLARE SUB FieldSetOffsetY (wid%, fid%, offsetY%)
+DECLARE SUB FieldSetSizeX (wid%, fid%, sizeX%)
+DECLARE SUB FieldSetSizeY (wid%, fid%, sizeY%)
 DECLARE SUB FieldSetStyle (wid%, fid%, sid%)
 DECLARE SUB FieldSetText (wid%, fid%, value$)
 DECLARE SUB FieldSetValue (wid%, fid%, value$)
@@ -1767,16 +1771,16 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       FieldSetCommand wid%, fid%, stoken$(1)
 
     CASE "offsetx"
-      fld(wid%, fid%).offsetX = VAL(stoken$(1))
+      FieldSetOffsetX wid%, fid%, VAL(stoken$(1))
 
     CASE "offsety"
-      fld(wid%, fid%).offsetY = VAL(stoken$(1))
+      FieldSetOffsetY wid%, fid%, VAL(stoken$(1))
 
     CASE "sizex"
-      fld(wid%, fid%).sizeX = VAL(stoken$(1))
+      FieldSetSizeX wid%, fid%, VAL(stoken$(1))
 
     CASE "sizey"
-      fld(wid%, fid%).sizeY = VAL(stoken$(1))
+      FieldSetSizeY wid%, fid%, VAL(stoken$(1))
 
     CASE "style"
       FieldSetStyle wid%, fid%, WinFindSid%(stoken$(1))
@@ -2886,6 +2890,22 @@ SUB FieldSetCommand (wid%, fid%, cmd$)
 
   ResourceSet fld(wid%, fid%).cmdrid, cmd$
 
+END SUB
+
+SUB FieldSetOffsetX (wid%, fid%, offsetX%)
+  fld(wid%, fid%).offsetX = offsetX%
+END SUB
+
+SUB FieldSetOffsetY (wid%, fid%, offsetY%)
+  fld(wid%, fid%).offsetY = offsetY%
+END SUB
+
+SUB FieldSetSizeX (wid%, fid%, sizeX%)
+  fld(wid%, fid%).sizeX = sizeX%
+END SUB
+
+SUB FieldSetSizeY (wid%, fid%, sizeY%)
+  fld(wid%, fid%).sizeY = sizeY%
 END SUB
 
 SUB FieldSetStyle (wid%, fid%, sid%)
