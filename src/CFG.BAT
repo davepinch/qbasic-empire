@@ -14,6 +14,8 @@ if "%1" == "p"        goto :configPersonas
 if "%1" == "per"      goto :configPersonas
 if "%1" == "persona"  goto :configPersonas
 if "%1" == "personas" goto :configPersonas
+if "%1" == "w"        goto :configWorld
+if "%1" == "world"    goto :configWorld
 
 :config
   qbasic /editor empire.cfg
@@ -35,5 +37,8 @@ if "%1" == "personas" goto :configPersonas
   qbasic /editor personas.cfg
   goto :done
 
-:done
+:configWorld
+  qbasic /editor world.cfg
+  goto :done
 
+:done

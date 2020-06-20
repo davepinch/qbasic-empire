@@ -325,12 +325,14 @@ DECLARE FUNCTION WinMapKey% (wid%, pressed$)
 '
 ' World
 '
+DECLARE SUB WorldAdd (hid%, cx%, cy%)
+DECLARE SUB WorldAddBanded (hid AS INTEGER, count AS INTEGER)
 DECLARE SUB WorldAddCluster (hid AS INTEGER, size AS INTEGER)
+DECLARE SUB WorldAddRandom (hid%, count%)
 DECLARE SUB WorldHarvest (aid%)
 DECLARE SUB WorldInit (areas AS INTEGER)
 DECLARE SUB WorldRemove (aid%)
 DECLARE SUB WorldSetLabel (aid%, labelrid%)
-DECLARE FUNCTION WorldAdd% (hid%, cx%, cy%)
 DECLARE FUNCTION WorldNextId% ()
 
 '
@@ -442,7 +444,7 @@ DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS IN
 '
 ' Globals
 '
-DIM SHARED area(1 TO 30)         AS AreaType
+DIM SHARED area(1 TO 35)         AS AreaType
 DIM SHARED atlascx               AS INTEGER
 DIM SHARED atlascy               AS INTEGER
 DIM SHARED atlasitem(1 TO 30)    AS AtlasItemType
@@ -454,6 +456,7 @@ DIM SHARED habitat(1 TO 8)       AS HabitatType
 DIM SHARED habitats              AS INTEGER
 DIM SHARED persona(1 TO 10)      AS PersonaType
 DIM SHARED personas              AS INTEGER
+DIM SHARED playeraid             AS INTEGER
 DIM SHARED resource(1 TO 100)    AS STRING
 DIM SHARED resources             AS INTEGER
 DIM SHARED trigger(1 TO 5)       AS TriggerType
@@ -1277,28 +1280,43 @@ END FUNCTION
 
 SUB DialogNext (outpid%, outtext$)
 
-  DIM handle AS INTEGER
-  DIM text   AS STRING
+  STATIC loaded AS INTEGER
+  STATIC lines() AS STRING
 
-  handle = FREEFILE
-  OPEN "EMPIRE.DLG" FOR INPUT ACCESS READ AS #handle
+  IF loaded = 0 THEN
+    REDIM lines(1 TO 100) AS STRING
+    handle = FREEFILE
+    OPEN "EMPIRE.DLG" FOR INPUT ACCESS READ AS #handle
+    DO WHILE (NOT EOF(handle)) AND (loaded < UBOUND(lines))
+      loaded = loaded + 1
+      LINE INPUT #handle, lines(loaded)
+    LOOP
+    CLOSE #handle
+  END IF
+ 
+  'DIM handle AS INTEGER
+  'DIM text   AS STRING
+
+  'handle = FREEFILE
+  'OPEN "EMPIRE.DLG" FOR INPUT ACCESS READ AS #handle
 
   '
   ' Start on a random line
   '
-  SEEK #handle, INT(RND * LOF(handle)) + 1
-  LINE INPUT #handle, text
-  IF EOF(handle) THEN
-    SEEK #handle, 1
-  END IF
+  'SEEK #handle, INT(RND * LOF(handle)) + 1
+  'LINE INPUT #handle, text
+  'IF EOF(handle) THEN
+  '  SEEK #handle, 1
+  'END IF
  
   '
   ' Read the line
   '
-  LINE INPUT #handle, text
-  CLOSE #handle
+  'LINE INPUT #handle, text
+  'CLOSE #handle
 
-  outtext$ = text
+  outtext$ = lines(INT(RND * UBOUND(lines)) + 1)
+  'outtext$ = text
   outpid% = INT(RND * personas) + 1
 
 END SUB
@@ -1347,7 +1365,7 @@ SUB DialogPrint (pid%, text$)
 
     END SELECT
 
-    AtlasSetStatus "@X1F " + name$ + " @X07 " + CHR$(34) + q$ + CHR$(34)
+    'AtlasSetStatus "@X1F " + name$ + " @X07 " + CHR$(34) + q$ + CHR$(34)
 
   END IF
 
@@ -1358,7 +1376,7 @@ SUB DialogTimer
   ' Executed periodically
   '
 
-  IF RND > .5 THEN
+  IF RND > .4 THEN
     EXIT SUB
   END IF
 
@@ -1375,7 +1393,7 @@ SUB DialogTimer
   ' Grab the next dialog
   '
   DialogNext pid%, text$
-
+ 
   '
   ' Print the dialog to the console
   '
@@ -1868,6 +1886,7 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
 
   AssertIsZero eid%, "ExecCmdRoot", "eid"
   AssertIsZero hid%, "ExecCmdRoot", "hid"
+  AssertIsZero pid%, "ExecCmdRoot", "pid"
   AssertIsZero sid%, "ExecCmdRoot", "sid"
   AssertIsZero tid%, "ExecCmdRoot", "tid"
   AssertIsZero wid%, "ExecCmdRoot", "wid"
@@ -1902,7 +1921,7 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
       InboxAdd stoken$(1), stoken$(2)
    
     CASE "newgame"
-      WorldInit 15
+      ExecFile "WORLD.CFG"
 
     CASE "persona"
       pid% = PersonaCreate%
@@ -1934,6 +1953,21 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
     CASE "run"
       ExecFile stoken$(1)
    
+    CASE "spawn"
+      DIM shid%: shid% = HabitatFind(stoken$(1))
+      IF shid% > 0 THEN
+        SELECT CASE LCASE$(stoken$(2))
+          CASE "at"
+            WorldAdd shid%, VAL(stoken$(3)), VAL(stoken$(4))
+          CASE "b", "band", "banded"
+            WorldAddBanded shid%, VAL(stoken$(3))
+          CASE "c", "cluster", "clustered"
+            WorldAddCluster shid%, VAL(stoken$(3))
+          CASE "r", "random"
+            WorldAddRandom shid%, VAL(stoken$(3))
+        END SELECT
+      END IF
+
     CASE "style"
       winstyles = winstyles + 1
       sid% = winstyles
@@ -4241,13 +4275,10 @@ SUB WinSetStyle (wid%, sid%)
   win(wid%).sid = sid%
 END SUB
 
-FUNCTION WorldAdd% (hid%, cx%, cy%)
+SUB WorldAdd (hid%, cx%, cy%)
 
   DIM aid%
 
-  '
-  ' Allocate the area
-  '
   aid% = WorldNextId%
   area(aid%).allocated = True
   area(aid%).hid = hid%
@@ -4255,22 +4286,45 @@ FUNCTION WorldAdd% (hid%, cx%, cy%)
 
   AtlasAddItem cx%, cy%, aid%, habitat(hid%).labelrid
 
-  WorldAdd% = aid%
+END SUB
 
-END FUNCTION
+SUB WorldAddBanded (hid AS INTEGER, count AS INTEGER)
+
+  DIM outcx AS INTEGER
+  DIM outcy AS INTEGER
+  DIM n     AS INTEGER
+
+  FOR n = 1 TO count
+    AtlasNextBanded outcx, outcy
+    WorldAdd hid, outcx, outcy
+  NEXT
+
+END SUB
 
 SUB WorldAddCluster (hid AS INTEGER, count AS INTEGER)
 
-  DIM aid   AS INTEGER
   DIM outcx AS INTEGER
   DIM outcy AS INTEGER
   DIM n     AS INTEGER
  
   FOR n = 1 TO count
     AtlasNextClustered outcx, outcy
-    aid = WorldAdd%(hid, outcx, outcy)
+    WorldAdd hid, outcx, outcy
   NEXT
   
+END SUB
+
+SUB WorldAddRandom (hid%, count%)
+
+  DIM outcx AS INTEGER
+  DIM outcy AS INTEGER
+  DIM n     AS INTEGER
+
+  FOR n = 1 TO count%
+    AtlasNextRandom outcx, outcy
+    WorldAdd hid%, outcx, outcy
+  NEXT
+
 END SUB
 
 SUB WorldHarvest (aid%)
@@ -4289,40 +4343,6 @@ SUB WorldHarvest (aid%)
     WorldRemove aid%
     EventIncName "NebulaDepleted"
   END IF
-
-END SUB
-
-SUB WorldInit (areas%)
- 
-  DIM aid AS INTEGER
-  DIM cx  AS INTEGER
-  DIM cy  AS INTEGER
-  DIM hid AS INTEGER
-  DIM i   AS INTEGER
-
-  hid = HabitatFind%("Nebula")
-  IF hid > 0 THEN
-    WorldAddCluster hid, 15
-  END IF
-
-  FOR i = 1 TO areas%
-
-    '
-    ' Select a random habitat
-    '
-    hid = INT(RND * habitats) + 1
-
-    '
-    ' Select a random location
-    '
-    AtlasNextRandom cx, cy
-   
-    '
-    ' Add the area to the world
-    '
-    aid = WorldAdd%(hid, cx, cy)
-
-  NEXT
 
 END SUB
 
