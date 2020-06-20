@@ -248,6 +248,7 @@ DECLARE SUB HabitatSetName (hid%, hname$)
 DECLARE FUNCTION HabitatCreate% ()
 DECLARE FUNCTION HabitatGetBackdrop$ (hid%)
 DECLARE FUNCTION HabitatGetName$ (hid%)
+DECLARE FUNCTION HabitatFind% (hname$)
 
 '
 ' Inbox
@@ -325,7 +326,6 @@ DECLARE FUNCTION WinMapKey% (wid%, pressed$)
 ' World
 '
 DECLARE SUB WorldAddCluster (hid AS INTEGER, size AS INTEGER)
-DECLARE SUB WorldAddNebula (size AS INTEGER)
 DECLARE SUB WorldHarvest (aid%)
 DECLARE SUB WorldInit (areas AS INTEGER)
 DECLARE SUB WorldRemove (aid%)
@@ -3024,6 +3024,17 @@ FUNCTION HabitatCreate%
   HabitatCreate% = habitats
 END FUNCTION
 
+FUNCTION HabitatFind% (hname$)
+
+  DIM hid%
+  FOR hid% = 1 TO habitats
+    IF ResourceGet(habitat(hid%).namerid) = hname$ THEN
+      HabitatFind% = hid%
+    END IF
+  NEXT
+
+END FUNCTION
+
 FUNCTION HabitatGetBackdrop$ (hid%)
   IF hid% > 0 THEN
     HabitatGetBackdrop$ = ResourceGet(habitat(hid%).backdrop)
@@ -4262,28 +4273,6 @@ SUB WorldAddCluster (hid AS INTEGER, count AS INTEGER)
   
 END SUB
 
-SUB WorldAddNebula (size AS INTEGER)
-
-  DIM hid   AS INTEGER
-  DIM hname AS STRING
-
-  '
-  ' Find the nebula habitat
-  '
-  FOR hid = 1 TO habitats
-   
-    IF habitat(hid).namerid > 0 THEN
-      hname = ResourceGet(habitat(hid).namerid)
-      IF hname = "Nebula" THEN
-        WorldAddCluster hid, size
-        EXIT SUB
-      END IF
-    END IF
-
-  NEXT
- 
-END SUB
-
 SUB WorldHarvest (aid%)
 
   AssertIsPositive aid%, "WorldHarvest", "aid"
@@ -4304,9 +4293,6 @@ SUB WorldHarvest (aid%)
 END SUB
 
 SUB WorldInit (areas%)
-  '
-  ' Initializes the world
-  '
  
   DIM aid AS INTEGER
   DIM cx  AS INTEGER
@@ -4314,7 +4300,10 @@ SUB WorldInit (areas%)
   DIM hid AS INTEGER
   DIM i   AS INTEGER
 
-  WorldAddNebula 15
+  hid = HabitatFind%("Nebula")
+  IF hid > 0 THEN
+    WorldAddCluster hid, 15
+  END IF
 
   FOR i = 1 TO areas%
 
