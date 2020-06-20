@@ -222,6 +222,7 @@ DECLARE SUB FieldSetText (wid%, fid%, value$)
 DECLARE SUB FieldSetValue (wid%, fid%, value$)
 DECLARE FUNCTION FieldCreate% (wid%, kind%)
 DECLARE FUNCTION FieldGetBound$ (wid%, fid%, b AS BindingType)
+DECLARE FUNCTION FieldGetKind% (wid%, fid%)
 DECLARE FUNCTION FieldGetStyle% (wid%, fid%)
 DECLARE FUNCTION FieldGetText$ (wid%, fid%)
 DECLARE FUNCTION FieldGetValue$ (wid%, fid%)
@@ -1734,7 +1735,10 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
   AssertIsPositive fid%, "ExecCmdFid", "fid"
 
   DIM endtag AS STRING
-  SELECT CASE fld(wid%, fid%).kind
+  DIM kind%
+  LET kind% = FieldGetKind(wid%, fid%)
+
+  SELECT CASE kind%
     CASE FieldKind.Button
       endtag = "endbutton"
     CASE FieldKind.Box
@@ -1754,7 +1758,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
     CASE FieldKind.Nebula
       endtag = "endnebula"
     CASE ELSE
-      AssertFail "ExecCmdFid", "Unknown kind:" + STR$(fld(wid%, fid%).kind)
+      AssertFail "ExecCmdFid", "Unknown kind:" + STR$(kind%)
   END SELECT
 
   ExecCmdFid% = CmdResult.OK
@@ -2151,7 +2155,7 @@ SUB FieldDraw (wid%, fid%)
   AssertIsPositive wid%, "FieldDraw", "wid"
   AssertIsPositive fid%, "FieldDraw", "fid"
 
-  SELECT CASE fld(wid%, fid%).kind
+  SELECT CASE FieldGetKind%(wid%, fid%)
     '
     ' Check the most common kinds first
     '
@@ -2680,6 +2684,10 @@ FUNCTION FieldGetBound$ (wid%, fid%, b AS BindingType)
 
 END FUNCTION
 
+FUNCTION FieldGetKind% (wid%, fid%)
+  FieldGetKind% = fld(wid%, fid%).kind
+END FUNCTION
+
 FUNCTION FieldGetStyle% (wid%, fid%)
 
   AssertIsPositive wid%, "FieldGetStyle", "wid"
@@ -2740,7 +2748,7 @@ FUNCTION FieldIsSelectable% (wid%, fid%)
  
   ELSE
 
-    SELECT CASE fld(wid%, fid%).kind
+    SELECT CASE FieldGetKind%(wid%, fid%)
       CASE FieldKind.Button
         FieldIsSelectable = True
 
@@ -2771,7 +2779,7 @@ SUB FieldKey (wid%, fid%, keypress$)
 
   IF fid% > 0 THEN
 
-    SELECT CASE fld(wid%, fid%).kind
+    SELECT CASE FieldGetKind%(wid%, fid%)
   
       CASE FieldKind.Boolean
         FieldKeyBoolean wid%, fid%, keypress$
@@ -3848,7 +3856,7 @@ SUB WinRun (wid%, result AS WinResultType)
        
         EXIT DO
 
-      ELSEIF fld(wid%, win(wid%).selected).kind <> FieldKind.Popup THEN
+      ELSEIF FieldGetKind%(wid%, win(wid%).selected) <> FieldKind.Popup THEN
        
         EXIT DO
 
