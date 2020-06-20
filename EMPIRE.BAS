@@ -19,8 +19,8 @@ TYPE AtlasItemType
   allocated AS INTEGER
   cx        AS INTEGER
   cy        AS INTEGER
-  value     AS INTEGER
   labelrid  AS INTEGER
+  value     AS INTEGER
 END TYPE
 
 TYPE BindingType
@@ -436,7 +436,7 @@ DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS IN
 ' Globals
 '
 DIM SHARED area(1 TO 30)         AS AreaType
-DIM SHARED atlasItem(1 TO 30)    AS AtlasItemType
+DIM SHARED atlasitem(1 TO 30)    AS AtlasItemType
 DIM SHARED atlaspage             AS INTEGER
 DIM SHARED event(1 TO 5)         AS EventType
 DIM SHARED events                AS INTEGER
@@ -524,11 +524,11 @@ SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, labelrid AS IN
   '
   ' Add the item to the item list
   '
-  atlasItem(idx).allocated = -1
-  atlasItem(idx).cx = cx
-  atlasItem(idx).cy = cy
-  atlasItem(idx).labelrid = labelrid
-  atlasItem(idx).value = value
+  atlasitem(idx).allocated = -1
+  atlasitem(idx).cx = cx
+  atlasitem(idx).cy = cy
+  atlasitem(idx).labelrid = labelrid
+  atlasitem(idx).value = value
 
   '
   ' Reference the item in the grid
@@ -539,29 +539,15 @@ SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, labelrid AS IN
 END SUB
 
 SUB AtlasDraw
-  '
-  ' Draws the atlas grid and items
-  '
-  ' Note: As a design rule, the draw subroutines should not modify
-  ' atlas data and should not call subroutines that modify data.
-  '
   AtlasDrawGrid
   AtlasDrawItems
-
 END SUB
 
 SUB AtlasDrawBegin
-
-  IF atlaspage <> 0 THEN
-    VideoPushActive atlaspage
-  END IF
-
+  VideoPushActive atlaspage
 END SUB
 
 SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
-  '
-  ' Draws the specified atlas cell onto the active video page
-  '
 
   DIM idx   AS INTEGER
   DIM sx    AS INTEGER
@@ -590,7 +576,7 @@ SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
     PRINT STRING$(AtlasStyle.CellSizeX, " ");
   ELSE
     DIM label AS STRING
-    LET label = ResourceGet(atlasItem(idx).labelrid)
+    LET label = ResourceGet(atlasitem(idx).labelrid)
     DrawText label
   END IF
 
@@ -599,44 +585,32 @@ SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
 END SUB
 
 SUB AtlasDrawEnd
-
-  IF atlaspage <> 0 THEN
-    VideoPop
-  END IF
-
+  VideoPop
 END SUB
 
 SUB AtlasDrawGrid
-  '
-  ' Draws the grid of the atlas onto the active video page
-  '
   AtlasDrawBegin
   DrawFileAt "GRID.PCB", 1, 2
   AtlasDrawEnd
-
 END SUB
 
 SUB AtlasDrawItem (idx AS INTEGER)
-  '
-  ' Draws the specified item
-  '
-  IF atlasItem(idx).allocated THEN
-    AtlasDrawCell atlasItem(idx).cx, atlasItem(idx).cy
+ 
+  AssertIsPositive idx, "AtlasDrawItem", "idx"
+
+  IF atlasitem(idx).allocated THEN
+    AtlasDrawCell atlasitem(idx).cx, atlasitem(idx).cy
   END IF
 
 END SUB
 
 SUB AtlasDrawItems
-  '
-  ' Draws the active items of the atlas.
-  '
-  DIM idx AS INTEGER
-  FOR idx = 1 TO UBOUND(atlasItem)
  
-    IF atlasItem(idx).allocated THEN
-      AtlasDrawCell atlasItem(idx).cx, atlasItem(idx).cy
+  DIM idx AS INTEGER
+  FOR idx = 1 TO UBOUND(atlasitem)
+    IF atlasitem(idx).allocated THEN
+      AtlasDrawCell atlasitem(idx).cx, atlasitem(idx).cy
     END IF
-
   NEXT
 
 END SUB
@@ -723,7 +697,7 @@ FUNCTION AtlasGetValue% (cx AS INTEGER, cy AS INTEGER, default AS INTEGER)
   IF idx = 0 THEN
     AtlasGetValue% = default
   ELSE
-    AtlasGetValue% = atlasItem(idx).value
+    AtlasGetValue% = atlasitem(idx).value
   END IF
 
 END FUNCTION
@@ -734,10 +708,10 @@ FUNCTION AtlasIndexOf% (value AS INTEGER)
   '
 
   DIM idx AS INTEGER
-  FOR idx = 1 TO UBOUND(atlasItem)
+  FOR idx = 1 TO UBOUND(atlasitem)
  
-    IF atlasItem(idx).value = value THEN
-      IF atlasItem(idx).allocated THEN
+    IF atlasitem(idx).value = value THEN
+      IF atlasitem(idx).allocated THEN
         AtlasIndexOf% = idx
         EXIT FUNCTION
       END IF
@@ -750,9 +724,6 @@ FUNCTION AtlasIndexOf% (value AS INTEGER)
 END FUNCTION
 
 SUB AtlasMoveItem (idx AS INTEGER, nx AS INTEGER, ny AS INTEGER)
-  '
-  ' Moves the item with at the specified index.
-  '
  
   DIM cx AS INTEGER
   DIM cy AS INTEGER
@@ -760,8 +731,8 @@ SUB AtlasMoveItem (idx AS INTEGER, nx AS INTEGER, ny AS INTEGER)
   '
   ' Get the current x and y coordinates
   '
-  cx = atlasItem(idx).cx
-  cy = atlasItem(idx).cy
+  cx = atlasitem(idx).cx
+  cy = atlasitem(idx).cy
 
   '
   ' Dereference the item from the grid
@@ -774,8 +745,8 @@ SUB AtlasMoveItem (idx AS INTEGER, nx AS INTEGER, ny AS INTEGER)
   '
   ' Update the item location
   '
-  atlasItem(idx).cx = nx
-  atlasItem(idx).cy = ny
+  atlasitem(idx).cx = nx
+  atlasitem(idx).cy = ny
 
   '
   ' Reference the item in the grid
@@ -872,11 +843,11 @@ FUNCTION AtlasNextIndex%
     ' Try the next index
     '
     try = try + 1
-    IF try > UBOUND(atlasItem) THEN
+    IF try > UBOUND(atlasitem) THEN
       try = 1
     END IF
 
-    IF NOT atlasItem(try).allocated THEN
+    IF NOT atlasitem(try).allocated THEN
       idx = try
       AtlasNextIndex = idx
       EXIT FUNCTION
@@ -927,9 +898,9 @@ SUB AtlasPlotBanded
   '
   AtlasNextRandom cx, cy
 
-  FOR idx = 1 TO UBOUND(atlasItem)
+  FOR idx = 1 TO UBOUND(atlasitem)
    
-    IF atlasItem(idx).allocated THEN
+    IF atlasitem(idx).allocated THEN
       '
       ' Get the new position near the same row as the prior location
       '
@@ -956,9 +927,9 @@ SUB AtlasPlotClustered
   '
   AtlasNextRandom cx, cy
 
-  FOR idx = 1 TO UBOUND(atlasItem)
+  FOR idx = 1 TO UBOUND(atlasitem)
   
-    IF atlasItem(idx).allocated THEN
+    IF atlasitem(idx).allocated THEN
       '
       ' Get the new position near the same row as the prior location
       '
@@ -981,15 +952,15 @@ SUB AtlasPlotManual
   DIM cx  AS INTEGER
   DIM cy  AS INTEGER
 
-  FOR idx = 1 TO UBOUND(atlasItem)
+  FOR idx = 1 TO UBOUND(atlasitem)
  
-    IF atlasItem(idx).allocated THEN
+    IF atlasitem(idx).allocated THEN
   
       '
       ' Get the current position of the item
       '
-      cx = atlasItem(idx).cx
-      cy = atlasItem(idx).cy
+      cx = atlasitem(idx).cx
+      cy = atlasitem(idx).cy
 
       '
       ' Manually get the new location of the item
@@ -1021,9 +992,9 @@ SUB AtlasPlotRandom
   DIM cy  AS INTEGER
   DIM idx AS INTEGER
 
-  FOR idx = 1 TO UBOUND(atlasItem)
+  FOR idx = 1 TO UBOUND(atlasitem)
   
-    IF atlasItem(idx).allocated THEN
+    IF atlasitem(idx).allocated THEN
       '
       ' Get the new position near the same row as the prior location
       '
@@ -1160,18 +1131,18 @@ SUB AtlasRemoveItem (idx AS INTEGER)
   DIM cx  AS INTEGER
   DIM cy  AS INTEGER
 
-  IF atlasItem(idx).allocated THEN
+  IF atlasitem(idx).allocated THEN
  
     '
     ' Remove the item from the list
     '
-    atlasItem(idx).allocated = False
+    atlasitem(idx).allocated = False
  
     '
     ' Remove the item from the grid
     '
-    cx = atlasItem(idx).cx
-    cy = atlasItem(idx).cy
+    cx = atlasitem(idx).cx
+    cy = atlasitem(idx).cy
 
     atlasGrid(cx, cy) = 0
     AtlasDrawCell cx, cy
@@ -1188,16 +1159,17 @@ SUB AtlasRemoveValue (value AS INTEGER)
   DIM idx AS INTEGER
   LET idx = AtlasIndexOf%(value)
 
-  AtlasRemoveItem idx
+  IF idx > 0 THEN
+    AtlasRemoveItem idx
+  END IF
 
 END SUB
 
 SUB AtlasSetLabel (idx AS INTEGER, labelrid AS INTEGER)
-  '
-  ' Sets the label for the specified item
-  '
  
-  atlasItem(idx).labelrid = labelrid
+  AssertIsPositive idx, "AtlasSetLabel", "idx"
+
+  atlasitem(idx).labelrid = labelrid
   AtlasDrawItem idx
 
 END SUB
