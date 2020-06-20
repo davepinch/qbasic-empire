@@ -1,6 +1,6 @@
 # qbasic-empire
 
-![title](./screenshots/original-atlas.png)
+![title](./pics/original-atlas.png)
 
 > An unfinished QBASIC game from 1991-1992, now being finished after a momentary distraction. Feel free to contribute or do as you wish.
 
@@ -8,11 +8,11 @@
 
 * Use the arrow keys, Home, End, PgDn and PgUp to navigate menus and windows.
 * Press Enter to select a menu item, or press ESC to cancel a menu.
-* Once you see the atlas, press Escape to open the top menubar.
+* Once you see the atlas, press Escape to open the top menu.
 
 # plans
 
-Currently in step 2:
+Currently working on step 3:
 
 1. Setup open source.
 2. Clean up code.
@@ -34,11 +34,11 @@ Assuming you no longer have a running copy of MS-DOS, you will need to run QBASI
 
 2. Start DOSBox.
 
-3. In the DOSBox command prompt, type __MOUNT C C:\PATH\TO\FOLDER__ (specifying the path to the folder containing QBASIC and EMPIRE.BAS).
+3. In the DOSBox command prompt, type __MOUNT C C:\PATH\TO\SRC__ (specifying the path to the SRC folder containing QBASIC.EXE, EMPIRE.BAS, and its supporting files).
     
 4. Type __C:__ to change to the C drive you just mounted.
 
-5. Type __QBASIC EMPIRE__ to start QBASIC and load the program.
+5. Type __RUN__ to start QBASIC and load the program.
 
 6. Press F5 to start.
 
