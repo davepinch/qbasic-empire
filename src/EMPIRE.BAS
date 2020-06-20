@@ -223,6 +223,7 @@ DECLARE SUB FieldSetValue (wid%, fid%, value$)
 DECLARE FUNCTION FieldCreate% (wid%, kind%)
 DECLARE FUNCTION FieldGetBound$ (wid%, fid%, b AS BindingType)
 DECLARE FUNCTION FieldGetKind% (wid%, fid%)
+DECLARE FUNCTION FieldGetSizeY% (wid%, fid%)
 DECLARE FUNCTION FieldGetStyle% (wid%, fid%)
 DECLARE FUNCTION FieldGetText$ (wid%, fid%)
 DECLARE FUNCTION FieldGetValue$ (wid%, fid%)
@@ -2220,7 +2221,7 @@ SUB FieldDrawBox0 (wid%, fid%)
   sid = FieldGetStyle(wid%, fid%)
   DrawColor winstyle(sid).textcolor
  
-  FOR row = 1 TO fld(wid%, fid%).sizeY
+  FOR row = 1 TO FieldGetSizeY%(wid%, fid%)
    
     sx = win(wid%).posX + fld(wid%, fid%).offsetX
     sy = win(wid%).posY + fld(wid%, fid%).offsetY + row - 1
@@ -2259,7 +2260,7 @@ SUB FieldDrawBox1 (wid%, fid%)
   sx1 = win(wid%).posX + fld(wid%, fid%).offsetX
   sy1 = win(wid%).posY + fld(wid%, fid%).offsetY
   sx2 = sx1 + fld(wid%, fid%).sizeX - 1
-  sy2 = sy1 + fld(wid%, fid%).sizeY - 1
+  sy2 = sy1 + FieldGetSizeY%(wid%, fid%) - 1
 
   sid = FieldGetStyle(wid%, fid%)
 
@@ -2297,10 +2298,13 @@ SUB FieldDrawBox2 (wid%, fid%)
   AssertIsPositive wid%, "FieldDrawBox2", "wid"
   AssertIsPositive fid%, "FieldDrawBox2", "fid"
 
-  DIM idx AS INTEGER
-  DIM row AS INTEGER
-  DIM sx  AS INTEGER
-  DIM sy  AS INTEGER
+  DIM idx   AS INTEGER
+  DIM row   AS INTEGER
+  DIM sizeY AS INTEGER
+  DIM sx    AS INTEGER
+  DIM sy    AS INTEGER
+
+  sizeY = FieldGetSizeY%(wid%, fid%)
 
   '
   ' Initialize special border characters
@@ -2330,7 +2334,7 @@ SUB FieldDrawBox2 (wid%, fid%)
   PRINT STRING$(fld(wid%, fid%).sizeX - 2, 196);
   PRINT CHR$(191);
 
-  FOR row = 1 TO fld(wid%, fid%).sizeY - 2
+  FOR row = 1 TO sizeY - 2
 
     '
     ' Get the index of the left border character
@@ -2358,7 +2362,7 @@ SUB FieldDrawBox2 (wid%, fid%)
     '
     ' Get the index of the right border char
     '
-    idx = fld(wid%, fid%).sizeY - row - 1
+    idx = sizeY - row - 1
 
     IF idx > UBOUND(ch) THEN idx = 0
 
@@ -2373,7 +2377,7 @@ SUB FieldDrawBox2 (wid%, fid%)
   '
   ' Bottom border
   '
-  sy = win(wid%).posY + fld(wid%, fid%).sizeY - 1
+  sy = win(wid%).posY + sizeY - 1
   LOCATE sy, sx
   COLOR fc(0), bc(0)
   PRINT CHR$(192);
@@ -2413,7 +2417,7 @@ SUB FieldDrawNebula (wid%, fid%)
 
   COLOR 7, 0
 
-  FOR y = 1 TO fld(wid%, fid%).sizeY
+  FOR y = 1 TO FieldGetSizeY%(wid%, fid%)
  
     x = INT(RND * fld(wid%, fid%).sizeX) + 1
     p = 1
@@ -2500,12 +2504,14 @@ SUB FieldDrawSeparator (wid%, fid%)
   AssertIsPositive wid%, "FieldDrawSeparator", "wid"
   AssertIsPositive fid%, "FieldDrawSeparator", "fid"
 
-  DIM row AS INTEGER
-  DIM sid AS INTEGER
-  DIM sx  AS INTEGER
-  DIM sy  AS INTEGER
+  DIM row   AS INTEGER
+  DIM sid   AS INTEGER
+  DIM sizeY AS INTEGER
+  DIM sx    AS INTEGER
+  DIM sy    AS INTEGER
 
   sid = FieldGetStyle(wid%, fid%)
+  sizeY = FieldGetSizeY%(wid%, fid%)
   sx = win(wid%).posX + fld(wid%, fid%).offsetX
   sy = win(wid%).posY + fld(wid%, fid%).offsetY
 
@@ -2542,7 +2548,7 @@ SUB FieldDrawSeparator (wid%, fid%)
         PRINT CHR$(196);  ' Ä
     END SELECT
 
-  ELSEIF fld(wid%, fid%).sizeY > 0 THEN
+  ELSEIF sizeY > 0 THEN
    
     '
     ' Top edge
@@ -2556,7 +2562,7 @@ SUB FieldDrawSeparator (wid%, fid%)
         PRINT CHR$(179);  ' ³
     END SELECT
 
-    FOR row = sy + 1 TO sy + fld(wid%, fid%).sizeY - 2
+    FOR row = sy + 1 TO sy + sizeY - 2
       LOCATE row, sx
       PRINT CHR$(179);
     NEXT
@@ -2564,8 +2570,8 @@ SUB FieldDrawSeparator (wid%, fid%)
     '
     ' Bottom edge
     '
-    LOCATE sy + fld(wid%, fid%).sizeY - 1, sx
-    SELECT CASE SCREEN(sy + fld(wid%, fid%).sizeY - 1, sx)
+    LOCATE sy + sizeY - 1, sx
+    SELECT CASE SCREEN(sy + sizeY - 1, sx)
       CASE 196            ' Ä
         PRINT CHR$(193);  ' Á
       CASE 205            ' Í
@@ -2686,6 +2692,10 @@ END FUNCTION
 
 FUNCTION FieldGetKind% (wid%, fid%)
   FieldGetKind% = fld(wid%, fid%).kind
+END FUNCTION
+
+FUNCTION FieldGetSizeY% (wid%, fid%)
+  FieldGetSizeY% = fld(wid%, fid%).sizeY
 END FUNCTION
 
 FUNCTION FieldGetStyle% (wid%, fid%)
