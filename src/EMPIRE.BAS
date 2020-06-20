@@ -442,6 +442,8 @@ DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS IN
 ' Globals
 '
 DIM SHARED area(1 TO 30)         AS AreaType
+DIM SHARED atlascx               AS INTEGER
+DIM SHARED atlascy               AS INTEGER
 DIM SHARED atlasitem(1 TO 30)    AS AtlasItemType
 DIM SHARED atlaspage             AS INTEGER
 DIM SHARED event(1 TO 5)         AS EventType
@@ -456,8 +458,6 @@ DIM SHARED resources             AS INTEGER
 DIM SHARED trigger(1 TO 5)       AS TriggerType
 DIM SHARED triggers              AS INTEGER
 DIM SHARED uiCurrentPage         AS INTEGER
-DIM SHARED uicx                  AS INTEGER
-DIM SHARED uicy                  AS INTEGER
 DIM SHARED vallocated            AS INTEGER
 DIM SHARED vstack(0 TO 5)        AS INTEGER
 DIM SHARED vstacked              AS INTEGER
@@ -2891,7 +2891,7 @@ SUB FieldSetBound (wid%, fid%, b AS BindingType, value$)
      
       CASE "area.energy"
         DIM aid%
-        LET aid% = AtlasGetValue(uicx, uicy, 0)
+        LET aid% = AtlasGetValue(atlascx, atlascy, 0)
         IF aid% > 0 THEN
           area(aid%).energy = VAL(value$)
         END IF
@@ -2963,8 +2963,8 @@ END SUB
 
 FUNCTION GameArea%
 
-  IF (uicx > 0) AND (uicy > 0) THEN
-    GameArea% = AtlasGetValue(uicx, uicy, 0)
+  IF (atlascx > 0) AND (atlascy > 0) THEN
+    GameArea% = AtlasGetValue(atlascx, atlascy, 0)
   END IF
 
 END FUNCTION
@@ -3323,7 +3323,7 @@ SUB UI.Action
   '
   ' Get the current area
   '
-  aid = AtlasGetValue(uicx, uicy, 0)
+  aid = AtlasGetValue(atlascx, atlascy, 0)
   IF aid > 0 THEN
 
     '
@@ -3421,12 +3421,12 @@ SUB UI.RunAtlas
   '
   ' Set the default position if this is the first run
   '
-  IF uicx = 0 THEN uicx = 1
-  IF uicy = 0 THEN uicy = 1
+  IF atlascx = 0 THEN atlascx = 1
+  IF atlascy = 0 THEN atlascy = 1
 
 PromptAgain:
 
-  IF AtlasPrompt(AtlasPromptFor.Item, uicx, uicy, outpress) THEN
+  IF AtlasPrompt(AtlasPromptFor.Item, atlascx, atlascy, outpress) THEN
 
     SELECT CASE outpress
      
@@ -3435,7 +3435,7 @@ PromptAgain:
         '
         ' Get the current area
         '
-        aid = AtlasGetValue(uicx, uicy, 0)
+        aid = AtlasGetValue(atlascx, atlascy, 0)
  
         '
         ' Get the habitat of the area
