@@ -1,11 +1,3 @@
-DECLARE SUB PersonaSetName (pid%, text$)
-DECLARE FUNCTION ExecCmdPid% (ntoken%, stoken$(), pid%)
-DECLARE FUNCTION PersonaCreate% ()
-DECLARE FUNCTION PersonaGetName$ (pid%)
-DECLARE SUB DialogNext (outwho$, outtext$)
-DECLARE SUB DialogPrint (who$, text$)
-DECLARE SUB DialogTimer ()
-DECLARE FUNCTION DialogGarble$ (text$, percent!)
 
 ' The Galactic Empire
 ' By David Pinch, 1991-2020
@@ -19,7 +11,7 @@ DECLARE FUNCTION DialogGarble$ (text$, percent!)
 
 TYPE AreaType
   allocated AS INTEGER
-  habitat   AS INTEGER
+  hid       AS INTEGER
   energy    AS INTEGER
 END TYPE
 
@@ -43,7 +35,7 @@ END TYPE
 
 TYPE FieldType
   kind      AS INTEGER
-  childwid  AS INTEGER  ' TODO: add nparam and combine these two
+  childwid  AS INTEGER
   cmdrid    AS INTEGER
   offsetX   AS INTEGER
   offsetY   AS INTEGER
@@ -63,7 +55,8 @@ TYPE HabitatType
 END TYPE
 
 TYPE PersonaType
-  namerid AS INTEGER
+  labelrid AS INTEGER
+  namerid  AS INTEGER
 END TYPE
 
 TYPE TriggerType
@@ -101,16 +94,22 @@ TYPE WinType
   posX      AS INTEGER
   posY      AS INTEGER
   selected  AS INTEGER
-  style     AS INTEGER
+  sid       AS INTEGER
   wname     AS STRING * 20
 END TYPE
 
 '
-' Atlas* declarations
+' Assertions
+'
+DECLARE SUB Assert (truth AS INTEGER, where AS STRING, what AS STRING)
+DECLARE SUB AssertFail (where$, what$)
+DECLARE SUB AssertIsPositive (value%, where$, what$)
+DECLARE SUB AssertIsZero (value%, where$, what$)
+
+'
+' Atlas
 '
 DECLARE SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, labelrid AS INTEGER)
-DECLARE SUB AtlasDisplayOff ()
-DECLARE SUB AtlasDisplayOn ()
 DECLARE SUB AtlasDraw ()
 DECLARE SUB AtlasDrawBegin ()
 DECLARE SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
@@ -151,29 +150,51 @@ DECLARE SUB ConsoleFile (filename$)
 DECLARE SUB ConsolePrint (text$)
 
 '
+' Dialog
+'
+DECLARE SUB DialogNext (outpid%, outtext$)
+DECLARE SUB DialogPrint (pid%, text$)
+DECLARE SUB DialogTimer ()
+DECLARE FUNCTION DialogGarble$ (text$, percent!)
+
+'
+' Drawing
+'
+DECLARE SUB DrawBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
+DECLARE SUB DrawColor (attr%)
+DECLARE SUB DrawFile (filename AS STRING)
+DECLARE SUB DrawFileAt (filename AS STRING, offsetX AS INTEGER, offsetY AS INTEGER)
+DECLARE SUB DrawText (text AS STRING)
+DECLARE FUNCTION DrawLength% (text$)
+
+'
 ' Events
 '
-DECLARE FUNCTION EventFind% (name$)
-DECLARE FUNCTION EventParseOperator% (opname$)
-DECLARE FUNCTION EventTestTrigger% (eid%, tid%)
 DECLARE SUB EventInc (eid%)
 DECLARE SUB EventIncName (ename$)
 DECLARE SUB EventFire (eid%)
+DECLARE FUNCTION EventFind% (name$)
+DECLARE FUNCTION EventParseOperator% (opname$)
+DECLARE FUNCTION EventTestTrigger% (eid%, tid%)
 
 '
-' Execute* subroutines
+' Execution/commands
 '
+DECLARE SUB ExecFile (filename AS STRING)
 DECLARE FUNCTION ExecCmd% (text AS STRING)
 DECLARE FUNCTION ExecCmdEid% (ntoken%, stoken$(), eid%)
 DECLARE FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
 DECLARE FUNCTION ExecCmdHid% (ntoken%, stoken$(), hid%)
-DECLARE FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
-DECLARE FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
+DECLARE FUNCTION ExecCmdPid% (ntoken%, stoken$(), pid%)
 DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
 DECLARE FUNCTION ExecCmdSid% (ntoken%, stoken$(), sid%)
+DECLARE FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
+DECLARE FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
 DECLARE FUNCTION ExecResource% (rid AS INTEGER)
-DECLARE SUB ExecFile (filename AS STRING)
 
+'
+' Fields
+'
 DECLARE SUB FieldBindText (wid%, fid%, expr$)
 DECLARE SUB FieldBindValue (wid%, fid%, expr$)
 DECLARE SUB FieldDraw (wid%, fid%)
@@ -194,6 +215,7 @@ DECLARE SUB FieldSetCommand (wid%, fid%, cmd$)
 DECLARE SUB FieldSetStyle (wid%, fid%, sid%)
 DECLARE SUB FieldSetText (wid%, fid%, value$)
 DECLARE SUB FieldSetValue (wid%, fid%, value$)
+DECLARE FUNCTION FieldCreate% (wid%, kind%)
 DECLARE FUNCTION FieldGetBound$ (wid%, fid%, b AS BindingType)
 DECLARE FUNCTION FieldGetStyle% (wid%, fid%)
 DECLARE FUNCTION FieldGetText$ (wid%, fid%)
@@ -202,7 +224,7 @@ DECLARE FUNCTION FieldIsBound% (wid%, fid%)
 DECLARE FUNCTION FieldIsSelectable% (wid%, fid%)
 
 '
-' Top-level game methods
+' Game
 '
 DECLARE SUB GameHarvest ()
 DECLARE FUNCTION GameAreaEnergy% ()
@@ -212,13 +234,13 @@ DECLARE FUNCTION GameHabitat% ()
 '
 ' Habitats
 '
-DECLARE FUNCTION HabitatCreate% ()
-DECLARE FUNCTION HabitatGetBackdrop$ (hid%)
-DECLARE FUNCTION HabitatGetName$ (hid%)
 DECLARE SUB HabitatSetAction (hid%, cmd$)
 DECLARE SUB HabitatSetBackdrop (hid%, backdrop$)
 DECLARE SUB HabitatSetLabel (hid%, label$)
 DECLARE SUB HabitatSetName (hid%, hname$)
+DECLARE FUNCTION HabitatCreate% ()
+DECLARE FUNCTION HabitatGetBackdrop$ (hid%)
+DECLARE FUNCTION HabitatGetName$ (hid%)
 
 '
 ' Inbox
@@ -232,24 +254,33 @@ DECLARE FUNCTION NebulaLabel$ (energy AS INTEGER)
 DECLARE FUNCTION NebulaLabelRid% (energy AS INTEGER)
 
 '
-' Resources
+' Persona
 '
-DECLARE FUNCTION ResourceCreate% (value AS STRING)
-DECLARE FUNCTION ResourceGet$ (rid AS INTEGER)
-DECLARE SUB ResourceSet (rid AS INTEGER, value AS STRING)
+DECLARE SUB PersonaSetLabel (pid%, label$)
+DECLARE SUB PersonaSetName (pid%, text$)
+DECLARE FUNCTION PersonaCreate% ()
+DECLARE FUNCTION PersonaGetLabel$ (pid%)
+DECLARE FUNCTION PersonaGetName$ (pid%)
 
 '
-' UI subroutines
+' Resources
+'
+DECLARE SUB ResourceSet (rid AS INTEGER, value AS STRING)
+DECLARE FUNCTION ResourceCreate% (value AS STRING)
+DECLARE FUNCTION ResourceGet$ (rid AS INTEGER)
+
+'
+' UI
 '
 DECLARE SUB UI.Action ()
 DECLARE SUB UI.ActionNebula (aid AS INTEGER)
 DECLARE SUB UI.Run ()
+DECLARE SUB UI.RunAtlas ()
+DECLARE SUB UI.RunConsole ()
 DECLARE SUB UI.SetPage (page AS INTEGER)
-DECLARE FUNCTION UI.RunAtlas% ()
-DECLARE FUNCTION UI.RunConsole% ()
 
 '
-' Video page management
+' Video pages
 '
 DECLARE SUB VideoFree (pagenum%)
 DECLARE SUB VideoPop ()
@@ -262,14 +293,6 @@ DECLARE FUNCTION VideoGetVisual% ()
 '
 ' Windows
 '
-DECLARE FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$, value$)
-DECLARE FUNCTION WinCreate% ()
-DECLARE FUNCTION WinCreateField% (wid%, kind%)
-DECLARE FUNCTION WinFindSid% (stylename AS STRING)
-DECLARE FUNCTION WinFindWid% (wname$)
-DECLARE FUNCTION WinGetStyle% (wid%)
-DECLARE FUNCTION WinMapKey% (wid%, pressed$)
-
 DECLARE SUB WinClose (wid%)
 DECLARE SUB WinDraw (wid%)
 DECLARE SUB WinOpen (wid%)
@@ -283,32 +306,28 @@ DECLARE SUB WinSelectFirst (wid%)
 DECLARE SUB WinSelectLast (wid%)
 DECLARE SUB WinSelectPrevious (wid%)
 DECLARE SUB WinSetStyle (wid%, sid%)
+DECLARE FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$, value$)
+DECLARE FUNCTION WinCreate% ()
+DECLARE FUNCTION WinFindSid% (stylename$)
+DECLARE FUNCTION WinFindWid% (wname$)
+DECLARE FUNCTION WinGetStyle% (wid%)
+DECLARE FUNCTION WinMapKey% (wid%, pressed$)
 
 '
-' World* subroutines
+' World
 '
 DECLARE SUB WorldAddCluster (hid AS INTEGER, size AS INTEGER)
 DECLARE SUB WorldAddNebula (size AS INTEGER)
 DECLARE SUB WorldHarvest (aid%)
 DECLARE SUB WorldInit (areas AS INTEGER)
-DECLARE SUB WorldRemove (aid AS INTEGER)
-DECLARE SUB WorldSetLabel (aid AS INTEGER, labelrid AS INTEGER)
-DECLARE SUB WorldLoadHabitats ()
-DECLARE FUNCTION WorldAdd% (hid AS INTEGER, cx AS INTEGER, cy AS INTEGER)
+DECLARE SUB WorldRemove (aid%)
+DECLARE SUB WorldSetLabel (aid%, labelrid%)
+DECLARE FUNCTION WorldAdd% (hid%, cx%, cy%)
 DECLARE FUNCTION WorldNextId% ()
 
 '
 ' Declarations
 '
-DECLARE SUB Assert (truth AS INTEGER, where AS STRING, what AS STRING)
-DECLARE SUB AssertFail (where AS STRING, what AS STRING)
-DECLARE SUB AssertIsPositive (value%, where$, what$)
-DECLARE SUB AssertIsZero (value%, where$, what$)
-DECLARE SUB DrawColor (attr%)
-DECLARE SUB DrawFile (filename AS STRING)
-DECLARE SUB DrawFileAt (filename AS STRING, offsetX AS INTEGER, offsetY AS INTEGER)
-DECLARE SUB DrawText (text AS STRING)
-DECLARE SUB PaintBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
 DECLARE SUB SetupGame ()
 DECLARE FUNCTION GetKey$ ()
 DECLARE FUNCTION Split% (text AS STRING, tokens() AS STRING)
@@ -347,6 +366,9 @@ CONST AtlasStyle.SelectBackcolor = 4
 CONST True = -1
 CONST False = NOT True
 
+'
+' Command Results
+'
 CONST CmdResult.OK = 0
 CONST CmdResult.Malformed = 1
 
@@ -390,12 +412,6 @@ CONST UIPage.Atlas = 1
 CONST UIPage.Console = 2
 
 '
-' UIResult.* constants
-'
-CONST UIResult.Exit = 0
-CONST UIResult.Escape = 1
-
-'
 ' WinAction* constants
 '
 CONST WinAction.None = 0
@@ -414,14 +430,13 @@ CONST WinAction.SelectPrevious = 15
 '
 ' Global atlas variables
 '
-DIM SHARED atlasActive        AS INTEGER
-DIM SHARED atlasItem(1 TO 30) AS AtlasItemType
 DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS INTEGER
 
 '
 ' Globals
 '
 DIM SHARED area(1 TO 30)         AS AreaType
+DIM SHARED atlasItem(1 TO 30)    AS AtlasItemType
 DIM SHARED atlaspage             AS INTEGER
 DIM SHARED event(1 TO 5)         AS EventType
 DIM SHARED events                AS INTEGER
@@ -478,8 +493,8 @@ SUB Assert (truth AS INTEGER, where AS STRING, what AS STRING)
 
 END SUB
 
-SUB AssertFail (where AS STRING, what AS STRING)
-  Assert 0, where, what
+SUB AssertFail (where$, what$)
+  Assert 0, where$, what$
 END SUB
 
 SUB AssertIsPositive (value%, where$, what$)
@@ -519,25 +534,7 @@ SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, labelrid AS IN
   ' Reference the item in the grid
   '
   atlasGrid(cx, cy) = idx
- 
-  IF atlasActive THEN
-    AtlasDrawCell cx, cy
-  END IF
-
-END SUB
-
-SUB AtlasDisplayOff
-  '
-  ' Turns off active updates to the atlas.
-  '
-  atlasActive = 0
-END SUB
-
-SUB AtlasDisplayOn
-  '
-  ' Enables synchronizing the atlas display with its data.
-  '
-  atlasActive = True
+  AtlasDrawCell cx, cy
 
 END SUB
 
@@ -670,7 +667,7 @@ SUB AtlasDrawSelect (cx AS INTEGER, cy AS INTEGER, valid AS INTEGER)
     col = 4
   END IF
 
-  PaintBackground sx1, sy1, sx1 + AtlasStyle.CellSizeX + 1, sy1 + 2, col
+  DrawBackground sx1, sy1, sx1 + AtlasStyle.CellSizeX + 1, sy1 + 2, col
 
   AtlasDrawEnd
 
@@ -692,7 +689,7 @@ SUB AtlasDrawUnselect (cx AS INTEGER, cy AS INTEGER)
   sx1 = AtlasGetScreenX(cx) - 1
   sy1 = AtlasGetScreenY(cy) - 1
 
-  PaintBackground sx1, sy1, sx1 + AtlasStyle.CellSizeX + 1, sy1 + 2, 0
+  DrawBackground sx1, sy1, sx1 + AtlasStyle.CellSizeX + 1, sy1 + 2, 0
 
   AtlasDrawCell cx, cy
   AtlasDrawEnd
@@ -771,9 +768,7 @@ SUB AtlasMoveItem (idx AS INTEGER, nx AS INTEGER, ny AS INTEGER)
   '
   IF cx > 0 AND cy > 0 THEN
     atlasGrid(cx, cy) = 0
-    IF atlasActive THEN
-      AtlasDrawCell cx, cy
-    END IF
+    AtlasDrawCell cx, cy
   END IF
 
   '
@@ -786,9 +781,7 @@ SUB AtlasMoveItem (idx AS INTEGER, nx AS INTEGER, ny AS INTEGER)
   ' Reference the item in the grid
   '
   atlasGrid(nx, ny) = idx
-  IF atlasActive THEN
-    AtlasDrawCell nx, ny
-  END IF
+  AtlasDrawCell nx, ny
 
 END SUB
 
@@ -1181,9 +1174,7 @@ SUB AtlasRemoveItem (idx AS INTEGER)
     cy = atlasItem(idx).cy
 
     atlasGrid(cx, cy) = 0
-    IF atlasActive THEN
-      AtlasDrawCell cx, cy
-    END IF
+    AtlasDrawCell cx, cy
  
   END IF
 
@@ -1207,9 +1198,7 @@ SUB AtlasSetLabel (idx AS INTEGER, labelrid AS INTEGER)
   '
  
   atlasItem(idx).labelrid = labelrid
-  IF atlasActive THEN
-    AtlasDrawItem idx
-  END IF
+  AtlasDrawItem idx
 
 END SUB
 
@@ -1321,7 +1310,7 @@ FUNCTION DialogGarble$ (text$, percent!)
 
 END FUNCTION
 
-SUB DialogNext (outwho$, outtext$)
+SUB DialogNext (outpid%, outtext$)
 
   DIM handle AS INTEGER
   DIM text   AS STRING
@@ -1345,18 +1334,25 @@ SUB DialogNext (outwho$, outtext$)
   CLOSE #handle
 
   outtext$ = text
-
-  DIM rpid%
-  LET rpid% = INT(RND * personas) + 1
-  outwho$ = PersonaGetName$(rpid%)
+  outpid% = INT(RND * personas) + 1
 
 END SUB
 
-SUB DialogPrint (who$, text$)
+SUB DialogPrint (pid%, text$)
+
+  DIM label$
+  DIM name$
+
+  name$ = PersonaGetName(pid%)
+ 
+  label$ = PersonaGetLabel(pid%)
+  IF label$ = "" THEN
+    label$ = "@X1F " + name$ + " @X07"
+  END IF
 
   IF LEFT$(text$, 1) = "(" THEN
 
-    ConsolePrint STRING$((80 - LEN(text$)) / 2, " ") + "@X04" + text$ + "@X07"
+    ConsolePrint STRING$((80 - DrawLength(text$)) / 2, " ") + "@X04" + text$ + "@X07"
     ConsolePrint ""
 
   ELSE
@@ -1370,7 +1366,7 @@ SUB DialogPrint (who$, text$)
         '
         q$ = DialogGarble(text$, .2)
 
-        ConsolePrint "@X1F " + who$ + " @X07"
+        ConsolePrint label$
         ConsolePrint "@X07" + text$ + "@X07"
         ConsolePrint ""
 
@@ -1380,13 +1376,13 @@ SUB DialogPrint (who$, text$)
         '
         q$ = DialogGarble(text$, .7)
       
-        ConsolePrint STRING$(78 - LEN(who$), " ") + "@X1F " + who$ + " @X07"
-        ConsolePrint STRING$(78 - LEN(text$), " ") + "@X07" + q$ + "@X07"
+        ConsolePrint STRING$(78 - DrawLength(label$), " ") + label$
+        ConsolePrint STRING$(78 - DrawLength(text$), " ") + "@X07" + q$ + "@X07"
         ConsolePrint ""
 
     END SELECT
 
-    AtlasSetStatus "@X1F " + who$ + " @X07 " + CHR$(34) + q$ + CHR$(34)
+    AtlasSetStatus "@X1F " + name$ + " @X07 " + CHR$(34) + q$ + CHR$(34)
 
   END IF
 
@@ -1402,7 +1398,7 @@ SUB DialogTimer
   END IF
 
   DIM aid%
-  DIM who$
+  DIM pid%
   DIM text$
 
   aid% = GameArea%
@@ -1413,12 +1409,40 @@ SUB DialogTimer
   '
   ' Grab the next dialog
   '
-  DialogNext who$, text$
+  DialogNext pid%, text$
 
   '
   ' Print the dialog to the console
   '
-  DialogPrint who$, text$
+  DialogPrint pid%, text$
+
+END SUB
+
+SUB DrawBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
+  
+   DIM at% ' Attribute
+   DIM ch% ' Character
+   DIM sx% ' Screen x-coordinate
+   DIM sy% ' Screen y-coordinate
+
+   FOR sy% = sy1% TO sy2%
+
+     '
+     ' Move the cursor to the start of the row
+     '
+     LOCATE sy%, sx1%
+
+     FOR sx% = sx1% TO sx2%
+    
+       ch% = SCREEN(sy%, sx%)
+       at% = SCREEN(sy%, sx%, 1) AND &HF
+
+       COLOR at%, backcolor%
+       PRINT CHR$(ch%);
+
+     NEXT
+  
+   NEXT
 
 END SUB
 
@@ -1480,6 +1504,48 @@ SUB DrawFileAt (filename AS STRING, sx AS INTEGER, sy AS INTEGER)
   CLOSE #1
 
 END SUB
+
+FUNCTION DrawLength% (text$)
+
+  DIM char  AS STRING * 1
+  DIM count AS INTEGER
+  DIM i     AS INTEGER
+  DIM state AS INTEGER
+
+  FOR i = 1 TO LEN(text$)
+
+    char = MID$(text$, i, 1)
+
+    SELECT CASE state
+     
+      CASE 0:
+        IF char = "@" THEN
+          state = 1
+        ELSE
+          count = count + 1
+        END IF
+     
+      CASE 1:
+        IF char = "X" THEN
+          state = 2
+        ELSE
+          count = count + 2
+          state = 0
+        END IF
+     
+      CASE 2:
+        state = 3
+
+      CASE 3:
+        state = 0
+
+    END SELECT
+
+  NEXT
+
+  DrawLength% = count
+
+END FUNCTION
 
 SUB DrawText (text AS STRING)
 
@@ -1580,7 +1646,7 @@ SUB EventFire (eid%)
 END SUB
 
 SUB EventInc (eid%)
-  AssertIsPositive eid%, "EventIncrement", "eid"
+  AssertIsPositive eid%, "EventInc", "eid"
   event(eid%).value = event(eid%).value + 1
   EventFire eid%
 END SUB
@@ -1594,7 +1660,6 @@ FUNCTION EventParseOperator% (opname$)
   SELECT CASE opname$
     CASE "="
       EventParseOperator% = OpEquals
-
     CASE ELSE
       EventParseOperator% = OpNone
   END SELECT
@@ -1623,7 +1688,6 @@ FUNCTION EventTestTrigger% (eid%, tid%)
     SELECT CASE trigger(tid%).operator
       CASE OpEquals
         EventTestTrigger = trigger(tid%).operand = event(eid%).value
-
       CASE ELSE
         EventTestTrigger = False
     END SELECT
@@ -1642,8 +1706,7 @@ FUNCTION ExecCmd% (text AS STRING)
   SHARED tid%
   SHARED wid%
 
-  DIM result         AS INTEGER
- 
+  DIM result%
   DIM ntoken%
   DIM stoken$(0 TO 5)
 
@@ -1656,24 +1719,26 @@ FUNCTION ExecCmd% (text AS STRING)
   END IF
 
   IF fid% > 0 THEN
-    result = ExecCmdFid%(ntoken%, stoken$(), wid%, fid%)
+    result% = ExecCmdFid%(ntoken%, stoken$(), wid%, fid%)
   ELSEIF wid% > 0 THEN
-    result = ExecCmdWid%(ntoken%, stoken$(), wid%, fid%)
+    result% = ExecCmdWid%(ntoken%, stoken$(), wid%, fid%)
   ELSEIF eid% > 0 THEN
-    result = ExecCmdEid%(ntoken%, stoken$(), eid%)
+    result% = ExecCmdEid%(ntoken%, stoken$(), eid%)
   ELSEIF hid% > 0 THEN
-    result = ExecCmdHid%(ntoken%, stoken$(), hid%)
+    result% = ExecCmdHid%(ntoken%, stoken$(), hid%)
   ELSEIF pid% > 0 THEN
-    result = ExecCmdPid%(ntoken%, stoken$(), pid%)
+    result% = ExecCmdPid%(ntoken%, stoken$(), pid%)
   ELSEIF sid% > 0 THEN
-    result = ExecCmdSid%(ntoken%, stoken$(), sid%)
+    result% = ExecCmdSid%(ntoken%, stoken$(), sid%)
   ELSEIF tid% > 0 THEN
-    result = ExecCmdTid%(ntoken%, stoken$(), tid%)
+    result% = ExecCmdTid%(ntoken%, stoken$(), tid%)
   ELSE
-    result = ExecCmdRoot%(ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
+    result% = ExecCmdRoot%(ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
   END IF
 
-  Assert result = CmdResult.OK, "ExecCmd", "Malformed: " + text
+  Assert result% = CmdResult.OK, "ExecCmd", "Malformed: " + text
+
+  ExecCmd% = result%
 
 END FUNCTION
 
@@ -1681,37 +1746,23 @@ FUNCTION ExecCmdEid% (ntoken%, stoken$(), eid%)
 
   AssertIsPositive eid%, "ExecCmdEid", "eid"
 
-  IF ntoken% = 1 THEN
+  ExecCmdEid% = CmdResult.OK
 
-    IF LCASE$(stoken$(0)) = "endevent" THEN
-      eid% = 0
-      ExecCmdEid% = CmdResult.OK
-    ELSE
-      ExecCmdEid% = CmdResult.Malformed
-    END IF
-
-  ELSEIF ntoken% <> 2 THEN
-
-    ExecCmdEid% = CmdResult.Malformed
-
-  ELSE
-
-    ExecCmdEid% = CmdResult.OK
-
-    SELECT CASE stoken$(0)
+  SELECT CASE stoken$(0)
    
-      CASE "name"
-        event(eid%).namerid = ResourceCreate(stoken$(1))
+    CASE "endevent"
+      eid% = 0
 
-      CASE "value"
-        event(eid%).value = VAL(stoken$(1))
+    CASE "name"
+      event(eid%).namerid = ResourceCreate(stoken$(1))
 
-      CASE ELSE
-        ExecCmdEid% = CmdResult.Malformed
+    CASE "value"
+      event(eid%).value = VAL(stoken$(1))
 
-    END SELECT
+    CASE ELSE
+      ExecCmdEid% = CmdResult.Malformed
 
-  END IF
+  END SELECT
 
 END FUNCTION
 
@@ -1720,77 +1771,34 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
   AssertIsPositive wid%, "ExecCmdFid", "wid"
   AssertIsPositive fid%, "ExecCmdFid", "fid"
 
-  IF ntoken% = 1 THEN
+  DIM endtag AS STRING
+  SELECT CASE fld(wid%, fid%).kind
+    CASE FieldKind.Button
+      endtag = "endbutton"
+    CASE FieldKind.Box
+      endtag = "endbox"
+    CASE FieldKind.File
+      endtag = "endfile"
+    CASE FieldKind.Label
+      endtag = "endlabel"
+    CASE FieldKind.Popup
+      endtag = "endpopup"
+    CASE FieldKind.Separator
+      endtag = "endseparator"
+    CASE FieldKind.Boolean
+      endtag = "endboolean"
+    CASE FieldKind.Integer
+      endtag = "endinteger"
+    CASE FieldKind.Nebula
+      endtag = "endnebula"
+    CASE ELSE
+      AssertFail "ExecCmdFid", "Unknown kind:" + STR$(fld(wid%, fid%).kind)
+  END SELECT
 
-    '
-    ' Exactly one token: only the end* commands are valid
-    ' Determine which command ends this field type
-    '
-    DIM endtag AS STRING
-    SELECT CASE fld(wid%, fid%).kind
-      CASE FieldKind.Button
-        endtag = "endbutton"
-      CASE FieldKind.Box
-        endtag = "endbox"
-      CASE FieldKind.File
-        endtag = "endfile"
-      CASE FieldKind.Label
-        endtag = "endlabel"
-      CASE FieldKind.Popup
-        endtag = "endpopup"
-      CASE FieldKind.Separator
-        endtag = "endseparator"
-      CASE FieldKind.Boolean
-        endtag = "endboolean"
-      CASE FieldKind.Integer
-        endtag = "endinteger"
-      CASE FieldKind.Nebula
-        endtag = "endnebula"
-      CASE ELSE
-        AssertFail "ExecCmdFid", "Unknown kind:" + STR$(fld(wid%, fid%).kind)
-    END SELECT
-
-    IF stoken$(0) = endtag THEN
-      fid% = 0
-      ExecCmdFid% = CmdResult.OK
-    ELSE
-      ExecCmdFid% = CmdResult.Malformed
-    END IF
-
-    EXIT FUNCTION
-
-  ELSEIF ntoken% = 3 THEN
-    
-    '
-    ' Possible commands are VALUE BIND <VALUE> or TEXT BIND <VALUE>
-    '
-    IF LCASE$(stoken$(1)) <> "bind" THEN
-      ExecCmdFid% = CmdResult.Malformed
-    ELSEIF stoken$(0) = "text" THEN
-      FieldBindText wid%, fid%, stoken$(2)
-      ExecCmdFid% = CmdResult.OK
-    ELSEIF stoken$(0) = "value" THEN
-      FieldBindValue wid%, fid%, stoken$(2)
-      ExecCmdFid% = CmdResult.OK
-    ELSE
-      ExecCmdFid% = CmdResult.Malformed
-    END IF
-
-    EXIT FUNCTION
-  END IF
-
-  '
-  ' Remaining commands are NAME VALUE format
-  '
-  IF ntoken% <> 2 THEN
-    ExecCmdFid% = CmdResult.Malformed
-    EXIT FUNCTION
-  ELSE
-    ExecCmdFid% = CmdResult.OK
-  END IF
+  ExecCmdFid% = CmdResult.OK
 
   SELECT CASE stoken$(0)
-
+    
     CASE endtag
       fid% = 0
 
@@ -1816,10 +1824,18 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       FieldSetStyle wid%, fid%, WinFindSid%(stoken$(1))
 
     CASE "text"
-      FieldSetText wid%, fid%, stoken$(1)
+      IF LCASE$(stoken$(1)) = "bind" THEN
+        FieldBindText wid%, fid%, stoken$(2)
+      ELSE
+        FieldSetText wid%, fid%, stoken$(1)
+      END IF
 
     CASE "value"
-      FieldSetValue wid%, fid%, stoken$(1)
+      IF LCASE$(stoken$(1)) = "bind" THEN
+        FieldBindValue wid%, fid%, stoken$(2)
+      ELSE
+        FieldSetValue wid%, fid%, stoken$(1)
+      END IF
 
     CASE ELSE
       ExecCmdFid% = CmdResult.Malformed
@@ -1832,24 +1848,6 @@ FUNCTION ExecCmdHid% (ntoken%, stoken$(), hid%)
 
   AssertIsPositive hid%, "ExecCmdHid", "hid"
 
-  IF stoken$(0) = "endhabitat" THEN
-    IF ntoken% = 1 THEN
-      hid% = 0
-      ExecCmdHid% = CmdResult.OK
-    ELSE
-      ExecCmdHid% = CmdResult.Malformed
-    END IF
-    EXIT FUNCTION
-  END IF
-
-  '
-  ' All remaining commands are NAME VALUE
-  '
-  IF ntoken% <> 2 THEN
-    ExecCmdHid% = CmdResult.Malformed
-    EXIT FUNCTION
-  END IF
-
   ExecCmdHid% = CmdResult.OK
 
   SELECT CASE stoken$(0)
@@ -1859,6 +1857,9 @@ FUNCTION ExecCmdHid% (ntoken%, stoken$(), hid%)
      
     CASE "backdrop"
       HabitatSetBackdrop hid%, stoken$(1)
+
+    CASE "endhabitat"
+      hid% = 0
 
     CASE "label"
       HabitatSetLabel hid%, stoken$(1)
@@ -1885,6 +1886,9 @@ FUNCTION ExecCmdPid% (ntoken%, stoken$(), pid%)
     CASE "endpersona"
       pid% = 0
 
+    CASE "label"
+      PersonaSetLabel pid%, stoken$(1)
+
     CASE "name"
       PersonaSetName pid%, stoken$(1)
 
@@ -1902,146 +1906,103 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
 
   ExecCmdRoot% = CmdResult.OK
 
-  IF ntoken% = 1 THEN
-    '
-    ' Parameterless commands
-    '
-    SELECT CASE stoken$(0)
+  SELECT CASE stoken$(0)
 
-      CASE "atlas"
-        UI.SetPage UIPage.Atlas
-  
-      CASE "cls"
-        ConsoleClear
+    CASE "atlas"
+      UI.SetPage UIPage.Atlas
+ 
+    CASE "cls"
+      ConsoleClear
 
-      CASE "console"
-        UI.SetPage UIPage.Console
+    CASE "console"
+      UI.SetPage UIPage.Console
 
-      CASE "endgame"
-        END
+    CASE "endgame"
+      END
 
-      CASE "event"
-        events = events + 1
-        eid% = events
+    CASE "event"
+      events = events + 1
+      eid% = events
 
-      CASE "habitat"
-        hid% = HabitatCreate%
+    CASE "habitat"
+      hid% = HabitatCreate%
 
-      CASE "harvest"
-        GameHarvest
+    CASE "harvest"
+      GameHarvest
 
-      CASE "newgame"
-        WorldInit 15
+    CASE "mail"
+      InboxAdd stoken$(1), stoken$(2)
+   
+    CASE "newgame"
+      WorldInit 15
 
-      CASE "persona"
-        pid% = PersonaCreate%
+    CASE "persona"
+      pid% = PersonaCreate%
 
-      CASE "style"
-        winstyles = winstyles + 1
-        sid% = winstyles
+    CASE "print"
+      ConsolePrint stoken$(1)
 
-      CASE "trigger"
-        triggers = triggers + 1
-        tid% = triggers
+    CASE "printfile"
+      ConsoleFile stoken$(1)
 
-      CASE "window"
-        wid% = WinCreate%
+    CASE "replot"
+      '
+      ' Replot <band | cluster | manual | random>
+      '
+      UI.SetPage UIPage.Atlas
+      SELECT CASE LCASE$(stoken$(1))
+        CASE "b", "band"
+          AtlasPlotBanded
+        CASE "c", "cluster"
+          AtlasPlotClustered
+        CASE "m", "manual"
+          AtlasPlotManual
+        CASE "r", "random"
+          AtlasPlotRandom
+        CASE ELSE
+          ExecCmdRoot% = CmdResult.Malformed
+      END SELECT
+   
+    CASE "run"
+      ExecFile stoken$(1)
+   
+    CASE "style"
+      winstyles = winstyles + 1
+      sid% = winstyles
 
-      CASE ELSE
-        ExecCmdRoot% = CmdResult.Malformed
+    CASE "trigger"
+      triggers = triggers + 1
+      tid% = triggers
 
-    END SELECT
+    CASE "window"
+      wid% = WinCreate%
 
-  ELSEIF ntoken% = 2 THEN
+    CASE "winrun"
+      WinRunName stoken$(1)
 
-    SELECT CASE stoken$(0)
-     
-      CASE "print"
-        ConsolePrint stoken$(1)
+    CASE ELSE
+      ExecCmdRoot% = CmdResult.Malformed
 
-      CASE "printfile"
-        ConsoleFile stoken$(1)
-
-      CASE "replot"
-        '
-        ' Replot <band | cluster | manual | random>
-        '
-        UI.SetPage UIPage.Atlas
-        SELECT CASE LCASE$(stoken$(1))
-          CASE "b", "band"
-            AtlasPlotBanded
-          CASE "c", "cluster"
-            AtlasPlotClustered
-          CASE "m", "manual"
-            AtlasPlotManual
-          CASE "r", "random"
-            AtlasPlotRandom
-          CASE ELSE
-            ExecCmdRoot% = CmdResult.Malformed
-        END SELECT
-
-      CASE "run"
-        ExecFile stoken$(1)
-
-      CASE "winrun"
-        WinRunName stoken$(1)
-
-      CASE ELSE
-        ExecCmdRoot% = CmdResult.Malformed
-
-    END SELECT
-
-  ELSEIF ntoken% = 3 THEN
-
-    SELECT CASE stoken$(0)
-      CASE "mail"
-        InboxAdd stoken$(1), stoken$(2)
-      CASE ELSE
-        ExecCmdRoot% = CmdResult.Malformed
-    END SELECT
-
-  ELSE
-
-    ExecCmdRoot% = CmdResult.Malformed
-
-  END IF
+  END SELECT
 
 END FUNCTION
 
 FUNCTION ExecCmdSid% (ntoken%, stoken$(), sid%)
 
-  AssertIsPositive sid%, "ExecCmd", "sid"
-
-  '
-  ' The endstyle command ends the context
-  '
-  IF stoken$(0) = "endstyle" THEN
-    IF ntoken% = 1 THEN
-      sid% = 0
-      ExecuteCommandSid% = CmdResult.OK
-    ELSE
-      ExecuteCommandSid% = CmdResult.Malformed
-    END IF
-    
-    EXIT FUNCTION
-  END IF
-
-  '
-  ' All remaining commands are NAME PARAM
-  '
-  IF ntoken% <> 2 THEN
-    ExecuteCommandSid% = CmdResult.Malformed
-    EXIT FUNCTION
-  END IF
+  AssertIsPositive sid%, "ExecCmdSid", "sid"
 
   ExecuteCommandSid% = CmdResult.OK
 
   SELECT CASE stoken$(0)
+   
     CASE "bordercolor"
       winstyle(sid%).bordercolor = VAL(stoken$(1))
 
     CASE "bordertype"
       winstyle(sid%).bordertype = VAL(stoken$(1))
+
+    CASE "endstyle"
+      sid% = 0
 
     CASE "name"
       winstyle(sid%).stylename = stoken$(1)
@@ -2098,31 +2059,31 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
         wid% = 0
      
       CASE "boolean"
-        fid% = WinCreateField(wid%, FieldKind.Boolean)
+        fid% = FieldCreate%(wid%, FieldKind.Boolean)
 
       CASE "box"
-        fid% = WinCreateField(wid%, FieldKind.Box)
+        fid% = FieldCreate%(wid%, FieldKind.Box)
 
       CASE "button"
-        fid% = WinCreateField(wid%, FieldKind.Button)
+        fid% = FieldCreate%(wid%, FieldKind.Button)
    
       CASE "file"
-        fid% = WinCreateField(wid%, FieldKind.File)
+        fid% = FieldCreate%(wid%, FieldKind.File)
 
       CASE "integer"
-        fid% = WinCreateField(wid%, FieldKind.Integer)
+        fid% = FieldCreate%(wid%, FieldKind.Integer)
 
       CASE "label"
-        fid% = WinCreateField(wid%, FieldKind.Label)
+        fid% = FieldCreate%(wid%, FieldKind.Label)
    
       CASE "nebula"
-        fid% = WinCreateField(wid%, FieldKind.Nebula)
+        fid% = FieldCreate%(wid%, FieldKind.Nebula)
 
       CASE "popup"
-        fid% = WinCreateField(wid%, FieldKind.Popup)
+        fid% = FieldCreate%(wid%, FieldKind.Popup)
 
       CASE "separator"
-        fid% = WinCreateField(wid%, FieldKind.Separator)
+        fid% = FieldCreate%(wid%, FieldKind.Separator)
 
       CASE ELSE
         ExecuteCommandWid% = CmdResult.Malformed
@@ -2210,10 +2171,23 @@ SUB FieldBindValue (wid%, fid%, expr$)
 
 END SUB
 
+FUNCTION FieldCreate% (wid%, kind%)
+
+  Assert wid% > 0, "FieldCreate", "wid cannot be 0"
+
+  DIM fid%
+  LET fid% = win(wid%).fields + 1
+
+  win(wid%).fields = fid%
+  fld(wid%, fid%).kind = kind%
+  FieldCreate% = fid%
+
+END FUNCTION
+
 SUB FieldDraw (wid%, fid%)
 
   AssertIsPositive wid%, "FieldDraw", "wid"
-  AssertIsPositive wid%, "FieldDraw", "fid"
+  AssertIsPositive fid%, "FieldDraw", "fid"
 
   SELECT CASE fld(wid%, fid%).kind
     '
@@ -2250,7 +2224,7 @@ SUB FieldDrawBox (wid%, fid%)
   AssertIsPositive fid%, "FieldDrawBox", "fid"
 
   DIM sid%
-  LET sid% = win(wid%).style
+  LET sid% = FieldGetStyle(wid%, fid%)
 
   SELECT CASE winstyle(sid%).bordertype
  
@@ -2561,14 +2535,16 @@ SUB FieldDrawSeparator (wid%, fid%)
   AssertIsPositive fid%, "FieldDrawSeparator", "fid"
 
   DIM row AS INTEGER
+  DIM sid AS INTEGER
   DIM sx  AS INTEGER
   DIM sy  AS INTEGER
 
+  sid = FieldGetStyle(wid%, fid%)
   sx = win(wid%).posX + fld(wid%, fid%).offsetX
   sy = win(wid%).posY + fld(wid%, fid%).offsetY
 
   LOCATE sy, sx
-  DrawColor winstyle(win(wid%).style).bordercolor
+  DrawColor winstyle(sid).bordercolor
 
   IF fld(wid%, fid%).sizeX > 0 THEN
     '
@@ -2751,7 +2727,7 @@ FUNCTION FieldGetStyle% (wid%, fid%)
 
   sid% = fld(wid%, fid%).sid
   IF sid% = 0 THEN
-    sid% = win(wid%).style
+    sid% = win(wid%).sid
   END IF
 
   FieldGetStyle% = sid%
@@ -2959,9 +2935,6 @@ SUB FieldSetStyle (wid%, fid%, sid%)
 END SUB
 
 SUB FieldSetText (wid%, fid%, value$)
-  '
-  ' Sets the text of the specified field.
-  '
 
   AssertIsPositive wid%, "FieldSetText", "wid"
   AssertIsPositive fid%, "FieldSetText", "fid"
@@ -3001,7 +2974,7 @@ FUNCTION GameHabitat%
 
   DIM aid%: aid% = GameArea%
   IF aid% > 0 THEN
-    GameHabitat% = area(aid%).habitat
+    GameHabitat% = area(aid%).hid
   END IF
 
 END FUNCTION
@@ -3049,7 +3022,7 @@ END FUNCTION
 
 FUNCTION HabitatGetName$ (hid%)
   IF hid% > 0 THEN
-    HabitatGetName$ = ResourceGet(habitat(hid%).namerid)
+    HabitatGetName$ = ResourceGet$(habitat(hid%).namerid)
   END IF
 END FUNCTION
 
@@ -3146,42 +3119,22 @@ FUNCTION NebulaLabelRid% (energy AS INTEGER)
 
 END FUNCTION
 
-SUB PaintBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
-  
-   DIM at% ' Attribute
-   DIM ch% ' Character
-   DIM sx% ' Screen x-coordinate
-   DIM sy% ' Screen y-coordinate
-
-   FOR sy% = sy1% TO sy2%
-
-     '
-     ' Move the cursor to the start of the row
-     '
-     LOCATE sy%, sx1%
-
-     FOR sx% = sx1% TO sx2%
-    
-       ch% = SCREEN(sy%, sx%)
-       at% = SCREEN(sy%, sx%, 1) AND &HF
-
-       COLOR at%, backcolor%
-       PRINT CHR$(ch%);
-
-     NEXT
-  
-   NEXT
-
-END SUB
-
 FUNCTION PersonaCreate%
   personas = personas + 1
   PersonaCreate% = personas
 END FUNCTION
 
+FUNCTION PersonaGetLabel$ (pid%)
+  PersonaGetLabel$ = ResourceGet$(persona(pid%).labelrid)
+END FUNCTION
+
 FUNCTION PersonaGetName$ (pid%)
   PersonaGetName$ = ResourceGet$(persona(pid%).namerid)
 END FUNCTION
+
+SUB PersonaSetLabel (pid%, label$)
+  ResourceSet persona(pid%).labelrid, label$
+END SUB
 
 SUB PersonaSetName (pid%, text$)
   ResourceSet persona(pid%).namerid, text$
@@ -3237,6 +3190,12 @@ SUB SetupGame
   ' Load menus and windows
   '
   ExecFile "EMPIRE.CFG"
+
+  '
+  ' Setup atlas
+  '
+  atlaspage = VideoAlloc%
+  AtlasDraw
 
   '
   ' Show starting window #1
@@ -3357,7 +3316,7 @@ SUB UI.Action
     '
     ' Get the habitat of the area
     '
-    hid = area(aid).habitat
+    hid = area(aid).hid
 
     'SELECT CASE habitat(hid).UI
     '  CASE "NEB"
@@ -3407,17 +3366,10 @@ SUB UI.Run
  
   DIM menuwid AS INTEGER
   DIM cresult AS INTEGER
-  DIM uresult AS INTEGER
   DIM wresult AS WinResultType
 
-  '
-  ' Set the atlas (setting the page causes it to redraw)
-  '
   UI.SetPage UIPage.Atlas
 
-  '
-  ' Find the main menu
-  '
   menuwid = WinFindWid("Menu")
 
   DO
@@ -3427,37 +3379,23 @@ SUB UI.Run
     SELECT CASE uiCurrentPage
     
       CASE UIPage.Atlas
-        uresult = UI.RunAtlas%
+        UI.RunAtlas
 
       CASE UIPage.Console
-        uresult = UI.RunConsole%
+        UI.RunConsole
 
     END SELECT
 
-    SELECT CASE uresult
-
-      CASE UIResult.Exit
-        '
-        ' The UI page exited normally.
-        '
-
-      CASE UIResult.Escape
-        '
-        ' The player pressed the escape key to open the menu
-        '
-       
-        WinRun menuwid, wresult
-        IF wresult.action = WinAction.Execute THEN
-          cresult = ExecResource%(wresult.cmdrid)
-        END IF
-
-    END SELECT
+    WinRun menuwid, wresult
+    IF wresult.action = WinAction.Execute THEN
+      cresult = ExecResource%(wresult.cmdrid)
+    END IF
 
   LOOP
 
 END SUB
 
-FUNCTION UI.RunAtlas%
+SUB UI.RunAtlas
  
   Assert uiCurrentPage = UIPage.Atlas, "UI.RunAtlas", "Wrong UI page"
 
@@ -3489,7 +3427,7 @@ PromptAgain:
         '
         ' Get the habitat of the area
         '
-        hid = area(aid).habitat
+        hid = area(aid).hid
        
         '
         ' Run the window name handling this habitat
@@ -3515,21 +3453,18 @@ PromptAgain:
     '
     ' The player hit escape
     '
-    UI.RunAtlas% = UIResult.Escape
 
   END IF
 
-END FUNCTION
+END SUB
 
-FUNCTION UI.RunConsole%
+SUB UI.RunConsole
 
   Assert uiCurrentPage = UIPage.Console, "UI.RunConsole", "Wrong UI page"
 
   DIM keypress$: keypress$ = GetKey$
 
-  UI.RunConsole% = UIResult.Escape
-
-END FUNCTION
+END SUB
 
 SUB UI.SetPage (page AS INTEGER)
  
@@ -3538,13 +3473,6 @@ SUB UI.SetPage (page AS INTEGER)
   SELECT CASE page
    
     CASE UIPage.Atlas
-     
-      IF atlaspage = 0 THEN
-        atlaspage = VideoAlloc%
-        AtlasDraw
-        AtlasDisplayOn
-      END IF
- 
       VideoScreen atlaspage, atlaspage
 
     CASE UIPage.Console
@@ -3644,7 +3572,7 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
   AssertIsPositive wid%, "WinAddButton", "wid"
 
   DIM fid%
-  LET fid% = WinCreateField(wid%, FieldKind.Button)
+  LET fid% = FieldCreate(wid%, FieldKind.Button)
 
   fld(wid%, fid%).childwid = 0
   fld(wid%, fid%).cmdrid = 0
@@ -3686,26 +3614,8 @@ SUB WinClose (wid%)
 END SUB
 
 FUNCTION WinCreate%
-  '
-  ' Creates an empty window
-  '
   wincount = wincount + 1
-  win(wincount).style = 1
   WinCreate% = wincount
-
-END FUNCTION
-
-FUNCTION WinCreateField% (wid%, kind%)
-
-  Assert wid% > 0, "WinCreateField", "wid cannot be 0"
-
-  DIM fid%
-  LET fid% = win(wid%).fields + 1
-
-  win(wid%).fields = fid%
-  fld(wid%, fid%).kind = kind%
-  WinCreateField% = fid%
-
 END FUNCTION
 
 SUB WinDraw (wid%)
@@ -3719,43 +3629,42 @@ SUB WinDraw (wid%)
 
 END SUB
 
-FUNCTION WinFindSid% (stylename AS STRING)
+FUNCTION WinFindSid% (sname$)
 
   DIM sid%
  
-  sid% = VAL(stylename)
+  '
+  ' Check for numeric ID
+  '
+  sid% = VAL(sname$)
   IF sid% > 0 THEN
-
     IF sid% >= LBOUND(winstyle) AND sid% <= UBOUND(winstyle) THEN
       WinFindSid% = sid%
       EXIT FUNCTION
     END IF
-
-  ELSE
-
-    FOR sid% = LBOUND(winstyle) TO UBOUND(winstyle)
-      IF RTRIM$(winstyle(sid%).stylename) = stylename THEN
-        WinFindSid% = sid%
-        EXIT FUNCTION
-      END IF
-    NEXT
-
-    WinFindSid% = 0
-
   END IF
+
+  '
+  ' Search by name
+  '
+  FOR sid% = LBOUND(winstyle) TO UBOUND(winstyle)
+    IF RTRIM$(winstyle(sid%).stylename) = sname$ THEN
+      WinFindSid% = sid%
+      EXIT FUNCTION
+    END IF
+  NEXT
+
+  WinFindSid% = 0
 
 END FUNCTION
 
 FUNCTION WinFindWid% (wname$)
-  '
-  ' Returns the ID of the window with the specified name.
-  '
  
-  DIM wid AS INTEGER
+  DIM wid%
 
-  FOR wid = 1 TO wincount
-    IF RTRIM$(win(wid).wname) = wname$ THEN
-      WinFindWid% = wid
+  FOR wid% = 1 TO wincount
+    IF RTRIM$(win(wid%).wname) = wname$ THEN
+      WinFindWid% = wid%
       EXIT FUNCTION
     END IF
   NEXT
@@ -3765,11 +3674,8 @@ FUNCTION WinFindWid% (wname$)
 END FUNCTION
 
 FUNCTION WinGetStyle% (wid%)
-
   AssertIsPositive wid%, "WinGetStyle", "wid"
-
-  WinGetStyle% = win(wid%).style
-
+  WinGetStyle% = win(wid%).sid
 END FUNCTION
 
 FUNCTION WinMapKey% (wid%, pressed$)
@@ -4303,24 +4209,24 @@ END SUB
 
 SUB WinSetStyle (wid%, sid%)
   AssertIsPositive wid%, "WinSetStyle", "wid"
-  win(wid%).style = sid%
+  win(wid%).sid = sid%
 END SUB
 
-FUNCTION WorldAdd% (hid AS INTEGER, cx AS INTEGER, cy AS INTEGER)
+FUNCTION WorldAdd% (hid%, cx%, cy%)
 
-  DIM aid AS INTEGER
+  DIM aid%
 
   '
   ' Allocate the area
   '
-  LET aid = WorldNextId%
-  area(aid).allocated = True
-  area(aid).habitat = hid
-  area(aid).energy = 3
+  aid% = WorldNextId%
+  area(aid%).allocated = True
+  area(aid%).hid = hid%
+  area(aid%).energy = 3
 
-  AtlasAddItem cx, cy, aid, habitat(hid).labelrid
+  AtlasAddItem cx%, cy%, aid%, habitat(hid%).labelrid
 
-  WorldAdd% = aid
+  WorldAdd% = aid%
 
 END FUNCTION
 
@@ -4379,7 +4285,7 @@ SUB WorldHarvest (aid%)
 
 END SUB
 
-SUB WorldInit (areas AS INTEGER)
+SUB WorldInit (areas%)
   '
   ' Initializes the world
   '
@@ -4392,7 +4298,7 @@ SUB WorldInit (areas AS INTEGER)
 
   WorldAddNebula 15
 
-  FOR i = 1 TO areas
+  FOR i = 1 TO areas%
 
     '
     ' Select a random habitat
@@ -4453,31 +4359,29 @@ FUNCTION WorldNextId%
 
 END FUNCTION
 
-SUB WorldRemove (aid AS INTEGER)
-  '
-  ' Removes an area from the world
-  '
+SUB WorldRemove (aid%)
 
-  AssertIsPositive aid, "WorldRemove", "aid"
+  AssertIsPositive aid%, "WorldRemove", "aid"
 
-  IF area(aid).allocated THEN
-    area(aid).allocated = False
-    AtlasRemoveValue aid
+  IF area(aid%).allocated THEN
+    area(aid%).allocated = False
+    AtlasRemoveValue aid%
   END IF
 
 END SUB
 
-SUB WorldSetLabel (aid AS INTEGER, labelrid AS INTEGER)
+SUB WorldSetLabel (aid%, labelrid%)
   '
   ' Updates the label for the specified area
   '
-  AssertIsPositive aid, "WorldSetLabel", "aid"
-  AssertIsPositive labelrid, "WorldSetLabel", "labelrid"
+  AssertIsPositive aid%, "WorldSetLabel", "aid"
+  AssertIsPositive labelrid%, "WorldSetLabel", "labelrid"
 
   DIM idx AS INTEGER
-  LET idx = AtlasIndexOf(aid)
+ 
+  idx = AtlasIndexOf(aid%)
   IF idx > 0 THEN
-    AtlasSetLabel idx, labelrid
+    AtlasSetLabel idx, labelrid%
   END IF
 
 END SUB

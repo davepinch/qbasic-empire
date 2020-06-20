@@ -30,7 +30,7 @@ This game is written in QBASIC. A copy of QBASIC.EXE is included in the repo in 
 
 Assuming you no longer have a running copy of MS-DOS, you will need to run QBASIC.EXE under an MS-DOS emulator. DOSBox is recommended and can be downloaded for free from https://www.dosbox.com.
 
-1. Clone the repo (if you want to contribute code), or just copy QBASIC.EXE, QBASIC.HLP (optional), and EMPIRE.BAS to a folder on your computer.
+1. Clone the repo (if you want to contribute code), or just copy all files to a folder on your computer. You can download a ZIP file from https://github.com/dave/pinch/qbasic-empire. Look for the green *Clone or download* button.
 
 2. Start DOSBox.
 
