@@ -24,8 +24,8 @@ TYPE AtlasItemType
 END TYPE
 
 TYPE BindingType
-  vrid AS INTEGER ' Resource of the value
-  xrid AS INTEGER ' Resource of the expression; 0=no binding
+  target AS INTEGER ' Type of binding
+  valrid AS INTEGER ' Value or target expression
 END TYPE
 
 TYPE EventType
@@ -209,6 +209,7 @@ DECLARE SUB FieldDrawText (wid%, fid%)
 DECLARE SUB FieldKey (wid%, fid%, keypress$)
 DECLARE SUB FieldKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB FieldKeyInteger (wid%, fid%, keypress$)
+DECLARE SUB FieldParseBinding (text$, outbind AS ANY)
 DECLARE SUB FieldSetBound (wid%, fid%, b AS BindingType, value$)
 DECLARE SUB FieldSetChild (wid%, fid%, wname$)
 DECLARE SUB FieldSetCommand (wid%, fid%, cmd$)
@@ -227,7 +228,6 @@ DECLARE FUNCTION FieldGetSizeY% (wid%, fid%)
 DECLARE FUNCTION FieldGetStyle% (wid%, fid%)
 DECLARE FUNCTION FieldGetText$ (wid%, fid%)
 DECLARE FUNCTION FieldGetValue$ (wid%, fid%)
-DECLARE FUNCTION FieldIsBound% (wid%, fid%)
 DECLARE FUNCTION FieldIsSelectable% (wid%, fid%)
 
 '
@@ -319,7 +319,6 @@ DECLARE FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$, value$)
 DECLARE FUNCTION WinCreate% ()
 DECLARE FUNCTION WinFindSid% (stylename$)
 DECLARE FUNCTION WinFindWid% (wname$)
-DECLARE FUNCTION WinGetStyle% (wid%)
 DECLARE FUNCTION WinMapKey% (wid%, pressed$)
 
 '
@@ -374,6 +373,11 @@ CONST AtlasStyle.GridSizeY = 11
 '
 CONST True = -1
 CONST False = NOT True
+
+CONST BindingTarget.None = 0
+CONST BindingTarget.Area = 1
+CONST BindingTarget.Field = 2
+CONST BindingTarget.Habitat = 3
 
 '
 ' Command Results
@@ -454,10 +458,11 @@ DIM SHARED events                AS INTEGER
 DIM SHARED fld(1 TO 15, 1 TO 13) AS FieldType
 DIM SHARED habitat(1 TO 8)       AS HabitatType
 DIM SHARED habitats              AS INTEGER
+DIM SHARED listening             AS INTEGER
 DIM SHARED persona(1 TO 10)      AS PersonaType
 DIM SHARED personas              AS INTEGER
 DIM SHARED playeraid             AS INTEGER
-DIM SHARED resource(1 TO 100)    AS STRING
+REDIM SHARED resource(1 TO 100)    AS STRING
 DIM SHARED resources             AS INTEGER
 DIM SHARED trigger(1 TO 5)       AS TriggerType
 DIM SHARED triggers              AS INTEGER
@@ -482,7 +487,9 @@ HandleTimer:
   '
   ' Executed when the game needs to perform periodic tasks
   '
-  DialogTimer
+  IF listening THEN
+    DialogTimer
+  END IF
   RETURN
 
 SUB Assert (truth AS INTEGER, where AS STRING, what AS STRING)
@@ -1917,6 +1924,10 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
     CASE "harvest"
       GameHarvest
 
+    CASE "listen"
+      UI.SetPage UIPage.Console
+      listening = True
+
     CASE "mail"
       InboxAdd stoken$(1), stoken$(2)
    
@@ -2160,7 +2171,7 @@ SUB FieldBindText (wid%, fid%, expr$)
   AssertIsPositive wid%, "FieldBindText", "wid"
   AssertIsPositive fid%, "FieldBindText", "fid"
 
-  ResourceSet fld(wid%, fid%).text.xrid, expr$
+  FieldParseBinding expr$, fld(wid%, fid%).text
 
 END SUB
 
@@ -2169,7 +2180,7 @@ SUB FieldBindValue (wid%, fid%, expr$)
   AssertIsPositive wid%, "FieldBindValue", "wid"
   AssertIsPositive fid%, "FieldBindValue", "fid"
 
-  ResourceSet fld(wid%, fid%).value.xrid, expr$
+  FieldParseBinding expr$, fld(wid%, fid%).value
 
 END SUB
 
@@ -2674,39 +2685,25 @@ END SUB
 
 FUNCTION FieldGetBound$ (wid%, fid%, b AS BindingType)
 
-  IF b.xrid = 0 THEN
-    '
-    ' No expression, return value
-    '
-    FieldGetBound$ = ResourceGet(b.vrid)
-    EXIT FUNCTION
+  DIM value$: value$ = ResourceGet(b.valrid)
 
-  END IF
+  SELECT CASE b.target
+   
+    CASE BindingTarget.None
+      FieldGetBound$ = value$
+    
+    CASE BindingTarget.Area
+      SELECT CASE value$
+        CASE "energy"
+          FieldGetBound$ = STR$(GameAreaEnergy%)
+        CASE ELSE
+          FieldGetBound$ = value$
+      END SELECT
 
-  '
-  ' Get the context of the binding
-  '
-  DIM aid%: aid% = GameArea%
-  DIM hid%: hid% = GameHabitat%
-
-  DIM text$: xtext$ = LCASE$(ResourceGet(b.xrid))
-
-  SELECT CASE xtext$
-
-    CASE "area.energy"
-      FieldGetBound$ = STR$(GameAreaEnergy%)
-      EXIT FUNCTION
-
-    CASE "habitat.backdrop"
-      FieldGetBound$ = HabitatGetBackdrop$(hid%)
-      EXIT FUNCTION
-
-    CASE "habitat.title"
-      FieldGetBound$ = HabitatGetName$(hid%)
-      EXIT FUNCTION
-
-    CASE "sel:value"
-
+    CASE BindingTarget.Field
+      '
+      ' TODO: support more than sel.value
+      '
       DIM sel%
       LET sel% = win(wid%).selected
 
@@ -2715,20 +2712,29 @@ FUNCTION FieldGetBound$ (wid%, fid%, b AS BindingType)
         ' No selected field to get a value
         '
         FieldGetBound$ = ""
-       
+      
       ELSEIF sel% = fid% THEN
         '
         ' Infinite recursion
         '
         FieldGetBound$ = ""
-       
+      
       ELSE
         FieldGetBound$ = FieldGetValue(wid%, win(wid%).selected)
-
       END IF
 
-    CASE ELSE
-      AssertFail "FieldGetBound", "Invalid binding: " + xtext$
+    CASE BindingTarget.Habitat
+
+      DIM hid%: hid% = GameHabitat%
+
+      SELECT CASE value$
+        CASE "backdrop"
+          FieldGetBound$ = HabitatGetBackdrop$(hid%)
+        CASE "title"
+          FieldGetBound$ = HabitatGetName$(hid%)
+        CASE ELSE
+          FieldGetBound$ = value$
+      END SELECT
 
   END SELECT
 
@@ -2774,18 +2780,6 @@ FUNCTION FieldGetValue$ (wid%, fid%)
   AssertIsPositive fid%, "FieldGetValue", "fid"
 
   FieldGetValue$ = FieldGetBound(wid%, fid%, fld(wid%, fid%).value)
-
-END FUNCTION
-
-FUNCTION FieldIsBound% (wid%, fid%)
-
-  IF fld(wid%, fid%).text.xrid > 0 THEN
-    FieldIsBound% = True
-  ELSEIF fld(wid%, fid%).value.xrid > 0 THEN
-    FieldIsBound% = True
-  ELSE
-    FieldIsBound = False
-  END IF
 
 END FUNCTION
 
@@ -2907,32 +2901,64 @@ SUB FieldKeyInteger (wid%, fid%, keypress$)
 
 END SUB
 
+SUB FieldParseBinding (text$, outbind AS BindingType)
+
+  DIM pindex%
+  DIM tname$
+
+  pindex% = INSTR(text$, ".")
+  IF pindex% > 1 THEN
+   
+    tname$ = LCASE$(LEFT$(text$, pindex%))
+
+    SELECT CASE tname$
+      CASE "area."
+        outbind.target = BindingTarget.Area
+
+      CASE "habitat."
+        outbind.target = BindingTarget.Habitat
+
+      CASE "sel."
+        outbind.target = BindingTarget.Field
+
+    END SELECT
+
+    ResourceSet outbind.valrid, MID$(text$, pindex% + 1)
+
+  ELSE
+
+    outbind.target = BindingTarget.None
+    ResourceSet outbind.valrid, text$
+
+  END IF
+
+END SUB
+
 SUB FieldSetBound (wid%, fid%, b AS BindingType, value$)
 
   AssertIsPositive wid%, "FieldSetBound", "wid"
   AssertIsPositive fid%, "FieldSetBound", "fid"
 
-  IF b.xrid = 0 THEN
-    '
-    ' No expression, set value directly
-    '
-    ResourceSet b.vrid, value$
+  IF b.target = BindingTarget.None THEN
+
+    ResourceSet b.valrid, value$
+
   ELSE
-    
+
     DIM xtext$
-    LET xtext$ = ResourceGet(b.xrid)
+    LET xtext$ = ResourceGet(b.valrid)
 
-    SELECT CASE xtext$
-     
-      CASE "area.energy"
-        DIM aid%
-        LET aid% = AtlasGetValue(atlascx, atlascy, 0)
-        IF aid% > 0 THEN
-          area(aid%).energy = VAL(value$)
-        END IF
+    SELECT CASE b.target
+      CASE BindingTarget.Area
 
-      CASE ELSE
-        AssertFail "FieldSetBound", "Unknown binding: " + xtext$
+        SELECT CASE xtext$
+          CASE "energy"
+            DIM aid%
+            LET aid% = AtlasGetValue(atlascx, atlascy, 0)
+            IF aid% > 0 THEN
+              area(aid%).energy = VAL(value$)
+            END IF
+        END SELECT
 
     END SELECT
 
@@ -3637,11 +3663,11 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
   fld(wid%, fid%).cmdrid = 0
   fld(wid%, fid%).offsetX = offsetX%
   fld(wid%, fid%).offsetY = offsetY%
-  fld(wid%, fid%).sizeYX = sizeX%
-  fld(wid%, fid%).text.vrid = ResourceCreate(text$)
-  fld(wid%, fid%).text.xrid = 0
-  fld(wid%, fid%).value.vrid = ResourceCreate(value$)
-  fld(wid%, fid%).value.xrid = 0
+ 
+  FieldSetSizeX wid%, fid%, sizeX%
+  FieldSetSizeY wid%, fid%, 1
+  FieldSetText wid%, fid%, text$
+  FieldSetValue wid%, fid%, value$
 
   WinAddButton% = fid%
 
@@ -3730,11 +3756,6 @@ FUNCTION WinFindWid% (wname$)
 
   WinFindWid% = 0
 
-END FUNCTION
-
-FUNCTION WinGetStyle% (wid%)
-  AssertIsPositive wid%, "WinGetStyle", "wid"
-  WinGetStyle% = win(wid%).sid
 END FUNCTION
 
 FUNCTION WinMapKey% (wid%, pressed$)
@@ -3873,16 +3894,13 @@ SUB WinRefreshField (wid%, fid%)
   IF winstacked > 0 THEN
     IF winstack(winstacked).wid = wid% THEN
      
-      FieldDraw wid%, fid%
-   
       FOR n = 1 TO win(wid%).fields
-        '
-        ' Look for bound fields, but don't redraw the same field
-        '
-        IF n <> fid% THEN
-          IF FieldIsBound%(wid%, n) THEN
-            FieldDraw wid%, n
-          END IF
+        IF n = fid% THEN
+          FieldDraw wid%, n
+        ELSEIF fld(wid%, n).text.target = BindingTarget.Field THEN
+          FieldDraw wid%, n
+        ELSEIF fld(wid%, n).value.target = BindingTarget.Field THEN
+          FieldDraw wid%, n
         END IF
       NEXT
 
