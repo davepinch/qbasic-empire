@@ -170,8 +170,7 @@ DECLARE FUNCTION DrawLength% (text$)
 '
 ' Events
 '
-DECLARE SUB EventInc (eid%)
-DECLARE SUB EventIncName (ename$)
+DECLARE SUB EventIncrement (ename$)
 DECLARE SUB EventFire (eid%)
 DECLARE FUNCTION EventFind% (name$)
 DECLARE FUNCTION EventParseOperator% (opname$)
@@ -327,7 +326,6 @@ DECLARE SUB WorldAddBanded (hid AS INTEGER, count AS INTEGER)
 DECLARE SUB WorldAddCluster (hid AS INTEGER, size AS INTEGER)
 DECLARE SUB WorldAddRandom (hid%, count%)
 DECLARE SUB WorldHarvest (aid%)
-DECLARE SUB WorldInit (areas AS INTEGER)
 DECLARE SUB WorldRemove (aid%)
 DECLARE SUB WorldSetLabel (aid%, labelrid%)
 DECLARE FUNCTION WorldAdd% (hid%, cx%, cy%)
@@ -1119,7 +1117,7 @@ FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS INTEGER, 
 
     END SELECT
 
-    EventIncName "AtlasMoves"
+    EventIncrement "AtlasMoves"
 
   LOOP
 
@@ -1634,14 +1632,16 @@ SUB EventFire (eid%)
 
 END SUB
 
-SUB EventInc (eid%)
-  AssertIsPositive eid%, "EventInc", "eid"
-  event(eid%).value = event(eid%).value + 1
-  EventFire eid%
-END SUB
+SUB EventIncrement (ename$)
+ 
+  DIM eid%
+  LET eid% = EventFind%(ename$)
+ 
+  IF eid% > 0 THEN
+    event(eid%).value = event(eid%).value + 1
+    EventFire eid%
+  END IF
 
-SUB EventIncName (ename$)
-  EventInc EventFind(ename$)
 END SUB
 
 FUNCTION EventParseOperator% (opname$)
@@ -3446,7 +3446,7 @@ SUB UI.ActionNebula (aid AS INTEGER)
     ' This is the last extraction
     '
     WorldRemove aid
-    EventIncName "NebulaDepleted"
+    EventIncrement "NebulaDepleted"
 
   ELSE
    
@@ -4364,7 +4364,7 @@ SUB WorldHarvest (aid%)
 
   IF energy% = 0 THEN
     WorldRemove aid%
-    EventIncName "NebulaDepleted"
+    EventIncrement "NebulaDepleted"
   END IF
 
 END SUB
