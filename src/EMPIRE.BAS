@@ -305,7 +305,6 @@ DECLARE SUB WinClose (wid%)
 DECLARE SUB WinDraw (wid%)
 DECLARE SUB WinOpen (wid%)
 DECLARE SUB WinRefreshField (wid%, fid%)
-DECLARE SUB WinRefreshWindow (wid%)
 DECLARE SUB WinRun (wid%, result AS WinResultType)
 DECLARE SUB WinRunName (idname$)
 DECLARE SUB WinSelect (wid%, fid%)
@@ -3921,19 +3920,6 @@ SUB WinRefreshField (wid%, fid%)
 
     END IF
   END IF
-
-END SUB
-
-SUB WinRefreshWindow (wid%)
-
-  AssertIsPositive wid%, "WinRefreshWindow", "wid"
-  AssertIsPositive winstacked, "WinRefreshWindow", "winstacked"
-  Assert winstack(winstacked).wid = wid%, "WinRefreshWindow", "top win only"
-
-  VideoScreen winstack(winstacked).workpage, winstack(winstacked).backpage
-  PCOPY winstack(winstacked).backpage, winstack(winstacked).workpage
-  WinDraw wid%
-  VideoScreen winstack(winstacked).workpage, winstack(winstacked).workpage
 
 END SUB
 
