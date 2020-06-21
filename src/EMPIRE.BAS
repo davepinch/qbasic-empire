@@ -324,7 +324,6 @@ DECLARE FUNCTION WinMapKey% (wid%, pressed$)
 '
 ' World
 '
-DECLARE SUB WorldAdd (hid%, cx%, cy%)
 DECLARE SUB WorldAddBanded (hid AS INTEGER, count AS INTEGER)
 DECLARE SUB WorldAddCluster (hid AS INTEGER, size AS INTEGER)
 DECLARE SUB WorldAddRandom (hid%, count%)
@@ -332,6 +331,7 @@ DECLARE SUB WorldHarvest (aid%)
 DECLARE SUB WorldInit (areas AS INTEGER)
 DECLARE SUB WorldRemove (aid%)
 DECLARE SUB WorldSetLabel (aid%, labelrid%)
+DECLARE FUNCTION WorldAdd% (hid%, cx%, cy%)
 DECLARE FUNCTION WorldNextId% ()
 
 '
@@ -1965,15 +1965,30 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
       ExecFile stoken$(1)
    
     CASE "spawn"
-      DIM shid%: shid% = HabitatFind(stoken$(1))
+      DIM aid%
+      DIM shid%
+      shid% = HabitatFind(stoken$(1))
       IF shid% > 0 THEN
         SELECT CASE LCASE$(stoken$(2))
+         
           CASE "at"
-            WorldAdd shid%, VAL(stoken$(3)), VAL(stoken$(4))
+            aid% = WorldAdd%(shid%, VAL(stoken$(3)), VAL(stoken$(4)))
+         
           CASE "b", "band", "banded"
             WorldAddBanded shid%, VAL(stoken$(3))
+         
           CASE "c", "cluster", "clustered"
             WorldAddCluster shid%, VAL(stoken$(3))
+         
+          CASE "p", "player"
+            DIM pcx%: pcx% = VAL(stoken$(3)): IF pcx% = 0 THEN pcx% = 1
+            DIM pcy%: pcx% = VAL(stoken$(4)): IF pcy% = 0 THEN pcy% = 1
+            IF playeraid = 0 THEN
+              playeraid = WorldAdd%(shid%, pcx%, pcy%)
+            ELSE
+              AtlasMoveItem AtlasIndexOf%(playeraid), pcx%, pcy%
+            END IF
+
           CASE "r", "random"
             WorldAddRandom shid%, VAL(stoken$(3))
         END SELECT
@@ -4293,7 +4308,7 @@ SUB WinSetStyle (wid%, sid%)
   win(wid%).sid = sid%
 END SUB
 
-SUB WorldAdd (hid%, cx%, cy%)
+FUNCTION WorldAdd% (hid%, cx%, cy%)
 
   DIM aid%
 
@@ -4303,44 +4318,48 @@ SUB WorldAdd (hid%, cx%, cy%)
   area(aid%).energy = 3
 
   AtlasAddItem cx%, cy%, aid%, habitat(hid%).labelrid
+  WorldAdd% = aid%
 
-END SUB
+END FUNCTION
 
 SUB WorldAddBanded (hid AS INTEGER, count AS INTEGER)
 
+  DIM aid   AS INTEGER
   DIM outcx AS INTEGER
   DIM outcy AS INTEGER
   DIM n     AS INTEGER
 
   FOR n = 1 TO count
     AtlasNextBanded outcx, outcy
-    WorldAdd hid, outcx, outcy
+    aid = WorldAdd%(hid, outcx, outcy)
   NEXT
 
 END SUB
 
 SUB WorldAddCluster (hid AS INTEGER, count AS INTEGER)
 
+  DIM aid   AS INTEGER
   DIM outcx AS INTEGER
   DIM outcy AS INTEGER
   DIM n     AS INTEGER
  
   FOR n = 1 TO count
     AtlasNextClustered outcx, outcy
-    WorldAdd hid, outcx, outcy
+    aid = WorldAdd%(hid, outcx, outcy)
   NEXT
   
 END SUB
 
 SUB WorldAddRandom (hid%, count%)
 
+  DIM aid   AS INTEGER
   DIM outcx AS INTEGER
   DIM outcy AS INTEGER
   DIM n     AS INTEGER
 
   FOR n = 1 TO count%
     AtlasNextRandom outcx, outcy
-    WorldAdd hid%, outcx, outcy
+    aid = WorldAdd%(hid%, outcx, outcy)
   NEXT
 
 END SUB
