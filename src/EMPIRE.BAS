@@ -1655,14 +1655,6 @@ FUNCTION EventParseOperator% (opname$)
 
 END FUNCTION
 
-SUB EventSet (eid%, value%)
-
-  AssertIsPositive eid%, "EventFire", "eid"
-  event(eid%).value = value%
-  EventFire eid%
-
-END SUB
-
 FUNCTION EventTestTrigger% (eid%, tid%)
 
   AssertIsPositive eid%, "EventTestTrigger", "eid"
