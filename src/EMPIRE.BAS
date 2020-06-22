@@ -240,7 +240,6 @@ DECLARE FUNCTION FieldIsSelectable% (wid%, fid%)
 '
 DECLARE SUB GameHarvest ()
 DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
-DECLARE FUNCTION GameArea% ()
 
 '
 ' Habitats
@@ -284,8 +283,6 @@ DECLARE FUNCTION ResourceGet$ (rid AS INTEGER)
 '
 ' UI
 '
-DECLARE SUB UI.Action ()
-DECLARE SUB UI.ActionNebula (aid AS INTEGER)
 DECLARE SUB UI.Run ()
 DECLARE SUB UI.RunAtlas ()
 DECLARE SUB UI.RunConsole ()
@@ -454,8 +451,6 @@ DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS IN
 ' Globals
 '
 DIM SHARED area(1 TO 35)         AS AreaType
-DIM SHARED atlascx               AS INTEGER
-DIM SHARED atlascy               AS INTEGER
 DIM SHARED atlasitem(1 TO 30)    AS AtlasItemType
 DIM SHARED atlaspage             AS INTEGER
 DIM SHARED event(1 TO 5)         AS EventType
@@ -3050,23 +3045,15 @@ SUB FieldSetValue (wid%, fid%, value$)
 
 END SUB
 
-FUNCTION GameArea%
-
-  IF (atlascx > 0) AND (atlascy > 0) THEN
-    GameArea% = AtlasGetValue(atlascx, atlascy, 0)
-  END IF
-
-END FUNCTION
-
 SUB GameHarvest
 
-  DIM aid%
-  DIM energy%
+  'DIM aid%
+  'DIM energy%
 
-  aid% = GameArea%
-  IF aid% > 0 THEN
-    WorldHarvest aid%
-  END IF
+  'aid% = GameArea%
+  'IF aid% > 0 THEN
+  '  WorldHarvest aid%
+  'END IF
 
 END SUB
 
@@ -3457,69 +3444,6 @@ FUNCTION Split% (text AS STRING, tokens() AS STRING)
   Split% = count
 
 END FUNCTION
-
-SUB UI.Action
-  '
-  ' Applies the default action to the currently selected location
-  '
- 
-  DIM aid AS INTEGER
-  DIM hid AS INTEGER
-
-  '
-  ' Get the current area
-  '
-  aid = AtlasGetValue(atlascx, atlascy, 0)
-  IF aid > 0 THEN
-
-    '
-    ' Get the habitat of the area
-    '
-    hid = area(aid).hid
-
-    'SELECT CASE habitat(hid).UI
-    '  CASE "NEB"
-    '    UI.ActionNebula aid
-    'END SELECT
-
-  END IF
-
-END SUB
-
-SUB UI.ActionNebula (aid AS INTEGER)
-
-  AssertIsPositive aid, "UI.ActionNebula", "aid"
-
-  DIM energy AS INTEGER
-  LET energy = area(aid).energy
-
-  '
-  ' Set the default energy
-  '
-  IF energy = 0 THEN
-    energy = 3
-  END IF
-
-  IF energy = 1 THEN
-   
-    '
-    ' This is the last extraction
-    '
-    WorldRemove aid
-    EventIncrement "NebulaDepleted"
-
-  ELSE
-   
-    '
-    ' Extract one energy
-    '
-    energy = energy - 1
-    area(aid).energy = energy
-    WorldSetLabel aid, NebulaLabelRid(energy)
-
-  END IF
-
-END SUB
 
 SUB UI.Run
  
