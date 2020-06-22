@@ -65,6 +65,11 @@ TYPE TriggerType
   cmdrid   AS INTEGER
 END TYPE
 
+TYPE WinParamType
+  pkind AS INTEGER
+  value AS INTEGER
+END TYPE
+
 TYPE WinResultType
   action   AS INTEGER
   canceled AS INTEGER
@@ -87,14 +92,15 @@ TYPE WinStyleType
 END TYPE
 
 TYPE WinType
-  arrowexit AS INTEGER
-  fields    AS INTEGER
-  helpWid   AS INTEGER
-  namerid   AS INTEGER
-  posX      AS INTEGER
-  posY      AS INTEGER
-  selected  AS INTEGER
-  sid       AS INTEGER
+  arrowexit  AS INTEGER
+  fields     AS INTEGER
+  helpWid    AS INTEGER
+  namerid    AS INTEGER
+  param      AS WinParamType
+  posX       AS INTEGER
+  posY       AS INTEGER
+  selected   AS INTEGER
+  sid        AS INTEGER
 END TYPE
 
 '
@@ -233,9 +239,8 @@ DECLARE FUNCTION FieldIsSelectable% (wid%, fid%)
 ' Game
 '
 DECLARE SUB GameHarvest ()
-DECLARE FUNCTION GameAreaEnergy% ()
+DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 DECLARE FUNCTION GameArea% ()
-DECLARE FUNCTION GameHabitat% ()
 
 '
 ' Habitats
@@ -372,9 +377,8 @@ CONST True = -1
 CONST False = NOT True
 
 CONST BindingTarget.None = 0
-CONST BindingTarget.Area = 1
-CONST BindingTarget.Field = 2
-CONST BindingTarget.Habitat = 3
+CONST BindingTarget.Field = 1
+CONST BindingTarget.Param = 2
 
 '
 ' Command Results
@@ -436,6 +440,10 @@ CONST WinAction.SelectFirst = 12
 CONST WinAction.SelectLast = 13
 CONST WinAction.SelectNext = 14
 CONST WinAction.SelectPrevious = 15
+
+CONST WinParamKind.None = 0
+CONST WinParamKind.Area = 1
+CONST WinParamKind.Habitat = 2
 
 '
 ' Global atlas variables
@@ -1117,8 +1125,6 @@ FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS INTEGER, 
 
     END SELECT
 
-    EventIncrement "AtlasMoves"
-
   LOOP
 
 END FUNCTION
@@ -1387,11 +1393,6 @@ SUB DialogTimer
   DIM aid%
   DIM pid%
   DIM text$
-
-  aid% = GameArea%
-  IF aid% = 0 THEN
-    EXIT SUB
-  END IF
 
   '
   ' Grab the next dialog
@@ -2125,6 +2126,15 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
     CASE "name"
       WinSetName wid%, stoken$(1)
  
+    CASE "param"
+      SELECT CASE LCASE$(stoken$(1))
+        CASE "area"
+          win(wid%).param.pkind = WinParamKind.Area
+        CASE "habitat"
+          win(wid%).param.pkind = WinParamKind.Habitat
+      END SELECT
+      win(wid%).param.value = VAL(stoken$(2))
+
     CASE "posx"
       win(wid%).posX = VAL(stoken$(1))
 
@@ -2696,14 +2706,41 @@ FUNCTION FieldGetBound$ (wid%, fid%, b AS BindingType)
   SELECT CASE b.target
    
     CASE BindingTarget.None
+      '
+      ' Field is not bound - return value
+      '
       FieldGetBound$ = value$
     
-    CASE BindingTarget.Area
-      SELECT CASE value$
-        CASE "energy"
-          FieldGetBound$ = STR$(GameAreaEnergy%)
+    CASE BindingTarget.Param
+      '
+      ' Field is bound to window parameter
+      '
+      DIM pvalue%
+      LET pvalue% = win(wid%).param.value
+
+      SELECT CASE win(wid%).param.pkind
+       
+        CASE WinParamKind.Area
+          SELECT CASE value$
+            CASE "energy"
+              FieldGetBound$ = STR$(area(pvalue%).energy)
+            CASE ELSE
+              FieldGetBound$ = value$
+          END SELECT
+
+        CASE WinParamKind.Habitat
+          SELECT CASE value$
+            CASE "backdrop"
+              FieldGetBound$ = HabitatGetBackdrop$(pvalue%)
+            CASE "title"
+              FieldGetBound$ = HabitatGetName$(pvalue%)
+            CASE ELSE
+              FieldGetBound$ = value$
+          END SELECT
+
         CASE ELSE
           FieldGetBound$ = value$
+
       END SELECT
 
     CASE BindingTarget.Field
@@ -2728,19 +2765,6 @@ FUNCTION FieldGetBound$ (wid%, fid%, b AS BindingType)
       ELSE
         FieldGetBound$ = FieldGetValue(wid%, win(wid%).selected)
       END IF
-
-    CASE BindingTarget.Habitat
-
-      DIM hid%: hid% = GameHabitat%
-
-      SELECT CASE value$
-        CASE "backdrop"
-          FieldGetBound$ = HabitatGetBackdrop$(hid%)
-        CASE "title"
-          FieldGetBound$ = HabitatGetName$(hid%)
-        CASE ELSE
-          FieldGetBound$ = value$
-      END SELECT
 
   END SELECT
 
@@ -2918,11 +2942,9 @@ SUB FieldParseBinding (text$, outbind AS BindingType)
     tname$ = LCASE$(LEFT$(text$, pindex%))
 
     SELECT CASE tname$
-      CASE "area."
-        outbind.target = BindingTarget.Area
 
-      CASE "habitat."
-        outbind.target = BindingTarget.Habitat
+      CASE "param."
+        outbind.target = BindingTarget.Param
 
       CASE "sel."
         outbind.target = BindingTarget.Field
@@ -2955,15 +2977,15 @@ SUB FieldSetBound (wid%, fid%, b AS BindingType, value$)
     LET xtext$ = ResourceGet(b.valrid)
 
     SELECT CASE b.target
-      CASE BindingTarget.Area
+     
+      CASE BindingTarget.Param
 
-        SELECT CASE xtext$
-          CASE "energy"
-            DIM aid%
-            LET aid% = AtlasGetValue(atlascx, atlascy, 0)
-            IF aid% > 0 THEN
-              area(aid%).energy = VAL(value$)
-            END IF
+        SELECT CASE win(wid%).param.pkind
+          CASE WinParamKind.Area
+            SELECT CASE xtext$
+              CASE "energy"
+                area(win(wid%).param.value).energy = VAL(value$)
+            END SELECT
         END SELECT
 
     END SELECT
@@ -3036,25 +3058,6 @@ FUNCTION GameArea%
 
 END FUNCTION
 
-FUNCTION GameAreaEnergy%
- 
-  DIM aid%
-  aid% = GameArea
-  IF aid% > 0 THEN
-    GameAreaEnergy = area(aid%).energy
-  END IF
-
-END FUNCTION
-
-FUNCTION GameHabitat%
-
-  DIM aid%: aid% = GameArea%
-  IF aid% > 0 THEN
-    GameHabitat% = area(aid%).hid
-  END IF
-
-END FUNCTION
-
 SUB GameHarvest
 
   DIM aid%
@@ -3063,6 +3066,71 @@ SUB GameHarvest
   aid% = GameArea%
   IF aid% > 0 THEN
     WorldHarvest aid%
+  END IF
+
+END SUB
+
+SUB GameMoveOffset (offsetX%, offsetY%)
+ 
+  DIM aid     AS INTEGER
+  DIM cx      AS INTEGER
+  DIM cy      AS INTEGER
+  DIM hid     AS INTEGER
+  DIM idx     AS INTEGER
+  DIM wresult AS WinResultType
+
+  '
+  ' Get the index of the player avatar
+  '
+  IF playeraid = 0 THEN EXIT SUB
+  idx = AtlasIndexOf%(playeraid)
+  IF idx = 0 THEN EXIT SUB
+ 
+  '
+  ' Get the coordinates of the player
+  '
+  cx = atlasitem(idx).cx
+  cy = atlasitem(idx).cy
+
+  '
+  ' Calculate next coordinates
+  '
+  cx = cx + offsetX%
+  cy = cy + offsetY%
+  IF cx < LBOUND(atlasGrid, 1) THEN cx = UBOUND(atlasGrid, 1)
+  IF cx > UBOUND(atlasGrid, 1) THEN cx = LBOUND(atlasGrid, 1)
+  IF cy < LBOUND(atlasGrid, 2) THEN cy = UBOUND(atlasGrid, 2)
+  IF cy > UBOUND(atlasGrid, 2) THEN cy = LBOUND(atlasGrid, 2)
+
+  '
+  ' See what is at the next location
+  '
+  aid = AtlasGetValue(cx, cy, 0)
+  IF aid = 0 THEN
+    AtlasMoveItem idx, cx, cy
+    EventIncrement "AtlasMoves"
+  ELSE
+
+    hid = area(aid).hid
+      
+    '
+    ' Run the window name handling this habitat
+    '
+    IF habitat(hid).wid > 0 THEN
+     
+      AtlasDrawSelect cx, cy, 1
+
+      ' HACK
+      win(habitat(hid).wid).param.value = hid
+      WinRun habitat(hid).wid, wresult
+      IF wresult.action = WinAction.Execute THEN
+        cresult = ExecResource%(wresult.cmdrid)
+      END IF
+  
+      AtlasDrawUnselect cx, cy
+
+    END IF
+
   END IF
 
 END SUB
@@ -3490,63 +3558,33 @@ SUB UI.RunAtlas
  
   Assert uiCurrentPage = UIPage.Atlas, "UI.RunAtlas", "Wrong UI page"
 
-  DIM aid      AS INTEGER
-  DIM cresult  AS INTEGER
-  DIM hid      AS INTEGER
-  DIM outpress AS STRING
-  DIM wresult  AS WinResultType
- 
-  '
-  ' Set the default position if this is the first run
-  '
-  IF atlascx = 0 THEN atlascx = 1
-  IF atlascy = 0 THEN atlascy = 1
+  DIM pressed AS STRING
 
-PromptAgain:
+  DO
 
-  IF AtlasPrompt(AtlasPromptFor.Item, atlascx, atlascy, outpress) THEN
+    pressed = GetKey$
 
-    SELECT CASE outpress
+    SELECT CASE pressed
      
-      CASE CHR$(ASCII.Return)
-      
-        '
-        ' Get the current area
-        '
-        aid = AtlasGetValue(atlascx, atlascy, 0)
- 
-        '
-        ' Get the habitat of the area
-        '
-        hid = area(aid).hid
-       
-        '
-        ' Run the window name handling this habitat
-        '
-        IF habitat(hid).wid > 0 THEN
-          WinRun habitat(hid).wid, wresult
-          IF wresult.action = WinAction.Execute THEN
-            cresult = ExecResource%(wresult.cmdrid)
-          END IF
-        END IF
+      CASE CHR$(ASCII.Escape)
+        EXIT SUB
 
-      CASE " "
-        UI.Action
+      CASE CHR$(0) + CHR$(ScanCode.Down)
+        GameMoveOffset 0, 1
+
+      CASE CHR$(0) + CHR$(ScanCode.Left)
+        GameMoveOffset -1, 0
+
+      CASE CHR$(0) + CHR$(ScanCode.Right)
+        GameMoveOffset 1, 0
+
+      CASE CHR$(0) + CHR$(ScanCode.Up)
+        GameMoveOffset 0, -1
 
     END SELECT
 
-    '
-    ' Keep one GOTO in this code just to break the rules.
-    '
-    GOTO PromptAgain
-
-  ELSE
-    '
-    ' The player hit escape
-    '
-
-  END IF
-
+  LOOP
+ 
 END SUB
 
 SUB UI.RunConsole
