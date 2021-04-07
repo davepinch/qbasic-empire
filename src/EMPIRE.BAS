@@ -50,6 +50,7 @@ TYPE HabitatType
   backdrop  AS INTEGER
   labelrid  AS INTEGER
   namerid   AS INTEGER
+  startfile AS INTEGER
   wid       AS INTEGER
 END TYPE
 
@@ -160,6 +161,8 @@ DECLARE SUB ConsolePrint (text$)
 '
 DECLARE SUB DialogNext (outpid%, outtext$)
 DECLARE SUB DialogPrint (pid%, text$)
+DECLARE SUB DialogStart (hid%)
+DECLARE SUB DialogStop ()
 DECLARE SUB DialogTimer ()
 DECLARE FUNCTION DialogGarble$ (text$, percent!)
 
@@ -487,7 +490,7 @@ HandleTimer:
   '
   ' Executed when the game needs to perform periodic tasks
   '
-  IF listening THEN
+  IF listening > 0 THEN
     DialogTimer
   END IF
   RETURN
@@ -1376,6 +1379,29 @@ SUB DialogPrint (pid%, text$)
 
 END SUB
 
+SUB DialogStart (hid%)
+ 
+  DIM startfile$
+
+  IF hid% <> listening THEN
+   
+    listening = 0
+
+    startfile$ = ResourceGet(habitat(hid%).startfile)
+    IF LEN(startfile$) > 0 THEN
+      ConsoleFile startfile$
+    END IF
+
+    listening = hid%
+
+  END IF
+
+END SUB
+
+SUB DialogStop
+  listening = 0
+END SUB
+
 SUB DialogTimer
   '
   ' Executed periodically
@@ -1844,6 +1870,9 @@ FUNCTION ExecCmdHid% (ntoken%, stoken$(), hid%)
     CASE "label"
       HabitatSetLabel hid%, stoken$(1)
 
+    CASE "startfile"
+      ResourceSet habitat(hid%).startfile, stoken$(1)
+
     CASE "name"
       HabitatSetName hid%, stoken$(1)
 
@@ -1892,6 +1921,9 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
     CASE "atlas"
       UI.SetPage UIPage.Atlas
  
+    CASE "chain"
+      CHAIN stoken$(1)
+
     CASE "cls"
       ConsoleClear
 
@@ -1912,8 +1944,13 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
       GameHarvest
 
     CASE "listen"
-      UI.SetPage UIPage.Console
-      listening = True
+      DIM listenhid%: listenhid% = VAL(stoken$(1))
+      IF listenhid% = 0 THEN
+        DialogStop
+      ELSE
+        UI.SetPage UIPage.Console
+        DialogStart listenhid%
+      END IF
 
     CASE "mail"
       InboxAdd stoken$(1), stoken$(2)
@@ -3107,11 +3144,22 @@ SUB GameMoveOffset (offsetX%, offsetY%)
      
       AtlasDrawSelect cx, cy, 1
 
-      ' HACK
+      '
+      ' HACK: set window parameter value
+      '
       win(habitat(hid).wid).param.value = hid
       WinRun habitat(hid).wid, wresult
+     
       IF wresult.action = WinAction.Execute THEN
-        cresult = ExecResource%(wresult.cmdrid)
+        '
+        ' HACK: expand command parameter
+        '
+        DIM cmd$: cmd$ = ResourceGet$(wresult.cmdrid)
+        DIM pdx%: pdx% = INSTR(cmd$, "{param.name}")
+        IF pdx% > 0 THEN
+          MID$(cmd$, pdx%) = STR$(hid)
+        END IF
+        cresult = ExecCmd(cmd$)
       END IF
   
       AtlasDrawUnselect cx, cy
@@ -3326,7 +3374,7 @@ END SUB
 
 SUB SetupGame
 
-  SCREEN 0, 0, 0, 0: WIDTH 80: COLOR 7, 0: KEY OFF: CLS : RANDOMIZE TIMER
+  SCREEN 0, 0, 0, 0: WIDTH 80: COLOR 7, 0: KEY OFF: RANDOMIZE TIMER
 
   '
   ' Load menus and windows

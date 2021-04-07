@@ -1,6 +1,11 @@
 @echo off
 
 if "%1" == ""         goto :config
+
+if "%1" == "d"        goto :configDialog
+if "%1" == "dia"      goto :configDialog
+if "%1" == "dlg"      goto :configDialog
+if "%1" == "dialog"   goto :configDialog
 if "%1" == "h"        goto :configHabitats
 if "%1" == "hab"      goto :configHabitats
 if "%1" == "habitat"  goto :configHabitats
@@ -19,6 +24,10 @@ if "%1" == "world"    goto :configWorld
 
 :config
   qbasic /editor empire.cfg
+  goto :done
+
+:configDialog
+  qbasic /editor empire.dlg
   goto :done
 
 :configHabitats

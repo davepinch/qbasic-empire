@@ -3,11 +3,11 @@ This file contains development tips.
 
 ## Assertions
 
-An *assertion* is a declaration that a variable or parameter is required to conform to some restriction. A failed assertion means the code has a bug. 
+An *assertion* is a declaration that a variable or parameter is required to conform to some restriction. A failed assertion means the code has a bug. Example:
 
     Assert var > 1, "ProcName", "invalid var"
 
-The first parameter is a boolean expression that should result in **True** if the requirement is met. The second parameter is the name of the procedure containing the assertion. The third parameter is a string description.
+This statement is asserting that "var" must be greater than one. The first parameter is a boolean expression that is expected by the code to result in **True**. The second parameter is the name of the procedure containing the assertion. The third parameter is a string description.
 
 If the assertion is met, nothing happens. If the assertion fails, the location and description is displayed and the program terminates. By liberally sprinkling assertions around in code, any new bugs are quickly caught, e.g., forgetting to initialize a value.
 
@@ -15,7 +15,7 @@ If the assertion is met, nothing happens. If the assertion fails, the location a
 * **AssertIsPositive(value%, where$, varname$)** asserts that a value is greater than zero.
 * **AssertFail(where$, what$)** always fails.
 
-The assertion subroutines are designed to be subroutines, never functions. Once code is stable, the assertions can be disabled by globally replacing **Assert** with **'Assert** (converting them to comments).
+Once code is stable, the assertions can be disabled by globally replacing **Assert** with **'Assert** (converting them to comments). For this reason, assertions are designed to be subroutines, never functions. 
 
 ## String Resources
 

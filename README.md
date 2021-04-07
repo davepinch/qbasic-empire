@@ -1,14 +1,27 @@
 # qbasic-empire
 
-![title](./pics/original-atlas.png)
+![original](./pics/original-atlas.png)
 
-> An unfinished QBASIC game from 1991-1992, now being finished after a momentary distraction. Feel free to contribute or do as you wish.
+![current](./pics/current.png)
+
+> An unfinished QBASIC game from 1991-1992, now being finished after a momentary distraction. It's not ready to play but you can download if you want to help out.
 
 # controls
 
-* Use the arrow keys, Home, End, PgDn and PgUp to navigate menus and windows.
-* Press Enter to select a menu item, or press ESC to cancel a menu.
-* Once you see the atlas, press Escape to open the top menu.
+## atlas controls
+
+* Use the arrow keys to move around.
+* Push into an object to open it.
+* Push into a boundary to warp to the other side.
+* Press the ESC key to open the top menu.
+
+## window controls
+
+* Use the arrow keys to navigate fields.
+* Use the Home key to navigate to the first field.
+* Use the End key to navigate to the last field.
+* Press Enter to press a button or menu item.
+* Press ESC to exit the window.
 
 # plans
 
@@ -22,7 +35,7 @@ Currently working on step 3:
 
 # history
 
-Around 1991 I had a friend who greatly enjoyed a text-based, multi-player, space conquest game on the Apple IIe/IIgs. He disliked its automated battle mode, however, and asked me to write something better. I took the challenge but alas, never finished the game. I think his name was Matt or Garrity and this is dedicated to him. He said he was going to conquer the world but I'm glad he didn't because he planned on being a ruthless dictator.
+Around 1991 I had a friend who greatly enjoyed a text-based, multi-player, space conquest game on the Apple IIe/IIgs. He disliked its automated battle mode and asked me to write something better. I took the challenge but alas, never finished the game. I think his name was Matt or Garrity and this is dedicated to him. He said he was going to conquer the world but I'm glad he didn't because he planned on being a ruthless dictator.
 
 # installation
 
