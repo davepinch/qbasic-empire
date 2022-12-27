@@ -97,9 +97,9 @@ TYPE WinType
   fields     AS INTEGER
   helpWid    AS INTEGER
   namerid    AS INTEGER
+  offsetX    AS INTEGER
+  offsetY    AS INTEGER
   param      AS WinParamType
-  posX       AS INTEGER
-  posY       AS INTEGER
   selected   AS INTEGER
   sid        AS INTEGER
 END TYPE
@@ -327,7 +327,7 @@ DECLARE SUB WinSelectLast (wid%)
 DECLARE SUB WinSelectPrevious (wid%)
 DECLARE SUB WinSetName (wid%, wname$)
 DECLARE SUB WinSetStyle (wid%, sid%)
-DECLARE FUNCTION WinAddButton% (wid%, posX%, posY%, sizeX%, text$, value$)
+DECLARE FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
 DECLARE FUNCTION WinCreate% ()
 DECLARE FUNCTION WinFindSid% (stylename$)
 DECLARE FUNCTION WinFindWid% (wname$)
@@ -1852,11 +1852,11 @@ FUNCTION CtlGetPopup% (wid%, fid%)
 END FUNCTION
 
 FUNCTION CtlGetScreenX% (wid%, fid%)
-  CtlGetScreenX% = win(wid%).posX + fld(wid%, fid%).offsetX
+  CtlGetScreenX% = 1 + win(wid%).offsetX + fld(wid%, fid%).offsetX
 END FUNCTION
 
 FUNCTION CtlGetScreenY% (wid%, fid%)
-  CtlGetScreenY% = win(wid%).posY + fld(wid%, fid%).offsetY
+  CtlGetScreenY% = 1 + win(wid%).offsetY + fld(wid%, fid%).offsetY
 END FUNCTION
 
 FUNCTION CtlGetSizeX% (wid%, fid%)
@@ -3083,10 +3083,10 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
       win(wid%).param.value = VAL(stoken$(2))
 
     CASE "posx"
-      win(wid%).posX = VAL(stoken$(1))
+      win(wid%).offsetX = VAL(stoken$(1)) - 1
 
     CASE "posy"
-      win(wid%).posY = VAL(stoken$(1))
+      win(wid%).offsetY = VAL(stoken$(1)) - 1
 
     CASE "style"
       WinSetStyle wid%, WinFindSid%(stoken$(1))
