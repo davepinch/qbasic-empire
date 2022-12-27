@@ -208,7 +208,7 @@ DECLARE SUB CtlBindValue (wid%, fid%, expr$)
 DECLARE SUB CtlDraw (wid%, fid%)
 DECLARE SUB CtlDrawBox (wid%, fid%)
 DECLARE SUB CtlDrawBox0 (wid%, fid%)
-DECLARE SUB FieldDrawBox1 (wid%, fid%)
+DECLARE SUB CtlDrawBox1 (wid%, fid%)
 DECLARE SUB FieldDrawBox2 (wid%, fid%)
 DECLARE SUB FieldDrawFile (wid%, fid%)
 DECLARE SUB FieldDrawNebula (wid%, fid%)
@@ -1314,7 +1314,7 @@ SUB CtlDrawBox (wid%, fid%)
       CtlDrawBox0 wid%, fid%
 
     CASE 1:
-      FieldDrawBox1 wid%, fid%
+      CtlDrawBox1 wid%, fid%
 
     CASE 2:
       FieldDrawBox2 wid%, fid%
@@ -1345,6 +1345,68 @@ SUB CtlDrawBox0 (wid%, fid%)
     PRINT STRING$(FieldGetSizeX%(wid%, fid%), " ");
  
   NEXT
+
+END SUB
+
+SUB CtlDrawBox1 (wid%, fid%)
+
+  AssertIsPositive wid%, "CtlDrawBox1", "wid"
+  AssertIsPositive fid%, "CtlDrawBox1", "fid"
+
+  CONST lowerFlat = "Ä"   ' CHR$(196)
+  CONST lowerLeft = "À"   ' CHR$(192)
+  CONST lowerRight = "Ù"  ' CHR$(217)
+  CONST sideLeft = "³"    ' CHR$(179)
+  CONST sideRight = "³"   ' CHR$(179)
+  CONST upperLeft = "Ú"   ' CHR$(218)
+  CONST upperFlat = "Ä"   ' CHR$(196)
+  CONST upperRight = "¿"  ' CHR$(191)
+
+  DIM r     AS INTEGER
+  DIM sid   AS INTEGER
+  DIM sizeX AS INTEGER
+  DIM sx1   AS INTEGER ' Upper-left x-coord
+  DIM sy1   AS INTEGER ' Upper-left y-coord
+  DIM sx2   AS INTEGER ' Lower-right x-coord
+  DIM sy2   AS INTEGER ' Lower-right y-coord
+
+  '
+  ' Calculate screen coordinates
+  '
+  sizeX = FieldGetSizeX%(wid%, fid%)
+  sx1 = win(wid%).posX + fld(wid%, fid%).offsetX
+  sy1 = win(wid%).posY + fld(wid%, fid%).offsetY
+  sx2 = sx1 + sizeX - 1
+  sy2 = sy1 + FieldGetSizeY%(wid%, fid%) - 1
+
+  sid = FieldGetStyle(wid%, fid%)
+
+  '
+  ' Draw the top border
+  '
+  LOCATE sy1, sx1
+  DrawColor winstyle(sid).bordercolor
+  PRINT upperLeft; STRING$(sizeX - 2, upperFlat); upperRight;
+
+  '
+  ' Draw each row of the border
+  '
+  FOR r = sy1 + 1 TO sy2 - 1
+    LOCATE r, sx1
+    PRINT sideLeft;
+  
+    DrawColor winstyle(sid).textcolor
+    PRINT STRING$(sizeX - 2, " ");
+  
+    DrawColor winstyle(sid).bordercolor
+    PRINT sideRight;
+  NEXT
+ 
+  '
+  ' Draw the lower border
+  '
+  LOCATE sy2, sx1
+  PRINT lowerLeft; STRING$(sizeX - 2, lowerFlat); lowerRight;
 
 END SUB
 
@@ -2326,68 +2388,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB FieldDrawBox1 (wid%, fid%)
-
-  AssertIsPositive wid%, "FieldDrawBox1", "wid"
-  AssertIsPositive fid%, "FieldDrawBox1", "fid"
-
-  CONST lowerFlat = "Ä"   ' CHR$(196)
-  CONST lowerLeft = "À"   ' CHR$(192)
-  CONST lowerRight = "Ù"  ' CHR$(217)
-  CONST sideLeft = "³"    ' CHR$(179)
-  CONST sideRight = "³"   ' CHR$(179)
-  CONST upperLeft = "Ú"   ' CHR$(218)
-  CONST upperFlat = "Ä"   ' CHR$(196)
-  CONST upperRight = "¿"  ' CHR$(191)
-
-  DIM r     AS INTEGER
-  DIM sid   AS INTEGER
-  DIM sizeX AS INTEGER
-  DIM sx1   AS INTEGER ' Upper-left x-coord
-  DIM sy1   AS INTEGER ' Upper-left y-coord
-  DIM sx2   AS INTEGER ' Lower-right x-coord
-  DIM sy2   AS INTEGER ' Lower-right y-coord
-
-  '
-  ' Calculate screen coordinates
-  '
-  sizeX = FieldGetSizeX%(wid%, fid%)
-  sx1 = win(wid%).posX + fld(wid%, fid%).offsetX
-  sy1 = win(wid%).posY + fld(wid%, fid%).offsetY
-  sx2 = sx1 + sizeX - 1
-  sy2 = sy1 + FieldGetSizeY%(wid%, fid%) - 1
-
-  sid = FieldGetStyle(wid%, fid%)
-
-  '
-  ' Draw the top border
-  '
-  LOCATE sy1, sx1
-  DrawColor winstyle(sid).bordercolor
-  PRINT upperLeft; STRING$(sizeX - 2, upperFlat); upperRight;
-
-  '
-  ' Draw each row of the border
-  '
-  FOR r = sy1 + 1 TO sy2 - 1
-    LOCATE r, sx1
-    PRINT sideLeft;
-  
-    DrawColor winstyle(sid).textcolor
-    PRINT STRING$(sizeX - 2, " ");
-  
-    DrawColor winstyle(sid).bordercolor
-    PRINT sideRight;
-  NEXT
- 
-  '
-  ' Draw the lower border
-  '
-  LOCATE sy2, sx1
-  PRINT lowerLeft; STRING$(sizeX - 2, lowerFlat); lowerRight;
-
-END SUB
 
 SUB FieldDrawBox2 (wid%, fid%)
 
