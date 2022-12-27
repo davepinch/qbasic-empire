@@ -231,7 +231,7 @@ DECLARE SUB FieldSetValue (wid%, fid%, value$)
 DECLARE FUNCTION CtlCreate% (wid%, kind%)
 DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
 DECLARE FUNCTION CtlGetKind% (wid%, fid%)
-DECLARE FUNCTION FieldGetSizeX% (wid%, fid%)
+DECLARE FUNCTION CtlGetSizeX% (wid%, fid%)
 DECLARE FUNCTION FieldGetSizeY% (wid%, fid%)
 DECLARE FUNCTION FieldGetStyle% (wid%, fid%)
 DECLARE FUNCTION FieldGetText$ (wid%, fid%)
@@ -1342,7 +1342,7 @@ SUB CtlDrawBox0 (wid%, fid%)
     sy = win(wid%).posY + fld(wid%, fid%).offsetY + row - 1
 
     LOCATE sy, sx
-    PRINT STRING$(FieldGetSizeX%(wid%, fid%), " ");
+    PRINT STRING$(CtlGetSizeX%(wid%, fid%), " ");
  
   NEXT
 
@@ -1373,7 +1373,7 @@ SUB CtlDrawBox1 (wid%, fid%)
   '
   ' Calculate screen coordinates
   '
-  sizeX = FieldGetSizeX%(wid%, fid%)
+  sizeX = CtlGetSizeX%(wid%, fid%)
   sx1 = win(wid%).posX + fld(wid%, fid%).offsetX
   sy1 = win(wid%).posY + fld(wid%, fid%).offsetY
   sx2 = sx1 + sizeX - 1
@@ -1422,7 +1422,7 @@ SUB CtlDrawBox2 (wid%, fid%)
   DIM sx    AS INTEGER
   DIM sy    AS INTEGER
 
-  sizeX = FieldGetSizeX%(wid%, fid%)
+  sizeX = CtlGetSizeX%(wid%, fid%)
   sizeY = FieldGetSizeY%(wid%, fid%)
 
   '
@@ -1535,7 +1535,7 @@ SUB CtlDrawNebula (wid%, fid%)
   DIM x     AS INTEGER
   DIM y     AS INTEGER
 
-  sizeX = FieldGetSizeX%(wid%, fid%)
+  sizeX = CtlGetSizeX%(wid%, fid%)
 
   COLOR 7, 0
 
@@ -1634,7 +1634,7 @@ SUB CtlDrawSeparator (wid%, fid%)
   DIM sy    AS INTEGER
 
   sid = FieldGetStyle(wid%, fid%)
-  sizeX = FieldGetSizeX%(wid%, fid%)
+  sizeX = CtlGetSizeX%(wid%, fid%)
   sizeY = FieldGetSizeY%(wid%, fid%)
   sx = win(wid%).posX + fld(wid%, fid%).offsetX
   sy = win(wid%).posY + fld(wid%, fid%).offsetY
@@ -1740,7 +1740,7 @@ SUB CtlDrawText (wid%, fid%)
   ' Print text clipped to size
   '
   text = FieldGetText(wid%, fid%)
-  size = FieldGetSizeX%(wid%, fid%)
+  size = CtlGetSizeX%(wid%, fid%)
   IF size < 1 THEN
     PRINT text;
   ELSE
@@ -1825,6 +1825,10 @@ END FUNCTION
 
 FUNCTION CtlGetKind% (wid%, fid%)
   CtlGetKind% = fld(wid%, fid%).kind
+END FUNCTION
+
+FUNCTION CtlGetSizeX% (wid%, fid%)
+  CtlGetSizeX% = fld(wid%, fid%).sizeYX AND &HFF
 END FUNCTION
 
 FUNCTION DialogGarble$ (text$, percent!)
@@ -2806,10 +2810,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
 
 END FUNCTION
 
-FUNCTION FieldGetSizeX% (wid%, fid%)
-  FieldGetSizeX% = fld(wid%, fid%).sizeYX AND &HFF
-END FUNCTION
-
 FUNCTION FieldGetSizeY% (wid%, fid%)
   FieldGetSizeY% = (fld(wid%, fid%).sizeYX AND &HFF00) \ 256
 END FUNCTION
@@ -2953,7 +2953,7 @@ SUB FieldKeyInteger (wid%, fid%, keypress$)
 
     CASE "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
 
-      IF LEN(buf$) < FieldGetSizeX%(wid%, fid%) THEN
+      IF LEN(buf$) < CtlGetSizeX%(wid%, fid%) THEN
         buf$ = buf$ + keypress$
       END IF
 
