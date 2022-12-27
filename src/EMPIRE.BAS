@@ -211,7 +211,7 @@ DECLARE SUB CtlDrawBox0 (wid%, fid%)
 DECLARE SUB CtlDrawBox1 (wid%, fid%)
 DECLARE SUB CtlDrawBox2 (wid%, fid%)
 DECLARE SUB CtlDrawFile (wid%, fid%)
-DECLARE SUB FieldDrawNebula (wid%, fid%)
+DECLARE SUB CtlDrawNebula (wid%, fid%)
 DECLARE SUB FieldDrawSeparator (wid%, fid%)
 DECLARE SUB FieldDrawText (wid%, fid%)
 DECLARE SUB FieldKey (wid%, fid%, keypress$)
@@ -1291,7 +1291,7 @@ SUB CtlDraw (wid%, fid%)
       FieldDrawSeparator wid%, fid%
 
     CASE FieldKind.Nebula
-      FieldDrawNebula wid%, fid%
+      CtlDrawNebula wid%, fid%
 
     CASE ELSE
       FieldDrawText wid%, fid%
@@ -1523,6 +1523,101 @@ SUB CtlDrawFile (wid%, fid%)
   sy = win(wid%).posY + fld(wid%, fid%).offsetY
 
   DrawFileAt filename, sx, sy
+
+END SUB
+
+SUB CtlDrawNebula (wid%, fid%)
+
+  DIM p     AS INTEGER
+  DIM sizeX AS INTEGER
+  DIM sx    AS INTEGER
+  DIM sy    AS INTEGER
+  DIM x     AS INTEGER
+  DIM y     AS INTEGER
+
+  sizeX = FieldGetSizeX%(wid%, fid%)
+
+  COLOR 7, 0
+
+  FOR y = 1 TO FieldGetSizeY%(wid%, fid%)
+ 
+    x = INT(RND * sizeX) + 1
+    p = 1
+
+    sx = win(wid%).posX + fld(wid%, fid%).offsetX + x - 1
+    sy = win(wid%).posY + fld(wid%, fid%).offsetY + y - 1
+    LOCATE sy, sx
+
+    DO
+    
+      '
+      ' Calculate the next p value. -1=stop, 0=space, or 1,2,3
+      '
+      SELECT CASE p
+  
+        CASE 0
+          SELECT CASE INT(RND * 3)
+            CASE 0
+              p = 1
+            CASE ELSE
+              EXIT DO
+          END SELECT
+  
+        CASE 1
+          SELECT CASE INT(RND * 4)
+            CASE 0
+              p = 0
+            CASE 1
+              p = 2
+            CASE ELSE
+              p = 1
+          END SELECT
+  
+        CASE 2
+          SELECT CASE INT(RND * 4)
+            CASE 0
+              p = 1
+            CASE 1
+              p = 3
+            CASE ELSE
+              p = 2
+          END SELECT
+  
+        CASE 3
+          SELECT CASE INT(RND * 4)
+            CASE 0
+              p = 3
+            CASE ELSE
+              p = 2
+          END SELECT
+
+      END SELECT
+     
+      '
+      ' Draw the p value
+      '
+      SELECT CASE p
+        CASE 1
+          COLOR 8
+          PRINT "Ä";
+        CASE 2
+          COLOR 7
+          PRINT "Ä";
+        CASE 3
+          COLOR 15
+          PRINT "Ä";
+        CASE 0
+          PRINT " ";
+      END SELECT
+   
+      x = x + 1
+      IF x > sizeX THEN
+        EXIT DO
+      END IF
+
+    LOOP
+
+  NEXT
 
 END SUB
 
@@ -2504,101 +2599,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB FieldDrawNebula (wid%, fid%)
-
-  DIM p     AS INTEGER
-  DIM sizeX AS INTEGER
-  DIM sx    AS INTEGER
-  DIM sy    AS INTEGER
-  DIM x     AS INTEGER
-  DIM y     AS INTEGER
-
-  sizeX = FieldGetSizeX%(wid%, fid%)
-
-  COLOR 7, 0
-
-  FOR y = 1 TO FieldGetSizeY%(wid%, fid%)
- 
-    x = INT(RND * sizeX) + 1
-    p = 1
-
-    sx = win(wid%).posX + fld(wid%, fid%).offsetX + x - 1
-    sy = win(wid%).posY + fld(wid%, fid%).offsetY + y - 1
-    LOCATE sy, sx
-
-    DO
-    
-      '
-      ' Calculate the next p value. -1=stop, 0=space, or 1,2,3
-      '
-      SELECT CASE p
-  
-        CASE 0
-          SELECT CASE INT(RND * 3)
-            CASE 0
-              p = 1
-            CASE ELSE
-              EXIT DO
-          END SELECT
-  
-        CASE 1
-          SELECT CASE INT(RND * 4)
-            CASE 0
-              p = 0
-            CASE 1
-              p = 2
-            CASE ELSE
-              p = 1
-          END SELECT
-  
-        CASE 2
-          SELECT CASE INT(RND * 4)
-            CASE 0
-              p = 1
-            CASE 1
-              p = 3
-            CASE ELSE
-              p = 2
-          END SELECT
-  
-        CASE 3
-          SELECT CASE INT(RND * 4)
-            CASE 0
-              p = 3
-            CASE ELSE
-              p = 2
-          END SELECT
-
-      END SELECT
-     
-      '
-      ' Draw the p value
-      '
-      SELECT CASE p
-        CASE 1
-          COLOR 8
-          PRINT "Ä";
-        CASE 2
-          COLOR 7
-          PRINT "Ä";
-        CASE 3
-          COLOR 15
-          PRINT "Ä";
-        CASE 0
-          PRINT " ";
-      END SELECT
-   
-      x = x + 1
-      IF x > sizeX THEN
-        EXIT DO
-      END IF
-
-    LOOP
-
-  NEXT
-
-END SUB
 
 SUB FieldDrawSeparator (wid%, fid%)
 
