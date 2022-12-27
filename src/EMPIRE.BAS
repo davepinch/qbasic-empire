@@ -235,7 +235,7 @@ DECLARE FUNCTION CtlGetSizeX% (wid%, fid%)
 DECLARE FUNCTION CtlGetSizeY% (wid%, fid%)
 DECLARE FUNCTION CtlGetStyle% (wid%, fid%)
 DECLARE FUNCTION CtlGetText$ (wid%, fid%)
-DECLARE FUNCTION FieldGetValue$ (wid%, fid%)
+DECLARE FUNCTION CtlGetValue$ (wid%, fid%)
 DECLARE FUNCTION FieldIsSelectable% (wid%, fid%)
 
 '
@@ -1514,7 +1514,7 @@ SUB CtlDrawFile (wid%, fid%)
   DIM sx AS INTEGER
   DIM sy AS INTEGER
 
-  filename = FieldGetValue$(wid%, fid%)
+  filename = CtlGetValue$(wid%, fid%)
   IF LEN(filename) = 0 THEN
     EXIT SUB
   END IF
@@ -1816,7 +1816,7 @@ FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
         CtlGetBound$ = ""
       
       ELSE
-        CtlGetBound$ = FieldGetValue(wid%, win(wid%).selected)
+        CtlGetBound$ = CtlGetValue(wid%, win(wid%).selected)
       END IF
 
   END SELECT
@@ -1854,6 +1854,15 @@ END FUNCTION
 FUNCTION CtlGetText$ (wid%, fid%)
 
   CtlGetText$ = CtlGetBound$(wid%, fid%, fld(wid%, fid%).text)
+
+END FUNCTION
+
+FUNCTION CtlGetValue$ (wid%, fid%)
+
+  AssertIsPositive wid%, "CtlGetValue", "wid"
+  AssertIsPositive fid%, "CtlGetValue", "fid"
+
+  CtlGetValue$ = CtlGetBound$(wid%, fid%, fld(wid%, fid%).value)
 
 END FUNCTION
 
@@ -2833,15 +2842,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   IF LEN(cmd$) > 0 THEN
     ExecResource% = ExecCmd%(cmd$)
   END IF
-
-END FUNCTION
-
-FUNCTION FieldGetValue$ (wid%, fid%)
-
-  AssertIsPositive wid%, "FieldGetValue", "wid"
-  AssertIsPositive fid%, "FieldGetValue", "fid"
-
-  FieldGetValue$ = CtlGetBound(wid%, fid%, fld(wid%, fid%).value)
 
 END FUNCTION
 
