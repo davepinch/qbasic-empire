@@ -221,7 +221,7 @@ DECLARE SUB CtlParseBinding (text$, outbind AS ANY)
 DECLARE SUB CtlSetBound (wid%, fid%, b AS BindingType, value$)
 DECLARE SUB CtlSetChild (wid%, fid%, wname$)
 DECLARE SUB CtlSetCommand (wid%, fid%, cmd$)
-DECLARE SUB FieldSetOffsetX (wid%, fid%, offsetX%)
+DECLARE SUB CtlSetOffsetX (wid%, fid%, offsetX%)
 DECLARE SUB FieldSetOffsetY (wid%, fid%, offsetY%)
 DECLARE SUB FieldSetSizeX (wid%, fid%, sizeX%)
 DECLARE SUB FieldSetSizeY (wid%, fid%, sizeY%)
@@ -2065,6 +2065,10 @@ SUB CtlSetCommand (wid%, fid%, cmd$)
 
 END SUB
 
+SUB CtlSetOffsetX (wid%, fid%, offsetX%)
+  fld(wid%, fid%).offsetX = offsetX%
+END SUB
+
 FUNCTION DialogGarble$ (text$, percent!)
 
   CONST GarbleCode = 250
@@ -2645,7 +2649,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       CtlSetCommand wid%, fid%, stoken$(1)
 
     CASE "offsetx"
-      FieldSetOffsetX wid%, fid%, VAL(stoken$(1))
+      CtlSetOffsetX wid%, fid%, VAL(stoken$(1))
 
     CASE "offsety"
       FieldSetOffsetY wid%, fid%, VAL(stoken$(1))
@@ -3043,10 +3047,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB FieldSetOffsetX (wid%, fid%, offsetX%)
-  fld(wid%, fid%).offsetX = offsetX%
-END SUB
 
 SUB FieldSetOffsetY (wid%, fid%, offsetY%)
   fld(wid%, fid%).offsetY = offsetY%
