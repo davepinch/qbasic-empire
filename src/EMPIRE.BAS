@@ -28,12 +28,7 @@ TYPE BindingType
   valrid AS INTEGER ' Value or target expression
 END TYPE
 
-TYPE EventType
-  namerid AS INTEGER
-  value   AS INTEGER
-END TYPE
-
-TYPE FieldType
+TYPE CtlType
   kind      AS INTEGER
   childwid  AS INTEGER
   cmdrid    AS INTEGER
@@ -43,6 +38,11 @@ TYPE FieldType
   sizeYX    AS INTEGER
   text      AS BindingType
   value     AS BindingType
+END TYPE
+
+TYPE EventType
+  namerid AS INTEGER
+  value   AS INTEGER
 END TYPE
 
 TYPE HabitatType
@@ -458,7 +458,7 @@ DIM SHARED atlasitem(1 TO 30)    AS AtlasItemType
 DIM SHARED atlaspage             AS INTEGER
 DIM SHARED event(1 TO 5)         AS EventType
 DIM SHARED events                AS INTEGER
-DIM SHARED fld(1 TO 15, 1 TO 13) AS FieldType
+DIM SHARED fld(1 TO 15, 1 TO 13) AS CtlType
 DIM SHARED habitat(1 TO 8)       AS HabitatType
 DIM SHARED habitats              AS INTEGER
 DIM SHARED listening             AS INTEGER
