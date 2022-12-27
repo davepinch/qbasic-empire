@@ -213,7 +213,7 @@ DECLARE SUB CtlDrawBox2 (wid%, fid%)
 DECLARE SUB CtlDrawFile (wid%, fid%)
 DECLARE SUB CtlDrawNebula (wid%, fid%)
 DECLARE SUB CtlDrawSeparator (wid%, fid%)
-DECLARE SUB FieldDrawText (wid%, fid%)
+DECLARE SUB CtlDrawText (wid%, fid%)
 DECLARE SUB FieldKey (wid%, fid%, keypress$)
 DECLARE SUB FieldKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB FieldKeyInteger (wid%, fid%, keypress$)
@@ -1276,13 +1276,13 @@ SUB CtlDraw (wid%, fid%)
     ' Check the most common kinds first
     '
     CASE FieldKind.Button
-      FieldDrawText wid%, fid%
+      CtlDrawText wid%, fid%
 
     CASE FieldKind.Box
       CtlDrawBox wid%, fid%
 
     CASE FieldKind.Label
-      FieldDrawText wid%, fid%
+      CtlDrawText wid%, fid%
 
     CASE FieldKind.File
       CtlDrawFile wid%, fid%
@@ -1294,7 +1294,7 @@ SUB CtlDraw (wid%, fid%)
       CtlDrawNebula wid%, fid%
 
     CASE ELSE
-      FieldDrawText wid%, fid%
+      CtlDrawText wid%, fid%
 
   END SELECT
 
@@ -1704,6 +1704,50 @@ SUB CtlDrawSeparator (wid%, fid%)
         PRINT CHR$(179);  ' ³
     END SELECT
 
+  END IF
+
+END SUB
+
+SUB CtlDrawText (wid%, fid%)
+
+  AssertIsPositive wid%, "CtlDrawText", "wid"
+  AssertIsPositive fid%, "CtlDrawText", "fid"
+ 
+  DIM sid  AS INTEGER
+  DIM size AS INTEGER
+  DIM sx   AS INTEGER
+  DIM sy   AS INTEGER
+  DIM text AS STRING
+
+  '
+  ' Get field position
+  '
+  sx = win(wid%).posX + fld(wid%, fid%).offsetX
+  sy = win(wid%).posY + fld(wid%, fid%).offsetY
+  LOCATE sy, sx
+
+  '
+  ' Set style of text
+  '
+  sid% = FieldGetStyle(wid%, fid%)
+  IF win(wid%).selected = fid% THEN
+    DrawColor winstyle(sid%).selectedcolor
+  ELSE
+    DrawColor winstyle(sid%).textcolor
+  END IF
+
+  '
+  ' Print text clipped to size
+  '
+  text = FieldGetText(wid%, fid%)
+  size = FieldGetSizeX%(wid%, fid%)
+  IF size < 1 THEN
+    PRINT text;
+  ELSE
+    PRINT LEFT$(text, size);
+    IF LEN(text) < size THEN
+      PRINT STRING$(size - LEN(text), " ");
+    END IF
   END IF
 
 END SUB
@@ -2686,50 +2730,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB FieldDrawText (wid%, fid%)
-
-  AssertIsPositive wid%, "FieldDrawText", "wid"
-  AssertIsPositive fid%, "FieldDrawText", "fid"
- 
-  DIM sid  AS INTEGER
-  DIM size AS INTEGER
-  DIM sx   AS INTEGER
-  DIM sy   AS INTEGER
-  DIM text AS STRING
-
-  '
-  ' Get field position
-  '
-  sx = win(wid%).posX + fld(wid%, fid%).offsetX
-  sy = win(wid%).posY + fld(wid%, fid%).offsetY
-  LOCATE sy, sx
-
-  '
-  ' Set style of text
-  '
-  sid% = FieldGetStyle(wid%, fid%)
-  IF win(wid%).selected = fid% THEN
-    DrawColor winstyle(sid%).selectedcolor
-  ELSE
-    DrawColor winstyle(sid%).textcolor
-  END IF
-
-  '
-  ' Print text clipped to size
-  '
-  text = FieldGetText(wid%, fid%)
-  size = FieldGetSizeX%(wid%, fid%)
-  IF size < 1 THEN
-    PRINT text;
-  ELSE
-    PRINT LEFT$(text, size);
-    IF LEN(text) < size THEN
-      PRINT STRING$(size - LEN(text), " ");
-    END IF
-  END IF
-
-END SUB
 
 FUNCTION FieldGetBound$ (wid%, fid%, b AS BindingType)
 
