@@ -220,7 +220,7 @@ DECLARE SUB CtlKeyInteger (wid%, fid%, keypress$)
 DECLARE SUB CtlParseBinding (text$, outbind AS ANY)
 DECLARE SUB CtlSetBound (wid%, fid%, b AS BindingType, value$)
 DECLARE SUB CtlSetChild (wid%, fid%, wname$)
-DECLARE SUB FieldSetCommand (wid%, fid%, cmd$)
+DECLARE SUB CtlSetCommand (wid%, fid%, cmd$)
 DECLARE SUB FieldSetOffsetX (wid%, fid%, offsetX%)
 DECLARE SUB FieldSetOffsetY (wid%, fid%, offsetY%)
 DECLARE SUB FieldSetSizeX (wid%, fid%, sizeX%)
@@ -2056,6 +2056,15 @@ SUB CtlSetChild (wid%, fid%, wname$)
 
 END SUB
 
+SUB CtlSetCommand (wid%, fid%, cmd$)
+
+  AssertIsPositive wid%, "CtlSetCommand", "wid"
+  AssertIsPositive fid%, "CtlSetCommand", "fid"
+
+  ResourceSet fld(wid%, fid%).cmdrid, cmd$
+
+END SUB
+
 FUNCTION DialogGarble$ (text$, percent!)
 
   CONST GarbleCode = 250
@@ -2633,7 +2642,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       CtlSetChild wid%, fid%, stoken$(1)
 
     CASE "command"
-      FieldSetCommand wid%, fid%, stoken$(1)
+      CtlSetCommand wid%, fid%, stoken$(1)
 
     CASE "offsetx"
       FieldSetOffsetX wid%, fid%, VAL(stoken$(1))
@@ -3034,15 +3043,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB FieldSetCommand (wid%, fid%, cmd$)
-
-  AssertIsPositive wid%, "FieldSetCommand", "wid"
-  AssertIsPositive fid%, "FieldSetCommand", "fid"
-
-  ResourceSet fld(wid%, fid%).cmdrid, cmd$
-
-END SUB
 
 SUB FieldSetOffsetX (wid%, fid%, offsetX%)
   fld(wid%, fid%).offsetX = offsetX%
