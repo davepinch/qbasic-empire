@@ -228,7 +228,7 @@ DECLARE SUB FieldSetSizeY (wid%, fid%, sizeY%)
 DECLARE SUB FieldSetStyle (wid%, fid%, sid%)
 DECLARE SUB FieldSetText (wid%, fid%, value$)
 DECLARE SUB FieldSetValue (wid%, fid%, value$)
-DECLARE FUNCTION FieldCreate% (wid%, kind%)
+DECLARE FUNCTION CtlCreate% (wid%, kind%)
 DECLARE FUNCTION FieldGetBound$ (wid%, fid%, b AS BindingType)
 DECLARE FUNCTION FieldGetKind% (wid%, fid%)
 DECLARE FUNCTION FieldGetSizeX% (wid%, fid%)
@@ -1253,6 +1253,19 @@ SUB CtlBindValue (wid%, fid%, expr$)
 
 END SUB
 
+FUNCTION CtlCreate% (wid%, kind%)
+
+  Assert wid% > 0, "CtlCreate", "wid cannot be 0"
+
+  DIM fid%
+  LET fid% = win(wid%).fields + 1
+
+  win(wid%).fields = fid%
+  fld(wid%, fid%).kind = kind%
+  CtlCreate% = fid%
+
+END FUNCTION
+
 SUB CtlDraw (wid%, fid%)
 
   AssertIsPositive wid%, "CtlDraw", "wid"
@@ -2163,31 +2176,31 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
         wid% = 0
      
       CASE "boolean"
-        fid% = FieldCreate%(wid%, FieldKind.Boolean)
+        fid% = CtlCreate%(wid%, FieldKind.Boolean)
 
       CASE "box"
-        fid% = FieldCreate%(wid%, FieldKind.Box)
+        fid% = CtlCreate%(wid%, FieldKind.Box)
 
       CASE "button"
-        fid% = FieldCreate%(wid%, FieldKind.Button)
+        fid% = CtlCreate%(wid%, FieldKind.Button)
    
       CASE "file"
-        fid% = FieldCreate%(wid%, FieldKind.File)
+        fid% = CtlCreate%(wid%, FieldKind.File)
 
       CASE "integer"
-        fid% = FieldCreate%(wid%, FieldKind.Integer)
+        fid% = CtlCreate%(wid%, FieldKind.Integer)
 
       CASE "label"
-        fid% = FieldCreate%(wid%, FieldKind.Label)
+        fid% = CtlCreate%(wid%, FieldKind.Label)
    
       CASE "nebula"
-        fid% = FieldCreate%(wid%, FieldKind.Nebula)
+        fid% = CtlCreate%(wid%, FieldKind.Nebula)
 
       CASE "popup"
-        fid% = FieldCreate%(wid%, FieldKind.Popup)
+        fid% = CtlCreate%(wid%, FieldKind.Popup)
 
       CASE "separator"
-        fid% = FieldCreate%(wid%, FieldKind.Separator)
+        fid% = CtlCreate%(wid%, FieldKind.Separator)
 
       CASE ELSE
         ExecuteCommandWid% = CmdResult.Malformed
@@ -2263,19 +2276,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   IF LEN(cmd$) > 0 THEN
     ExecResource% = ExecCmd%(cmd$)
   END IF
-
-END FUNCTION
-
-FUNCTION FieldCreate% (wid%, kind%)
-
-  Assert wid% > 0, "FieldCreate", "wid cannot be 0"
-
-  DIM fid%
-  LET fid% = win(wid%).fields + 1
-
-  win(wid%).fields = fid%
-  fld(wid%, fid%).kind = kind%
-  FieldCreate% = fid%
 
 END FUNCTION
 
@@ -3673,7 +3673,7 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
   AssertIsPositive wid%, "WinAddButton", "wid"
 
   DIM fid%
-  LET fid% = FieldCreate(wid%, FieldKind.Button)
+  LET fid% = CtlCreate(wid%, FieldKind.Button)
 
   fld(wid%, fid%).childwid = 0
   fld(wid%, fid%).cmdrid = 0
