@@ -236,7 +236,7 @@ DECLARE FUNCTION CtlGetSizeY% (wid%, fid%)
 DECLARE FUNCTION CtlGetStyle% (wid%, fid%)
 DECLARE FUNCTION CtlGetText$ (wid%, fid%)
 DECLARE FUNCTION CtlGetValue$ (wid%, fid%)
-DECLARE FUNCTION FieldIsSelectable% (wid%, fid%)
+DECLARE FUNCTION CtlSelectable% (wid%, fid%)
 
 '
 ' Game
@@ -1866,6 +1866,45 @@ FUNCTION CtlGetValue$ (wid%, fid%)
 
 END FUNCTION
 
+FUNCTION CtlSelectable% (wid%, fid%)
+  '
+  ' Returns True or False depending on whether the specified
+  ' field is selectable (i.e., can receive focus for input or
+  ' selection).
+  '
+  
+  IF wid% < 0 OR fid% <= 0 THEN
+
+    CtlSelectable = False
+
+  ELSEIF fid% > win(wid%).fields THEN
+   
+    CtlSelectable% = False
+ 
+  ELSE
+
+    SELECT CASE CtlGetKind%(wid%, fid%)
+      CASE FieldKind.Button
+        CtlSelectable = True
+
+      CASE FieldKind.Boolean
+        CtlSelectable = True
+
+      CASE FieldKind.Integer
+        CtlSelectable = True
+
+      CASE FieldKind.Popup
+        CtlSelectable = True
+
+      CASE ELSE
+        CtlSelectable = False
+
+    END SELECT
+
+  END IF
+
+END FUNCTION
+
 FUNCTION DialogGarble$ (text$, percent!)
 
   CONST GarbleCode = 250
@@ -2841,45 +2880,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
 
   IF LEN(cmd$) > 0 THEN
     ExecResource% = ExecCmd%(cmd$)
-  END IF
-
-END FUNCTION
-
-FUNCTION FieldIsSelectable% (wid%, fid%)
-  '
-  ' Returns True or False depending on whether the specified
-  ' field is selectable (i.e., can receive focus for input or
-  ' selection).
-  '
-  
-  IF wid% < 0 OR fid% <= 0 THEN
-
-    FieldIsSelectable = False
-
-  ELSEIF fid% > win(wid%).fields THEN
-   
-    FieldIsSelectable% = False
- 
-  ELSE
-
-    SELECT CASE CtlGetKind%(wid%, fid%)
-      CASE FieldKind.Button
-        FieldIsSelectable = True
-
-      CASE FieldKind.Boolean
-        FieldIsSelectable = True
-
-      CASE FieldKind.Integer
-        FieldIsSelectable = True
-
-      CASE FieldKind.Popup
-        FieldIsSelectable = True
-
-      CASE ELSE
-        FieldIsSelectable = False
-
-    END SELECT
-
   END IF
 
 END FUNCTION
@@ -4128,7 +4128,7 @@ SUB WinSelectFirst (wid%)
  
     DIM fid%
     FOR fid% = 1 TO win(wid%).fields
-      IF FieldIsSelectable(wid%, fid%) THEN
+      IF CtlSelectable(wid%, fid%) THEN
         WinSelect wid%, fid%
         EXIT SUB
       END IF
@@ -4160,7 +4160,7 @@ SUB WinSelectLast (wid%)
 
     DIM fid%
     FOR fid% = win(wid%).fields TO 1 STEP -1
-      IF FieldIsSelectable(wid%, fid%) THEN
+      IF CtlSelectable(wid%, fid%) THEN
         WinSelect wid%, fid%
         EXIT SUB
       END IF
@@ -4211,7 +4211,7 @@ SUB WinSelectNext (wid%)
         fid% = 1
       END IF
 
-      IF FieldIsSelectable(wid%, fid%) THEN
+      IF CtlSelectable(wid%, fid%) THEN
         EXIT DO
       END IF
 
@@ -4267,7 +4267,7 @@ SUB WinSelectPrevious (wid%)
         fid% = win(wid%).fields
       END IF
 
-      IF FieldIsSelectable(wid%, fid%) THEN
+      IF CtlSelectable(wid%, fid%) THEN
         EXIT DO
       END IF
 
