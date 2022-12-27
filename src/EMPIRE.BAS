@@ -217,7 +217,7 @@ DECLARE SUB CtlDrawText (wid%, fid%)
 DECLARE SUB CtlKey (wid%, fid%, keypress$)
 DECLARE SUB CtlKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB CtlKeyInteger (wid%, fid%, keypress$)
-DECLARE SUB FieldParseBinding (text$, outbind AS ANY)
+DECLARE SUB CtlParseBinding (text$, outbind AS ANY)
 DECLARE SUB FieldSetBound (wid%, fid%, b AS BindingType, value$)
 DECLARE SUB FieldSetChild (wid%, fid%, wname$)
 DECLARE SUB FieldSetCommand (wid%, fid%, cmd$)
@@ -1240,7 +1240,7 @@ SUB CtlBindText (wid%, fid%, expr$)
   AssertIsPositive wid%, "CtlBindText", "wid"
   AssertIsPositive fid%, "CtlBindText", "fid"
 
-  FieldParseBinding expr$, fld(wid%, fid%).text
+  CtlParseBinding expr$, fld(wid%, fid%).text
 
 END SUB
 
@@ -1249,7 +1249,7 @@ SUB CtlBindValue (wid%, fid%, expr$)
   AssertIsPositive wid%, "CtlBindValue", "wid"
   AssertIsPositive fid%, "CtlBindValue", "fid"
 
-  FieldParseBinding expr$, fld(wid%, fid%).value
+  CtlParseBinding expr$, fld(wid%, fid%).value
 
 END SUB
 
@@ -1942,6 +1942,37 @@ SUB CtlKeyInteger (wid%, fid%, keypress$)
   END SELECT
 
   FieldSetText wid%, fid%, buf$
+
+END SUB
+
+SUB CtlParseBinding (text$, outbind AS BindingType)
+
+  DIM pindex%
+  DIM tname$
+
+  pindex% = INSTR(text$, ".")
+  IF pindex% > 1 THEN
+   
+    tname$ = LCASE$(LEFT$(text$, pindex%))
+
+    SELECT CASE tname$
+
+      CASE "param."
+        outbind.target = BindingTarget.Param
+
+      CASE "sel."
+        outbind.target = BindingTarget.Field
+
+    END SELECT
+
+    ResourceSet outbind.valrid, MID$(text$, pindex% + 1)
+
+  ELSE
+
+    outbind.target = BindingTarget.None
+    ResourceSet outbind.valrid, text$
+
+  END IF
 
 END SUB
 
@@ -2962,37 +2993,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB FieldParseBinding (text$, outbind AS BindingType)
-
-  DIM pindex%
-  DIM tname$
-
-  pindex% = INSTR(text$, ".")
-  IF pindex% > 1 THEN
-   
-    tname$ = LCASE$(LEFT$(text$, pindex%))
-
-    SELECT CASE tname$
-
-      CASE "param."
-        outbind.target = BindingTarget.Param
-
-      CASE "sel."
-        outbind.target = BindingTarget.Field
-
-    END SELECT
-
-    ResourceSet outbind.valrid, MID$(text$, pindex% + 1)
-
-  ELSE
-
-    outbind.target = BindingTarget.None
-    ResourceSet outbind.valrid, text$
-
-  END IF
-
-END SUB
 
 SUB FieldSetBound (wid%, fid%, b AS BindingType, value$)
 
