@@ -219,7 +219,7 @@ DECLARE SUB CtlKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB CtlKeyInteger (wid%, fid%, keypress$)
 DECLARE SUB CtlParseBinding (text$, outbind AS ANY)
 DECLARE SUB CtlSetBound (wid%, fid%, b AS BindingType, value$)
-DECLARE SUB FieldSetChild (wid%, fid%, wname$)
+DECLARE SUB CtlSetChild (wid%, fid%, wname$)
 DECLARE SUB FieldSetCommand (wid%, fid%, cmd$)
 DECLARE SUB FieldSetOffsetX (wid%, fid%, offsetX%)
 DECLARE SUB FieldSetOffsetY (wid%, fid%, offsetY%)
@@ -2047,6 +2047,15 @@ SUB CtlSetBound (wid%, fid%, b AS BindingType, value$)
 
 END SUB
 
+SUB CtlSetChild (wid%, fid%, wname$)
+
+  AssertIsPositive wid%, "CtlSetChild", "wid"
+  AssertIsPositive fid%, "CtlSetChild", "fid"
+
+  fld(wid%, fid%).childwid = WinFindWid%(wname$)
+
+END SUB
+
 FUNCTION DialogGarble$ (text$, percent!)
 
   CONST GarbleCode = 250
@@ -2621,7 +2630,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       fid% = 0
 
     CASE "child"
-      FieldSetChild wid%, fid%, stoken$(1)
+      CtlSetChild wid%, fid%, stoken$(1)
 
     CASE "command"
       FieldSetCommand wid%, fid%, stoken$(1)
@@ -3025,15 +3034,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB FieldSetChild (wid%, fid%, wname$)
-
-  AssertIsPositive wid%, "FieldSetChild", "wid"
-  AssertIsPositive fid%, "FieldSetChild", "fid"
-
-  fld(wid%, fid%).childwid = WinFindWid%(wname$)
-
-END SUB
 
 SUB FieldSetCommand (wid%, fid%, cmd$)
 
