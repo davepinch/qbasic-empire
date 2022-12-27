@@ -220,7 +220,7 @@ DECLARE SUB CtlKeyInteger (wid%, fid%, keypress$)
 DECLARE SUB CtlParseBinding (text$, outbind AS ANY)
 DECLARE SUB CtlSetBound (wid%, fid%, b AS BindingType, value$)
 DECLARE SUB CtlSetCmdRid (wid%, fid%, cmdrid%)
-DECLARE SUB CtlSetCommand (wid%, fid%, cmd$)
+DECLARE SUB CtlSetCmdStr (wid%, fid%, cmd$)
 DECLARE SUB CtlSetKind (wid%, fid%, kind%)
 DECLARE SUB CtlSetOffsetX (wid%, fid%, offsetX%)
 DECLARE SUB CtlSetOffsetY (wid%, fid%, offsetY%)
@@ -2074,10 +2074,10 @@ SUB CtlSetCmdRid (wid%, fid%, cmdrid%)
   fld(wid%, fid%).cmdrid = cmdrid%
 END SUB
 
-SUB CtlSetCommand (wid%, fid%, cmd$)
+SUB CtlSetCmdStr (wid%, fid%, cmd$)
 
-  AssertIsPositive wid%, "CtlSetCommand", "wid"
-  AssertIsPositive fid%, "CtlSetCommand", "fid"
+  AssertIsPositive wid%, "CtlSetCmdStr", "wid"
+  AssertIsPositive fid%, "CtlSetCmdStr", "fid"
 
   DIM rid%
   LET rid% = CtlGetCmdRid%(wid%, fid%)
@@ -2718,7 +2718,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       CtlSetPopupName wid%, fid%, stoken$(1)
 
     CASE "command"
-      CtlSetCommand wid%, fid%, stoken$(1)
+      CtlSetCmdStr wid%, fid%, stoken$(1)
 
     CASE "offsetx"
       CtlSetOffsetX wid%, fid%, VAL(stoken$(1))
