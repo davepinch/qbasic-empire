@@ -387,18 +387,18 @@ CONST CmdResult.OK = 0
 CONST CmdResult.Malformed = 1
 
 '
-' Field Kinds
+' Ctl Kinds
 '
-CONST FieldKind.None = 0
-CONST FieldKind.Boolean = 1
-CONST FieldKind.Box = 2
-CONST FieldKind.Button = 3
-CONST FieldKind.File = 4
-CONST FieldKind.Integer = 5
-CONST FieldKind.Label = 6
-CONST FieldKind.Popup = 7
-CONST FieldKind.Separator = 8
-CONST FieldKind.Nebula = 100
+CONST CtlKind.None = 0
+CONST CtlKind.Boolean = 1
+CONST CtlKind.Box = 2
+CONST CtlKind.Button = 3
+CONST CtlKind.File = 4
+CONST CtlKind.Integer = 5
+CONST CtlKind.Label = 6
+CONST CtlKind.Popup = 7
+CONST CtlKind.Separator = 8
+CONST CtlKind.Nebula = 100
 
 '
 ' Operators
@@ -1275,22 +1275,22 @@ SUB CtlDraw (wid%, fid%)
     '
     ' Check the most common kinds first
     '
-    CASE FieldKind.Button
+    CASE CtlKind.Button
       CtlDrawText wid%, fid%
 
-    CASE FieldKind.Box
+    CASE CtlKind.Box
       CtlDrawBox wid%, fid%
 
-    CASE FieldKind.Label
+    CASE CtlKind.Label
       CtlDrawText wid%, fid%
 
-    CASE FieldKind.File
+    CASE CtlKind.File
       CtlDrawFile wid%, fid%
 
-    CASE FieldKind.Separator
+    CASE CtlKind.Separator
       CtlDrawSeparator wid%, fid%
 
-    CASE FieldKind.Nebula
+    CASE CtlKind.Nebula
       CtlDrawNebula wid%, fid%
 
     CASE ELSE
@@ -1877,10 +1877,10 @@ SUB CtlKey (wid%, fid%, keypress$)
 
     SELECT CASE CtlGetKind%(wid%, fid%)
   
-      CASE FieldKind.Boolean
+      CASE CtlKind.Boolean
         CtlKeyBoolean wid%, fid%, keypress$
 
-      CASE FieldKind.Integer
+      CASE CtlKind.Integer
         CtlKeyInteger wid%, fid%, keypress$
 
     END SELECT
@@ -1994,16 +1994,16 @@ FUNCTION CtlSelectable% (wid%, fid%)
   ELSE
 
     SELECT CASE CtlGetKind%(wid%, fid%)
-      CASE FieldKind.Button
+      CASE CtlKind.Button
         CtlSelectable = True
 
-      CASE FieldKind.Boolean
+      CASE CtlKind.Boolean
         CtlSelectable = True
 
-      CASE FieldKind.Integer
+      CASE CtlKind.Integer
         CtlSelectable = True
 
-      CASE FieldKind.Popup
+      CASE CtlKind.Popup
         CtlSelectable = True
 
       CASE ELSE
@@ -2647,23 +2647,23 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
   LET kind% = CtlGetKind(wid%, fid%)
 
   SELECT CASE kind%
-    CASE FieldKind.Button
+    CASE CtlKind.Button
       endtag = "endbutton"
-    CASE FieldKind.Box
+    CASE CtlKind.Box
       endtag = "endbox"
-    CASE FieldKind.File
+    CASE CtlKind.File
       endtag = "endfile"
-    CASE FieldKind.Label
+    CASE CtlKind.Label
       endtag = "endlabel"
-    CASE FieldKind.Popup
+    CASE CtlKind.Popup
       endtag = "endpopup"
-    CASE FieldKind.Separator
+    CASE CtlKind.Separator
       endtag = "endseparator"
-    CASE FieldKind.Boolean
+    CASE CtlKind.Boolean
       endtag = "endboolean"
-    CASE FieldKind.Integer
+    CASE CtlKind.Integer
       endtag = "endinteger"
-    CASE FieldKind.Nebula
+    CASE CtlKind.Nebula
       endtag = "endnebula"
     CASE ELSE
       AssertFail "ExecCmdFid", "Unknown kind:" + STR$(kind%)
@@ -2979,31 +2979,31 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
         wid% = 0
      
       CASE "boolean"
-        fid% = CtlCreate%(wid%, FieldKind.Boolean)
+        fid% = CtlCreate%(wid%, CtlKind.Boolean)
 
       CASE "box"
-        fid% = CtlCreate%(wid%, FieldKind.Box)
+        fid% = CtlCreate%(wid%, CtlKind.Box)
 
       CASE "button"
-        fid% = CtlCreate%(wid%, FieldKind.Button)
+        fid% = CtlCreate%(wid%, CtlKind.Button)
    
       CASE "file"
-        fid% = CtlCreate%(wid%, FieldKind.File)
+        fid% = CtlCreate%(wid%, CtlKind.File)
 
       CASE "integer"
-        fid% = CtlCreate%(wid%, FieldKind.Integer)
+        fid% = CtlCreate%(wid%, CtlKind.Integer)
 
       CASE "label"
-        fid% = CtlCreate%(wid%, FieldKind.Label)
+        fid% = CtlCreate%(wid%, CtlKind.Label)
    
       CASE "nebula"
-        fid% = CtlCreate%(wid%, FieldKind.Nebula)
+        fid% = CtlCreate%(wid%, CtlKind.Nebula)
 
       CASE "popup"
-        fid% = CtlCreate%(wid%, FieldKind.Popup)
+        fid% = CtlCreate%(wid%, CtlKind.Popup)
 
       CASE "separator"
-        fid% = CtlCreate%(wid%, FieldKind.Separator)
+        fid% = CtlCreate%(wid%, CtlKind.Separator)
 
       CASE ELSE
         ExecuteCommandWid% = CmdResult.Malformed
@@ -3673,7 +3673,7 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
   AssertIsPositive wid%, "WinAddButton", "wid"
 
   DIM fid%
-  LET fid% = CtlCreate(wid%, FieldKind.Button)
+  LET fid% = CtlCreate(wid%, CtlKind.Button)
 
   fld(wid%, fid%).childwid = 0
   fld(wid%, fid%).cmdrid = 0
@@ -3950,7 +3950,7 @@ SUB WinRun (wid%, result AS WinResultType)
        
         EXIT DO
 
-      ELSEIF CtlGetKind%(wid%, win(wid%).selected) <> FieldKind.Popup THEN
+      ELSEIF CtlGetKind%(wid%, win(wid%).selected) <> CtlKind.Popup THEN
        
         EXIT DO
 
