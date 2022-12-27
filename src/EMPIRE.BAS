@@ -219,6 +219,7 @@ DECLARE SUB CtlKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB CtlKeyInteger (wid%, fid%, keypress$)
 DECLARE SUB CtlParseBinding (text$, outbind AS ANY)
 DECLARE SUB CtlSetBound (wid%, fid%, b AS BindingType, value$)
+DECLARE SUB CtlSetCmdRid (wid%, fid%, cmdrid%)
 DECLARE SUB CtlSetCommand (wid%, fid%, cmd$)
 DECLARE SUB CtlSetKind (wid%, fid%, kind%)
 DECLARE SUB CtlSetOffsetX (wid%, fid%, offsetX%)
@@ -2064,6 +2065,10 @@ SUB CtlSetBound (wid%, fid%, b AS BindingType, value$)
 
 END SUB
 
+SUB CtlSetCmdRid (wid%, fid%, cmdrid%)
+  fld(wid%, fid%).cmdrid = cmdrid%
+END SUB
+
 SUB CtlSetCommand (wid%, fid%, cmd$)
 
   AssertIsPositive wid%, "CtlSetCommand", "wid"
@@ -3695,8 +3700,7 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
   DIM fid%
   LET fid% = CtlCreate(wid%, CtlKind.Button)
 
-  fld(wid%, fid%).cmdrid = 0
- 
+  CtlSetCmdRid wid%, fid%, 0
   CtlSetOffsetX wid%, fid%, offsetX%
   CtlSetOffsetY wid%, fid%, offsetY%
   CtlSetPopup wid%, fid%, 0
