@@ -209,7 +209,7 @@ DECLARE SUB CtlDraw (wid%, fid%)
 DECLARE SUB CtlDrawBox (wid%, fid%)
 DECLARE SUB CtlDrawBox0 (wid%, fid%)
 DECLARE SUB CtlDrawBox1 (wid%, fid%)
-DECLARE SUB FieldDrawBox2 (wid%, fid%)
+DECLARE SUB CtlDrawBox2 (wid%, fid%)
 DECLARE SUB FieldDrawFile (wid%, fid%)
 DECLARE SUB FieldDrawNebula (wid%, fid%)
 DECLARE SUB FieldDrawSeparator (wid%, fid%)
@@ -1317,7 +1317,7 @@ SUB CtlDrawBox (wid%, fid%)
       CtlDrawBox1 wid%, fid%
 
     CASE 2:
-      FieldDrawBox2 wid%, fid%
+      CtlDrawBox2 wid%, fid%
 
   END SELECT
 
@@ -1407,6 +1407,101 @@ SUB CtlDrawBox1 (wid%, fid%)
   '
   LOCATE sy2, sx1
   PRINT lowerLeft; STRING$(sizeX - 2, lowerFlat); lowerRight;
+
+END SUB
+
+SUB CtlDrawBox2 (wid%, fid%)
+
+  AssertIsPositive wid%, "CtlDrawBox2", "wid"
+  AssertIsPositive fid%, "CtlDrawBox2", "fid"
+
+  DIM idx   AS INTEGER
+  DIM row   AS INTEGER
+  DIM sizeX AS INTEGER
+  DIM sizeY AS INTEGER
+  DIM sx    AS INTEGER
+  DIM sy    AS INTEGER
+
+  sizeX = FieldGetSizeX%(wid%, fid%)
+  sizeY = FieldGetSizeY%(wid%, fid%)
+
+  '
+  ' Initialize special border characters
+  '
+  DIM ch(0 TO 8) AS STRING * 1  ' Character
+  DIM fc(0 TO 8) AS INTEGER     ' Forecolor
+  DIM bc(0 TO 8) AS INTEGER     ' Backcolor
+
+  ch(0) = CHR$(179): bc(0) = 0: fc(0) = 13
+  ch(1) = CHR$(219): bc(1) = 5: fc(1) = 13
+  ch(2) = CHR$(178): bc(2) = 5: fc(2) = 13
+  ch(3) = CHR$(177): bc(3) = 5: fc(3) = 13
+  ch(4) = CHR$(176): bc(4) = 5: fc(4) = 13
+  ch(5) = CHR$(219): bc(5) = 0: fc(5) = 5
+  ch(6) = CHR$(178): bc(6) = 0: fc(6) = 5
+  ch(7) = CHR$(177): bc(7) = 0: fc(7) = 5
+  ch(8) = CHR$(176): bc(8) = 0: fc(8) = 5
+
+  '
+  ' Top border
+  '
+  sx = win(wid%).posX + fld(wid%, fid%).offsetX
+  sy = win(wid%).posY + fld(wid%, fid%).offsetY
+  LOCATE sy, sx
+  COLOR fc(0), bc(0)
+  PRINT CHR$(220);
+  PRINT STRING$(sizeX - 2, 196);
+  PRINT CHR$(191);
+
+  FOR row = 1 TO sizeY - 2
+
+    '
+    ' Get the index of the left border character
+    '
+    idx = row
+    IF idx > UBOUND(ch) THEN
+      idx = 0
+    END IF
+
+    '
+    ' Left border
+    '
+    sx = win(wid%).posX + fld(wid%, fid%).offsetX
+    sy = win(wid%).posY + fld(wid%, fid%).offsetY + row
+    LOCATE sy, sx
+    COLOR fc(idx), bc(idx)
+    PRINT ch(idx);
+
+    '
+    ' Inner space
+    '
+    COLOR fc(0), bc(0)
+    PRINT STRING$(sizeX - 2, " ");
+
+    '
+    ' Get the index of the right border char
+    '
+    idx = sizeY - row - 1
+
+    IF idx > UBOUND(ch) THEN idx = 0
+
+    '
+    ' Right border
+    '
+    COLOR fc(idx), bc(idx)
+    PRINT ch(idx);
+
+  NEXT
+
+  '
+  ' Bottom border
+  '
+  sy = win(wid%).posY + sizeY - 1
+  LOCATE sy, sx
+  COLOR fc(0), bc(0)
+  PRINT CHR$(192);
+  PRINT STRING$(sizeX - 2, 196);
+  PRINT CHR$(223);
 
 END SUB
 
@@ -2388,101 +2483,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB FieldDrawBox2 (wid%, fid%)
-
-  AssertIsPositive wid%, "FieldDrawBox2", "wid"
-  AssertIsPositive fid%, "FieldDrawBox2", "fid"
-
-  DIM idx   AS INTEGER
-  DIM row   AS INTEGER
-  DIM sizeX AS INTEGER
-  DIM sizeY AS INTEGER
-  DIM sx    AS INTEGER
-  DIM sy    AS INTEGER
-
-  sizeX = FieldGetSizeX%(wid%, fid%)
-  sizeY = FieldGetSizeY%(wid%, fid%)
-
-  '
-  ' Initialize special border characters
-  '
-  DIM ch(0 TO 8) AS STRING * 1  ' Character
-  DIM fc(0 TO 8) AS INTEGER     ' Forecolor
-  DIM bc(0 TO 8) AS INTEGER     ' Backcolor
-
-  ch(0) = CHR$(179): bc(0) = 0: fc(0) = 13
-  ch(1) = CHR$(219): bc(1) = 5: fc(1) = 13
-  ch(2) = CHR$(178): bc(2) = 5: fc(2) = 13
-  ch(3) = CHR$(177): bc(3) = 5: fc(3) = 13
-  ch(4) = CHR$(176): bc(4) = 5: fc(4) = 13
-  ch(5) = CHR$(219): bc(5) = 0: fc(5) = 5
-  ch(6) = CHR$(178): bc(6) = 0: fc(6) = 5
-  ch(7) = CHR$(177): bc(7) = 0: fc(7) = 5
-  ch(8) = CHR$(176): bc(8) = 0: fc(8) = 5
-
-  '
-  ' Top border
-  '
-  sx = win(wid%).posX + fld(wid%, fid%).offsetX
-  sy = win(wid%).posY + fld(wid%, fid%).offsetY
-  LOCATE sy, sx
-  COLOR fc(0), bc(0)
-  PRINT CHR$(220);
-  PRINT STRING$(sizeX - 2, 196);
-  PRINT CHR$(191);
-
-  FOR row = 1 TO sizeY - 2
-
-    '
-    ' Get the index of the left border character
-    '
-    idx = row
-    IF idx > UBOUND(ch) THEN
-      idx = 0
-    END IF
-
-    '
-    ' Left border
-    '
-    sx = win(wid%).posX + fld(wid%, fid%).offsetX
-    sy = win(wid%).posY + fld(wid%, fid%).offsetY + row
-    LOCATE sy, sx
-    COLOR fc(idx), bc(idx)
-    PRINT ch(idx);
-
-    '
-    ' Inner space
-    '
-    COLOR fc(0), bc(0)
-    PRINT STRING$(sizeX - 2, " ");
-
-    '
-    ' Get the index of the right border char
-    '
-    idx = sizeY - row - 1
-
-    IF idx > UBOUND(ch) THEN idx = 0
-
-    '
-    ' Right border
-    '
-    COLOR fc(idx), bc(idx)
-    PRINT ch(idx);
-
-  NEXT
-
-  '
-  ' Bottom border
-  '
-  sy = win(wid%).posY + sizeY - 1
-  LOCATE sy, sx
-  COLOR fc(0), bc(0)
-  PRINT CHR$(192);
-  PRINT STRING$(sizeX - 2, 196);
-  PRINT CHR$(223);
-
-END SUB
 
 SUB FieldDrawFile (wid%, fid%)
 
