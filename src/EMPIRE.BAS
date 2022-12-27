@@ -205,7 +205,7 @@ DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 '
 DECLARE SUB FieldBindText (wid%, fid%, expr$)
 DECLARE SUB FieldBindValue (wid%, fid%, expr$)
-DECLARE SUB FieldDraw (wid%, fid%)
+DECLARE SUB CtlDraw (wid%, fid%)
 DECLARE SUB FieldDrawBox (wid%, fid%)
 DECLARE SUB FieldDrawBox0 (wid%, fid%)
 DECLARE SUB FieldDrawBox1 (wid%, fid%)
@@ -1235,6 +1235,40 @@ SUB ConsolePrint (text$)
 
 END SUB
 
+SUB CtlDraw (wid%, fid%)
+
+  AssertIsPositive wid%, "CtlDraw", "wid"
+  AssertIsPositive fid%, "CtlDraw", "fid"
+
+  SELECT CASE FieldGetKind%(wid%, fid%)
+    '
+    ' Check the most common kinds first
+    '
+    CASE FieldKind.Button
+      FieldDrawText wid%, fid%
+
+    CASE FieldKind.Box
+      FieldDrawBox wid%, fid%
+
+    CASE FieldKind.Label
+      FieldDrawText wid%, fid%
+
+    CASE FieldKind.File
+      FieldDrawFile wid%, fid%
+
+    CASE FieldKind.Separator
+      FieldDrawSeparator wid%, fid%
+
+    CASE FieldKind.Nebula
+      FieldDrawNebula wid%, fid%
+
+    CASE ELSE
+      FieldDrawText wid%, fid%
+
+  END SELECT
+
+END SUB
+
 FUNCTION DialogGarble$ (text$, percent!)
 
   CONST GarbleCode = 250
@@ -2244,40 +2278,6 @@ FUNCTION FieldCreate% (wid%, kind%)
   FieldCreate% = fid%
 
 END FUNCTION
-
-SUB FieldDraw (wid%, fid%)
-
-  AssertIsPositive wid%, "FieldDraw", "wid"
-  AssertIsPositive fid%, "FieldDraw", "fid"
-
-  SELECT CASE FieldGetKind%(wid%, fid%)
-    '
-    ' Check the most common kinds first
-    '
-    CASE FieldKind.Button
-      FieldDrawText wid%, fid%
-
-    CASE FieldKind.Box
-      FieldDrawBox wid%, fid%
-
-    CASE FieldKind.Label
-      FieldDrawText wid%, fid%
-
-    CASE FieldKind.File
-      FieldDrawFile wid%, fid%
-
-    CASE FieldKind.Separator
-      FieldDrawSeparator wid%, fid%
-
-    CASE FieldKind.Nebula
-      FieldDrawNebula wid%, fid%
-
-    CASE ELSE
-      FieldDrawText wid%, fid%
-
-  END SELECT
-
-END SUB
 
 SUB FieldDrawBox (wid%, fid%)
 
@@ -3725,7 +3725,7 @@ SUB WinDraw (wid%)
 
   DIM fid%
   FOR fid% = 1 TO win(wid%).fields
-    FieldDraw wid%, fid%
+    CtlDraw wid%, fid%
   NEXT
 
 END SUB
@@ -3912,11 +3912,11 @@ SUB WinRefreshField (wid%, fid%)
      
       FOR n = 1 TO win(wid%).fields
         IF n = fid% THEN
-          FieldDraw wid%, n
+          CtlDraw wid%, n
         ELSEIF fld(wid%, n).text.target = BindingTarget.Field THEN
-          FieldDraw wid%, n
+          CtlDraw wid%, n
         ELSEIF fld(wid%, n).value.target = BindingTarget.Field THEN
-          FieldDraw wid%, n
+          CtlDraw wid%, n
         END IF
       NEXT
 
