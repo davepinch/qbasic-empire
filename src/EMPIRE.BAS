@@ -210,7 +210,7 @@ DECLARE SUB CtlDrawBox (wid%, fid%)
 DECLARE SUB CtlDrawBox0 (wid%, fid%)
 DECLARE SUB CtlDrawBox1 (wid%, fid%)
 DECLARE SUB CtlDrawBox2 (wid%, fid%)
-DECLARE SUB FieldDrawFile (wid%, fid%)
+DECLARE SUB CtlDrawFile (wid%, fid%)
 DECLARE SUB FieldDrawNebula (wid%, fid%)
 DECLARE SUB FieldDrawSeparator (wid%, fid%)
 DECLARE SUB FieldDrawText (wid%, fid%)
@@ -1285,7 +1285,7 @@ SUB CtlDraw (wid%, fid%)
       FieldDrawText wid%, fid%
 
     CASE FieldKind.File
-      FieldDrawFile wid%, fid%
+      CtlDrawFile wid%, fid%
 
     CASE FieldKind.Separator
       FieldDrawSeparator wid%, fid%
@@ -1502,6 +1502,27 @@ SUB CtlDrawBox2 (wid%, fid%)
   PRINT CHR$(192);
   PRINT STRING$(sizeX - 2, 196);
   PRINT CHR$(223);
+
+END SUB
+
+SUB CtlDrawFile (wid%, fid%)
+
+  AssertIsPositive wid%, "CtlDrawFile", "wid"
+  AssertIsPositive fid%, "CtlDrawFile", "fid"
+
+  DIM filename AS STRING
+  DIM sx AS INTEGER
+  DIM sy AS INTEGER
+
+  filename = FieldGetValue$(wid%, fid%)
+  IF LEN(filename) = 0 THEN
+    EXIT SUB
+  END IF
+
+  sx = win(wid%).posX + fld(wid%, fid%).offsetX
+  sy = win(wid%).posY + fld(wid%, fid%).offsetY
+
+  DrawFileAt filename, sx, sy
 
 END SUB
 
@@ -2483,27 +2504,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB FieldDrawFile (wid%, fid%)
-
-  AssertIsPositive wid%, "FieldDrawFile", "wid"
-  AssertIsPositive fid%, "FieldDrawFile", "fid"
-
-  DIM filename AS STRING
-  DIM sx AS INTEGER
-  DIM sy AS INTEGER
-
-  filename = FieldGetValue$(wid%, fid%)
-  IF LEN(filename) = 0 THEN
-    EXIT SUB
-  END IF
-
-  sx = win(wid%).posX + fld(wid%, fid%).offsetX
-  sy = win(wid%).posY + fld(wid%, fid%).offsetY
-
-  DrawFileAt filename, sx, sy
-
-END SUB
 
 SUB FieldDrawNebula (wid%, fid%)
 
