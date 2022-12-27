@@ -206,7 +206,7 @@ DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 DECLARE SUB CtlBindText (wid%, fid%, expr$)
 DECLARE SUB CtlBindValue (wid%, fid%, expr$)
 DECLARE SUB CtlDraw (wid%, fid%)
-DECLARE SUB FieldDrawBox (wid%, fid%)
+DECLARE SUB CtlDrawBox (wid%, fid%)
 DECLARE SUB FieldDrawBox0 (wid%, fid%)
 DECLARE SUB FieldDrawBox1 (wid%, fid%)
 DECLARE SUB FieldDrawBox2 (wid%, fid%)
@@ -1279,7 +1279,7 @@ SUB CtlDraw (wid%, fid%)
       FieldDrawText wid%, fid%
 
     CASE FieldKind.Box
-      FieldDrawBox wid%, fid%
+      CtlDrawBox wid%, fid%
 
     CASE FieldKind.Label
       FieldDrawText wid%, fid%
@@ -1295,6 +1295,29 @@ SUB CtlDraw (wid%, fid%)
 
     CASE ELSE
       FieldDrawText wid%, fid%
+
+  END SELECT
+
+END SUB
+
+SUB CtlDrawBox (wid%, fid%)
+
+  AssertIsPositive wid%, "CtlDrawBox", "wid"
+  AssertIsPositive fid%, "CtlDrawBox", "fid"
+
+  DIM sid%
+  LET sid% = FieldGetStyle(wid%, fid%)
+
+  SELECT CASE winstyle(sid%).bordertype
+ 
+    CASE 0:
+      FieldDrawBox0 wid%, fid%
+
+    CASE 1:
+      FieldDrawBox1 wid%, fid%
+
+    CASE 2:
+      FieldDrawBox2 wid%, fid%
 
   END SELECT
 
@@ -1905,7 +1928,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       IF LCASE$(stoken$(1)) = "bind" THEN
         CtlBindValue wid%, fid%, stoken$(2)
       ELSE
-        CtlSetValue wid%, fid%, stoken$(1)
+        FieldSetValue wid%, fid%, stoken$(1)
       END IF
 
     CASE ELSE
@@ -2278,29 +2301,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB FieldDrawBox (wid%, fid%)
-
-  AssertIsPositive wid%, "FieldDrawBox", "wid"
-  AssertIsPositive fid%, "FieldDrawBox", "fid"
-
-  DIM sid%
-  LET sid% = FieldGetStyle(wid%, fid%)
-
-  SELECT CASE winstyle(sid%).bordertype
- 
-    CASE 0:
-      FieldDrawBox0 wid%, fid%
-
-    CASE 1:
-      FieldDrawBox1 wid%, fid%
-
-    CASE 2:
-      FieldDrawBox2 wid%, fid%
-
-  END SELECT
-
-END SUB
 
 SUB FieldDrawBox0 (wid%, fid%)
 
