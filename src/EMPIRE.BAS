@@ -216,7 +216,7 @@ DECLARE SUB CtlDrawSeparator (wid%, fid%)
 DECLARE SUB CtlDrawText (wid%, fid%)
 DECLARE SUB CtlKey (wid%, fid%, keypress$)
 DECLARE SUB CtlKeyBoolean (wid%, fid%, keypress$)
-DECLARE SUB FieldKeyInteger (wid%, fid%, keypress$)
+DECLARE SUB CtlKeyInteger (wid%, fid%, keypress$)
 DECLARE SUB FieldParseBinding (text$, outbind AS ANY)
 DECLARE SUB FieldSetBound (wid%, fid%, b AS BindingType, value$)
 DECLARE SUB FieldSetChild (wid%, fid%, wname$)
@@ -1881,7 +1881,7 @@ SUB CtlKey (wid%, fid%, keypress$)
         CtlKeyBoolean wid%, fid%, keypress$
 
       CASE FieldKind.Integer
-        FieldKeyInteger wid%, fid%, keypress$
+        CtlKeyInteger wid%, fid%, keypress$
 
     END SELECT
  
@@ -1914,6 +1914,34 @@ SUB CtlKeyBoolean (wid%, fid%, keypress$)
       FieldSetText wid%, fid%, "Yes"
 
   END SELECT
+
+END SUB
+
+SUB CtlKeyInteger (wid%, fid%, keypress$)
+  '
+  ' Sends a key to an integer field
+  '
+
+  DIM buf$
+  LET buf$ = CtlGetText$(wid%, fid%)
+
+  SELECT CASE keypress$
+   
+    CASE CHR$(ASCII.Backspace)
+
+      IF LEN(buf$) > 0 THEN
+        buf$ = LEFT$(buf$, LEN(buf$) - 1)
+      END IF
+
+    CASE "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
+
+      IF LEN(buf$) < CtlGetSizeX%(wid%, fid%) THEN
+        buf$ = buf$ + keypress$
+      END IF
+
+  END SELECT
+
+  FieldSetText wid%, fid%, buf$
 
 END SUB
 
@@ -2934,34 +2962,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB FieldKeyInteger (wid%, fid%, keypress$)
-  '
-  ' Sends a key to an integer field
-  '
-
-  DIM buf$
-  LET buf$ = CtlGetText$(wid%, fid%)
-
-  SELECT CASE keypress$
-   
-    CASE CHR$(ASCII.Backspace)
-
-      IF LEN(buf$) > 0 THEN
-        buf$ = LEFT$(buf$, LEN(buf$) - 1)
-      END IF
-
-    CASE "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
-
-      IF LEN(buf$) < CtlGetSizeX%(wid%, fid%) THEN
-        buf$ = buf$ + keypress$
-      END IF
-
-  END SELECT
-
-  FieldSetText wid%, fid%, buf$
-
-END SUB
 
 SUB FieldParseBinding (text$, outbind AS BindingType)
 
