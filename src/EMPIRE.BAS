@@ -234,6 +234,7 @@ DECLARE FUNCTION CtlCreate% (wid%, kind%)
 DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
 DECLARE FUNCTION CtlGetKind% (wid%, fid%)
 DECLARE FUNCTION CtlGetOffsetX% (wid%, fid%)
+DECLARE FUNCTION CtlGetOffsetY% (wid%, fid%)
 DECLARE FUNCTION CtlGetPopup% (wid%, fid%)
 DECLARE FUNCTION CtlGetSizeX% (wid%, fid%)
 DECLARE FUNCTION CtlGetSizeY% (wid%, fid%)
@@ -1343,7 +1344,7 @@ SUB CtlDrawBox0 (wid%, fid%)
   FOR row = 1 TO CtlGetSizeY%(wid%, fid%)
    
     sx = win(wid%).posX + CtlGetOffsetX%(wid%, fid%)
-    sy = win(wid%).posY + fld(wid%, fid%).offsetY + row - 1
+    sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%) + row - 1
 
     LOCATE sy, sx
     PRINT STRING$(CtlGetSizeX%(wid%, fid%), " ");
@@ -1379,7 +1380,7 @@ SUB CtlDrawBox1 (wid%, fid%)
   '
   sizeX = CtlGetSizeX%(wid%, fid%)
   sx1 = win(wid%).posX + CtlGetOffsetX%(wid%, fid%)
-  sy1 = win(wid%).posY + fld(wid%, fid%).offsetY
+  sy1 = win(wid%).posY + CtlGetOffsetY%(wid%, fid%)
   sx2 = sx1 + sizeX - 1
   sy2 = sy1 + CtlGetSizeY%(wid%, fid%) - 1
 
@@ -1450,7 +1451,7 @@ SUB CtlDrawBox2 (wid%, fid%)
   ' Top border
   '
   sx = win(wid%).posX + CtlGetOffsetX%(wid%, fid%)
-  sy = win(wid%).posY + fld(wid%, fid%).offsetY
+  sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%)
   LOCATE sy, sx
   COLOR fc(0), bc(0)
   PRINT CHR$(220);
@@ -1471,7 +1472,7 @@ SUB CtlDrawBox2 (wid%, fid%)
     ' Left border
     '
     sx = win(wid%).posX + CtlGetOffsetX%(wid%, fid%)
-    sy = win(wid%).posY + fld(wid%, fid%).offsetY + row
+    sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%) + row
     LOCATE sy, sx
     COLOR fc(idx), bc(idx)
     PRINT ch(idx);
@@ -1524,7 +1525,7 @@ SUB CtlDrawFile (wid%, fid%)
   END IF
 
   sx = win(wid%).posX + CtlGetOffsetX%(wid%, fid%)
-  sy = win(wid%).posY + fld(wid%, fid%).offsetY
+  sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%)
 
   DrawFileAt filename, sx, sy
 
@@ -1549,7 +1550,7 @@ SUB CtlDrawNebula (wid%, fid%)
     p = 1
 
     sx = win(wid%).posX + CtlGetOffsetX%(wid%, fid%) + x - 1
-    sy = win(wid%).posY + fld(wid%, fid%).offsetY + y - 1
+    sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%) + y - 1
     LOCATE sy, sx
 
     DO
@@ -1641,7 +1642,7 @@ SUB CtlDrawSeparator (wid%, fid%)
   sizeX = CtlGetSizeX%(wid%, fid%)
   sizeY = CtlGetSizeY%(wid%, fid%)
   sx = win(wid%).posX + CtlGetOffsetX%(wid%, fid%)
-  sy = win(wid%).posY + fld(wid%, fid%).offsetY
+  sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%)
 
   LOCATE sy, sx
   DrawColor winstyle(sid).bordercolor
@@ -1727,7 +1728,7 @@ SUB CtlDrawText (wid%, fid%)
   ' Get field position
   '
   sx = win(wid%).posX + CtlGetOffsetX%(wid%, fid%)
-  sy = win(wid%).posY + fld(wid%, fid%).offsetY
+  sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%)
   LOCATE sy, sx
 
   '
@@ -1833,6 +1834,10 @@ END FUNCTION
 
 FUNCTION CtlGetOffsetX% (wid%, fid%)
   CtlGetOffsetX% = fld(wid%, fid%).offsetX
+END FUNCTION
+
+FUNCTION CtlGetOffsetY% (wid%, fid%)
+  CtlGetOffsetY% = fld(wid%, fid%).offsetY
 END FUNCTION
 
 FUNCTION CtlGetPopup% (wid%, fid%)
@@ -3691,9 +3696,9 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
   LET fid% = CtlCreate(wid%, CtlKind.Button)
 
   fld(wid%, fid%).cmdrid = 0
-  fld(wid%, fid%).offsetX = offsetX%
-  fld(wid%, fid%).offsetY = offsetY%
  
+  CtlSetOffsetX wid%, fid%, offsetX%
+  CtlSetOffsetY wid%, fid%, offsetY%
   CtlSetPopup wid%, fid%, 0
   CtlSetSizeX wid%, fid%, sizeX%
   CtlSetSizeY wid%, fid%, 1
