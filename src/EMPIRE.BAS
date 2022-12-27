@@ -220,6 +220,7 @@ DECLARE SUB CtlKeyInteger (wid%, fid%, keypress$)
 DECLARE SUB CtlParseBinding (text$, outbind AS ANY)
 DECLARE SUB CtlSetBound (wid%, fid%, b AS BindingType, value$)
 DECLARE SUB CtlSetCommand (wid%, fid%, cmd$)
+DECLARE SUB CtlSetKind (wid%, fid%, kind%)
 DECLARE SUB CtlSetOffsetX (wid%, fid%, offsetX%)
 DECLARE SUB CtlSetOffsetY (wid%, fid%, offsetY%)
 DECLARE SUB CtlSetPopup (wid%, fid%, popupcid%)
@@ -1263,7 +1264,7 @@ FUNCTION CtlCreate% (wid%, kind%)
   LET fid% = win(wid%).fields + 1
 
   win(wid%).fields = fid%
-  fld(wid%, fid%).kind = kind%
+  CtlSetKind wid%, fid%, kind%
   CtlCreate% = fid%
 
 END FUNCTION
@@ -2060,6 +2061,10 @@ SUB CtlSetCommand (wid%, fid%, cmd$)
 
   ResourceSet fld(wid%, fid%).cmdrid, cmd$
 
+END SUB
+
+SUB CtlSetKind (wid%, fid%, kind%)
+  fld(wid%, fid%).kind = kind%
 END SUB
 
 SUB CtlSetOffsetX (wid%, fid%, offsetX%)
