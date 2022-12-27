@@ -224,7 +224,7 @@ DECLARE SUB CtlSetCommand (wid%, fid%, cmd$)
 DECLARE SUB CtlSetOffsetX (wid%, fid%, offsetX%)
 DECLARE SUB CtlSetOffsetY (wid%, fid%, offsetY%)
 DECLARE SUB CtlSetSizeX (wid%, fid%, sizeX%)
-DECLARE SUB FieldSetSizeY (wid%, fid%, sizeY%)
+DECLARE SUB CtlSetSizeY (wid%, fid%, sizeY%)
 DECLARE SUB FieldSetStyle (wid%, fid%, sid%)
 DECLARE SUB FieldSetText (wid%, fid%, value$)
 DECLARE SUB FieldSetValue (wid%, fid%, value$)
@@ -2077,6 +2077,10 @@ SUB CtlSetSizeX (wid%, fid%, sizeX%)
   fld(wid%, fid%).sizeYX = (fld(wid%, fid%).sizeYX AND &HFF00) OR sizeX%
 END SUB
 
+SUB CtlSetSizeY (wid%, fid%, sizeY%)
+  fld(wid%, fid%).sizeYX = (fld(wid%, fid%).sizeYX% AND &HFF) OR (sizeY% * 256)
+END SUB
+
 FUNCTION DialogGarble$ (text$, percent!)
 
   CONST GarbleCode = 250
@@ -2666,7 +2670,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       CtlSetSizeX wid%, fid%, VAL(stoken$(1))
 
     CASE "sizey"
-      FieldSetSizeY wid%, fid%, VAL(stoken$(1))
+      CtlSetSizeY wid%, fid%, VAL(stoken$(1))
 
     CASE "style"
       FieldSetStyle wid%, fid%, WinFindSid%(stoken$(1))
@@ -3055,10 +3059,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB FieldSetSizeY (wid%, fid%, sizeY%)
-  fld(wid%, fid%).sizeYX = (fld(wid%, fid%).sizeYX% AND &HFF) OR (sizeY% * 256)
-END SUB
 
 SUB FieldSetStyle (wid%, fid%, sid%)
   fld(wid%, fid%).sid = sid%
@@ -3681,7 +3681,7 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
   fld(wid%, fid%).offsetY = offsetY%
  
   CtlSetSizeX wid%, fid%, sizeX%
-  FieldSetSizeY wid%, fid%, 1
+  CtlSetSizeY wid%, fid%, 1
   FieldSetText wid%, fid%, text$
   FieldSetValue wid%, fid%, value$
 
