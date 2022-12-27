@@ -234,7 +234,7 @@ DECLARE FUNCTION CtlGetKind% (wid%, fid%)
 DECLARE FUNCTION CtlGetSizeX% (wid%, fid%)
 DECLARE FUNCTION CtlGetSizeY% (wid%, fid%)
 DECLARE FUNCTION CtlGetStyle% (wid%, fid%)
-DECLARE FUNCTION FieldGetText$ (wid%, fid%)
+DECLARE FUNCTION CtlGetText$ (wid%, fid%)
 DECLARE FUNCTION FieldGetValue$ (wid%, fid%)
 DECLARE FUNCTION FieldIsSelectable% (wid%, fid%)
 
@@ -1739,7 +1739,7 @@ SUB CtlDrawText (wid%, fid%)
   '
   ' Print text clipped to size
   '
-  text = FieldGetText(wid%, fid%)
+  text = CtlGetText(wid%, fid%)
   size = CtlGetSizeX%(wid%, fid%)
   IF size < 1 THEN
     PRINT text;
@@ -1849,6 +1849,12 @@ FUNCTION CtlGetStyle% (wid%, fid%)
 
   CtlGetStyle% = sid%
   
+END FUNCTION
+
+FUNCTION CtlGetText$ (wid%, fid%)
+
+  CtlGetText$ = CtlGetBound$(wid%, fid%, fld(wid%, fid%).text)
+
 END FUNCTION
 
 FUNCTION DialogGarble$ (text$, percent!)
@@ -2830,12 +2836,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
 
 END FUNCTION
 
-FUNCTION FieldGetText$ (wid%, fid%)
-
-  FieldGetText$ = CtlGetBound$(wid%, fid%, fld(wid%, fid%).text)
-
-END FUNCTION
-
 FUNCTION FieldGetValue$ (wid%, fid%)
 
   AssertIsPositive wid%, "FieldGetValue", "wid"
@@ -2913,7 +2913,7 @@ SUB FieldKeyBoolean (wid%, fid%, keypress$)
   '
  
   DIM text AS STRING
-  LET text = FieldGetText$(wid%, fid%)
+  LET text = CtlGetText$(wid%, fid%)
 
   SELECT CASE keypress$
 
@@ -2941,7 +2941,7 @@ SUB FieldKeyInteger (wid%, fid%, keypress$)
   '
 
   DIM buf$
-  LET buf$ = FieldGetText$(wid%, fid%)
+  LET buf$ = CtlGetText$(wid%, fid%)
 
   SELECT CASE keypress$
    
