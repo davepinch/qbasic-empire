@@ -227,7 +227,7 @@ DECLARE SUB CtlSetSizeX (wid%, fid%, sizeX%)
 DECLARE SUB CtlSetSizeY (wid%, fid%, sizeY%)
 DECLARE SUB CtlSetStyle (wid%, fid%, sid%)
 DECLARE SUB CtlSetText (wid%, fid%, value$)
-DECLARE SUB FieldSetValue (wid%, fid%, value$)
+DECLARE SUB CtlSetValue (wid%, fid%, value$)
 DECLARE FUNCTION CtlCreate% (wid%, kind%)
 DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
 DECLARE FUNCTION CtlGetKind% (wid%, fid%)
@@ -2094,6 +2094,15 @@ SUB CtlSetText (wid%, fid%, value$)
 
 END SUB
 
+SUB CtlSetValue (wid%, fid%, value$)
+
+  AssertIsPositive wid%, "CtlSetValue", "wid"
+  AssertIsPositive fid%, "CtlSetValue", "fid"
+
+  CtlSetBound wid%, fid%, fld(wid%, fid%).value, value$
+
+END SUB
+
 FUNCTION DialogGarble$ (text$, percent!)
 
   CONST GarbleCode = 250
@@ -2699,7 +2708,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       IF LCASE$(stoken$(1)) = "bind" THEN
         CtlBindValue wid%, fid%, stoken$(2)
       ELSE
-        FieldSetValue wid%, fid%, stoken$(1)
+        CtlSetValue wid%, fid%, stoken$(1)
       END IF
 
     CASE ELSE
@@ -3072,15 +3081,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB FieldSetValue (wid%, fid%, value$)
-
-  AssertIsPositive wid%, "FieldSetValue", "wid"
-  AssertIsPositive fid%, "FieldSetValue", "fid"
-
-  CtlSetBound wid%, fid%, fld(wid%, fid%).value, value$
-
-END SUB
 
 SUB GameHarvest
 
@@ -3683,7 +3683,7 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
   CtlSetSizeX wid%, fid%, sizeX%
   CtlSetSizeY wid%, fid%, 1
   CtlSetText wid%, fid%, text$
-  FieldSetValue wid%, fid%, value$
+  CtlSetValue wid%, fid%, value$
 
   WinAddButton% = fid%
 
