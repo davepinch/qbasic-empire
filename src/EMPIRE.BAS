@@ -287,8 +287,8 @@ DECLARE FUNCTION PersonaGetName$ (pid%)
 ' Resources
 '
 DECLARE SUB ResourceSet (rid AS INTEGER, value AS STRING)
-DECLARE FUNCTION ResourceCreate% (value AS STRING)
-DECLARE FUNCTION ResourceGet$ (rid AS INTEGER)
+DECLARE FUNCTION ResourceCreate% (value$)
+DECLARE FUNCTION ResourceGet$ (rid%)
 
 '
 ' UI
@@ -3368,35 +3368,37 @@ SUB PersonaSetName (pid%, text$)
   ResourceSet persona(pid%).namerid, text$
 END SUB
 
-FUNCTION ResourceCreate% (value AS STRING)
+FUNCTION ResourceCreate% (value$)
 
   IF resources = UBOUND(resource) THEN
    
     AssertFail "ResourceCreate", "Out of resource space"
     ResourceCreate% = 0
 
-  ELSEIF value = "" THEN
-
+  ELSEIF LEN(value$) = 0 THEN
+    '
+    ' Resource zero is reserved for the empty string
+    '
     ResourceCreate% = 0
 
   ELSE
 
     resources = resources + 1
-    resource(resources) = value
+    resource(resources) = value$
     ResourceCreate% = resources
 
   END IF
 
 END FUNCTION
 
-FUNCTION ResourceGet$ (rid AS INTEGER)
-  IF rid = 0 THEN
+FUNCTION ResourceGet$ (rid%)
+  IF rid% = 0 THEN
     '
     ' Resource 0 is always an empty string
     '
     ResourceGet$ = ""
   ELSE
-    ResourceGet$ = resource(rid)
+    ResourceGet$ = resource(rid%)
   END IF
 END FUNCTION
 
