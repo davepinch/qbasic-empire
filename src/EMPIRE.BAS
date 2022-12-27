@@ -233,6 +233,7 @@ DECLARE SUB CtlSetText (wid%, fid%, value$)
 DECLARE SUB CtlSetValue (wid%, fid%, value$)
 DECLARE FUNCTION CtlCreate% (wid%, kind%)
 DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
+DECLARE FUNCTION CtlGetCmdRid% (wid%, fid%)
 DECLARE FUNCTION CtlGetKind% (wid%, fid%)
 DECLARE FUNCTION CtlGetOffsetX% (wid%, fid%)
 DECLARE FUNCTION CtlGetOffsetY% (wid%, fid%)
@@ -1829,6 +1830,10 @@ FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
 
 END FUNCTION
 
+FUNCTION CtlGetCmdRid% (wid%, fid%)
+  CtlGetCmdRid% = fld(wid%, fid%).cmdrid
+END FUNCTION
+
 FUNCTION CtlGetKind% (wid%, fid%)
   CtlGetKind% = fld(wid%, fid%).kind
 END FUNCTION
@@ -2074,7 +2079,15 @@ SUB CtlSetCommand (wid%, fid%, cmd$)
   AssertIsPositive wid%, "CtlSetCommand", "wid"
   AssertIsPositive fid%, "CtlSetCommand", "fid"
 
-  ResourceSet fld(wid%, fid%).cmdrid, cmd$
+  DIM rid%
+  LET rid% = CtlGetCmdRid%(wid%, fid%)
+
+  '
+  ' rid% is an output parameter
+  '
+  ResourceSet rid%, cmd$
+
+  CtlSetCmdRid wid%, fid%, rid%
 
 END SUB
 
@@ -3816,7 +3829,7 @@ FUNCTION WinMapKey% (wid%, pressed$)
   selected = win(wid%).selected
   IF selected > 0 THEN
     popupcid = CtlGetPopup%(wid%, selected)
-    cmdrid = fld(wid%, selected).cmdrid
+    cmdrid = CtlGetCmdRid%(wid%, selected)
   END IF
 
   SELECT CASE pressed$
@@ -4043,7 +4056,7 @@ SUB WinRun (wid%, result AS WinResultType)
         result.action = WinAction.Execute
         result.canceled = False
         result.selected = win(wid%).selected
-        result.cmdrid = fld(wid%, result.selected).cmdrid
+        result.cmdrid = CtlGetCmdRid%(wid%, result.selected)
         WinClose wid%
         EXIT SUB
 
