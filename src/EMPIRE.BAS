@@ -157,51 +157,7 @@ DECLARE SUB ConsoleFile (filename$)
 DECLARE SUB ConsolePrint (text$)
 
 '
-' Dialog
-'
-DECLARE SUB DialogNext (outpid%, outtext$)
-DECLARE SUB DialogPrint (pid%, text$)
-DECLARE SUB DialogStart (hid%)
-DECLARE SUB DialogStop ()
-DECLARE SUB DialogTimer ()
-DECLARE FUNCTION DialogGarble$ (text$, percent!)
-
-'
-' Drawing
-'
-DECLARE SUB DrawBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
-DECLARE SUB DrawColor (attr%)
-DECLARE SUB DrawFile (filename AS STRING)
-DECLARE SUB DrawFileAt (filename AS STRING, offsetX AS INTEGER, offsetY AS INTEGER)
-DECLARE SUB DrawText (text AS STRING)
-DECLARE FUNCTION DrawLength% (text$)
-
-'
-' Events
-'
-DECLARE SUB EventIncrement (ename$)
-DECLARE SUB EventFire (eid%)
-DECLARE FUNCTION EventFind% (name$)
-DECLARE FUNCTION EventParseOperator% (opname$)
-DECLARE FUNCTION EventTestTrigger% (eid%, tid%)
-
-'
-' Execution/commands
-'
-DECLARE SUB ExecFile (filename AS STRING)
-DECLARE FUNCTION ExecCmd% (text AS STRING)
-DECLARE FUNCTION ExecCmdEid% (ntoken%, stoken$(), eid%)
-DECLARE FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
-DECLARE FUNCTION ExecCmdHid% (ntoken%, stoken$(), hid%)
-DECLARE FUNCTION ExecCmdPid% (ntoken%, stoken$(), pid%)
-DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
-DECLARE FUNCTION ExecCmdSid% (ntoken%, stoken$(), sid%)
-DECLARE FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
-DECLARE FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
-DECLARE FUNCTION ExecResource% (rid AS INTEGER)
-
-'
-' Fields
+' Controls
 '
 DECLARE SUB CtlBindText (wid%, fid%, expr$)
 DECLARE SUB CtlBindValue (wid%, fid%, expr$)
@@ -248,12 +204,56 @@ DECLARE FUNCTION CtlGetValue$ (wid%, fid%)
 DECLARE FUNCTION CtlSelectable% (wid%, fid%)
 
 '
+' Dialog
+'
+DECLARE SUB DialogNext (outpid%, outtext$)
+DECLARE SUB DialogPrint (pid%, text$)
+DECLARE SUB DialogStart (hid%)
+DECLARE SUB DialogStop ()
+DECLARE SUB DialogTimer ()
+DECLARE FUNCTION DialogGarble$ (text$, percent!)
+
+'
+' Drawing
+'
+DECLARE SUB DrawBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
+DECLARE SUB DrawColor (attr%)
+DECLARE SUB DrawFile (filename AS STRING)
+DECLARE SUB DrawFileAt (filename AS STRING, offsetX AS INTEGER, offsetY AS INTEGER)
+DECLARE SUB DrawText (text AS STRING)
+DECLARE FUNCTION DrawLength% (text$)
+
+'
+' Events
+'
+DECLARE SUB EventIncrement (ename$)
+DECLARE SUB EventFire (eid%)
+DECLARE FUNCTION EventFind% (name$)
+DECLARE FUNCTION EventParseOperator% (opname$)
+DECLARE FUNCTION EventTestTrigger% (eid%, tid%)
+
+'
+' Execution/commands
+'
+DECLARE SUB ExecFile (filename AS STRING)
+DECLARE FUNCTION ExecCmd% (text AS STRING)
+DECLARE FUNCTION ExecCmdEid% (ntoken%, stoken$(), eid%)
+DECLARE FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
+DECLARE FUNCTION ExecCmdHid% (ntoken%, stoken$(), hid%)
+DECLARE FUNCTION ExecCmdPid% (ntoken%, stoken$(), pid%)
+DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
+DECLARE FUNCTION ExecCmdSid% (ntoken%, stoken$(), sid%)
+DECLARE FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
+DECLARE FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
+DECLARE FUNCTION ExecResource% (rid AS INTEGER)
+
+'
 ' Game
 '
 DECLARE SUB GameHarvest ()
 DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 
-'
+'                          
 ' Habitats
 '
 DECLARE SUB HabitatSetAction (hid%, cmd$)
