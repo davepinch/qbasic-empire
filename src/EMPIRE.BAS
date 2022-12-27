@@ -214,7 +214,7 @@ DECLARE SUB CtlDrawFile (wid%, fid%)
 DECLARE SUB CtlDrawNebula (wid%, fid%)
 DECLARE SUB CtlDrawSeparator (wid%, fid%)
 DECLARE SUB CtlDrawText (wid%, fid%)
-DECLARE SUB FieldKey (wid%, fid%, keypress$)
+DECLARE SUB CtlKey (wid%, fid%, keypress$)
 DECLARE SUB FieldKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB FieldKeyInteger (wid%, fid%, keypress$)
 DECLARE SUB FieldParseBinding (text$, outbind AS ANY)
@@ -1866,6 +1866,29 @@ FUNCTION CtlGetValue$ (wid%, fid%)
 
 END FUNCTION
 
+SUB CtlKey (wid%, fid%, keypress$)
+  '
+  ' Sends a keystroke to a field
+  '
+ 
+  AssertIsPositive wid%, "CtlKey", "wid"
+
+  IF fid% > 0 THEN
+
+    SELECT CASE CtlGetKind%(wid%, fid%)
+  
+      CASE FieldKind.Boolean
+        FieldKeyBoolean wid%, fid%, keypress$
+
+      CASE FieldKind.Integer
+        FieldKeyInteger wid%, fid%, keypress$
+
+    END SELECT
+ 
+  END IF
+
+END SUB
+
 FUNCTION CtlSelectable% (wid%, fid%)
   '
   ' Returns True or False depending on whether the specified
@@ -2883,29 +2906,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB FieldKey (wid%, fid%, keypress$)
-  '
-  ' Sends a keystroke to a field
-  '
- 
-  AssertIsPositive wid%, "FieldKey", "wid"
-
-  IF fid% > 0 THEN
-
-    SELECT CASE CtlGetKind%(wid%, fid%)
-  
-      CASE FieldKind.Boolean
-        FieldKeyBoolean wid%, fid%, keypress$
-
-      CASE FieldKind.Integer
-        FieldKeyInteger wid%, fid%, keypress$
-
-    END SELECT
- 
-  END IF
-
-END SUB
 
 SUB FieldKeyBoolean (wid%, fid%, keypress$)
   '
@@ -4060,7 +4060,7 @@ SUB WinRun (wid%, result AS WinResultType)
         WinSelectPrevious wid%
 
       CASE ELSE
-        FieldKey wid%, (win(wid%).selected), pressed
+        CtlKey wid%, (win(wid%).selected), pressed
         WinRefreshField wid%, win(wid%).selected
 
     END SELECT
