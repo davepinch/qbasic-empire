@@ -95,7 +95,6 @@ END TYPE
 TYPE WinType
   arrowexit  AS INTEGER
   fields     AS INTEGER
-  helpWid    AS INTEGER
   namerid    AS INTEGER
   offsetX    AS INTEGER
   offsetY    AS INTEGER
@@ -187,7 +186,7 @@ DECLARE SUB CtlSetSizeY (wid%, fid%, sizeY%)
 DECLARE SUB CtlSetStyle (wid%, fid%, sid%)
 DECLARE SUB CtlSetText (wid%, fid%, value$)
 DECLARE SUB CtlSetValue (wid%, fid%, value$)
-DECLARE FUNCTION CtlCreate% (wid%, kind%)
+DECLARE FUNCTION CtlCreateChild% (wid%, kind%)
 DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
 DECLARE FUNCTION CtlGetCmdRid% (wid%, fid%)
 DECLARE FUNCTION CtlGetKind% (wid%, fid%)
@@ -201,6 +200,7 @@ DECLARE FUNCTION CtlGetSizeY% (wid%, fid%)
 DECLARE FUNCTION CtlGetStyle% (wid%, fid%)
 DECLARE FUNCTION CtlGetText$ (wid%, fid%)
 DECLARE FUNCTION CtlGetValue$ (wid%, fid%)
+DECLARE FUNCTION CtlRedirected% (wid%, fid%, pid%)
 DECLARE FUNCTION CtlSelectable% (wid%, fid%)
 
 '
@@ -253,7 +253,7 @@ DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 DECLARE SUB GameHarvest ()
 DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 
-'                          
+'                       
 ' Habitats
 '
 DECLARE SUB HabitatSetAction (hid%, cmd$)
@@ -399,15 +399,22 @@ CONST CmdResult.Malformed = 1
 ' Ctl Kinds
 '
 CONST CtlKind.None = 0
-CONST CtlKind.Boolean = 1
-CONST CtlKind.Box = 2
-CONST CtlKind.Button = 3
-CONST CtlKind.File = 4
-CONST CtlKind.Integer = 5
-CONST CtlKind.Label = 6
-CONST CtlKind.Popup = 7
-CONST CtlKind.Separator = 8
+CONST CtlKind.Window = 1
+CONST CtlKind.Boolean = 2
+CONST CtlKind.Box = 3
+CONST CtlKind.Button = 4
+CONST CtlKind.File = 5
+CONST CtlKind.Integer = 6
+CONST CtlKind.Label = 7
+CONST CtlKind.Popup = 8
+CONST CtlKind.Separator = 9
 CONST CtlKind.Nebula = 100
+
+'
+' CtlProps
+'
+CONST CtlPropId.Value = 0
+CONST CtlPropId.TextRid = 1
 
 '
 ' Operators
@@ -443,7 +450,6 @@ CONST WinAction.Complete = 2
 CONST WinAction.Execute = 3
 CONST WinAction.ExitLeft = 4
 CONST WinAction.ExitRight = 5
-CONST WinAction.Help = 6
 CONST WinAction.OpenPopup = 11
 CONST WinAction.SelectFirst = 12
 CONST WinAction.SelectLast = 13
@@ -1262,16 +1268,16 @@ SUB CtlBindValue (wid%, fid%, expr$)
 
 END SUB
 
-FUNCTION CtlCreate% (wid%, kind%)
+FUNCTION CtlCreateChild% (wid%, kind%)
 
-  Assert wid% > 0, "CtlCreate", "wid cannot be 0"
+  Assert wid% > 0, "CtlCreateChild", "wid cannot be 0"
 
   DIM fid%
   LET fid% = win(wid%).fields + 1
 
   win(wid%).fields = fid%
   CtlSetKind wid%, fid%, kind%
-  CtlCreate% = fid%
+  CtlCreateChild% = fid%
 
 END FUNCTION
 
@@ -2007,6 +2013,20 @@ SUB CtlParseBinding (text$, outbind AS BindingType)
   END IF
 
 END SUB
+
+FUNCTION CtlRedirected% (wid%, fid%, pid%)
+
+  SELECT CASE pid%
+
+    CASE CtlPropId.TextRid
+      CtlRedirected = fld(wid%, fid%).text.target = BindingTarget.Field
+
+    CASE CtlPropId.Value
+      CtlRedirected% = fld(wid%, fid%).value.target = BindingTarget.Field
+
+  END SELECT
+
+END FUNCTION
 
 FUNCTION CtlSelectable% (wid%, fid%)
   '
@@ -3026,31 +3046,31 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
         wid% = 0
      
       CASE "boolean"
-        fid% = CtlCreate%(wid%, CtlKind.Boolean)
+        fid% = CtlCreateChild%(wid%, CtlKind.Boolean)
 
       CASE "box"
-        fid% = CtlCreate%(wid%, CtlKind.Box)
+        fid% = CtlCreateChild%(wid%, CtlKind.Box)
 
       CASE "button"
-        fid% = CtlCreate%(wid%, CtlKind.Button)
+        fid% = CtlCreateChild%(wid%, CtlKind.Button)
    
       CASE "file"
-        fid% = CtlCreate%(wid%, CtlKind.File)
+        fid% = CtlCreateChild%(wid%, CtlKind.File)
 
       CASE "integer"
-        fid% = CtlCreate%(wid%, CtlKind.Integer)
+        fid% = CtlCreateChild%(wid%, CtlKind.Integer)
 
       CASE "label"
-        fid% = CtlCreate%(wid%, CtlKind.Label)
+        fid% = CtlCreateChild%(wid%, CtlKind.Label)
    
       CASE "nebula"
-        fid% = CtlCreate%(wid%, CtlKind.Nebula)
+        fid% = CtlCreateChild%(wid%, CtlKind.Nebula)
 
       CASE "popup"
-        fid% = CtlCreate%(wid%, CtlKind.Popup)
+        fid% = CtlCreateChild%(wid%, CtlKind.Popup)
 
       CASE "separator"
-        fid% = CtlCreate%(wid%, CtlKind.Separator)
+        fid% = CtlCreateChild%(wid%, CtlKind.Separator)
 
       CASE ELSE
         ExecuteCommandWid% = CmdResult.Malformed
@@ -3722,7 +3742,7 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
   AssertIsPositive wid%, "WinAddButton", "wid"
 
   DIM fid%
-  LET fid% = CtlCreate(wid%, CtlKind.Button)
+  LET fid% = CtlCreateChild(wid%, CtlKind.Button)
 
   CtlSetCmdRid wid%, fid%, 0
   CtlSetOffsetX wid%, fid%, offsetX%
@@ -3896,9 +3916,6 @@ FUNCTION WinMapKey% (wid%, pressed$)
     CASE CHR$(0) + CHR$(ScanCode.Up)
       WinMapKey% = WinAction.SelectPrevious
 
-    CASE "?", "/"
-      WinMapKey = WinAction.Help
-
     CASE ELSE
       WinMapKey = WinAction.None
 
@@ -3961,9 +3978,9 @@ SUB WinRefreshField (wid%, fid%)
       FOR n = 1 TO win(wid%).fields
         IF n = fid% THEN
           CtlDraw wid%, n
-        ELSEIF fld(wid%, n).text.target = BindingTarget.Field THEN
+        ELSEIF CtlRedirected%(wid%, n, CtlPropId.TextRid) THEN
           CtlDraw wid%, n
-        ELSEIF fld(wid%, n).value.target = BindingTarget.Field THEN
+        ELSEIF CtlRedirected%(wid%, n, CtlPropId.Value) THEN
           CtlDraw wid%, n
         END IF
       NEXT
@@ -4086,11 +4103,6 @@ SUB WinRun (wid%, result AS WinResultType)
         result.selected = win(wid%).selected
         WinClose wid%
         EXIT SUB
-
-      CASE WinAction.Help
-        IF win(wid%).helpWid <> 0 THEN
-          WinRun win(wid%).helpWid, result
-        END IF
 
       CASE WinAction.OpenPopup
         nopopups = False
