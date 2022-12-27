@@ -204,7 +204,7 @@ DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 ' Fields
 '
 DECLARE SUB CtlBindText (wid%, fid%, expr$)
-DECLARE SUB FieldBindValue (wid%, fid%, expr$)
+DECLARE SUB CtlBindValue (wid%, fid%, expr$)
 DECLARE SUB CtlDraw (wid%, fid%)
 DECLARE SUB FieldDrawBox (wid%, fid%)
 DECLARE SUB FieldDrawBox0 (wid%, fid%)
@@ -1244,6 +1244,15 @@ SUB CtlBindText (wid%, fid%, expr$)
 
 END SUB
 
+SUB CtlBindValue (wid%, fid%, expr$)
+
+  AssertIsPositive wid%, "CtlBindValue", "wid"
+  AssertIsPositive fid%, "CtlBindValue", "fid"
+
+  FieldParseBinding expr$, fld(wid%, fid%).value
+
+END SUB
+
 SUB CtlDraw (wid%, fid%)
 
   AssertIsPositive wid%, "CtlDraw", "wid"
@@ -1881,9 +1890,9 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
 
     CASE "value"
       IF LCASE$(stoken$(1)) = "bind" THEN
-        FieldBindValue wid%, fid%, stoken$(2)
+        CtlBindValue wid%, fid%, stoken$(2)
       ELSE
-        FieldSetValue wid%, fid%, stoken$(1)
+        CtlSetValue wid%, fid%, stoken$(1)
       END IF
 
     CASE ELSE
@@ -2256,15 +2265,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB FieldBindValue (wid%, fid%, expr$)
-
-  AssertIsPositive wid%, "FieldBindValue", "wid"
-  AssertIsPositive fid%, "FieldBindValue", "fid"
-
-  FieldParseBinding expr$, fld(wid%, fid%).value
-
-END SUB
 
 FUNCTION FieldCreate% (wid%, kind%)
 
