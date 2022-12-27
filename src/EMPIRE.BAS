@@ -232,7 +232,7 @@ DECLARE FUNCTION CtlCreate% (wid%, kind%)
 DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
 DECLARE FUNCTION CtlGetKind% (wid%, fid%)
 DECLARE FUNCTION CtlGetSizeX% (wid%, fid%)
-DECLARE FUNCTION FieldGetSizeY% (wid%, fid%)
+DECLARE FUNCTION CtlGetSizeY% (wid%, fid%)
 DECLARE FUNCTION FieldGetStyle% (wid%, fid%)
 DECLARE FUNCTION FieldGetText$ (wid%, fid%)
 DECLARE FUNCTION FieldGetValue$ (wid%, fid%)
@@ -1336,7 +1336,7 @@ SUB CtlDrawBox0 (wid%, fid%)
   sid = FieldGetStyle(wid%, fid%)
   DrawColor winstyle(sid).textcolor
  
-  FOR row = 1 TO FieldGetSizeY%(wid%, fid%)
+  FOR row = 1 TO CtlGetSizeY%(wid%, fid%)
    
     sx = win(wid%).posX + fld(wid%, fid%).offsetX
     sy = win(wid%).posY + fld(wid%, fid%).offsetY + row - 1
@@ -1377,7 +1377,7 @@ SUB CtlDrawBox1 (wid%, fid%)
   sx1 = win(wid%).posX + fld(wid%, fid%).offsetX
   sy1 = win(wid%).posY + fld(wid%, fid%).offsetY
   sx2 = sx1 + sizeX - 1
-  sy2 = sy1 + FieldGetSizeY%(wid%, fid%) - 1
+  sy2 = sy1 + CtlGetSizeY%(wid%, fid%) - 1
 
   sid = FieldGetStyle(wid%, fid%)
 
@@ -1423,7 +1423,7 @@ SUB CtlDrawBox2 (wid%, fid%)
   DIM sy    AS INTEGER
 
   sizeX = CtlGetSizeX%(wid%, fid%)
-  sizeY = FieldGetSizeY%(wid%, fid%)
+  sizeY = CtlGetSizeY%(wid%, fid%)
 
   '
   ' Initialize special border characters
@@ -1539,7 +1539,7 @@ SUB CtlDrawNebula (wid%, fid%)
 
   COLOR 7, 0
 
-  FOR y = 1 TO FieldGetSizeY%(wid%, fid%)
+  FOR y = 1 TO CtlGetSizeY%(wid%, fid%)
  
     x = INT(RND * sizeX) + 1
     p = 1
@@ -1635,7 +1635,7 @@ SUB CtlDrawSeparator (wid%, fid%)
 
   sid = FieldGetStyle(wid%, fid%)
   sizeX = CtlGetSizeX%(wid%, fid%)
-  sizeY = FieldGetSizeY%(wid%, fid%)
+  sizeY = CtlGetSizeY%(wid%, fid%)
   sx = win(wid%).posX + fld(wid%, fid%).offsetX
   sy = win(wid%).posY + fld(wid%, fid%).offsetY
 
@@ -1829,6 +1829,10 @@ END FUNCTION
 
 FUNCTION CtlGetSizeX% (wid%, fid%)
   CtlGetSizeX% = fld(wid%, fid%).sizeYX AND &HFF
+END FUNCTION
+
+FUNCTION CtlGetSizeY% (wid%, fid%)
+  CtlGetSizeY% = (fld(wid%, fid%).sizeYX AND &HFF00) \ 256
 END FUNCTION
 
 FUNCTION DialogGarble$ (text$, percent!)
@@ -2808,10 +2812,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
     ExecResource% = ExecCmd%(cmd$)
   END IF
 
-END FUNCTION
-
-FUNCTION FieldGetSizeY% (wid%, fid%)
-  FieldGetSizeY% = (fld(wid%, fid%).sizeYX AND &HFF00) \ 256
 END FUNCTION
 
 FUNCTION FieldGetStyle% (wid%, fid%)
