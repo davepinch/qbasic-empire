@@ -30,10 +30,10 @@ END TYPE
 
 TYPE CtlType
   kind      AS INTEGER
-  childwid  AS INTEGER
   cmdrid    AS INTEGER
   offsetX   AS INTEGER
   offsetY   AS INTEGER
+  popupcid  AS INTEGER
   sid       AS INTEGER
   sizeYX    AS INTEGER
   text      AS BindingType
@@ -219,10 +219,11 @@ DECLARE SUB CtlKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB CtlKeyInteger (wid%, fid%, keypress$)
 DECLARE SUB CtlParseBinding (text$, outbind AS ANY)
 DECLARE SUB CtlSetBound (wid%, fid%, b AS BindingType, value$)
-DECLARE SUB CtlSetChild (wid%, fid%, wname$)
 DECLARE SUB CtlSetCommand (wid%, fid%, cmd$)
 DECLARE SUB CtlSetOffsetX (wid%, fid%, offsetX%)
 DECLARE SUB CtlSetOffsetY (wid%, fid%, offsetY%)
+DECLARE SUB CtlSetPopup (wid%, fid%, popupcid%)
+DECLARE SUB CtlSetPopupName (wid%, fid%, wname$)
 DECLARE SUB CtlSetSizeX (wid%, fid%, sizeX%)
 DECLARE SUB CtlSetSizeY (wid%, fid%, sizeY%)
 DECLARE SUB CtlSetStyle (wid%, fid%, sid%)
@@ -231,6 +232,7 @@ DECLARE SUB CtlSetValue (wid%, fid%, value$)
 DECLARE FUNCTION CtlCreate% (wid%, kind%)
 DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
 DECLARE FUNCTION CtlGetKind% (wid%, fid%)
+DECLARE FUNCTION CtlGetPopup% (wid%, fid%)
 DECLARE FUNCTION CtlGetSizeX% (wid%, fid%)
 DECLARE FUNCTION CtlGetSizeY% (wid%, fid%)
 DECLARE FUNCTION CtlGetStyle% (wid%, fid%)
@@ -1827,6 +1829,10 @@ FUNCTION CtlGetKind% (wid%, fid%)
   CtlGetKind% = fld(wid%, fid%).kind
 END FUNCTION
 
+FUNCTION CtlGetPopup% (wid%, fid%)
+  CtlGetPopup% = fld(wid%, fid%).popupcid
+END FUNCTION
+
 FUNCTION CtlGetSizeX% (wid%, fid%)
   CtlGetSizeX% = fld(wid%, fid%).sizeYX AND &HFF
 END FUNCTION
@@ -2047,15 +2053,6 @@ SUB CtlSetBound (wid%, fid%, b AS BindingType, value$)
 
 END SUB
 
-SUB CtlSetChild (wid%, fid%, wname$)
-
-  AssertIsPositive wid%, "CtlSetChild", "wid"
-  AssertIsPositive fid%, "CtlSetChild", "fid"
-
-  fld(wid%, fid%).childwid = WinFindWid%(wname$)
-
-END SUB
-
 SUB CtlSetCommand (wid%, fid%, cmd$)
 
   AssertIsPositive wid%, "CtlSetCommand", "wid"
@@ -2071,6 +2068,14 @@ END SUB
 
 SUB CtlSetOffsetY (wid%, fid%, offsetY%)
   fld(wid%, fid%).offsetY = offsetY%
+END SUB
+
+SUB CtlSetPopup (wid%, fid%, popupcid%)
+  fld(wid%, fid%).popupcid = popupcid%
+END SUB
+
+SUB CtlSetPopupName (wid%, fid%, wname$)
+  CtlSetPopup wid%, fid%, WinFindWid%(wname$)
 END SUB
 
 SUB CtlSetSizeX (wid%, fid%, sizeX%)
@@ -2677,7 +2682,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       fid% = 0
 
     CASE "child"
-      CtlSetChild wid%, fid%, stoken$(1)
+      CtlSetPopupName wid%, fid%, stoken$(1)
 
     CASE "command"
       CtlSetCommand wid%, fid%, stoken$(1)
@@ -3675,11 +3680,11 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
   DIM fid%
   LET fid% = CtlCreate(wid%, CtlKind.Button)
 
-  fld(wid%, fid%).childwid = 0
   fld(wid%, fid%).cmdrid = 0
   fld(wid%, fid%).offsetX = offsetX%
   fld(wid%, fid%).offsetY = offsetY%
  
+  CtlSetPopup wid%, fid%, 0
   CtlSetSizeX wid%, fid%, sizeX%
   CtlSetSizeY wid%, fid%, 1
   CtlSetText wid%, fid%, text$
@@ -3776,7 +3781,7 @@ END FUNCTION
 
 FUNCTION WinMapKey% (wid%, pressed$)
 
-  DIM childwid  AS INTEGER
+  DIM popupcid  AS INTEGER
   DIM cmdrid    AS INTEGER
   DIM exitLeft  AS INTEGER
   DIM exitRight AS INTEGER
@@ -3791,14 +3796,14 @@ FUNCTION WinMapKey% (wid%, pressed$)
   exitRight = win(wid%).arrowexit AND &H2
   selected = win(wid%).selected
   IF selected > 0 THEN
-    childwid = fld(wid%, selected).childwid
+    popupcid = CtlGetPopup%(wid%, selected)
     cmdrid = fld(wid%, selected).cmdrid
   END IF
 
   SELECT CASE pressed$
 
     CASE CHR$(ASCII.Return)
-      IF childwid > 0 THEN
+      IF popupcid > 0 THEN
         WinMapKey% = WinAction.OpenPopup
       ELSEIF cmdrid > 0 THEN
         WinMapKey% = WinAction.Execute
@@ -3813,7 +3818,7 @@ FUNCTION WinMapKey% (wid%, pressed$)
       WinMapKey% = WinAction.SelectNext
 
     CASE CHR$(0) + CHR$(ScanCode.Down)
-      IF childwid > 0 THEN
+      IF popupcid > 0 THEN
         WinMapKey% = WinAction.OpenPopup
       ELSE
         WinMapKey% = WinAction.SelectNext
@@ -3954,13 +3959,13 @@ SUB WinRun (wid%, result AS WinResultType)
        
         EXIT DO
 
-      ELSEIF fld(wid%, win(wid%).selected).childwid = 0 THEN
+      ELSEIF CtlGetPopup(wid%, win(wid%).selected) = 0 THEN
        
         EXIT DO
 
       ELSE
      
-        WinRun fld(wid%, win(wid%).selected).childwid, result
+        WinRun CtlGetPopup(wid%, win(wid%).selected), result
        
         SELECT CASE result.action
          
