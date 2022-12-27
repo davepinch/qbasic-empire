@@ -212,7 +212,7 @@ DECLARE SUB CtlDrawBox1 (wid%, fid%)
 DECLARE SUB CtlDrawBox2 (wid%, fid%)
 DECLARE SUB CtlDrawFile (wid%, fid%)
 DECLARE SUB CtlDrawNebula (wid%, fid%)
-DECLARE SUB FieldDrawSeparator (wid%, fid%)
+DECLARE SUB CtlDrawSeparator (wid%, fid%)
 DECLARE SUB FieldDrawText (wid%, fid%)
 DECLARE SUB FieldKey (wid%, fid%, keypress$)
 DECLARE SUB FieldKeyBoolean (wid%, fid%, keypress$)
@@ -1288,7 +1288,7 @@ SUB CtlDraw (wid%, fid%)
       CtlDrawFile wid%, fid%
 
     CASE FieldKind.Separator
-      FieldDrawSeparator wid%, fid%
+      CtlDrawSeparator wid%, fid%
 
     CASE FieldKind.Nebula
       CtlDrawNebula wid%, fid%
@@ -1618,6 +1618,93 @@ SUB CtlDrawNebula (wid%, fid%)
     LOOP
 
   NEXT
+
+END SUB
+
+SUB CtlDrawSeparator (wid%, fid%)
+
+  AssertIsPositive wid%, "CtlDrawSeparator", "wid"
+  AssertIsPositive fid%, "CtlDrawSeparator", "fid"
+
+  DIM row   AS INTEGER
+  DIM sid   AS INTEGER
+  DIM sizeX AS INTEGER
+  DIM sizeY AS INTEGER
+  DIM sx    AS INTEGER
+  DIM sy    AS INTEGER
+
+  sid = FieldGetStyle(wid%, fid%)
+  sizeX = FieldGetSizeX%(wid%, fid%)
+  sizeY = FieldGetSizeY%(wid%, fid%)
+  sx = win(wid%).posX + fld(wid%, fid%).offsetX
+  sy = win(wid%).posY + fld(wid%, fid%).offsetY
+
+  LOCATE sy, sx
+  DrawColor winstyle(sid).bordercolor
+
+  IF sizeX > 0 THEN
+    '
+    ' Left edge
+    '
+    SELECT CASE SCREEN(sy, sx)
+      CASE 179            ' ³
+        PRINT CHR$(195);  ' Ã
+      CASE 186            ' º
+        PRINT CHR$(199);  ' Ç
+      CASE ELSE           '
+        PRINT CHR$(196);  ' Ä
+    END SELECT
+   
+    '
+    ' Inner separator
+    '
+    PRINT STRING$(sizeX - 2, 196);
+
+    '
+    ' Right edge
+    '
+    SELECT CASE SCREEN(sy, sx + sizeX - 1)
+      CASE 179            ' ³
+        PRINT CHR$(180);  ' ´
+      CASE 186            ' º
+        PRINT CHR$(182);  ' ¶
+      CASE ELSE           '
+        PRINT CHR$(196);  ' Ä
+    END SELECT
+
+  ELSEIF sizeY > 0 THEN
+   
+    '
+    ' Top edge
+    '
+    SELECT CASE SCREEN(sy, sx)
+      CASE 196            ' Ä
+        PRINT CHR$(194);  ' Â
+      CASE 205            ' Í
+        PRINT CHR$(209);  ' Ñ
+      CASE ELSE           '
+        PRINT CHR$(179);  ' ³
+    END SELECT
+
+    FOR row = sy + 1 TO sy + sizeY - 2
+      LOCATE row, sx
+      PRINT CHR$(179);
+    NEXT
+
+    '
+    ' Bottom edge
+    '
+    LOCATE sy + sizeY - 1, sx
+    SELECT CASE SCREEN(sy + sizeY - 1, sx)
+      CASE 196            ' Ä
+        PRINT CHR$(193);  ' Á
+      CASE 205            ' Í
+        PRINT CHR$(207);  ' Ï
+      CASE ELSE           '
+        PRINT CHR$(179);  ' ³
+    END SELECT
+
+  END IF
 
 END SUB
 
@@ -2599,93 +2686,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB FieldDrawSeparator (wid%, fid%)
-
-  AssertIsPositive wid%, "FieldDrawSeparator", "wid"
-  AssertIsPositive fid%, "FieldDrawSeparator", "fid"
-
-  DIM row   AS INTEGER
-  DIM sid   AS INTEGER
-  DIM sizeX AS INTEGER
-  DIM sizeY AS INTEGER
-  DIM sx    AS INTEGER
-  DIM sy    AS INTEGER
-
-  sid = FieldGetStyle(wid%, fid%)
-  sizeX = FieldGetSizeX%(wid%, fid%)
-  sizeY = FieldGetSizeY%(wid%, fid%)
-  sx = win(wid%).posX + fld(wid%, fid%).offsetX
-  sy = win(wid%).posY + fld(wid%, fid%).offsetY
-
-  LOCATE sy, sx
-  DrawColor winstyle(sid).bordercolor
-
-  IF sizeX > 0 THEN
-    '
-    ' Left edge
-    '
-    SELECT CASE SCREEN(sy, sx)
-      CASE 179            ' ³
-        PRINT CHR$(195);  ' Ã
-      CASE 186            ' º
-        PRINT CHR$(199);  ' Ç
-      CASE ELSE           '
-        PRINT CHR$(196);  ' Ä
-    END SELECT
-   
-    '
-    ' Inner separator
-    '
-    PRINT STRING$(sizeX - 2, 196);
-
-    '
-    ' Right edge
-    '
-    SELECT CASE SCREEN(sy, sx + sizeX - 1)
-      CASE 179            ' ³
-        PRINT CHR$(180);  ' ´
-      CASE 186            ' º
-        PRINT CHR$(182);  ' ¶
-      CASE ELSE           '
-        PRINT CHR$(196);  ' Ä
-    END SELECT
-
-  ELSEIF sizeY > 0 THEN
-   
-    '
-    ' Top edge
-    '
-    SELECT CASE SCREEN(sy, sx)
-      CASE 196            ' Ä
-        PRINT CHR$(194);  ' Â
-      CASE 205            ' Í
-        PRINT CHR$(209);  ' Ñ
-      CASE ELSE           '
-        PRINT CHR$(179);  ' ³
-    END SELECT
-
-    FOR row = sy + 1 TO sy + sizeY - 2
-      LOCATE row, sx
-      PRINT CHR$(179);
-    NEXT
-
-    '
-    ' Bottom edge
-    '
-    LOCATE sy + sizeY - 1, sx
-    SELECT CASE SCREEN(sy + sizeY - 1, sx)
-      CASE 196            ' Ä
-        PRINT CHR$(193);  ' Á
-      CASE 205            ' Í
-        PRINT CHR$(207);  ' Ï
-      CASE ELSE           '
-        PRINT CHR$(179);  ' ³
-    END SELECT
-
-  END IF
-
-END SUB
 
 SUB FieldDrawText (wid%, fid%)
 
