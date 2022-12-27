@@ -238,6 +238,7 @@ DECLARE FUNCTION CtlGetKind% (wid%, fid%)
 DECLARE FUNCTION CtlGetOffsetX% (wid%, fid%)
 DECLARE FUNCTION CtlGetOffsetY% (wid%, fid%)
 DECLARE FUNCTION CtlGetPopup% (wid%, fid%)
+DECLARE FUNCTION CtlGetScreenX% (wid%, fid%)
 DECLARE FUNCTION CtlGetSizeX% (wid%, fid%)
 DECLARE FUNCTION CtlGetSizeY% (wid%, fid%)
 DECLARE FUNCTION CtlGetStyle% (wid%, fid%)
@@ -1345,7 +1346,7 @@ SUB CtlDrawBox0 (wid%, fid%)
  
   FOR row = 1 TO CtlGetSizeY%(wid%, fid%)
    
-    sx = win(wid%).posX + CtlGetOffsetX%(wid%, fid%)
+    sx = CtlGetScreenX%(wid%, fid%)
     sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%) + row - 1
 
     LOCATE sy, sx
@@ -1381,7 +1382,7 @@ SUB CtlDrawBox1 (wid%, fid%)
   ' Calculate screen coordinates
   '
   sizeX = CtlGetSizeX%(wid%, fid%)
-  sx1 = win(wid%).posX + CtlGetOffsetX%(wid%, fid%)
+  sx1 = CtlGetScreenX%(wid%, fid%)
   sy1 = win(wid%).posY + CtlGetOffsetY%(wid%, fid%)
   sx2 = sx1 + sizeX - 1
   sy2 = sy1 + CtlGetSizeY%(wid%, fid%) - 1
@@ -1452,7 +1453,7 @@ SUB CtlDrawBox2 (wid%, fid%)
   '
   ' Top border
   '
-  sx = win(wid%).posX + CtlGetOffsetX%(wid%, fid%)
+  sx = CtlGetScreenX%(wid%, fid%)
   sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%)
   LOCATE sy, sx
   COLOR fc(0), bc(0)
@@ -1473,7 +1474,7 @@ SUB CtlDrawBox2 (wid%, fid%)
     '
     ' Left border
     '
-    sx = win(wid%).posX + CtlGetOffsetX%(wid%, fid%)
+    sx = CtlGetScreenX%(wid%, fid%)
     sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%) + row
     LOCATE sy, sx
     COLOR fc(idx), bc(idx)
@@ -1526,7 +1527,7 @@ SUB CtlDrawFile (wid%, fid%)
     EXIT SUB
   END IF
 
-  sx = win(wid%).posX + CtlGetOffsetX%(wid%, fid%)
+  sx = CtlGetScreenX%(wid%, fid%)
   sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%)
 
   DrawFileAt filename, sx, sy
@@ -1551,7 +1552,7 @@ SUB CtlDrawNebula (wid%, fid%)
     x = INT(RND * sizeX) + 1
     p = 1
 
-    sx = win(wid%).posX + CtlGetOffsetX%(wid%, fid%) + x - 1
+    sx = CtlGetScreenX%(wid%, fid%) + x - 1
     sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%) + y - 1
     LOCATE sy, sx
 
@@ -1643,7 +1644,7 @@ SUB CtlDrawSeparator (wid%, fid%)
   sid = CtlGetStyle(wid%, fid%)
   sizeX = CtlGetSizeX%(wid%, fid%)
   sizeY = CtlGetSizeY%(wid%, fid%)
-  sx = win(wid%).posX + CtlGetOffsetX%(wid%, fid%)
+  sx = CtlGetScreenX%(wid%, fid%)
   sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%)
 
   LOCATE sy, sx
@@ -1729,7 +1730,7 @@ SUB CtlDrawText (wid%, fid%)
   '
   ' Get field position
   '
-  sx = win(wid%).posX + CtlGetOffsetX%(wid%, fid%)
+  sx = CtlGetScreenX%(wid%, fid%)
   sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%)
   LOCATE sy, sx
 
@@ -1848,6 +1849,10 @@ END FUNCTION
 
 FUNCTION CtlGetPopup% (wid%, fid%)
   CtlGetPopup% = fld(wid%, fid%).popupcid
+END FUNCTION
+
+FUNCTION CtlGetScreenX% (wid%, fid%)
+  CtlGetScreenX% = win(wid%).posX + fld(wid%, fid%).offsetX
 END FUNCTION
 
 FUNCTION CtlGetSizeX% (wid%, fid%)
