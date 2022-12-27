@@ -233,7 +233,7 @@ DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
 DECLARE FUNCTION CtlGetKind% (wid%, fid%)
 DECLARE FUNCTION CtlGetSizeX% (wid%, fid%)
 DECLARE FUNCTION CtlGetSizeY% (wid%, fid%)
-DECLARE FUNCTION FieldGetStyle% (wid%, fid%)
+DECLARE FUNCTION CtlGetStyle% (wid%, fid%)
 DECLARE FUNCTION FieldGetText$ (wid%, fid%)
 DECLARE FUNCTION FieldGetValue$ (wid%, fid%)
 DECLARE FUNCTION FieldIsSelectable% (wid%, fid%)
@@ -1306,7 +1306,7 @@ SUB CtlDrawBox (wid%, fid%)
   AssertIsPositive fid%, "CtlDrawBox", "fid"
 
   DIM sid%
-  LET sid% = FieldGetStyle(wid%, fid%)
+  LET sid% = CtlGetStyle(wid%, fid%)
 
   SELECT CASE winstyle(sid%).bordertype
  
@@ -1333,7 +1333,7 @@ SUB CtlDrawBox0 (wid%, fid%)
   DIM sx  AS INTEGER
   DIM sy  AS INTEGER
 
-  sid = FieldGetStyle(wid%, fid%)
+  sid = CtlGetStyle(wid%, fid%)
   DrawColor winstyle(sid).textcolor
  
   FOR row = 1 TO CtlGetSizeY%(wid%, fid%)
@@ -1379,7 +1379,7 @@ SUB CtlDrawBox1 (wid%, fid%)
   sx2 = sx1 + sizeX - 1
   sy2 = sy1 + CtlGetSizeY%(wid%, fid%) - 1
 
-  sid = FieldGetStyle(wid%, fid%)
+  sid = CtlGetStyle(wid%, fid%)
 
   '
   ' Draw the top border
@@ -1633,7 +1633,7 @@ SUB CtlDrawSeparator (wid%, fid%)
   DIM sx    AS INTEGER
   DIM sy    AS INTEGER
 
-  sid = FieldGetStyle(wid%, fid%)
+  sid = CtlGetStyle(wid%, fid%)
   sizeX = CtlGetSizeX%(wid%, fid%)
   sizeY = CtlGetSizeY%(wid%, fid%)
   sx = win(wid%).posX + fld(wid%, fid%).offsetX
@@ -1729,7 +1729,7 @@ SUB CtlDrawText (wid%, fid%)
   '
   ' Set style of text
   '
-  sid% = FieldGetStyle(wid%, fid%)
+  sid% = CtlGetStyle(wid%, fid%)
   IF win(wid%).selected = fid% THEN
     DrawColor winstyle(sid%).selectedcolor
   ELSE
@@ -1833,6 +1833,22 @@ END FUNCTION
 
 FUNCTION CtlGetSizeY% (wid%, fid%)
   CtlGetSizeY% = (fld(wid%, fid%).sizeYX AND &HFF00) \ 256
+END FUNCTION
+
+FUNCTION CtlGetStyle% (wid%, fid%)
+
+  AssertIsPositive wid%, "CtlGetStyle", "wid"
+  AssertIsPositive fid%, "CtlGetStyle", "fid"
+
+  DIM sid%
+
+  sid% = fld(wid%, fid%).sid
+  IF sid% = 0 THEN
+    sid% = win(wid%).sid
+  END IF
+
+  CtlGetStyle% = sid%
+  
 END FUNCTION
 
 FUNCTION DialogGarble$ (text$, percent!)
@@ -2812,22 +2828,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
     ExecResource% = ExecCmd%(cmd$)
   END IF
 
-END FUNCTION
-
-FUNCTION FieldGetStyle% (wid%, fid%)
-
-  AssertIsPositive wid%, "FieldGetStyle", "wid"
-  AssertIsPositive fid%, "FieldGetStyle", "fid"
-
-  DIM sid%
-
-  sid% = fld(wid%, fid%).sid
-  IF sid% = 0 THEN
-    sid% = win(wid%).sid
-  END IF
-
-  FieldGetStyle% = sid%
-  
 END FUNCTION
 
 FUNCTION FieldGetText$ (wid%, fid%)
