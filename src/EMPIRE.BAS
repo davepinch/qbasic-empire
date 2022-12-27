@@ -239,6 +239,7 @@ DECLARE FUNCTION CtlGetOffsetX% (wid%, fid%)
 DECLARE FUNCTION CtlGetOffsetY% (wid%, fid%)
 DECLARE FUNCTION CtlGetPopup% (wid%, fid%)
 DECLARE FUNCTION CtlGetScreenX% (wid%, fid%)
+DECLARE FUNCTION CtlGetScreenY% (wid%, fid%)
 DECLARE FUNCTION CtlGetSizeX% (wid%, fid%)
 DECLARE FUNCTION CtlGetSizeY% (wid%, fid%)
 DECLARE FUNCTION CtlGetStyle% (wid%, fid%)
@@ -1347,7 +1348,7 @@ SUB CtlDrawBox0 (wid%, fid%)
   FOR row = 1 TO CtlGetSizeY%(wid%, fid%)
    
     sx = CtlGetScreenX%(wid%, fid%)
-    sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%) + row - 1
+    sy = CtlGetScreenY%(wid%, fid%) + row - 1
 
     LOCATE sy, sx
     PRINT STRING$(CtlGetSizeX%(wid%, fid%), " ");
@@ -1383,7 +1384,7 @@ SUB CtlDrawBox1 (wid%, fid%)
   '
   sizeX = CtlGetSizeX%(wid%, fid%)
   sx1 = CtlGetScreenX%(wid%, fid%)
-  sy1 = win(wid%).posY + CtlGetOffsetY%(wid%, fid%)
+  sy1 = CtlGetScreenY%(wid%, fid%)
   sx2 = sx1 + sizeX - 1
   sy2 = sy1 + CtlGetSizeY%(wid%, fid%) - 1
 
@@ -1425,13 +1426,18 @@ SUB CtlDrawBox2 (wid%, fid%)
 
   DIM idx   AS INTEGER
   DIM row   AS INTEGER
+ 
   DIM sizeX AS INTEGER
   DIM sizeY AS INTEGER
-  DIM sx    AS INTEGER
-  DIM sy    AS INTEGER
 
   sizeX = CtlGetSizeX%(wid%, fid%)
   sizeY = CtlGetSizeY%(wid%, fid%)
+ 
+  '
+  ' Calculate screen coordinates
+  '
+  DIM sx%: sx% = CtlGetScreenX%(wid%, fid%)
+  DIM sy%: sy% = CtlGetScreenY%(wid%, fid%)
 
   '
   ' Initialize special border characters
@@ -1453,9 +1459,7 @@ SUB CtlDrawBox2 (wid%, fid%)
   '
   ' Top border
   '
-  sx = CtlGetScreenX%(wid%, fid%)
-  sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%)
-  LOCATE sy, sx
+  LOCATE sy%, sx%
   COLOR fc(0), bc(0)
   PRINT CHR$(220);
   PRINT STRING$(sizeX - 2, 196);
@@ -1474,9 +1478,7 @@ SUB CtlDrawBox2 (wid%, fid%)
     '
     ' Left border
     '
-    sx = CtlGetScreenX%(wid%, fid%)
-    sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%) + row
-    LOCATE sy, sx
+    LOCATE sy% + row, sx%
     COLOR fc(idx), bc(idx)
     PRINT ch(idx);
 
@@ -1490,7 +1492,6 @@ SUB CtlDrawBox2 (wid%, fid%)
     ' Get the index of the right border char
     '
     idx = sizeY - row - 1
-
     IF idx > UBOUND(ch) THEN idx = 0
 
     '
@@ -1504,8 +1505,7 @@ SUB CtlDrawBox2 (wid%, fid%)
   '
   ' Bottom border
   '
-  sy = win(wid%).posY + sizeY - 1
-  LOCATE sy, sx
+  LOCATE sy% + sizeY% - 1, sx%
   COLOR fc(0), bc(0)
   PRINT CHR$(192);
   PRINT STRING$(sizeX - 2, 196);
@@ -1528,7 +1528,7 @@ SUB CtlDrawFile (wid%, fid%)
   END IF
 
   sx = CtlGetScreenX%(wid%, fid%)
-  sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%)
+  sy = CtlGetScreenY%(wid%, fid%)
 
   DrawFileAt filename, sx, sy
 
@@ -1553,7 +1553,7 @@ SUB CtlDrawNebula (wid%, fid%)
     p = 1
 
     sx = CtlGetScreenX%(wid%, fid%) + x - 1
-    sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%) + y - 1
+    sy = CtlGetScreenY%(wid%, fid%) + y - 1
     LOCATE sy, sx
 
     DO
@@ -1645,7 +1645,7 @@ SUB CtlDrawSeparator (wid%, fid%)
   sizeX = CtlGetSizeX%(wid%, fid%)
   sizeY = CtlGetSizeY%(wid%, fid%)
   sx = CtlGetScreenX%(wid%, fid%)
-  sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%)
+  sy = CtlGetScreenY%(wid%, fid%)
 
   LOCATE sy, sx
   DrawColor winstyle(sid).bordercolor
@@ -1731,7 +1731,7 @@ SUB CtlDrawText (wid%, fid%)
   ' Get field position
   '
   sx = CtlGetScreenX%(wid%, fid%)
-  sy = win(wid%).posY + CtlGetOffsetY%(wid%, fid%)
+  sy = CtlGetScreenY%(wid%, fid%)
   LOCATE sy, sx
 
   '
@@ -1853,6 +1853,10 @@ END FUNCTION
 
 FUNCTION CtlGetScreenX% (wid%, fid%)
   CtlGetScreenX% = win(wid%).posX + fld(wid%, fid%).offsetX
+END FUNCTION
+
+FUNCTION CtlGetScreenY% (wid%, fid%)
+  CtlGetScreenY% = win(wid%).posY + fld(wid%, fid%).offsetY
 END FUNCTION
 
 FUNCTION CtlGetSizeX% (wid%, fid%)
