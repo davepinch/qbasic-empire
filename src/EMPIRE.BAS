@@ -207,7 +207,7 @@ DECLARE SUB CtlBindText (wid%, fid%, expr$)
 DECLARE SUB CtlBindValue (wid%, fid%, expr$)
 DECLARE SUB CtlDraw (wid%, fid%)
 DECLARE SUB CtlDrawBox (wid%, fid%)
-DECLARE SUB FieldDrawBox0 (wid%, fid%)
+DECLARE SUB CtlDrawBox0 (wid%, fid%)
 DECLARE SUB FieldDrawBox1 (wid%, fid%)
 DECLARE SUB FieldDrawBox2 (wid%, fid%)
 DECLARE SUB FieldDrawFile (wid%, fid%)
@@ -1311,7 +1311,7 @@ SUB CtlDrawBox (wid%, fid%)
   SELECT CASE winstyle(sid%).bordertype
  
     CASE 0:
-      FieldDrawBox0 wid%, fid%
+      CtlDrawBox0 wid%, fid%
 
     CASE 1:
       FieldDrawBox1 wid%, fid%
@@ -1320,6 +1320,31 @@ SUB CtlDrawBox (wid%, fid%)
       FieldDrawBox2 wid%, fid%
 
   END SELECT
+
+END SUB
+
+SUB CtlDrawBox0 (wid%, fid%)
+
+  AssertIsPositive wid%, "CtlDrawBox0", "wid"
+  AssertIsPositive fid%, "CtlDrawBox0", "fid"
+
+  DIM row AS INTEGER
+  DIM sid AS INTEGER
+  DIM sx  AS INTEGER
+  DIM sy  AS INTEGER
+
+  sid = FieldGetStyle(wid%, fid%)
+  DrawColor winstyle(sid).textcolor
+ 
+  FOR row = 1 TO FieldGetSizeY%(wid%, fid%)
+   
+    sx = win(wid%).posX + fld(wid%, fid%).offsetX
+    sy = win(wid%).posY + fld(wid%, fid%).offsetY + row - 1
+
+    LOCATE sy, sx
+    PRINT STRING$(FieldGetSizeX%(wid%, fid%), " ");
+ 
+  NEXT
 
 END SUB
 
@@ -2301,31 +2326,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB FieldDrawBox0 (wid%, fid%)
-
-  AssertIsPositive wid%, "FieldDrawBox0", "wid"
-  AssertIsPositive fid%, "FieldDrawBox0", "fid"
-
-  DIM row AS INTEGER
-  DIM sid AS INTEGER
-  DIM sx  AS INTEGER
-  DIM sy  AS INTEGER
-
-  sid = FieldGetStyle(wid%, fid%)
-  DrawColor winstyle(sid).textcolor
- 
-  FOR row = 1 TO FieldGetSizeY%(wid%, fid%)
-   
-    sx = win(wid%).posX + fld(wid%, fid%).offsetX
-    sy = win(wid%).posY + fld(wid%, fid%).offsetY + row - 1
-
-    LOCATE sy, sx
-    PRINT STRING$(FieldGetSizeX%(wid%, fid%), " ");
- 
-  NEXT
-
-END SUB
 
 SUB FieldDrawBox1 (wid%, fid%)
 
