@@ -95,7 +95,6 @@ END TYPE
 TYPE WinType
   arrowexit  AS INTEGER
   fields     AS INTEGER
-  helpWid    AS INTEGER
   namerid    AS INTEGER
   offsetX    AS INTEGER
   offsetY    AS INTEGER
@@ -443,7 +442,6 @@ CONST WinAction.Complete = 2
 CONST WinAction.Execute = 3
 CONST WinAction.ExitLeft = 4
 CONST WinAction.ExitRight = 5
-CONST WinAction.Help = 6
 CONST WinAction.OpenPopup = 11
 CONST WinAction.SelectFirst = 12
 CONST WinAction.SelectLast = 13
@@ -3896,9 +3894,6 @@ FUNCTION WinMapKey% (wid%, pressed$)
     CASE CHR$(0) + CHR$(ScanCode.Up)
       WinMapKey% = WinAction.SelectPrevious
 
-    CASE "?", "/"
-      WinMapKey = WinAction.Help
-
     CASE ELSE
       WinMapKey = WinAction.None
 
@@ -4086,11 +4081,6 @@ SUB WinRun (wid%, result AS WinResultType)
         result.selected = win(wid%).selected
         WinClose wid%
         EXIT SUB
-
-      CASE WinAction.Help
-        IF win(wid%).helpWid <> 0 THEN
-          WinRun win(wid%).helpWid, result
-        END IF
 
       CASE WinAction.OpenPopup
         nopopups = False
