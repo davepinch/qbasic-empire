@@ -226,7 +226,7 @@ DECLARE SUB CtlSetOffsetY (wid%, fid%, offsetY%)
 DECLARE SUB CtlSetSizeX (wid%, fid%, sizeX%)
 DECLARE SUB CtlSetSizeY (wid%, fid%, sizeY%)
 DECLARE SUB CtlSetStyle (wid%, fid%, sid%)
-DECLARE SUB FieldSetText (wid%, fid%, value$)
+DECLARE SUB CtlSetText (wid%, fid%, value$)
 DECLARE SUB FieldSetValue (wid%, fid%, value$)
 DECLARE FUNCTION CtlCreate% (wid%, kind%)
 DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
@@ -1902,16 +1902,16 @@ SUB CtlKeyBoolean (wid%, fid%, keypress$)
     CASE " "
       SELECT CASE text
         CASE "No"
-          FieldSetText wid%, fid%, "Yes"
+          CtlSetText wid%, fid%, "Yes"
         CASE "Yes"
-          FieldSetText wid%, fid%, "No"
+          CtlSetText wid%, fid%, "No"
       END SELECT
 
     CASE "n", "N"
-      FieldSetText wid%, fid%, "No"
+      CtlSetText wid%, fid%, "No"
 
     CASE "y", "Y"
-      FieldSetText wid%, fid%, "Yes"
+      CtlSetText wid%, fid%, "Yes"
 
   END SELECT
 
@@ -1941,7 +1941,7 @@ SUB CtlKeyInteger (wid%, fid%, keypress$)
 
   END SELECT
 
-  FieldSetText wid%, fid%, buf$
+  CtlSetText wid%, fid%, buf$
 
 END SUB
 
@@ -2083,6 +2083,15 @@ END SUB
 
 SUB CtlSetStyle (wid%, fid%, sid%)
   fld(wid%, fid%).sid = sid%
+END SUB
+
+SUB CtlSetText (wid%, fid%, value$)
+
+  AssertIsPositive wid%, "CtlSetText", "wid"
+  AssertIsPositive fid%, "CtlSetText", "fid"
+
+  CtlSetBound wid%, fid%, fld(wid%, fid%).text, value$
+
 END SUB
 
 FUNCTION DialogGarble$ (text$, percent!)
@@ -2683,7 +2692,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       IF LCASE$(stoken$(1)) = "bind" THEN
         CtlBindText wid%, fid%, stoken$(2)
       ELSE
-        FieldSetText wid%, fid%, stoken$(1)
+        CtlSetText wid%, fid%, stoken$(1)
       END IF
 
     CASE "value"
@@ -3063,15 +3072,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB FieldSetText (wid%, fid%, value$)
-
-  AssertIsPositive wid%, "FieldSetText", "wid"
-  AssertIsPositive fid%, "FieldSetText", "fid"
-
-  CtlSetBound wid%, fid%, fld(wid%, fid%).text, value$
-
-END SUB
 
 SUB FieldSetValue (wid%, fid%, value$)
 
@@ -3682,7 +3682,7 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
  
   CtlSetSizeX wid%, fid%, sizeX%
   CtlSetSizeY wid%, fid%, 1
-  FieldSetText wid%, fid%, text$
+  CtlSetText wid%, fid%, text$
   FieldSetValue wid%, fid%, value$
 
   WinAddButton% = fid%
