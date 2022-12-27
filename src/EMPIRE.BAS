@@ -229,7 +229,7 @@ DECLARE SUB FieldSetStyle (wid%, fid%, sid%)
 DECLARE SUB FieldSetText (wid%, fid%, value$)
 DECLARE SUB FieldSetValue (wid%, fid%, value$)
 DECLARE FUNCTION CtlCreate% (wid%, kind%)
-DECLARE FUNCTION FieldGetBound$ (wid%, fid%, b AS BindingType)
+DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
 DECLARE FUNCTION FieldGetKind% (wid%, fid%)
 DECLARE FUNCTION FieldGetSizeX% (wid%, fid%)
 DECLARE FUNCTION FieldGetSizeY% (wid%, fid%)
@@ -1752,6 +1752,77 @@ SUB CtlDrawText (wid%, fid%)
 
 END SUB
 
+FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
+
+  DIM value$: value$ = ResourceGet(b.valrid)
+
+  SELECT CASE b.target
+   
+    CASE BindingTarget.None
+      '
+      ' Field is not bound - return value
+      '
+      CtlGetBound$ = value$
+    
+    CASE BindingTarget.Param
+      '
+      ' Field is bound to window parameter
+      '
+      DIM pvalue%
+      LET pvalue% = win(wid%).param.value
+
+      SELECT CASE win(wid%).param.pkind
+       
+        CASE WinParamKind.Area
+          SELECT CASE value$
+            CASE "energy"
+              CtlGetBound$ = STR$(area(pvalue%).energy)
+            CASE ELSE
+              CtlGetBound$ = value$
+          END SELECT
+
+        CASE WinParamKind.Habitat
+          SELECT CASE value$
+            CASE "backdrop"
+              CtlGetBound$ = HabitatGetBackdrop$(pvalue%)
+            CASE "title"
+              CtlGetBound$ = HabitatGetName$(pvalue%)
+            CASE ELSE
+              CtlGetBound$ = value$
+          END SELECT
+
+        CASE ELSE
+          CtlGetBound$ = value$
+
+      END SELECT
+
+    CASE BindingTarget.Field
+      '
+      ' TODO: support more than sel.value
+      '
+      DIM sel%
+      LET sel% = win(wid%).selected
+
+      IF sel% = 0 THEN
+        '
+        ' No selected field to get a value
+        '
+        CtlGetBound$ = ""
+      
+      ELSEIF sel% = fid% THEN
+        '
+        ' Infinite recursion
+        '
+        CtlGetBound$ = ""
+      
+      ELSE
+        CtlGetBound$ = FieldGetValue(wid%, win(wid%).selected)
+      END IF
+
+  END SELECT
+
+END FUNCTION
+
 FUNCTION DialogGarble$ (text$, percent!)
 
   CONST GarbleCode = 250
@@ -2731,77 +2802,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
 
 END FUNCTION
 
-FUNCTION FieldGetBound$ (wid%, fid%, b AS BindingType)
-
-  DIM value$: value$ = ResourceGet(b.valrid)
-
-  SELECT CASE b.target
-   
-    CASE BindingTarget.None
-      '
-      ' Field is not bound - return value
-      '
-      FieldGetBound$ = value$
-    
-    CASE BindingTarget.Param
-      '
-      ' Field is bound to window parameter
-      '
-      DIM pvalue%
-      LET pvalue% = win(wid%).param.value
-
-      SELECT CASE win(wid%).param.pkind
-       
-        CASE WinParamKind.Area
-          SELECT CASE value$
-            CASE "energy"
-              FieldGetBound$ = STR$(area(pvalue%).energy)
-            CASE ELSE
-              FieldGetBound$ = value$
-          END SELECT
-
-        CASE WinParamKind.Habitat
-          SELECT CASE value$
-            CASE "backdrop"
-              FieldGetBound$ = HabitatGetBackdrop$(pvalue%)
-            CASE "title"
-              FieldGetBound$ = HabitatGetName$(pvalue%)
-            CASE ELSE
-              FieldGetBound$ = value$
-          END SELECT
-
-        CASE ELSE
-          FieldGetBound$ = value$
-
-      END SELECT
-
-    CASE BindingTarget.Field
-      '
-      ' TODO: support more than sel.value
-      '
-      DIM sel%
-      LET sel% = win(wid%).selected
-
-      IF sel% = 0 THEN
-        '
-        ' No selected field to get a value
-        '
-        FieldGetBound$ = ""
-      
-      ELSEIF sel% = fid% THEN
-        '
-        ' Infinite recursion
-        '
-        FieldGetBound$ = ""
-      
-      ELSE
-        FieldGetBound$ = FieldGetValue(wid%, win(wid%).selected)
-      END IF
-
-  END SELECT
-
-END FUNCTION
-
 FUNCTION FieldGetKind% (wid%, fid%)
   FieldGetKind% = fld(wid%, fid%).kind
 END FUNCTION
@@ -2832,7 +2832,7 @@ END FUNCTION
 
 FUNCTION FieldGetText$ (wid%, fid%)
 
-  FieldGetText$ = FieldGetBound$(wid%, fid%, fld(wid%, fid%).text)
+  FieldGetText$ = CtlGetBound$(wid%, fid%, fld(wid%, fid%).text)
 
 END FUNCTION
 
@@ -2841,7 +2841,7 @@ FUNCTION FieldGetValue$ (wid%, fid%)
   AssertIsPositive wid%, "FieldGetValue", "wid"
   AssertIsPositive fid%, "FieldGetValue", "fid"
 
-  FieldGetValue$ = FieldGetBound(wid%, fid%, fld(wid%, fid%).value)
+  FieldGetValue$ = CtlGetBound(wid%, fid%, fld(wid%, fid%).value)
 
 END FUNCTION
 
