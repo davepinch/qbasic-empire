@@ -218,7 +218,7 @@ DECLARE SUB CtlKey (wid%, fid%, keypress$)
 DECLARE SUB CtlKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB CtlKeyInteger (wid%, fid%, keypress$)
 DECLARE SUB CtlParseBinding (text$, outbind AS ANY)
-DECLARE SUB FieldSetBound (wid%, fid%, b AS BindingType, value$)
+DECLARE SUB CtlSetBound (wid%, fid%, b AS BindingType, value$)
 DECLARE SUB FieldSetChild (wid%, fid%, wname$)
 DECLARE SUB FieldSetCommand (wid%, fid%, cmd$)
 DECLARE SUB FieldSetOffsetX (wid%, fid%, offsetX%)
@@ -2015,6 +2015,38 @@ FUNCTION CtlSelectable% (wid%, fid%)
 
 END FUNCTION
 
+SUB CtlSetBound (wid%, fid%, b AS BindingType, value$)
+
+  AssertIsPositive wid%, "CtlSetBound", "wid"
+  AssertIsPositive fid%, "CtlSetBound", "fid"
+
+  IF b.target = BindingTarget.None THEN
+
+    ResourceSet b.valrid, value$
+
+  ELSE
+
+    DIM xtext$
+    LET xtext$ = ResourceGet(b.valrid)
+
+    SELECT CASE b.target
+     
+      CASE BindingTarget.Param
+
+        SELECT CASE win(wid%).param.pkind
+          CASE WinParamKind.Area
+            SELECT CASE xtext$
+              CASE "energy"
+                area(win(wid%).param.value).energy = VAL(value$)
+            END SELECT
+        END SELECT
+
+    END SELECT
+
+  END IF
+
+END SUB
+
 FUNCTION DialogGarble$ (text$, percent!)
 
   CONST GarbleCode = 250
@@ -2994,38 +3026,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
 
 END FUNCTION
 
-SUB FieldSetBound (wid%, fid%, b AS BindingType, value$)
-
-  AssertIsPositive wid%, "FieldSetBound", "wid"
-  AssertIsPositive fid%, "FieldSetBound", "fid"
-
-  IF b.target = BindingTarget.None THEN
-
-    ResourceSet b.valrid, value$
-
-  ELSE
-
-    DIM xtext$
-    LET xtext$ = ResourceGet(b.valrid)
-
-    SELECT CASE b.target
-     
-      CASE BindingTarget.Param
-
-        SELECT CASE win(wid%).param.pkind
-          CASE WinParamKind.Area
-            SELECT CASE xtext$
-              CASE "energy"
-                area(win(wid%).param.value).energy = VAL(value$)
-            END SELECT
-        END SELECT
-
-    END SELECT
-
-  END IF
-
-END SUB
-
 SUB FieldSetChild (wid%, fid%, wname$)
 
   AssertIsPositive wid%, "FieldSetChild", "wid"
@@ -3069,7 +3069,7 @@ SUB FieldSetText (wid%, fid%, value$)
   AssertIsPositive wid%, "FieldSetText", "wid"
   AssertIsPositive fid%, "FieldSetText", "fid"
 
-  FieldSetBound wid%, fid%, fld(wid%, fid%).text, value$
+  CtlSetBound wid%, fid%, fld(wid%, fid%).text, value$
 
 END SUB
 
@@ -3078,7 +3078,7 @@ SUB FieldSetValue (wid%, fid%, value$)
   AssertIsPositive wid%, "FieldSetValue", "wid"
   AssertIsPositive fid%, "FieldSetValue", "fid"
 
-  FieldSetBound wid%, fid%, fld(wid%, fid%).value, value$
+  CtlSetBound wid%, fid%, fld(wid%, fid%).value, value$
 
 END SUB
 
