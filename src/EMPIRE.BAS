@@ -215,7 +215,7 @@ DECLARE SUB CtlDrawNebula (wid%, fid%)
 DECLARE SUB CtlDrawSeparator (wid%, fid%)
 DECLARE SUB CtlDrawText (wid%, fid%)
 DECLARE SUB CtlKey (wid%, fid%, keypress$)
-DECLARE SUB FieldKeyBoolean (wid%, fid%, keypress$)
+DECLARE SUB CtlKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB FieldKeyInteger (wid%, fid%, keypress$)
 DECLARE SUB FieldParseBinding (text$, outbind AS ANY)
 DECLARE SUB FieldSetBound (wid%, fid%, b AS BindingType, value$)
@@ -1878,7 +1878,7 @@ SUB CtlKey (wid%, fid%, keypress$)
     SELECT CASE CtlGetKind%(wid%, fid%)
   
       CASE FieldKind.Boolean
-        FieldKeyBoolean wid%, fid%, keypress$
+        CtlKeyBoolean wid%, fid%, keypress$
 
       CASE FieldKind.Integer
         FieldKeyInteger wid%, fid%, keypress$
@@ -1886,6 +1886,34 @@ SUB CtlKey (wid%, fid%, keypress$)
     END SELECT
  
   END IF
+
+END SUB
+
+SUB CtlKeyBoolean (wid%, fid%, keypress$)
+  '
+  ' Sends a keystroke to a boolean field.
+  '
+ 
+  DIM text AS STRING
+  LET text = CtlGetText$(wid%, fid%)
+
+  SELECT CASE keypress$
+
+    CASE " "
+      SELECT CASE text
+        CASE "No"
+          FieldSetText wid%, fid%, "Yes"
+        CASE "Yes"
+          FieldSetText wid%, fid%, "No"
+      END SELECT
+
+    CASE "n", "N"
+      FieldSetText wid%, fid%, "No"
+
+    CASE "y", "Y"
+      FieldSetText wid%, fid%, "Yes"
+
+  END SELECT
 
 END SUB
 
@@ -2906,34 +2934,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB FieldKeyBoolean (wid%, fid%, keypress$)
-  '
-  ' Sends a keystroke to a boolean field.
-  '
- 
-  DIM text AS STRING
-  LET text = CtlGetText$(wid%, fid%)
-
-  SELECT CASE keypress$
-
-    CASE " "
-      SELECT CASE text
-        CASE "No"
-          FieldSetText wid%, fid%, "Yes"
-        CASE "Yes"
-          FieldSetText wid%, fid%, "No"
-      END SELECT
-
-    CASE "n", "N"
-      FieldSetText wid%, fid%, "No"
-
-    CASE "y", "Y"
-      FieldSetText wid%, fid%, "Yes"
-
-  END SELECT
-
-END SUB
 
 SUB FieldKeyInteger (wid%, fid%, keypress$)
   '
