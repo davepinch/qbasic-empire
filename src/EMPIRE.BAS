@@ -230,7 +230,7 @@ DECLARE SUB FieldSetText (wid%, fid%, value$)
 DECLARE SUB FieldSetValue (wid%, fid%, value$)
 DECLARE FUNCTION CtlCreate% (wid%, kind%)
 DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
-DECLARE FUNCTION FieldGetKind% (wid%, fid%)
+DECLARE FUNCTION CtlGetKind% (wid%, fid%)
 DECLARE FUNCTION FieldGetSizeX% (wid%, fid%)
 DECLARE FUNCTION FieldGetSizeY% (wid%, fid%)
 DECLARE FUNCTION FieldGetStyle% (wid%, fid%)
@@ -1271,7 +1271,7 @@ SUB CtlDraw (wid%, fid%)
   AssertIsPositive wid%, "CtlDraw", "wid"
   AssertIsPositive fid%, "CtlDraw", "fid"
 
-  SELECT CASE FieldGetKind%(wid%, fid%)
+  SELECT CASE CtlGetKind%(wid%, fid%)
     '
     ' Check the most common kinds first
     '
@@ -1823,6 +1823,10 @@ FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
 
 END FUNCTION
 
+FUNCTION CtlGetKind% (wid%, fid%)
+  CtlGetKind% = fld(wid%, fid%).kind
+END FUNCTION
+
 FUNCTION DialogGarble$ (text$, percent!)
 
   CONST GarbleCode = 250
@@ -2364,7 +2368,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
 
   DIM endtag AS STRING
   DIM kind%
-  LET kind% = FieldGetKind(wid%, fid%)
+  LET kind% = CtlGetKind(wid%, fid%)
 
   SELECT CASE kind%
     CASE FieldKind.Button
@@ -2802,10 +2806,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
 
 END FUNCTION
 
-FUNCTION FieldGetKind% (wid%, fid%)
-  FieldGetKind% = fld(wid%, fid%).kind
-END FUNCTION
-
 FUNCTION FieldGetSizeX% (wid%, fid%)
   FieldGetSizeX% = fld(wid%, fid%).sizeYX AND &HFF
 END FUNCTION
@@ -2862,7 +2862,7 @@ FUNCTION FieldIsSelectable% (wid%, fid%)
  
   ELSE
 
-    SELECT CASE FieldGetKind%(wid%, fid%)
+    SELECT CASE CtlGetKind%(wid%, fid%)
       CASE FieldKind.Button
         FieldIsSelectable = True
 
@@ -2893,7 +2893,7 @@ SUB FieldKey (wid%, fid%, keypress$)
 
   IF fid% > 0 THEN
 
-    SELECT CASE FieldGetKind%(wid%, fid%)
+    SELECT CASE CtlGetKind%(wid%, fid%)
   
       CASE FieldKind.Boolean
         FieldKeyBoolean wid%, fid%, keypress$
@@ -3950,7 +3950,7 @@ SUB WinRun (wid%, result AS WinResultType)
        
         EXIT DO
 
-      ELSEIF FieldGetKind%(wid%, win(wid%).selected) <> FieldKind.Popup THEN
+      ELSEIF CtlGetKind%(wid%, win(wid%).selected) <> FieldKind.Popup THEN
        
         EXIT DO
 
