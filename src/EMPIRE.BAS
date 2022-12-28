@@ -36,7 +36,8 @@ TYPE CtlType
   offsetY   AS INTEGER
   popupcid  AS INTEGER
   sid       AS INTEGER
-  sizeYX    AS INTEGER
+  sizeX     AS INTEGER
+  sizeY     AS INTEGER
   textbind  AS PropType
   valuebind AS PropType
 END TYPE
@@ -171,6 +172,7 @@ DECLARE SUB CtlKey (wid%, fid%, keypress$)
 DECLARE SUB CtlKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB CtlKeyInteger (wid%, fid%, keypress$)
 DECLARE SUB CtlParseBinding (text$, outbind AS ANY)
+DECLARE SUB CtlSet (cid%, pid%, value%)
 DECLARE SUB CtlSetBound (wid%, fid%, b AS PropType, value$)
 DECLARE SUB CtlSetCmdRid (cid%, cmdrid%)
 DECLARE SUB CtlSetCmdStr (cid%, cmd$)
@@ -1816,6 +1818,12 @@ FUNCTION CtlGet% (cid%, pid%)
     CASE PropId.OffsetY
       CtlGet% = gctl(cid%).offsetY
 
+    CASE PropId.SizeX
+      CtlGet% = gctl(cid%).sizeX
+
+    CASE PropId.SizeY
+      CtlGet% = gctl(cid%).sizeY
+
   END SELECT
 
 END FUNCTION
@@ -1942,11 +1950,11 @@ FUNCTION CtlGetScreenY% (cid%)
 END FUNCTION
 
 FUNCTION CtlGetSizeX% (cid%)
-   CtlGetSizeX% = gctl(cid%).sizeYX AND &HFF
+  CtlGetSizeX% = CtlGet%(cid%, PropId.SizeX)
 END FUNCTION
 
 FUNCTION CtlGetSizeY% (cid%)
-  CtlGetSizeY% = (gctl(cid%).sizeYX AND &HFF00) \ 256
+  CtlGetSizeY% = CtlGet%(cid%, PropId.SizeY)
 END FUNCTION
 
 FUNCTION CtlGetStyle% (cid%)
@@ -2154,6 +2162,20 @@ FUNCTION CtlSelectable% (cid%)
 
 END FUNCTION
 
+SUB CtlSet (cid%, pid%, value%)
+
+  SELECT CASE pid%
+
+    CASE PropId.SizeX
+      gctl(cid%).sizeX = value%
+
+    CASE PropId.SizeY
+      gctl(cid%).sizeY = value%
+
+  END SELECT
+
+END SUB
+
 SUB CtlSetBound (wid%, fid%, b AS PropType, value$)
 
   AssertIsPositive wid%, "CtlSetBound", "wid"
@@ -2229,11 +2251,11 @@ SUB CtlSetPopupName (cid%, wname$)
 END SUB
 
 SUB CtlSetSizeX (cid%, sizeX%)
-  gctl(cid%).sizeYX = (gctl(cid%).sizeYX AND &HFF00) OR sizeX%
+  CtlSet cid%, PropId.SizeX, sizeX%
 END SUB
 
 SUB CtlSetSizeY (cid%, sizeY%)
-  gctl(cid%).sizeYX = (gctl(cid%).sizeYX% AND &HFF) OR (sizeY% * 256)
+  CtlSet cid%, PropId.SizeY, sizeY%
 END SUB
 
 SUB CtlSetStyle (cid%, sid%)
