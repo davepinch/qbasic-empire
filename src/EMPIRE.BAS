@@ -196,7 +196,7 @@ DECLARE FUNCTION CtlGetOffsetY% (wid%, fid%)
 DECLARE FUNCTION CtlGetPopup% (cid%)
 DECLARE FUNCTION CtlGetScreenX% (wid%, fid%)
 DECLARE FUNCTION CtlGetScreenY% (wid%, fid%)
-DECLARE FUNCTION CtlGetSizeX% (wid%, fid%)
+DECLARE FUNCTION CtlGetSizeX% (cid%)
 DECLARE FUNCTION CtlGetSizeY% (wid%, fid%)
 DECLARE FUNCTION CtlGetStyle% (wid%, fid%)
 DECLARE FUNCTION CtlGetText$ (wid%, fid%)
@@ -254,7 +254,7 @@ DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 DECLARE SUB GameHarvest ()
 DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 
-'                   
+'                  
 ' Habitats
 '
 DECLARE SUB HabitatSetAction (hid%, cmd$)
@@ -1375,6 +1375,9 @@ SUB CtlDrawBox0 (wid%, fid%)
   AssertIsPositive wid%, "CtlDrawBox0", "wid"
   AssertIsPositive fid%, "CtlDrawBox0", "fid"
 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
   DIM row AS INTEGER
   DIM sid AS INTEGER
   DIM sx  AS INTEGER
@@ -1389,7 +1392,7 @@ SUB CtlDrawBox0 (wid%, fid%)
     sy = CtlGetScreenY%(wid%, fid%) + row - 1
 
     LOCATE sy, sx
-    PRINT STRING$(CtlGetSizeX%(wid%, fid%), " ");
+    PRINT STRING$(CtlGetSizeX%(cid%), " ");
  
   NEXT
 
@@ -1409,6 +1412,9 @@ SUB CtlDrawBox1 (wid%, fid%)
   CONST upperFlat = "Ä"   ' CHR$(196)
   CONST upperRight = "¿"  ' CHR$(191)
 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
   DIM r     AS INTEGER
   DIM sid   AS INTEGER
   DIM sizeX AS INTEGER
@@ -1420,7 +1426,7 @@ SUB CtlDrawBox1 (wid%, fid%)
   '
   ' Calculate screen coordinates
   '
-  sizeX = CtlGetSizeX%(wid%, fid%)
+  sizeX = CtlGetSizeX%(cid%)
   sx1 = CtlGetScreenX%(wid%, fid%)
   sy1 = CtlGetScreenY%(wid%, fid%)
   sx2 = sx1 + sizeX - 1
@@ -1462,13 +1468,16 @@ SUB CtlDrawBox2 (wid%, fid%)
   AssertIsPositive wid%, "CtlDrawBox2", "wid"
   AssertIsPositive fid%, "CtlDrawBox2", "fid"
 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
   DIM idx   AS INTEGER
   DIM row   AS INTEGER
  
   DIM sizeX AS INTEGER
   DIM sizeY AS INTEGER
 
-  sizeX = CtlGetSizeX%(wid%, fid%)
+  sizeX = CtlGetSizeX%(cid%)
   sizeY = CtlGetSizeY%(wid%, fid%)
  
   '
@@ -1581,7 +1590,10 @@ SUB CtlDrawNebula (wid%, fid%)
   DIM x     AS INTEGER
   DIM y     AS INTEGER
 
-  sizeX = CtlGetSizeX%(wid%, fid%)
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  sizeX = CtlGetSizeX%(cid%)
 
   COLOR 7, 0
 
@@ -1679,8 +1691,11 @@ SUB CtlDrawSeparator (wid%, fid%)
   DIM sx    AS INTEGER
   DIM sy    AS INTEGER
 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
   sid = CtlGetStyle(wid%, fid%)
-  sizeX = CtlGetSizeX%(wid%, fid%)
+  sizeX = CtlGetSizeX%(cid%)
   sizeY = CtlGetSizeY%(wid%, fid%)
   sx = CtlGetScreenX%(wid%, fid%)
   sy = CtlGetScreenY%(wid%, fid%)
@@ -1758,7 +1773,10 @@ SUB CtlDrawText (wid%, fid%)
 
   AssertIsPositive wid%, "CtlDrawText", "wid"
   AssertIsPositive fid%, "CtlDrawText", "fid"
- 
+
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
   DIM sid  AS INTEGER
   DIM size AS INTEGER
   DIM sx   AS INTEGER
@@ -1786,7 +1804,7 @@ SUB CtlDrawText (wid%, fid%)
   ' Print text clipped to size
   '
   text = CtlGetText(wid%, fid%)
-  size = CtlGetSizeX%(wid%, fid%)
+  size = CtlGetSizeX%(cid%)
   IF size < 1 THEN
     PRINT text;
   ELSE
@@ -1922,13 +1940,8 @@ FUNCTION CtlGetScreenY% (wid%, fid%)
 
 END FUNCTION
 
-FUNCTION CtlGetSizeX% (wid%, fid%)
- 
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
-
-  CtlGetSizeX% = gctl(cid%).sizeYX AND &HFF
-
+FUNCTION CtlGetSizeX% (cid%)
+   CtlGetSizeX% = gctl(cid%).sizeYX AND &HFF
 END FUNCTION
 
 FUNCTION CtlGetSizeY% (wid%, fid%)
@@ -2039,6 +2052,9 @@ SUB CtlKeyInteger (wid%, fid%, keypress$)
   ' Sends a key to an integer field
   '
 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
   DIM buf$
   LET buf$ = CtlGetText$(wid%, fid%)
 
@@ -2052,7 +2068,7 @@ SUB CtlKeyInteger (wid%, fid%, keypress$)
 
     CASE "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
 
-      IF LEN(buf$) < CtlGetSizeX%(wid%, fid%) THEN
+      IF LEN(buf$) < CtlGetSizeX%(cid%) THEN
         buf$ = buf$ + keypress$
       END IF
 
