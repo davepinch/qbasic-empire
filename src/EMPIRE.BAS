@@ -164,7 +164,7 @@ DECLARE SUB CtlDrawBox0 (cid%)
 DECLARE SUB CtlDrawBox1 (cid%)
 DECLARE SUB CtlDrawBox2 (cid%)
 DECLARE SUB CtlDrawFile (wid%, fid%)
-DECLARE SUB CtlDrawNebula (wid%, fid%)
+DECLARE SUB CtlDrawNebula (cid%)
 DECLARE SUB CtlDrawSeparator (wid%, fid%)
 DECLARE SUB CtlDrawText (wid%, fid%)
 DECLARE SUB CtlKey (wid%, fid%, keypress$)
@@ -254,7 +254,7 @@ DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 DECLARE SUB GameHarvest ()
 DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 
-'             
+'            
 ' Habitats
 '
 DECLARE SUB HabitatSetAction (hid%, cmd$)
@@ -1342,7 +1342,7 @@ SUB CtlDraw (wid%, fid%)
       CtlDrawSeparator wid%, fid%
 
     CASE CtlKind.Nebula
-      CtlDrawNebula wid%, fid%
+      CtlDrawNebula cid%
 
     CASE ELSE
       CtlDrawText wid%, fid%
@@ -1567,7 +1567,7 @@ SUB CtlDrawFile (wid%, fid%)
 
 END SUB
 
-SUB CtlDrawNebula (wid%, fid%)
+SUB CtlDrawNebula (cid%)
 
   DIM p     AS INTEGER
   DIM sizeX AS INTEGER
@@ -1575,9 +1575,6 @@ SUB CtlDrawNebula (wid%, fid%)
   DIM sy    AS INTEGER
   DIM x     AS INTEGER
   DIM y     AS INTEGER
-
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
 
   sizeX = CtlGetSizeX%(cid%)
 
