@@ -161,7 +161,7 @@ DECLARE SUB CtlBindValue (wid%, fid%, expr$)
 DECLARE SUB CtlDraw (wid%, fid%)
 DECLARE SUB CtlDrawBox (wid%, fid%)
 DECLARE SUB CtlDrawBox0 (wid%, fid%)
-DECLARE SUB CtlDrawBox1 (wid%, fid%)
+DECLARE SUB CtlDrawBox1 (cid%)
 DECLARE SUB CtlDrawBox2 (cid%)
 DECLARE SUB CtlDrawFile (wid%, fid%)
 DECLARE SUB CtlDrawNebula (wid%, fid%)
@@ -1368,7 +1368,7 @@ SUB CtlDrawBox (wid%, fid%)
       CtlDrawBox0 wid%, fid%
 
     CASE 1:
-      CtlDrawBox1 wid%, fid%
+      CtlDrawBox1 cid%
 
     CASE 2:
       CtlDrawBox2 cid%
@@ -1405,10 +1405,7 @@ SUB CtlDrawBox0 (wid%, fid%)
 
 END SUB
 
-SUB CtlDrawBox1 (wid%, fid%)
-
-  AssertIsPositive wid%, "CtlDrawBox1", "wid"
-  AssertIsPositive fid%, "CtlDrawBox1", "fid"
+SUB CtlDrawBox1 (cid%)
 
   CONST lowerFlat = "Ä"   ' CHR$(196)
   CONST lowerLeft = "À"   ' CHR$(192)
@@ -1418,9 +1415,6 @@ SUB CtlDrawBox1 (wid%, fid%)
   CONST upperLeft = "Ú"   ' CHR$(218)
   CONST upperFlat = "Ä"   ' CHR$(196)
   CONST upperRight = "¿"  ' CHR$(191)
-
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
 
   DIM r     AS INTEGER
   DIM sid   AS INTEGER
