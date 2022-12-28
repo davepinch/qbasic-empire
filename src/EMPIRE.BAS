@@ -176,7 +176,7 @@ DECLARE SUB CtlParseBinding (text$, outbind AS ANY)
 DECLARE SUB CtlSetBound (wid%, fid%, b AS BindingType, value$)
 DECLARE SUB CtlSetCmdRid (wid%, fid%, cmdrid%)
 DECLARE SUB CtlSetCmdStr (wid%, fid%, cmd$)
-DECLARE SUB CtlSetKind (wid%, fid%, kind%)
+DECLARE SUB CtlSetKind (cid%, kind%)
 DECLARE SUB CtlSetOffsetX (wid%, fid%, offsetX%)
 DECLARE SUB CtlSetOffsetY (wid%, fid%, offsetY%)
 DECLARE SUB CtlSetPopup (wid%, fid%, popupcid%)
@@ -470,7 +470,7 @@ DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS IN
 ' Globals
 '
 DIM SHARED gctl(1 TO 200)         AS CtlType
-DIM SHARED gwin(1 TO 20, 1 TO 13) AS INTEGER
+DIM SHARED gwin(1 TO 20, 0 TO 13) AS INTEGER
 DIM SHARED gcids                  AS INTEGER
 
 DIM SHARED area(1 TO 35)         AS AreaType
@@ -1279,8 +1279,12 @@ SUB CtlBindValue (wid%, fid%, expr$)
 END SUB
 
 FUNCTION CtlCreate%
+ 
+  Assert gcids <= UBOUND(gctl), "CtlCreate", "Out of control space"
+
   gcids = gcids + 1
   CtlCreate% = gcids
+
 END FUNCTION
 
 FUNCTION CtlCreateChild% (wid%, kind%)
@@ -1301,7 +1305,7 @@ FUNCTION CtlCreateChild% (wid%, kind%)
   LET cid% = CtlCreate%
   gwin(wid%, fid%) = cid%
 
-  CtlSetKind wid%, fid%, kind%
+  CtlSetKind cid%, kind%
   CtlCreateChild% = fid%
 
 END FUNCTION
@@ -2207,13 +2211,8 @@ SUB CtlSetCmdStr (wid%, fid%, cmd$)
 
 END SUB
 
-SUB CtlSetKind (wid%, fid%, kind%)
- 
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
-
+SUB CtlSetKind (cid%, kind%)
   gctl(cid%).kind = kind%
-
 END SUB
 
 SUB CtlSetOffsetX (wid%, fid%, offsetX%)
@@ -3910,7 +3909,21 @@ SUB WinClose (wid%)
 END SUB
 
 FUNCTION WinCreate%
+ 
   wincount = wincount + 1
+ 
+  '
+  ' Create a control to represent the window
+  '
+  DIM cid%
+  LET cid% = CtlCreate%
+  CtlSetKind cid%, CtlKind.Window
+ 
+  '
+  ' Track the control as field #0
+  '
+  gwin(wincount, 0) = cid%
+
   WinCreate% = wincount
 END FUNCTION
 
