@@ -197,7 +197,7 @@ DECLARE FUNCTION CtlGetPopup% (cid%)
 DECLARE FUNCTION CtlGetScreenX% (wid%, fid%)
 DECLARE FUNCTION CtlGetScreenY% (wid%, fid%)
 DECLARE FUNCTION CtlGetSizeX% (cid%)
-DECLARE FUNCTION CtlGetSizeY% (wid%, fid%)
+DECLARE FUNCTION CtlGetSizeY% (cid%)
 DECLARE FUNCTION CtlGetStyle% (wid%, fid%)
 DECLARE FUNCTION CtlGetText$ (wid%, fid%)
 DECLARE FUNCTION CtlGetValue$ (wid%, fid%)
@@ -1386,7 +1386,7 @@ SUB CtlDrawBox0 (wid%, fid%)
   sid = CtlGetStyle(wid%, fid%)
   DrawColor winstyle(sid).textcolor
  
-  FOR row = 1 TO CtlGetSizeY%(wid%, fid%)
+  FOR row = 1 TO CtlGetSizeY%(cid%)
    
     sx = CtlGetScreenX%(wid%, fid%)
     sy = CtlGetScreenY%(wid%, fid%) + row - 1
@@ -1430,7 +1430,7 @@ SUB CtlDrawBox1 (wid%, fid%)
   sx1 = CtlGetScreenX%(wid%, fid%)
   sy1 = CtlGetScreenY%(wid%, fid%)
   sx2 = sx1 + sizeX - 1
-  sy2 = sy1 + CtlGetSizeY%(wid%, fid%) - 1
+  sy2 = sy1 + CtlGetSizeY%(cid%) - 1
 
   sid = CtlGetStyle(wid%, fid%)
 
@@ -1478,7 +1478,7 @@ SUB CtlDrawBox2 (wid%, fid%)
   DIM sizeY AS INTEGER
 
   sizeX = CtlGetSizeX%(cid%)
-  sizeY = CtlGetSizeY%(wid%, fid%)
+  sizeY = CtlGetSizeY%(cid%)
  
   '
   ' Calculate screen coordinates
@@ -1597,7 +1597,7 @@ SUB CtlDrawNebula (wid%, fid%)
 
   COLOR 7, 0
 
-  FOR y = 1 TO CtlGetSizeY%(wid%, fid%)
+  FOR y = 1 TO CtlGetSizeY%(cid%)
  
     x = INT(RND * sizeX) + 1
     p = 1
@@ -1696,7 +1696,7 @@ SUB CtlDrawSeparator (wid%, fid%)
 
   sid = CtlGetStyle(wid%, fid%)
   sizeX = CtlGetSizeX%(cid%)
-  sizeY = CtlGetSizeY%(wid%, fid%)
+  sizeY = CtlGetSizeY%(cid%)
   sx = CtlGetScreenX%(wid%, fid%)
   sy = CtlGetScreenY%(wid%, fid%)
 
@@ -1944,13 +1944,8 @@ FUNCTION CtlGetSizeX% (cid%)
    CtlGetSizeX% = gctl(cid%).sizeYX AND &HFF
 END FUNCTION
 
-FUNCTION CtlGetSizeY% (wid%, fid%)
- 
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
-
+FUNCTION CtlGetSizeY% (cid%)
   CtlGetSizeY% = (gctl(cid%).sizeYX AND &HFF00) \ 256
-
 END FUNCTION
 
 FUNCTION CtlGetStyle% (wid%, fid%)
