@@ -29,6 +29,7 @@ TYPE BindingType
 END TYPE
 
 TYPE CtlType
+  parentcid AS INTEGER
   kind      AS INTEGER
   cmdrid    AS INTEGER
   offsetX   AS INTEGER
@@ -179,6 +180,7 @@ DECLARE SUB CtlSetCmdStr (cid%, cmd$)
 DECLARE SUB CtlSetKind (cid%, kind%)
 DECLARE SUB CtlSetOffsetX (cid%, offsetX%)
 DECLARE SUB CtlSetOffsetY (cid%, offsetY%)
+DECLARE SUB CtlSetParentCid (cid%, parentcid%)
 DECLARE SUB CtlSetPopup (cid%, popupcid%)
 DECLARE SUB CtlSetPopupName (cid%, wname$)
 DECLARE SUB CtlSetSizeX (cid%, sizeX%)
@@ -193,6 +195,7 @@ DECLARE FUNCTION CtlGetCmdRid% (cid%)
 DECLARE FUNCTION CtlGetKind% (cid%)
 DECLARE FUNCTION CtlGetOffsetX% (cid%)
 DECLARE FUNCTION CtlGetOffsetY% (cid%)
+DECLARE FUNCTION CtlGetParentCid% (cid%)
 DECLARE FUNCTION CtlGetPopup% (cid%)
 DECLARE FUNCTION CtlGetScreenX% (wid%, fid%)
 DECLARE FUNCTION CtlGetScreenY% (wid%, fid%)
@@ -254,7 +257,7 @@ DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 DECLARE SUB GameHarvest ()
 DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 
-'                
+'              
 ' Habitats
 '
 DECLARE SUB HabitatSetAction (hid%, cmd$)
@@ -1305,6 +1308,10 @@ FUNCTION CtlCreateChild% (wid%, kind%)
   LET cid% = CtlCreate%
   gwin(wid%, fid%) = cid%
 
+  '
+  ' Set the parent to the window control
+  '
+  CtlSetParentCid cid%, gwin(wid%, 0)
   CtlSetKind cid%, kind%
   CtlCreateChild% = fid%
 
@@ -1903,6 +1910,10 @@ FUNCTION CtlGetOffsetY% (cid%)
   CtlGetOffsetY% = gctl(cid%).offsetY
 END FUNCTION
 
+FUNCTION CtlGetParentCid% (cid%)
+  CtlGetParentCid% = gctl(cid%).parentcid
+END FUNCTION
+
 FUNCTION CtlGetPopup% (cid%)
   CtlGetPopup% = gctl(cid%).popupcid
 END FUNCTION
@@ -2197,6 +2208,10 @@ END SUB
 
 SUB CtlSetOffsetY (cid%, offsetY%)
   gctl(cid%).offsetY = offsetY%
+END SUB
+
+SUB CtlSetParentCid (cid%, parentcid%)
+  gctl(cid%).parentcid = parentcid%
 END SUB
 
 SUB CtlSetPopup (cid%, popupcid%)
@@ -3875,6 +3890,7 @@ FUNCTION WinCreate%
   '
   DIM cid%
   LET cid% = CtlCreate%
+ 
   CtlSetKind cid%, CtlKind.Window
  
   '
