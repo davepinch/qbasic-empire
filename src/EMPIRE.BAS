@@ -1,5 +1,5 @@
 
-' The Galactic Empire
+' Emporer
 ' By David Pinch, 1991-2020
 '
 ' MIT License
@@ -253,7 +253,7 @@ DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 DECLARE SUB GameHarvest ()
 DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 
-'                       
+'                      
 ' Habitats
 '
 DECLARE SUB HabitatSetAction (hid%, cmd$)
