@@ -187,6 +187,7 @@ DECLARE SUB CtlSetText (wid%, fid%, value$)
 DECLARE SUB CtlSetValueStr (wid%, fid%, value$)
 DECLARE FUNCTION CtlCreate% ()
 DECLARE FUNCTION CtlCreateChild% (wid%, kind%)
+DECLARE FUNCTION CtlGet% (cid%, pid%)
 DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS PropType)
 DECLARE FUNCTION CtlGetCmdRid% (cid%)
 DECLARE FUNCTION CtlGetKind% (cid%)
@@ -1802,6 +1803,20 @@ SUB CtlDrawText (wid%, fid%)
 
 END SUB
 
+FUNCTION CtlGet% (cid%, pid%)
+
+  SELECT CASE pid%
+   
+    CASE PropId.OffsetX
+      CtlGet% = gctl(cid%).offsetX
+
+    CASE PropId.OffsetY
+      CtlGet% = gctl(cid%).offsetY
+
+  END SELECT
+
+END FUNCTION
+
 FUNCTION CtlGetBound$ (wid%, fid%, b AS PropType)
 
   DIM value$: value$ = ResourceGet(b.value)
@@ -1882,11 +1897,11 @@ FUNCTION CtlGetKind% (cid%)
 END FUNCTION
 
 FUNCTION CtlGetOffsetX% (cid%)
-  CtlGetOffsetX% = gctl(cid%).offsetX
+  CtlGetOffsetX% = CtlGet%(cid%, PropId.OffsetX)
 END FUNCTION
 
 FUNCTION CtlGetOffsetY% (cid%)
-  CtlGetOffsetY% = gctl(cid%).offsetY
+  CtlGetOffsetY% = CtlGet%(cid%, PropId.OffsetY)
 END FUNCTION
 
 FUNCTION CtlGetParentCid% (cid%)
