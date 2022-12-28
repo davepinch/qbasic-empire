@@ -165,7 +165,7 @@ DECLARE SUB CtlDrawBox1 (cid%)
 DECLARE SUB CtlDrawBox2 (cid%)
 DECLARE SUB CtlDrawFile (wid%, fid%)
 DECLARE SUB CtlDrawNebula (cid%)
-DECLARE SUB CtlDrawSeparator (wid%, fid%)
+DECLARE SUB CtlDrawSeparator (cid%)
 DECLARE SUB CtlDrawText (wid%, fid%)
 DECLARE SUB CtlKey (wid%, fid%, keypress$)
 DECLARE SUB CtlKeyBoolean (wid%, fid%, keypress$)
@@ -1339,7 +1339,7 @@ SUB CtlDraw (wid%, fid%)
       CtlDrawFile wid%, fid%
 
     CASE CtlKind.Separator
-      CtlDrawSeparator wid%, fid%
+      CtlDrawSeparator cid%
 
     CASE CtlKind.Nebula
       CtlDrawNebula cid%
@@ -1662,10 +1662,7 @@ SUB CtlDrawNebula (cid%)
 
 END SUB
 
-SUB CtlDrawSeparator (wid%, fid%)
-
-  AssertIsPositive wid%, "CtlDrawSeparator", "wid"
-  AssertIsPositive fid%, "CtlDrawSeparator", "fid"
+SUB CtlDrawSeparator (cid%)
 
   DIM row   AS INTEGER
   DIM sid   AS INTEGER
@@ -1673,9 +1670,6 @@ SUB CtlDrawSeparator (wid%, fid%)
   DIM sizeY AS INTEGER
   DIM sx    AS INTEGER
   DIM sy    AS INTEGER
-
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
 
   sid = CtlGetStyle(cid%)
   sizeX = CtlGetSizeX%(cid%)
