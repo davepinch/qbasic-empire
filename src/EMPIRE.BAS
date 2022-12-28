@@ -254,7 +254,7 @@ DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 DECLARE SUB GameHarvest ()
 DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 
-'          
+'
 ' Habitats
 '
 DECLARE SUB HabitatSetAction (hid%, cmd$)
@@ -479,7 +479,7 @@ DIM SHARED atlaspage             AS INTEGER
 DIM SHARED event(1 TO 5)         AS EventType
 DIM SHARED events                AS INTEGER
 DIM SHARED habitat(1 TO 8)       AS HabitatType
-DIM SHARED habitats              AS INTEGER
+DIM SHARED Habitats              AS INTEGER
 DIM SHARED listening             AS INTEGER
 DIM SHARED persona(1 TO 10)      AS PersonaType
 DIM SHARED personas              AS INTEGER
@@ -3330,14 +3330,14 @@ FUNCTION GetKey$
 END FUNCTION
 
 FUNCTION HabitatCreate%
-  habitats = habitats + 1
-  HabitatCreate% = habitats
+  Habitats = Habitats + 1
+  HabitatCreate% = Habitats
 END FUNCTION
 
 FUNCTION HabitatFind% (hname$)
 
   DIM hid%
-  FOR hid% = 1 TO habitats
+  FOR hid% = 1 TO Habitats
     IF ResourceGet(habitat(hid%).namerid) = hname$ THEN
       HabitatFind% = hid%
     END IF
