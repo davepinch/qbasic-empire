@@ -421,7 +421,16 @@ CONST OpEquals = 1
 ' PropId.*
 '
 CONST PropId.Value = 0
-CONST PropId.TextRid = 1
+CONST PropId.Parent = 1
+CONST PropId.Kind = 2
+CONST PropId.Text = 3
+CONST PropId.Command = 4
+CONST PropId.OffsetX = 5
+CONST PropId.OffsetY = 6
+CONST PropId.Popup = 7
+CONST PropId.SizeX = 8
+CONST PropId.SizeY = 9
+CONST PropId.Style = 10
 
 '
 ' ScanCode constants
@@ -2083,7 +2092,7 @@ FUNCTION CtlRedirected% (cid%, pid%)
 
   SELECT CASE pid%
 
-    CASE PropId.TextRid
+    CASE PropId.Text
       CtlRedirected% = gctl(cid%).textbind.flags = BindingTarget.Field
 
     CASE PropId.Value
@@ -4076,7 +4085,7 @@ SUB WinRefreshField (wid%, fid%)
 
         IF n = fid% THEN
           CtlDraw wid%, n
-        ELSEIF CtlRedirected%(cid%, PropId.TextRid) THEN
+        ELSEIF CtlRedirected%(cid%, PropId.Text) THEN
           CtlDraw wid%, n
         ELSEIF CtlRedirected%(cid%, PropId.Value) THEN
           CtlDraw wid%, n
