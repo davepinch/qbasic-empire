@@ -160,7 +160,7 @@ DECLARE SUB CtlBindText (wid%, fid%, expr$)
 DECLARE SUB CtlBindValue (wid%, fid%, expr$)
 DECLARE SUB CtlDraw (wid%, fid%)
 DECLARE SUB CtlDrawBox (wid%, fid%)
-DECLARE SUB CtlDrawBox0 (wid%, fid%)
+DECLARE SUB CtlDrawBox0 (cid%)
 DECLARE SUB CtlDrawBox1 (cid%)
 DECLARE SUB CtlDrawBox2 (cid%)
 DECLARE SUB CtlDrawFile (wid%, fid%)
@@ -1365,7 +1365,7 @@ SUB CtlDrawBox (wid%, fid%)
   SELECT CASE winstyle(sid%).bordertype
  
     CASE 0:
-      CtlDrawBox0 wid%, fid%
+      CtlDrawBox0 cid%
 
     CASE 1:
       CtlDrawBox1 cid%
@@ -1377,13 +1377,7 @@ SUB CtlDrawBox (wid%, fid%)
 
 END SUB
 
-SUB CtlDrawBox0 (wid%, fid%)
-
-  AssertIsPositive wid%, "CtlDrawBox0", "wid"
-  AssertIsPositive fid%, "CtlDrawBox0", "fid"
-
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
+SUB CtlDrawBox0 (cid%)
 
   DIM row AS INTEGER
   DIM sid AS INTEGER
