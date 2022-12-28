@@ -186,6 +186,7 @@ DECLARE SUB CtlSetSizeY (wid%, fid%, sizeY%)
 DECLARE SUB CtlSetStyle (wid%, fid%, sid%)
 DECLARE SUB CtlSetText (wid%, fid%, value$)
 DECLARE SUB CtlSetValue (wid%, fid%, value$)
+DECLARE FUNCTION CtlCreate% ()
 DECLARE FUNCTION CtlCreateChild% (wid%, kind%)
 DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
 DECLARE FUNCTION CtlGetCmdRid% (wid%, fid%)
@@ -468,12 +469,15 @@ DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS IN
 '
 ' Globals
 '
+DIM SHARED gctl(1 TO 200)         AS CtlType
+DIM SHARED gwin(1 TO 20, 1 TO 13) AS INTEGER
+DIM SHARED gcids                  AS INTEGER
+
 DIM SHARED area(1 TO 35)         AS AreaType
 DIM SHARED atlasitem(1 TO 30)    AS AtlasItemType
 DIM SHARED atlaspage             AS INTEGER
 DIM SHARED event(1 TO 5)         AS EventType
 DIM SHARED events                AS INTEGER
-DIM SHARED fld(1 TO 15, 1 TO 13) AS CtlType
 DIM SHARED habitat(1 TO 8)       AS HabitatType
 DIM SHARED habitats              AS INTEGER
 DIM SHARED listening             AS INTEGER
@@ -1255,7 +1259,10 @@ SUB CtlBindText (wid%, fid%, expr$)
   AssertIsPositive wid%, "CtlBindText", "wid"
   AssertIsPositive fid%, "CtlBindText", "fid"
 
-  CtlParseBinding expr$, fld(wid%, fid%).textbind
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  CtlParseBinding expr$, gctl(cid%).textbind
 
 END SUB
 
@@ -1264,18 +1271,36 @@ SUB CtlBindValue (wid%, fid%, expr$)
   AssertIsPositive wid%, "CtlBindValue", "wid"
   AssertIsPositive fid%, "CtlBindValue", "fid"
 
-  CtlParseBinding expr$, fld(wid%, fid%).valuebind
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  CtlParseBinding expr$, gctl(cid%).valuebind
 
 END SUB
+
+FUNCTION CtlCreate%
+  gcids = gcids + 1
+  CtlCreate% = gcids
+END FUNCTION
 
 FUNCTION CtlCreateChild% (wid%, kind%)
 
   Assert wid% > 0, "CtlCreateChild", "wid cannot be 0"
 
+  '
+  ' Get a new field index
+  '
   DIM fid%
   LET fid% = win(wid%).fields + 1
-
   win(wid%).fields = fid%
+
+  '
+  ' Allocate a control
+  '
+  DIM cid%
+  LET cid% = CtlCreate%
+  gwin(wid%, fid%) = cid%
+
   CtlSetKind wid%, fid%, kind%
   CtlCreateChild% = fid%
 
@@ -1838,39 +1863,84 @@ FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
 END FUNCTION
 
 FUNCTION CtlGetCmdRid% (wid%, fid%)
-  CtlGetCmdRid% = fld(wid%, fid%).cmdrid
+ 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  CtlGetCmdRid% = gctl(cid%).cmdrid
+
 END FUNCTION
 
 FUNCTION CtlGetKind% (wid%, fid%)
-  CtlGetKind% = fld(wid%, fid%).kind
+ 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  CtlGetKind% = gctl(cid%).kind
+
 END FUNCTION
 
 FUNCTION CtlGetOffsetX% (wid%, fid%)
-  CtlGetOffsetX% = fld(wid%, fid%).offsetX
+ 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  CtlGetOffsetX% = gctl(cid%).offsetX
+
 END FUNCTION
 
 FUNCTION CtlGetOffsetY% (wid%, fid%)
-  CtlGetOffsetY% = fld(wid%, fid%).offsetY
+ 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  CtlGetOffsetY% = gctl(cid%).offsetY
+
 END FUNCTION
 
 FUNCTION CtlGetPopup% (wid%, fid%)
-  CtlGetPopup% = fld(wid%, fid%).popupcid
+ 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  CtlGetPopup% = gctl(cid%).popupcid
+
 END FUNCTION
 
 FUNCTION CtlGetScreenX% (wid%, fid%)
-  CtlGetScreenX% = 1 + win(wid%).offsetX + fld(wid%, fid%).offsetX
+
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  CtlGetScreenX% = 1 + win(wid%).offsetX + gctl(cid%).offsetX
+
 END FUNCTION
 
 FUNCTION CtlGetScreenY% (wid%, fid%)
-  CtlGetScreenY% = 1 + win(wid%).offsetY + fld(wid%, fid%).offsetY
+
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  CtlGetScreenY% = 1 + win(wid%).offsetY + gctl(cid%).offsetY
+
 END FUNCTION
 
 FUNCTION CtlGetSizeX% (wid%, fid%)
-  CtlGetSizeX% = fld(wid%, fid%).sizeYX AND &HFF
+ 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  CtlGetSizeX% = gctl(cid%).sizeYX AND &HFF
+
 END FUNCTION
 
 FUNCTION CtlGetSizeY% (wid%, fid%)
-  CtlGetSizeY% = (fld(wid%, fid%).sizeYX AND &HFF00) \ 256
+ 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  CtlGetSizeY% = (gctl(cid%).sizeYX AND &HFF00) \ 256
+
 END FUNCTION
 
 FUNCTION CtlGetStyle% (wid%, fid%)
@@ -1878,9 +1948,12 @@ FUNCTION CtlGetStyle% (wid%, fid%)
   AssertIsPositive wid%, "CtlGetStyle", "wid"
   AssertIsPositive fid%, "CtlGetStyle", "fid"
 
-  DIM sid%
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
 
-  sid% = fld(wid%, fid%).sid
+  DIM sid%
+  LET sid% = gctl(cid%).sid
+ 
   IF sid% = 0 THEN
     sid% = win(wid%).sid
   END IF
@@ -1891,7 +1964,10 @@ END FUNCTION
 
 FUNCTION CtlGetText$ (wid%, fid%)
 
-  CtlGetText$ = CtlGetBound$(wid%, fid%, fld(wid%, fid%).textbind)
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  CtlGetText$ = CtlGetBound$(wid%, fid%, gctl(cid%).textbind)
 
 END FUNCTION
 
@@ -1900,7 +1976,10 @@ FUNCTION CtlGetValue$ (wid%, fid%)
   AssertIsPositive wid%, "CtlGetValue", "wid"
   AssertIsPositive fid%, "CtlGetValue", "fid"
 
-  CtlGetValue$ = CtlGetBound$(wid%, fid%, fld(wid%, fid%).valuebind)
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  CtlGetValue$ = CtlGetBound$(wid%, fid%, gctl(cid%).valuebind)
 
 END FUNCTION
 
@@ -2016,13 +2095,16 @@ END SUB
 
 FUNCTION CtlRedirected% (wid%, fid%, pid%)
 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
   SELECT CASE pid%
 
     CASE CtlPropId.TextRid
-      CtlRedirected = fld(wid%, fid%).textbind.target = BindingTarget.Field
+      CtlRedirected = gctl(cid%).textbind.target = BindingTarget.Field
 
     CASE CtlPropId.Value
-      CtlRedirected% = fld(wid%, fid%).valuebind.target = BindingTarget.Field
+      CtlRedirected% = gctl(cid%).valuebind.target = BindingTarget.Field
 
   END SELECT
 
@@ -2100,7 +2182,12 @@ SUB CtlSetBound (wid%, fid%, b AS BindingType, value$)
 END SUB
 
 SUB CtlSetCmdRid (wid%, fid%, cmdrid%)
-  fld(wid%, fid%).cmdrid = cmdrid%
+ 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  gctl(cid%).cmdrid = cmdrid%
+
 END SUB
 
 SUB CtlSetCmdStr (wid%, fid%, cmd$)
@@ -2121,19 +2208,39 @@ SUB CtlSetCmdStr (wid%, fid%, cmd$)
 END SUB
 
 SUB CtlSetKind (wid%, fid%, kind%)
-  fld(wid%, fid%).kind = kind%
+ 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  gctl(cid%).kind = kind%
+
 END SUB
 
 SUB CtlSetOffsetX (wid%, fid%, offsetX%)
-  fld(wid%, fid%).offsetX = offsetX%
+ 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  gctl(cid%).offsetX = offsetX%
+
 END SUB
 
 SUB CtlSetOffsetY (wid%, fid%, offsetY%)
-  fld(wid%, fid%).offsetY = offsetY%
+ 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  gctl(cid%).offsetY = offsetY%
+
 END SUB
 
 SUB CtlSetPopup (wid%, fid%, popupcid%)
-  fld(wid%, fid%).popupcid = popupcid%
+ 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  gctl(cid%).popupcid = popupcid%
+
 END SUB
 
 SUB CtlSetPopupName (wid%, fid%, wname$)
@@ -2141,15 +2248,29 @@ SUB CtlSetPopupName (wid%, fid%, wname$)
 END SUB
 
 SUB CtlSetSizeX (wid%, fid%, sizeX%)
-  fld(wid%, fid%).sizeYX = (fld(wid%, fid%).sizeYX AND &HFF00) OR sizeX%
+ 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  gctl(cid%).sizeYX = (gctl(cid%).sizeYX AND &HFF00) OR sizeX%
+
 END SUB
 
 SUB CtlSetSizeY (wid%, fid%, sizeY%)
-  fld(wid%, fid%).sizeYX = (fld(wid%, fid%).sizeYX% AND &HFF) OR (sizeY% * 256)
+ 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  gctl(cid%).sizeYX = (gctl(cid%).sizeYX% AND &HFF) OR (sizeY% * 256)
 END SUB
 
 SUB CtlSetStyle (wid%, fid%, sid%)
-  fld(wid%, fid%).sid = sid%
+ 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  gctl(cid%).sid = sid%
+
 END SUB
 
 SUB CtlSetText (wid%, fid%, value$)
@@ -2157,7 +2278,10 @@ SUB CtlSetText (wid%, fid%, value$)
   AssertIsPositive wid%, "CtlSetText", "wid"
   AssertIsPositive fid%, "CtlSetText", "fid"
 
-  CtlSetBound wid%, fid%, fld(wid%, fid%).textbind, value$
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  CtlSetBound wid%, fid%, gctl(cid%).textbind, value$
 
 END SUB
 
@@ -2166,7 +2290,10 @@ SUB CtlSetValue (wid%, fid%, value$)
   AssertIsPositive wid%, "CtlSetValue", "wid"
   AssertIsPositive fid%, "CtlSetValue", "fid"
 
-  CtlSetBound wid%, fid%, fld(wid%, fid%).valuebind, value$
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  CtlSetBound wid%, fid%, gctl(cid%).valuebind, value$
 
 END SUB
 
