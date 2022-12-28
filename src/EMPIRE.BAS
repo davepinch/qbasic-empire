@@ -177,7 +177,7 @@ DECLARE SUB CtlSetBound (wid%, fid%, b AS BindingType, value$)
 DECLARE SUB CtlSetCmdRid (wid%, fid%, cmdrid%)
 DECLARE SUB CtlSetCmdStr (wid%, fid%, cmd$)
 DECLARE SUB CtlSetKind (cid%, kind%)
-DECLARE SUB CtlSetOffsetX (wid%, fid%, offsetX%)
+DECLARE SUB CtlSetOffsetX (cid%, offsetX%)
 DECLARE SUB CtlSetOffsetY (wid%, fid%, offsetY%)
 DECLARE SUB CtlSetPopup (cid%, popupcid%)
 DECLARE SUB CtlSetPopupName (cid%, wname$)
@@ -2212,13 +2212,8 @@ SUB CtlSetKind (cid%, kind%)
   gctl(cid%).kind = kind%
 END SUB
 
-SUB CtlSetOffsetX (wid%, fid%, offsetX%)
- 
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
-
+SUB CtlSetOffsetX (cid%, offsetX%)
   gctl(cid%).offsetX = offsetX%
-
 END SUB
 
 SUB CtlSetOffsetY (wid%, fid%, offsetY%)
@@ -2871,7 +2866,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       CtlSetCmdStr wid%, fid%, stoken$(1)
 
     CASE "offsetx"
-      CtlSetOffsetX wid%, fid%, VAL(stoken$(1))
+      CtlSetOffsetX cid%, VAL(stoken$(1))
 
     CASE "offsety"
       CtlSetOffsetY wid%, fid%, VAL(stoken$(1))
@@ -3869,7 +3864,7 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
   LET cid% = gwin(wid%, fid%)
 
   CtlSetCmdRid wid%, fid%, 0
-  CtlSetOffsetX wid%, fid%, offsetX%
+  CtlSetOffsetX cid%, offsetX%
   CtlSetOffsetY wid%, fid%, offsetY%
   CtlSetPopup cid%, 0
   CtlSetSizeX wid%, fid%, sizeX%
