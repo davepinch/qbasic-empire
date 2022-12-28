@@ -36,8 +36,8 @@ TYPE CtlType
   popupcid  AS INTEGER
   sid       AS INTEGER
   sizeYX    AS INTEGER
-  text      AS BindingType
-  value     AS BindingType
+  textbind  AS BindingType
+  valuebind AS BindingType
 END TYPE
 
 TYPE EventType
@@ -253,7 +253,7 @@ DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 DECLARE SUB GameHarvest ()
 DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 
-'                      
+'                     
 ' Habitats
 '
 DECLARE SUB HabitatSetAction (hid%, cmd$)
@@ -1255,7 +1255,7 @@ SUB CtlBindText (wid%, fid%, expr$)
   AssertIsPositive wid%, "CtlBindText", "wid"
   AssertIsPositive fid%, "CtlBindText", "fid"
 
-  CtlParseBinding expr$, fld(wid%, fid%).text
+  CtlParseBinding expr$, fld(wid%, fid%).textbind
 
 END SUB
 
@@ -1264,7 +1264,7 @@ SUB CtlBindValue (wid%, fid%, expr$)
   AssertIsPositive wid%, "CtlBindValue", "wid"
   AssertIsPositive fid%, "CtlBindValue", "fid"
 
-  CtlParseBinding expr$, fld(wid%, fid%).value
+  CtlParseBinding expr$, fld(wid%, fid%).valuebind
 
 END SUB
 
@@ -1891,7 +1891,7 @@ END FUNCTION
 
 FUNCTION CtlGetText$ (wid%, fid%)
 
-  CtlGetText$ = CtlGetBound$(wid%, fid%, fld(wid%, fid%).text)
+  CtlGetText$ = CtlGetBound$(wid%, fid%, fld(wid%, fid%).textbind)
 
 END FUNCTION
 
@@ -1900,7 +1900,7 @@ FUNCTION CtlGetValue$ (wid%, fid%)
   AssertIsPositive wid%, "CtlGetValue", "wid"
   AssertIsPositive fid%, "CtlGetValue", "fid"
 
-  CtlGetValue$ = CtlGetBound$(wid%, fid%, fld(wid%, fid%).value)
+  CtlGetValue$ = CtlGetBound$(wid%, fid%, fld(wid%, fid%).valuebind)
 
 END FUNCTION
 
@@ -2019,10 +2019,10 @@ FUNCTION CtlRedirected% (wid%, fid%, pid%)
   SELECT CASE pid%
 
     CASE CtlPropId.TextRid
-      CtlRedirected = fld(wid%, fid%).text.target = BindingTarget.Field
+      CtlRedirected = fld(wid%, fid%).textbind.target = BindingTarget.Field
 
     CASE CtlPropId.Value
-      CtlRedirected% = fld(wid%, fid%).value.target = BindingTarget.Field
+      CtlRedirected% = fld(wid%, fid%).valuebind.target = BindingTarget.Field
 
   END SELECT
 
@@ -2157,7 +2157,7 @@ SUB CtlSetText (wid%, fid%, value$)
   AssertIsPositive wid%, "CtlSetText", "wid"
   AssertIsPositive fid%, "CtlSetText", "fid"
 
-  CtlSetBound wid%, fid%, fld(wid%, fid%).text, value$
+  CtlSetBound wid%, fid%, fld(wid%, fid%).textbind, value$
 
 END SUB
 
@@ -2166,7 +2166,7 @@ SUB CtlSetValue (wid%, fid%, value$)
   AssertIsPositive wid%, "CtlSetValue", "wid"
   AssertIsPositive fid%, "CtlSetValue", "fid"
 
-  CtlSetBound wid%, fid%, fld(wid%, fid%).value, value$
+  CtlSetBound wid%, fid%, fld(wid%, fid%).valuebind, value$
 
 END SUB
 
