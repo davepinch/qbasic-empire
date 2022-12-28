@@ -202,7 +202,7 @@ DECLARE FUNCTION CtlGetStyle% (wid%, fid%)
 DECLARE FUNCTION CtlGetText$ (wid%, fid%)
 DECLARE FUNCTION CtlGetValue$ (wid%, fid%)
 DECLARE FUNCTION CtlRedirected% (wid%, fid%, pid%)
-DECLARE FUNCTION CtlSelectable% (wid%, fid%)
+DECLARE FUNCTION CtlSelectable% (cid%)
 
 '
 ' Dialog
@@ -2106,40 +2106,33 @@ FUNCTION CtlRedirected% (wid%, fid%, pid%)
 
 END FUNCTION
 
-FUNCTION CtlSelectable% (wid%, fid%)
+FUNCTION CtlSelectable% (cid%)
   '
   ' Returns True or False depending on whether the specified
   ' field is selectable (i.e., can receive focus for input or
   ' selection).
   '
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
+  IF (cid% < 0) OR (cid% > UBOUND(gctl)) THEN
 
-  IF wid% < 0 OR fid% <= 0 THEN
-
-    CtlSelectable = False
-
-  ELSEIF fid% > win(wid%).fields THEN
-   
     CtlSelectable% = False
  
   ELSE
 
     SELECT CASE CtlGetKind%(cid%)
       CASE CtlKind.Button
-        CtlSelectable = True
+        CtlSelectable% = True
 
       CASE CtlKind.Boolean
-        CtlSelectable = True
+        CtlSelectable% = True
 
       CASE CtlKind.Integer
-        CtlSelectable = True
+        CtlSelectable% = True
 
       CASE CtlKind.Popup
-        CtlSelectable = True
+        CtlSelectable% = True
 
       CASE ELSE
-        CtlSelectable = False
+        CtlSelectable% = False
 
     END SELECT
 
@@ -4299,7 +4292,11 @@ SUB WinSelectFirst (wid%)
  
     DIM fid%
     FOR fid% = 1 TO win(wid%).fields
-      IF CtlSelectable(wid%, fid%) THEN
+     
+      DIM cid%
+      LET cid% = gwin(wid%, fid%)
+
+      IF CtlSelectable%(cid%) THEN
         WinSelect wid%, fid%
         EXIT SUB
       END IF
@@ -4331,7 +4328,11 @@ SUB WinSelectLast (wid%)
 
     DIM fid%
     FOR fid% = win(wid%).fields TO 1 STEP -1
-      IF CtlSelectable(wid%, fid%) THEN
+     
+      DIM cid%
+      LET cid% = gwin(wid%, fid%)
+
+      IF CtlSelectable%(cid%) THEN
         WinSelect wid%, fid%
         EXIT SUB
       END IF
@@ -4382,7 +4383,10 @@ SUB WinSelectNext (wid%)
         fid% = 1
       END IF
 
-      IF CtlSelectable(wid%, fid%) THEN
+      DIM cid%
+      LET cid% = gwin(wid%, fid%)
+
+      IF CtlSelectable%(cid%) THEN
         EXIT DO
       END IF
 
@@ -4438,7 +4442,10 @@ SUB WinSelectPrevious (wid%)
         fid% = win(wid%).fields
       END IF
 
-      IF CtlSelectable(wid%, fid%) THEN
+      DIM cid%
+      LET cid% = gwin(wid%, fid%)
+
+      IF CtlSelectable%(cid%) THEN
         EXIT DO
       END IF
 
