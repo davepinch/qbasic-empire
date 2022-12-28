@@ -174,8 +174,8 @@ DECLARE SUB CtlKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB CtlKeyInteger (wid%, fid%, keypress$)
 DECLARE SUB CtlParseBinding (text$, outbind AS ANY)
 DECLARE SUB CtlSetBound (wid%, fid%, b AS BindingType, value$)
-DECLARE SUB CtlSetCmdRid (wid%, fid%, cmdrid%)
-DECLARE SUB CtlSetCmdStr (wid%, fid%, cmd$)
+DECLARE SUB CtlSetCmdRid (cid%, cmdrid%)
+DECLARE SUB CtlSetCmdStr (cid%, cmd$)
 DECLARE SUB CtlSetKind (cid%, kind%)
 DECLARE SUB CtlSetOffsetX (cid%, offsetX%)
 DECLARE SUB CtlSetOffsetY (cid%, offsetY%)
@@ -1880,7 +1880,7 @@ FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
         CtlGetBound$ = ""
       
       ELSE
-        CtlGetBound$ = CtlGetValue(wid%, win(wid%).selected)
+        CtlGetBound$ = CtlGetValue$(wid%, win(wid%).selected)
       END IF
 
   END SELECT
@@ -2179,22 +2179,11 @@ SUB CtlSetBound (wid%, fid%, b AS BindingType, value$)
 
 END SUB
 
-SUB CtlSetCmdRid (wid%, fid%, cmdrid%)
- 
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
-
+SUB CtlSetCmdRid (cid%, cmdrid%)
   gctl(cid%).cmdrid = cmdrid%
-
 END SUB
 
-SUB CtlSetCmdStr (wid%, fid%, cmd$)
-
-  AssertIsPositive wid%, "CtlSetCmdStr", "wid"
-  AssertIsPositive fid%, "CtlSetCmdStr", "fid"
-
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
+SUB CtlSetCmdStr (cid%, cmd$)
 
   DIM rid%
   LET rid% = CtlGetCmdRid%(cid%)
@@ -2204,7 +2193,7 @@ SUB CtlSetCmdStr (wid%, fid%, cmd$)
   '
   ResourceSet rid%, cmd$
 
-  CtlSetCmdRid wid%, fid%, rid%
+  CtlSetCmdRid cid%, rid%
 
 END SUB
 
@@ -2849,7 +2838,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       CtlSetPopupName cid%, stoken$(1)
 
     CASE "command"
-      CtlSetCmdStr wid%, fid%, stoken$(1)
+      CtlSetCmdStr cid%, stoken$(1)
 
     CASE "offsetx"
       CtlSetOffsetX cid%, VAL(stoken$(1))
@@ -3849,7 +3838,7 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
   DIM cid%
   LET cid% = gwin(wid%, fid%)
 
-  CtlSetCmdRid wid%, fid%, 0
+  CtlSetCmdRid cid%, 0
   CtlSetOffsetX cid%, offsetX%
   CtlSetOffsetY cid%, offsetY%
   CtlSetPopup cid%, 0
