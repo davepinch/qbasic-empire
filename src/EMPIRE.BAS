@@ -1393,14 +1393,14 @@ SUB CtlDrawBox1 (wid%, fid%)
   AssertIsPositive wid%, "CtlDrawBox1", "wid"
   AssertIsPositive fid%, "CtlDrawBox1", "fid"
 
-  CONST lowerFlat = "Ä"   ' CHR$(196)
-  CONST lowerLeft = "À"   ' CHR$(192)
-  CONST lowerRight = "Ù"  ' CHR$(217)
-  CONST sideLeft = "³"    ' CHR$(179)
-  CONST sideRight = "³"   ' CHR$(179)
-  CONST upperLeft = "Ú"   ' CHR$(218)
-  CONST upperFlat = "Ä"   ' CHR$(196)
-  CONST upperRight = "¿"  ' CHR$(191)
+  CONST lowerFlat = "ï¿½"   ' CHR$(196)
+  CONST lowerLeft = "ï¿½"   ' CHR$(192)
+  CONST lowerRight = "ï¿½"  ' CHR$(217)
+  CONST sideLeft = "ï¿½"    ' CHR$(179)
+  CONST sideRight = "ï¿½"   ' CHR$(179)
+  CONST upperLeft = "ï¿½"   ' CHR$(218)
+  CONST upperFlat = "ï¿½"   ' CHR$(196)
+  CONST upperRight = "ï¿½"  ' CHR$(191)
 
   DIM r     AS INTEGER
   DIM sid   AS INTEGER
@@ -1638,13 +1638,13 @@ SUB CtlDrawNebula (wid%, fid%)
       SELECT CASE p
         CASE 1
           COLOR 8
-          PRINT "Ä";
+          PRINT "ï¿½";
         CASE 2
           COLOR 7
-          PRINT "Ä";
+          PRINT "ï¿½";
         CASE 3
           COLOR 15
-          PRINT "Ä";
+          PRINT "ï¿½";
         CASE 0
           PRINT " ";
       END SELECT
@@ -1686,12 +1686,12 @@ SUB CtlDrawSeparator (wid%, fid%)
     ' Left edge
     '
     SELECT CASE SCREEN(sy, sx)
-      CASE 179            ' ³
-        PRINT CHR$(195);  ' Ã
-      CASE 186            ' º
-        PRINT CHR$(199);  ' Ç
+      CASE 179            ' ï¿½
+        PRINT CHR$(195);  ' ï¿½
+      CASE 186            ' ï¿½
+        PRINT CHR$(199);  ' ï¿½
       CASE ELSE           '
-        PRINT CHR$(196);  ' Ä
+        PRINT CHR$(196);  ' ï¿½
     END SELECT
    
     '
@@ -1703,12 +1703,12 @@ SUB CtlDrawSeparator (wid%, fid%)
     ' Right edge
     '
     SELECT CASE SCREEN(sy, sx + sizeX - 1)
-      CASE 179            ' ³
-        PRINT CHR$(180);  ' ´
-      CASE 186            ' º
-        PRINT CHR$(182);  ' ¶
+      CASE 179            ' ï¿½
+        PRINT CHR$(180);  ' ï¿½
+      CASE 186            ' ï¿½
+        PRINT CHR$(182);  ' ï¿½
       CASE ELSE           '
-        PRINT CHR$(196);  ' Ä
+        PRINT CHR$(196);  ' ï¿½
     END SELECT
 
   ELSEIF sizeY > 0 THEN
@@ -1717,12 +1717,12 @@ SUB CtlDrawSeparator (wid%, fid%)
     ' Top edge
     '
     SELECT CASE SCREEN(sy, sx)
-      CASE 196            ' Ä
-        PRINT CHR$(194);  ' Â
-      CASE 205            ' Í
-        PRINT CHR$(209);  ' Ñ
+      CASE 196            ' ï¿½
+        PRINT CHR$(194);  ' ï¿½
+      CASE 205            ' ï¿½
+        PRINT CHR$(209);  ' ï¿½
       CASE ELSE           '
-        PRINT CHR$(179);  ' ³
+        PRINT CHR$(179);  ' ï¿½
     END SELECT
 
     FOR row = sy + 1 TO sy + sizeY - 2
@@ -1735,12 +1735,12 @@ SUB CtlDrawSeparator (wid%, fid%)
     '
     LOCATE sy + sizeY - 1, sx
     SELECT CASE SCREEN(sy + sizeY - 1, sx)
-      CASE 196            ' Ä
-        PRINT CHR$(193);  ' Á
-      CASE 205            ' Í
-        PRINT CHR$(207);  ' Ï
+      CASE 196            ' ï¿½
+        PRINT CHR$(193);  ' ï¿½
+      CASE 205            ' ï¿½
+        PRINT CHR$(207);  ' ï¿½
       CASE ELSE           '
-        PRINT CHR$(179);  ' ³
+        PRINT CHR$(179);  ' ï¿½
     END SELECT
 
   END IF
@@ -3450,29 +3450,29 @@ FUNCTION NebulaLabel$ (energy AS INTEGER)
   SELECT CASE energy
 
     CASE 0:
-      label = " @X08Ä  "
+      label = " @X08ï¿½  "
 
     CASE 1:
       SELECT CASE INT(RND * 4)
-        CASE 0: label = "@X08Ä - "
-        CASE 1: label = "@X08 ÄÄ "
-        CASE 2: label = "@X08 Ä Ä"
-        CASE 3: label = "@X08Ä  Ä"
+        CASE 0: label = "@X08ï¿½ - "
+        CASE 1: label = "@X08 ï¿½ï¿½ "
+        CASE 2: label = "@X08 ï¿½ ï¿½"
+        CASE 3: label = "@X08ï¿½  ï¿½"
       END SELECT
 
     CASE 2:
       SELECT CASE INT(RND * 4)
-        CASE 0: label = "@X08Ä@X07Ä @X08Ä"
-        CASE 1: label = "@X08Ä @X07Ä@X08Ä"
-        CASE 2: label = " @X08Ä@X07Ä@X08Ä"
-        CASE 3: label = "@X08Ä@X07ÄÄ@X08Ä"
+        CASE 0: label = "@X08ï¿½@X07ï¿½ @X08ï¿½"
+        CASE 1: label = "@X08ï¿½ @X07ï¿½@X08ï¿½"
+        CASE 2: label = " @X08ï¿½@X07ï¿½@X08ï¿½"
+        CASE 3: label = "@X08ï¿½@X07ï¿½ï¿½@X08ï¿½"
       END SELECT
 
     CASE 3:
       SELECT CASE INT(RND * 3)
-        CASE 0: label = "@X08Ä@X07Ä@X0FÄ@X07"
-        CASE 1: label = "@X07ÄÄ@X0FÄ@X07Ä"
-        CASE 2: label = "@X08Ä @X0FÄ@X08Ä"
+        CASE 0: label = "@X08ï¿½@X07ï¿½@X0Fï¿½@X07"
+        CASE 1: label = "@X07ï¿½ï¿½@X0Fï¿½@X07ï¿½"
+        CASE 2: label = "@X08ï¿½ @X0Fï¿½@X08ï¿½"
       END SELECT
 
     CASE ELSE
