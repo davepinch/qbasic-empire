@@ -1807,6 +1807,9 @@ FUNCTION CtlGet% (cid%, pid%)
 
   SELECT CASE pid%
    
+    CASE PropId.Kind
+      CtlGet% = gctl(cid%).kind
+
     CASE PropId.OffsetX
       CtlGet% = gctl(cid%).offsetX
 
@@ -1893,7 +1896,7 @@ FUNCTION CtlGetCmdRid% (cid%)
 END FUNCTION
 
 FUNCTION CtlGetKind% (cid%)
-  CtlGetKind% = gctl(cid%).kind
+  CtlGetKind% = CtlGet%(cid%, PropId.Kind)
 END FUNCTION
 
 FUNCTION CtlGetOffsetX% (cid%)
