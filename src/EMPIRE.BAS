@@ -201,7 +201,7 @@ DECLARE FUNCTION CtlGetSizeY% (cid%)
 DECLARE FUNCTION CtlGetStyle% (wid%, fid%)
 DECLARE FUNCTION CtlGetText$ (wid%, fid%)
 DECLARE FUNCTION CtlGetValue$ (wid%, fid%)
-DECLARE FUNCTION CtlRedirected% (wid%, fid%, pid%)
+DECLARE FUNCTION CtlRedirected% (cid%, pid%)
 DECLARE FUNCTION CtlSelectable% (cid%)
 
 '
@@ -2089,15 +2089,12 @@ SUB CtlParseBinding (text$, outbind AS BindingType)
 
 END SUB
 
-FUNCTION CtlRedirected% (wid%, fid%, pid%)
-
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
+FUNCTION CtlRedirected% (cid%, pid%)
 
   SELECT CASE pid%
 
     CASE CtlPropId.TextRid
-      CtlRedirected = gctl(cid%).textbind.target = BindingTarget.Field
+      CtlRedirected% = gctl(cid%).textbind.target = BindingTarget.Field
 
     CASE CtlPropId.Value
       CtlRedirected% = gctl(cid%).valuebind.target = BindingTarget.Field
@@ -4073,17 +4070,21 @@ END SUB
 
 SUB WinRefreshField (wid%, fid%)
 
+  DIM cid%
   DIM n AS INTEGER
 
   IF winstacked > 0 THEN
     IF winstack(winstacked).wid = wid% THEN
      
       FOR n = 1 TO win(wid%).fields
+       
+        cid% = gwin(wid%, n)
+
         IF n = fid% THEN
           CtlDraw wid%, n
-        ELSEIF CtlRedirected%(wid%, n, CtlPropId.TextRid) THEN
+        ELSEIF CtlRedirected%(cid%, CtlPropId.TextRid) THEN
           CtlDraw wid%, n
-        ELSEIF CtlRedirected%(wid%, n, CtlPropId.Value) THEN
+        ELSEIF CtlRedirected%(cid%, CtlPropId.Value) THEN
           CtlDraw wid%, n
         END IF
       NEXT
