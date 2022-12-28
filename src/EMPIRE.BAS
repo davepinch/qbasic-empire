@@ -179,7 +179,7 @@ DECLARE SUB CtlSetCmdStr (wid%, fid%, cmd$)
 DECLARE SUB CtlSetKind (cid%, kind%)
 DECLARE SUB CtlSetOffsetX (wid%, fid%, offsetX%)
 DECLARE SUB CtlSetOffsetY (wid%, fid%, offsetY%)
-DECLARE SUB CtlSetPopup (wid%, fid%, popupcid%)
+DECLARE SUB CtlSetPopup (cid%, popupcid%)
 DECLARE SUB CtlSetPopupName (wid%, fid%, wname$)
 DECLARE SUB CtlSetSizeX (wid%, fid%, sizeX%)
 DECLARE SUB CtlSetSizeY (wid%, fid%, sizeY%)
@@ -254,7 +254,7 @@ DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 DECLARE SUB GameHarvest ()
 DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 
-'                 
+'                
 ' Habitats
 '
 DECLARE SUB HabitatSetAction (hid%, cmd$)
@@ -2230,17 +2230,17 @@ SUB CtlSetOffsetY (wid%, fid%, offsetY%)
 
 END SUB
 
-SUB CtlSetPopup (wid%, fid%, popupcid%)
+SUB CtlSetPopup (cid%, popupcid%)
+  gctl(cid%).popupcid = popupcid%
+END SUB
+
+SUB CtlSetPopupName (wid%, fid%, wname$)
  
   DIM cid%
   LET cid% = gwin(wid%, fid%)
 
-  gctl(cid%).popupcid = popupcid%
+  CtlSetPopup cid%, WinFindWid%(wname$)
 
-END SUB
-
-SUB CtlSetPopupName (wid%, fid%, wname$)
-  CtlSetPopup wid%, fid%, WinFindWid%(wname$)
 END SUB
 
 SUB CtlSetSizeX (wid%, fid%, sizeX%)
@@ -3870,10 +3870,13 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
   DIM fid%
   LET fid% = CtlCreateChild(wid%, CtlKind.Button)
 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
   CtlSetCmdRid wid%, fid%, 0
   CtlSetOffsetX wid%, fid%, offsetX%
   CtlSetOffsetY wid%, fid%, offsetY%
-  CtlSetPopup wid%, fid%, 0
+  CtlSetPopup cid%, 0
   CtlSetSizeX wid%, fid%, sizeX%
   CtlSetSizeY wid%, fid%, 1
   CtlSetText wid%, fid%, text$
