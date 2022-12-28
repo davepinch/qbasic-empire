@@ -2169,6 +2169,12 @@ SUB CtlSet (cid%, pid%, value%)
     CASE PropId.Kind
       gctl(cid%).kind = value%
 
+    CASE PropId.OffsetX
+      gctl(cid%).offsetX = value%
+
+    CASE PropId.OffsetY
+      gctl(cid%).offsetY = value%
+
     CASE PropId.SizeX
       gctl(cid%).sizeX = value%
 
@@ -2234,11 +2240,11 @@ SUB CtlSetKind (cid%, kind%)
 END SUB
 
 SUB CtlSetOffsetX (cid%, offsetX%)
-  gctl(cid%).offsetX = offsetX%
+  CtlSet cid%, PropId.OffsetX, offsetX%
 END SUB
 
 SUB CtlSetOffsetY (cid%, offsetY%)
-  gctl(cid%).offsetY = offsetY%
+  CtlSet cid%, PropId.OffsetY, offsetY%
 END SUB
 
 SUB CtlSetParentCid (cid%, parentcid%)
