@@ -24,8 +24,8 @@ TYPE AtlasItemType
 END TYPE
 
 TYPE PropType
-  target AS INTEGER ' Type of binding
-  valrid AS INTEGER ' Value or target expression
+  flags AS INTEGER
+  value AS INTEGER
 END TYPE
 
 TYPE CtlType
@@ -1795,9 +1795,9 @@ END SUB
 
 FUNCTION CtlGetBound$ (wid%, fid%, b AS PropType)
 
-  DIM value$: value$ = ResourceGet(b.valrid)
+  DIM value$: value$ = ResourceGet(b.value)
 
-  SELECT CASE b.target
+  SELECT CASE b.flags
    
     CASE BindingTarget.None
       '
@@ -2061,19 +2061,19 @@ SUB CtlParseBinding (text$, outbind AS PropType)
     SELECT CASE tname$
 
       CASE "param."
-        outbind.target = BindingTarget.Param
+        outbind.flags = BindingTarget.Param
 
       CASE "sel."
-        outbind.target = BindingTarget.Field
+        outbind.flags = BindingTarget.Field
 
     END SELECT
 
-    ResourceSet outbind.valrid, MID$(text$, pindex% + 1)
+    ResourceSet outbind.value, MID$(text$, pindex% + 1)
 
   ELSE
 
-    outbind.target = BindingTarget.None
-    ResourceSet outbind.valrid, text$
+    outbind.flags = BindingTarget.None
+    ResourceSet outbind.value, text$
 
   END IF
 
@@ -2084,10 +2084,10 @@ FUNCTION CtlRedirected% (cid%, pid%)
   SELECT CASE pid%
 
     CASE CtlPropId.TextRid
-      CtlRedirected% = gctl(cid%).textbind.target = BindingTarget.Field
+      CtlRedirected% = gctl(cid%).textbind.flags = BindingTarget.Field
 
     CASE CtlPropId.Value
-      CtlRedirected% = gctl(cid%).valuebind.target = BindingTarget.Field
+      CtlRedirected% = gctl(cid%).valuebind.flags = BindingTarget.Field
 
   END SELECT
 
@@ -2132,16 +2132,16 @@ SUB CtlSetBound (wid%, fid%, b AS PropType, value$)
   AssertIsPositive wid%, "CtlSetBound", "wid"
   AssertIsPositive fid%, "CtlSetBound", "fid"
 
-  IF b.target = BindingTarget.None THEN
+  IF b.flags = BindingTarget.None THEN
 
-    ResourceSet b.valrid, value$
+    ResourceSet b.value, value$
 
   ELSE
 
     DIM xtext$
-    LET xtext$ = ResourceGet(b.valrid)
+    LET xtext$ = ResourceGet(b.value)
 
-    SELECT CASE b.target
+    SELECT CASE b.flags
      
       CASE BindingTarget.Param
 
