@@ -193,7 +193,7 @@ DECLARE FUNCTION CtlGetCmdRid% (wid%, fid%)
 DECLARE FUNCTION CtlGetKind% (wid%, fid%)
 DECLARE FUNCTION CtlGetOffsetX% (wid%, fid%)
 DECLARE FUNCTION CtlGetOffsetY% (wid%, fid%)
-DECLARE FUNCTION CtlGetPopup% (wid%, fid%)
+DECLARE FUNCTION CtlGetPopup% (cid%)
 DECLARE FUNCTION CtlGetScreenX% (wid%, fid%)
 DECLARE FUNCTION CtlGetScreenY% (wid%, fid%)
 DECLARE FUNCTION CtlGetSizeX% (wid%, fid%)
@@ -254,7 +254,7 @@ DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 DECLARE SUB GameHarvest ()
 DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 
-'                    
+'                   
 ' Habitats
 '
 DECLARE SUB HabitatSetAction (hid%, cmd$)
@@ -1902,13 +1902,8 @@ FUNCTION CtlGetOffsetY% (wid%, fid%)
 
 END FUNCTION
 
-FUNCTION CtlGetPopup% (wid%, fid%)
- 
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
-
+FUNCTION CtlGetPopup% (cid%)
   CtlGetPopup% = gctl(cid%).popupcid
-
 END FUNCTION
 
 FUNCTION CtlGetScreenX% (wid%, fid%)
@@ -3984,11 +3979,12 @@ END FUNCTION
 
 FUNCTION WinMapKey% (wid%, pressed$)
 
-  DIM popupcid  AS INTEGER
-  DIM cmdrid    AS INTEGER
-  DIM exitLeft  AS INTEGER
-  DIM exitRight AS INTEGER
-  DIM selected  AS INTEGER
+  DIM popupcid    AS INTEGER
+  DIM cmdrid      AS INTEGER
+  DIM exitLeft    AS INTEGER
+  DIM exitRight   AS INTEGER
+  DIM selected    AS INTEGER
+  DIM selectedCid AS INTEGER
 
   '
   ' Examine the field.
@@ -3999,7 +3995,8 @@ FUNCTION WinMapKey% (wid%, pressed$)
   exitRight = win(wid%).arrowexit AND &H2
   selected = win(wid%).selected
   IF selected > 0 THEN
-    popupcid = CtlGetPopup%(wid%, selected)
+    selectedCid = gwin(wid%, selected)
+    popupcid = CtlGetPopup%(selectedCid)
     cmdrid = CtlGetCmdRid%(wid%, selected)
   END IF
 
@@ -4148,24 +4145,25 @@ SUB WinRun (wid%, result AS WinResultType)
     DO
 
       IF nopopups THEN
-              
         EXIT DO
-
       ELSEIF win(wid%).selected = 0 THEN
+        EXIT DO
+      END IF
+
+      DIM selectedCid%
+      LET selectedCid% = gwin(wid%, win(wid%).selected)
+
+      IF CtlGetKind%(wid%, win(wid%).selected) <> CtlKind.Popup THEN
        
         EXIT DO
 
-      ELSEIF CtlGetKind%(wid%, win(wid%).selected) <> CtlKind.Popup THEN
-       
-        EXIT DO
-
-      ELSEIF CtlGetPopup(wid%, win(wid%).selected) = 0 THEN
+      ELSEIF CtlGetPopup%(selectedCid%) = 0 THEN
        
         EXIT DO
 
       ELSE
      
-        WinRun CtlGetPopup(wid%, win(wid%).selected), result
+        WinRun CtlGetPopup%(selectedCid%), result
        
         SELECT CASE result.action
          
