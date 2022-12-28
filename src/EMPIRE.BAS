@@ -180,7 +180,7 @@ DECLARE SUB CtlSetKind (cid%, kind%)
 DECLARE SUB CtlSetOffsetX (wid%, fid%, offsetX%)
 DECLARE SUB CtlSetOffsetY (wid%, fid%, offsetY%)
 DECLARE SUB CtlSetPopup (cid%, popupcid%)
-DECLARE SUB CtlSetPopupName (wid%, fid%, wname$)
+DECLARE SUB CtlSetPopupName (cid%, wname$)
 DECLARE SUB CtlSetSizeX (wid%, fid%, sizeX%)
 DECLARE SUB CtlSetSizeY (wid%, fid%, sizeY%)
 DECLARE SUB CtlSetStyle (wid%, fid%, sid%)
@@ -2234,13 +2234,8 @@ SUB CtlSetPopup (cid%, popupcid%)
   gctl(cid%).popupcid = popupcid%
 END SUB
 
-SUB CtlSetPopupName (wid%, fid%, wname$)
- 
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
-
+SUB CtlSetPopupName (cid%, wname$)
   CtlSetPopup cid%, WinFindWid%(wname$)
-
 END SUB
 
 SUB CtlSetSizeX (wid%, fid%, sizeX%)
@@ -2870,7 +2865,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       fid% = 0
 
     CASE "child"
-      CtlSetPopupName wid%, fid%, stoken$(1)
+      CtlSetPopupName cid%, stoken$(1)
 
     CASE "command"
       CtlSetCmdStr wid%, fid%, stoken$(1)
