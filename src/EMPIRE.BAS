@@ -23,7 +23,7 @@ TYPE AtlasItemType
   value     AS INTEGER
 END TYPE
 
-TYPE BindingType
+TYPE PropType
   target AS INTEGER ' Type of binding
   valrid AS INTEGER ' Value or target expression
 END TYPE
@@ -37,8 +37,8 @@ TYPE CtlType
   popupcid  AS INTEGER
   sid       AS INTEGER
   sizeYX    AS INTEGER
-  textbind  AS BindingType
-  valuebind AS BindingType
+  textbind  AS PropType
+  valuebind AS PropType
 END TYPE
 
 TYPE EventType
@@ -171,7 +171,7 @@ DECLARE SUB CtlKey (wid%, fid%, keypress$)
 DECLARE SUB CtlKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB CtlKeyInteger (wid%, fid%, keypress$)
 DECLARE SUB CtlParseBinding (text$, outbind AS ANY)
-DECLARE SUB CtlSetBound (wid%, fid%, b AS BindingType, value$)
+DECLARE SUB CtlSetBound (wid%, fid%, b AS PropType, value$)
 DECLARE SUB CtlSetCmdRid (cid%, cmdrid%)
 DECLARE SUB CtlSetCmdStr (cid%, cmd$)
 DECLARE SUB CtlSetKind (cid%, kind%)
@@ -187,7 +187,7 @@ DECLARE SUB CtlSetText (wid%, fid%, value$)
 DECLARE SUB CtlSetValueStr (wid%, fid%, value$)
 DECLARE FUNCTION CtlCreate% ()
 DECLARE FUNCTION CtlCreateChild% (wid%, kind%)
-DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
+DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS PropType)
 DECLARE FUNCTION CtlGetCmdRid% (cid%)
 DECLARE FUNCTION CtlGetKind% (cid%)
 DECLARE FUNCTION CtlGetOffsetX% (cid%)
@@ -254,7 +254,7 @@ DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 DECLARE SUB GameHarvest ()
 DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 
-'            
+'           
 ' Habitats
 '
 DECLARE SUB HabitatSetAction (hid%, cmd$)
@@ -1793,7 +1793,7 @@ SUB CtlDrawText (wid%, fid%)
 
 END SUB
 
-FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
+FUNCTION CtlGetBound$ (wid%, fid%, b AS PropType)
 
   DIM value$: value$ = ResourceGet(b.valrid)
 
@@ -2048,7 +2048,7 @@ SUB CtlKeyInteger (wid%, fid%, keypress$)
 
 END SUB
 
-SUB CtlParseBinding (text$, outbind AS BindingType)
+SUB CtlParseBinding (text$, outbind AS PropType)
 
   DIM pindex%
   DIM tname$
@@ -2127,7 +2127,7 @@ FUNCTION CtlSelectable% (cid%)
 
 END FUNCTION
 
-SUB CtlSetBound (wid%, fid%, b AS BindingType, value$)
+SUB CtlSetBound (wid%, fid%, b AS PropType, value$)
 
   AssertIsPositive wid%, "CtlSetBound", "wid"
   AssertIsPositive fid%, "CtlSetBound", "fid"
