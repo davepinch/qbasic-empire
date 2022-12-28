@@ -162,7 +162,7 @@ DECLARE SUB CtlDraw (wid%, fid%)
 DECLARE SUB CtlDrawBox (wid%, fid%)
 DECLARE SUB CtlDrawBox0 (wid%, fid%)
 DECLARE SUB CtlDrawBox1 (wid%, fid%)
-DECLARE SUB CtlDrawBox2 (wid%, fid%)
+DECLARE SUB CtlDrawBox2 (cid%)
 DECLARE SUB CtlDrawFile (wid%, fid%)
 DECLARE SUB CtlDrawNebula (wid%, fid%)
 DECLARE SUB CtlDrawSeparator (wid%, fid%)
@@ -254,7 +254,7 @@ DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 DECLARE SUB GameHarvest ()
 DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 
-'              
+'             
 ' Habitats
 '
 DECLARE SUB HabitatSetAction (hid%, cmd$)
@@ -1371,7 +1371,7 @@ SUB CtlDrawBox (wid%, fid%)
       CtlDrawBox1 wid%, fid%
 
     CASE 2:
-      CtlDrawBox2 wid%, fid%
+      CtlDrawBox2 cid%
 
   END SELECT
 
@@ -1470,13 +1470,7 @@ SUB CtlDrawBox1 (wid%, fid%)
 
 END SUB
 
-SUB CtlDrawBox2 (wid%, fid%)
-
-  AssertIsPositive wid%, "CtlDrawBox2", "wid"
-  AssertIsPositive fid%, "CtlDrawBox2", "fid"
-
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
+SUB CtlDrawBox2 (cid%)
 
   DIM idx   AS INTEGER
   DIM row   AS INTEGER
