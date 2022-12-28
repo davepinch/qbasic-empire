@@ -192,7 +192,7 @@ DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
 DECLARE FUNCTION CtlGetCmdRid% (wid%, fid%)
 DECLARE FUNCTION CtlGetKind% (cid%)
 DECLARE FUNCTION CtlGetOffsetX% (cid%)
-DECLARE FUNCTION CtlGetOffsetY% (wid%, fid%)
+DECLARE FUNCTION CtlGetOffsetY% (cid%)
 DECLARE FUNCTION CtlGetPopup% (cid%)
 DECLARE FUNCTION CtlGetScreenX% (wid%, fid%)
 DECLARE FUNCTION CtlGetScreenY% (wid%, fid%)
@@ -254,7 +254,7 @@ DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 DECLARE SUB GameHarvest ()
 DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 
-'                  
+'                 
 ' Habitats
 '
 DECLARE SUB HabitatSetAction (hid%, cmd$)
@@ -1904,13 +1904,8 @@ FUNCTION CtlGetOffsetX% (cid%)
   CtlGetOffsetX% = gctl(cid%).offsetX
 END FUNCTION
 
-FUNCTION CtlGetOffsetY% (wid%, fid%)
- 
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
-
+FUNCTION CtlGetOffsetY% (cid%)
   CtlGetOffsetY% = gctl(cid%).offsetY
-
 END FUNCTION
 
 FUNCTION CtlGetPopup% (cid%)
@@ -1931,7 +1926,7 @@ FUNCTION CtlGetScreenY% (wid%, fid%)
   DIM cid%
   LET cid% = gwin(wid%, fid%)
 
-  CtlGetScreenY% = 1 + win(wid%).offsetY + gctl(cid%).offsetY
+  CtlGetScreenY% = 1 + win(wid%).offsetY + CtlGetOffsetY%(cid%)
 
 END FUNCTION
 
