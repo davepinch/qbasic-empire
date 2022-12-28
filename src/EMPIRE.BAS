@@ -97,8 +97,6 @@ TYPE WinType
   arrowexit  AS INTEGER
   fields     AS INTEGER
   namerid    AS INTEGER
-  offsetX    AS INTEGER
-  offsetY    AS INTEGER
   param      AS WinParamType
   selected   AS INTEGER
 END TYPE
@@ -196,8 +194,8 @@ DECLARE FUNCTION CtlGetOffsetX% (cid%)
 DECLARE FUNCTION CtlGetOffsetY% (cid%)
 DECLARE FUNCTION CtlGetParentCid% (cid%)
 DECLARE FUNCTION CtlGetPopup% (cid%)
-DECLARE FUNCTION CtlGetScreenX% (wid%, fid%)
-DECLARE FUNCTION CtlGetScreenY% (wid%, fid%)
+DECLARE FUNCTION CtlGetScreenX% (cid%)
+DECLARE FUNCTION CtlGetScreenY% (cid%)
 DECLARE FUNCTION CtlGetSizeX% (cid%)
 DECLARE FUNCTION CtlGetSizeY% (cid%)
 DECLARE FUNCTION CtlGetStyle% (cid%)
@@ -1397,8 +1395,8 @@ SUB CtlDrawBox0 (wid%, fid%)
  
   FOR row = 1 TO CtlGetSizeY%(cid%)
    
-    sx = CtlGetScreenX%(wid%, fid%)
-    sy = CtlGetScreenY%(wid%, fid%) + row - 1
+    sx = CtlGetScreenX%(cid%)
+    sy = CtlGetScreenY%(cid%) + row - 1
 
     LOCATE sy, sx
     PRINT STRING$(CtlGetSizeX%(cid%), " ");
@@ -1436,8 +1434,8 @@ SUB CtlDrawBox1 (wid%, fid%)
   ' Calculate screen coordinates
   '
   sizeX = CtlGetSizeX%(cid%)
-  sx1 = CtlGetScreenX%(wid%, fid%)
-  sy1 = CtlGetScreenY%(wid%, fid%)
+  sx1 = CtlGetScreenX%(cid%)
+  sy1 = CtlGetScreenY%(cid%)
   sx2 = sx1 + sizeX - 1
   sy2 = sy1 + CtlGetSizeY%(cid%) - 1
 
@@ -1492,8 +1490,8 @@ SUB CtlDrawBox2 (wid%, fid%)
   '
   ' Calculate screen coordinates
   '
-  DIM sx%: sx% = CtlGetScreenX%(wid%, fid%)
-  DIM sy%: sy% = CtlGetScreenY%(wid%, fid%)
+  DIM sx%: sx% = CtlGetScreenX%(cid%)
+  DIM sy%: sy% = CtlGetScreenY%(cid%)
 
   '
   ' Initialize special border characters
@@ -1574,6 +1572,9 @@ SUB CtlDrawFile (wid%, fid%)
   AssertIsPositive wid%, "CtlDrawFile", "wid"
   AssertIsPositive fid%, "CtlDrawFile", "fid"
 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
   DIM filename AS STRING
   DIM sx AS INTEGER
   DIM sy AS INTEGER
@@ -1583,8 +1584,8 @@ SUB CtlDrawFile (wid%, fid%)
     EXIT SUB
   END IF
 
-  sx = CtlGetScreenX%(wid%, fid%)
-  sy = CtlGetScreenY%(wid%, fid%)
+  sx = CtlGetScreenX%(cid%)
+  sy = CtlGetScreenY%(cid%)
 
   DrawFileAt filename, sx, sy
 
@@ -1611,8 +1612,8 @@ SUB CtlDrawNebula (wid%, fid%)
     x = INT(RND * sizeX) + 1
     p = 1
 
-    sx = CtlGetScreenX%(wid%, fid%) + x - 1
-    sy = CtlGetScreenY%(wid%, fid%) + y - 1
+    sx = CtlGetScreenX%(cid%) + x - 1
+    sy = CtlGetScreenY%(cid%) + y - 1
     LOCATE sy, sx
 
     DO
@@ -1706,8 +1707,8 @@ SUB CtlDrawSeparator (wid%, fid%)
   sid = CtlGetStyle(cid%)
   sizeX = CtlGetSizeX%(cid%)
   sizeY = CtlGetSizeY%(cid%)
-  sx = CtlGetScreenX%(wid%, fid%)
-  sy = CtlGetScreenY%(wid%, fid%)
+  sx = CtlGetScreenX%(cid%)
+  sy = CtlGetScreenY%(cid%)
 
   LOCATE sy, sx
   DrawColor winstyle(sid).bordercolor
@@ -1795,8 +1796,8 @@ SUB CtlDrawText (wid%, fid%)
   '
   ' Get field position
   '
-  sx = CtlGetScreenX%(wid%, fid%)
-  sy = CtlGetScreenY%(wid%, fid%)
+  sx = CtlGetScreenX%(cid%)
+  sy = CtlGetScreenY%(cid%)
   LOCATE sy, sx
 
   '
@@ -1920,21 +1921,29 @@ FUNCTION CtlGetPopup% (cid%)
   CtlGetPopup% = gctl(cid%).popupcid
 END FUNCTION
 
-FUNCTION CtlGetScreenX% (wid%, fid%)
+FUNCTION CtlGetScreenX% (cid%)
 
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
+  DIM parentcid%
+  LET parentcid% = CtlGetParentCid%(cid%)
 
-  CtlGetScreenX% = 1 + win(wid%).offsetX + CtlGetOffsetX%(cid%)
+  IF parentcid% = 0 THEN
+    CtlGetScreenX% = CtlGetOffsetX%(cid%) + 1
+  ELSE
+    CtlGetScreenX% = CtlGetOffsetX%(cid%) + CtlGetScreenX%(parentcid%)
+  END IF
 
 END FUNCTION
 
-FUNCTION CtlGetScreenY% (wid%, fid%)
+FUNCTION CtlGetScreenY% (cid%)
 
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
+  DIM parentcid%
+  LET parentcid% = CtlGetParentCid%(cid%)
 
-  CtlGetScreenY% = 1 + win(wid%).offsetY + CtlGetOffsetY%(cid%)
+  IF parentcid% = 0 THEN
+    CtlGetScreenY% = CtlGetOffsetY%(cid%) + 1
+  ELSE
+    CtlGetScreenY% = CtlGetOffsetY%(cid%) + CtlGetScreenY%(parentcid%)
+  END IF
 
 END FUNCTION
 
@@ -3130,6 +3139,9 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
   AssertIsPositive wid%, "ExecCmdWid", "wid"
   AssertIsZero fid%, "ExecCmdWid", "fid"
 
+  DIM widcid%
+  LET widcid% = gwin(wid%, 0)
+
   ExecuteCommandWid% = CmdResult.OK
 
   IF ntoken% = 1 THEN
@@ -3138,7 +3150,8 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
      
       CASE "endwindow"
         wid% = 0
-     
+        widcid% = 0
+
       CASE "boolean"
         fid% = CtlCreateChild%(wid%, CtlKind.Boolean)
 
@@ -3197,10 +3210,10 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
       win(wid%).param.value = VAL(stoken$(2))
 
     CASE "posx"
-      win(wid%).offsetX = VAL(stoken$(1)) - 1
+      CtlSetOffsetX widcid%, VAL(stoken$(1)) - 1
 
     CASE "posy"
-      win(wid%).offsetY = VAL(stoken$(1)) - 1
+      CtlSetOffsetY widcid%, VAL(stoken$(1)) - 1
 
     CASE "style"
       WinSetStyle wid%, WinFindSid%(stoken$(1))
