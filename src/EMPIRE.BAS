@@ -254,7 +254,7 @@ DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 DECLARE SUB GameHarvest ()
 DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 
-'           
+'          
 ' Habitats
 '
 DECLARE SUB HabitatSetAction (hid%, cmd$)
@@ -412,16 +412,16 @@ CONST CtlKind.Separator = 9
 CONST CtlKind.Nebula = 100
 
 '
-' CtlProps
-'
-CONST CtlPropId.Value = 0
-CONST CtlPropId.TextRid = 1
-
-'
 ' Operators
 '
 CONST OpNone = 0
 CONST OpEquals = 1
+
+'
+' PropId.*
+'
+CONST PropId.Value = 0
+CONST PropId.TextRid = 1
 
 '
 ' ScanCode constants
@@ -2083,10 +2083,10 @@ FUNCTION CtlRedirected% (cid%, pid%)
 
   SELECT CASE pid%
 
-    CASE CtlPropId.TextRid
+    CASE PropId.TextRid
       CtlRedirected% = gctl(cid%).textbind.flags = BindingTarget.Field
 
-    CASE CtlPropId.Value
+    CASE PropId.Value
       CtlRedirected% = gctl(cid%).valuebind.flags = BindingTarget.Field
 
   END SELECT
@@ -4076,9 +4076,9 @@ SUB WinRefreshField (wid%, fid%)
 
         IF n = fid% THEN
           CtlDraw wid%, n
-        ELSEIF CtlRedirected%(cid%, CtlPropId.TextRid) THEN
+        ELSEIF CtlRedirected%(cid%, PropId.TextRid) THEN
           CtlDraw wid%, n
-        ELSEIF CtlRedirected%(cid%, CtlPropId.Value) THEN
+        ELSEIF CtlRedirected%(cid%, PropId.Value) THEN
           CtlDraw wid%, n
         END IF
       NEXT
