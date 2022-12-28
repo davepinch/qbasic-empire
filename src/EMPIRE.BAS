@@ -191,7 +191,7 @@ DECLARE FUNCTION CtlCreateChild% (wid%, kind%)
 DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
 DECLARE FUNCTION CtlGetCmdRid% (wid%, fid%)
 DECLARE FUNCTION CtlGetKind% (cid%)
-DECLARE FUNCTION CtlGetOffsetX% (wid%, fid%)
+DECLARE FUNCTION CtlGetOffsetX% (cid%)
 DECLARE FUNCTION CtlGetOffsetY% (wid%, fid%)
 DECLARE FUNCTION CtlGetPopup% (cid%)
 DECLARE FUNCTION CtlGetScreenX% (wid%, fid%)
@@ -1900,13 +1900,8 @@ FUNCTION CtlGetKind% (cid%)
   CtlGetKind% = gctl(cid%).kind
 END FUNCTION
 
-FUNCTION CtlGetOffsetX% (wid%, fid%)
- 
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
-
+FUNCTION CtlGetOffsetX% (cid%)
   CtlGetOffsetX% = gctl(cid%).offsetX
-
 END FUNCTION
 
 FUNCTION CtlGetOffsetY% (wid%, fid%)
@@ -1927,7 +1922,7 @@ FUNCTION CtlGetScreenX% (wid%, fid%)
   DIM cid%
   LET cid% = gwin(wid%, fid%)
 
-  CtlGetScreenX% = 1 + win(wid%).offsetX + gctl(cid%).offsetX
+  CtlGetScreenX% = 1 + win(wid%).offsetX + CtlGetOffsetX%(cid%)
 
 END FUNCTION
 
