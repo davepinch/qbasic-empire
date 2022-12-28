@@ -190,7 +190,7 @@ DECLARE FUNCTION CtlCreate% ()
 DECLARE FUNCTION CtlCreateChild% (wid%, kind%)
 DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
 DECLARE FUNCTION CtlGetCmdRid% (wid%, fid%)
-DECLARE FUNCTION CtlGetKind% (wid%, fid%)
+DECLARE FUNCTION CtlGetKind% (cid%)
 DECLARE FUNCTION CtlGetOffsetX% (wid%, fid%)
 DECLARE FUNCTION CtlGetOffsetY% (wid%, fid%)
 DECLARE FUNCTION CtlGetPopup% (cid%)
@@ -1315,7 +1315,10 @@ SUB CtlDraw (wid%, fid%)
   AssertIsPositive wid%, "CtlDraw", "wid"
   AssertIsPositive fid%, "CtlDraw", "fid"
 
-  SELECT CASE CtlGetKind%(wid%, fid%)
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
+  SELECT CASE CtlGetKind%(cid%)
     '
     ' Check the most common kinds first
     '
@@ -1875,13 +1878,8 @@ FUNCTION CtlGetCmdRid% (wid%, fid%)
 
 END FUNCTION
 
-FUNCTION CtlGetKind% (wid%, fid%)
- 
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
-
+FUNCTION CtlGetKind% (cid%)
   CtlGetKind% = gctl(cid%).kind
-
 END FUNCTION
 
 FUNCTION CtlGetOffsetX% (wid%, fid%)
@@ -1989,9 +1987,12 @@ SUB CtlKey (wid%, fid%, keypress$)
  
   AssertIsPositive wid%, "CtlKey", "wid"
 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
   IF fid% > 0 THEN
 
-    SELECT CASE CtlGetKind%(wid%, fid%)
+    SELECT CASE CtlGetKind%(cid%)
   
       CASE CtlKind.Boolean
         CtlKeyBoolean wid%, fid%, keypress$
@@ -2115,7 +2116,9 @@ FUNCTION CtlSelectable% (wid%, fid%)
   ' field is selectable (i.e., can receive focus for input or
   ' selection).
   '
-  
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
   IF wid% < 0 OR fid% <= 0 THEN
 
     CtlSelectable = False
@@ -2126,7 +2129,7 @@ FUNCTION CtlSelectable% (wid%, fid%)
  
   ELSE
 
-    SELECT CASE CtlGetKind%(wid%, fid%)
+    SELECT CASE CtlGetKind%(cid%)
       CASE CtlKind.Button
         CtlSelectable = True
 
@@ -2830,9 +2833,12 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
   AssertIsPositive wid%, "ExecCmdFid", "wid"
   AssertIsPositive fid%, "ExecCmdFid", "fid"
 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
   DIM endtag AS STRING
   DIM kind%
-  LET kind% = CtlGetKind(wid%, fid%)
+  LET kind% = CtlGetKind(cid%)
 
   SELECT CASE kind%
     CASE CtlKind.Button
@@ -4153,7 +4159,7 @@ SUB WinRun (wid%, result AS WinResultType)
       DIM selectedCid%
       LET selectedCid% = gwin(wid%, win(wid%).selected)
 
-      IF CtlGetKind%(wid%, win(wid%).selected) <> CtlKind.Popup THEN
+      IF CtlGetKind%(selectedCid%) <> CtlKind.Popup THEN
        
         EXIT DO
 
