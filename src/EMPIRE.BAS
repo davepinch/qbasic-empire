@@ -189,7 +189,7 @@ DECLARE SUB CtlSetValue (wid%, fid%, value$)
 DECLARE FUNCTION CtlCreate% ()
 DECLARE FUNCTION CtlCreateChild% (wid%, kind%)
 DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
-DECLARE FUNCTION CtlGetCmdRid% (wid%, fid%)
+DECLARE FUNCTION CtlGetCmdRid% (cid%)
 DECLARE FUNCTION CtlGetKind% (cid%)
 DECLARE FUNCTION CtlGetOffsetX% (cid%)
 DECLARE FUNCTION CtlGetOffsetY% (cid%)
@@ -1887,13 +1887,8 @@ FUNCTION CtlGetBound$ (wid%, fid%, b AS BindingType)
 
 END FUNCTION
 
-FUNCTION CtlGetCmdRid% (wid%, fid%)
- 
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
-
+FUNCTION CtlGetCmdRid% (cid%)
   CtlGetCmdRid% = gctl(cid%).cmdrid
-
 END FUNCTION
 
 FUNCTION CtlGetKind% (cid%)
@@ -2198,8 +2193,11 @@ SUB CtlSetCmdStr (wid%, fid%, cmd$)
   AssertIsPositive wid%, "CtlSetCmdStr", "wid"
   AssertIsPositive fid%, "CtlSetCmdStr", "fid"
 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
   DIM rid%
-  LET rid% = CtlGetCmdRid%(wid%, fid%)
+  LET rid% = CtlGetCmdRid%(cid%)
 
   '
   ' rid% is an output parameter
@@ -4004,7 +4002,7 @@ FUNCTION WinMapKey% (wid%, pressed$)
   IF selected > 0 THEN
     selectedCid = gwin(wid%, selected)
     popupcid = CtlGetPopup%(selectedCid)
-    cmdrid = CtlGetCmdRid%(wid%, selected)
+    cmdrid = CtlGetCmdRid%(selectedCid)
   END IF
 
   SELECT CASE pressed$
@@ -4229,7 +4227,7 @@ SUB WinRun (wid%, result AS WinResultType)
         result.action = WinAction.Execute
         result.canceled = False
         result.selected = win(wid%).selected
-        result.cmdrid = CtlGetCmdRid%(wid%, result.selected)
+        result.cmdrid = CtlGetCmdRid%(gwin(wid%, result.selected))
         WinClose wid%
         EXIT SUB
 
