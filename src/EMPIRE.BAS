@@ -159,7 +159,7 @@ DECLARE SUB ConsolePrint (text$)
 DECLARE SUB CtlBindText (wid%, fid%, expr$)
 DECLARE SUB CtlBindValue (wid%, fid%, expr$)
 DECLARE SUB CtlDraw (wid%, fid%)
-DECLARE SUB CtlDrawBox (wid%, fid%)
+DECLARE SUB CtlDrawBox (cid%)
 DECLARE SUB CtlDrawBox0 (cid%)
 DECLARE SUB CtlDrawBox1 (cid%)
 DECLARE SUB CtlDrawBox2 (cid%)
@@ -1330,7 +1330,7 @@ SUB CtlDraw (wid%, fid%)
       CtlDrawText wid%, fid%
 
     CASE CtlKind.Box
-      CtlDrawBox wid%, fid%
+      CtlDrawBox cid%
 
     CASE CtlKind.Label
       CtlDrawText wid%, fid%
@@ -1351,13 +1351,7 @@ SUB CtlDraw (wid%, fid%)
 
 END SUB
 
-SUB CtlDrawBox (wid%, fid%)
-
-  AssertIsPositive wid%, "CtlDrawBox", "wid"
-  AssertIsPositive fid%, "CtlDrawBox", "fid"
-
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
+SUB CtlDrawBox (cid%)
 
   DIM sid%
   LET sid% = CtlGetStyle(cid%)
