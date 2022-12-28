@@ -2166,6 +2166,9 @@ SUB CtlSet (cid%, pid%, value%)
 
   SELECT CASE pid%
 
+    CASE PropId.Kind
+      gctl(cid%).kind = value%
+
     CASE PropId.SizeX
       gctl(cid%).sizeX = value%
 
@@ -2227,7 +2230,7 @@ SUB CtlSetCmdStr (cid%, cmd$)
 END SUB
 
 SUB CtlSetKind (cid%, kind%)
-  gctl(cid%).kind = kind%
+  CtlSet cid%, PropId.Kind, kind%
 END SUB
 
 SUB CtlSetOffsetX (cid%, offsetX%)
