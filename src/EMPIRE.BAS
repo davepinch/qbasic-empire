@@ -101,7 +101,6 @@ TYPE WinType
   offsetY    AS INTEGER
   param      AS WinParamType
   selected   AS INTEGER
-  sid        AS INTEGER
 END TYPE
 
 '
@@ -185,7 +184,7 @@ DECLARE SUB CtlSetPopup (cid%, popupcid%)
 DECLARE SUB CtlSetPopupName (cid%, wname$)
 DECLARE SUB CtlSetSizeX (cid%, sizeX%)
 DECLARE SUB CtlSetSizeY (cid%, sizeY%)
-DECLARE SUB CtlSetStyle (wid%, fid%, sid%)
+DECLARE SUB CtlSetStyle (cid%, sid%)
 DECLARE SUB CtlSetText (wid%, fid%, value$)
 DECLARE SUB CtlSetValue (wid%, fid%, value$)
 DECLARE FUNCTION CtlCreate% ()
@@ -201,7 +200,7 @@ DECLARE FUNCTION CtlGetScreenX% (wid%, fid%)
 DECLARE FUNCTION CtlGetScreenY% (wid%, fid%)
 DECLARE FUNCTION CtlGetSizeX% (cid%)
 DECLARE FUNCTION CtlGetSizeY% (cid%)
-DECLARE FUNCTION CtlGetStyle% (wid%, fid%)
+DECLARE FUNCTION CtlGetStyle% (cid%)
 DECLARE FUNCTION CtlGetText$ (wid%, fid%)
 DECLARE FUNCTION CtlGetValue$ (wid%, fid%)
 DECLARE FUNCTION CtlRedirected% (cid%, pid%)
@@ -1359,8 +1358,11 @@ SUB CtlDrawBox (wid%, fid%)
   AssertIsPositive wid%, "CtlDrawBox", "wid"
   AssertIsPositive fid%, "CtlDrawBox", "fid"
 
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
   DIM sid%
-  LET sid% = CtlGetStyle(wid%, fid%)
+  LET sid% = CtlGetStyle(cid%)
 
   SELECT CASE winstyle(sid%).bordertype
  
@@ -1390,7 +1392,7 @@ SUB CtlDrawBox0 (wid%, fid%)
   DIM sx  AS INTEGER
   DIM sy  AS INTEGER
 
-  sid = CtlGetStyle(wid%, fid%)
+  sid = CtlGetStyle(cid%)
   DrawColor winstyle(sid).textcolor
  
   FOR row = 1 TO CtlGetSizeY%(cid%)
@@ -1439,7 +1441,7 @@ SUB CtlDrawBox1 (wid%, fid%)
   sx2 = sx1 + sizeX - 1
   sy2 = sy1 + CtlGetSizeY%(cid%) - 1
 
-  sid = CtlGetStyle(wid%, fid%)
+  sid = CtlGetStyle(cid%)
 
   '
   ' Draw the top border
@@ -1701,7 +1703,7 @@ SUB CtlDrawSeparator (wid%, fid%)
   DIM cid%
   LET cid% = gwin(wid%, fid%)
 
-  sid = CtlGetStyle(wid%, fid%)
+  sid = CtlGetStyle(cid%)
   sizeX = CtlGetSizeX%(cid%)
   sizeY = CtlGetSizeY%(cid%)
   sx = CtlGetScreenX%(wid%, fid%)
@@ -1800,7 +1802,7 @@ SUB CtlDrawText (wid%, fid%)
   '
   ' Set style of text
   '
-  sid% = CtlGetStyle(wid%, fid%)
+  sid% = CtlGetStyle(cid%)
   IF win(wid%).selected = fid% THEN
     DrawColor winstyle(sid%).selectedcolor
   ELSE
@@ -1944,19 +1946,20 @@ FUNCTION CtlGetSizeY% (cid%)
   CtlGetSizeY% = (gctl(cid%).sizeYX AND &HFF00) \ 256
 END FUNCTION
 
-FUNCTION CtlGetStyle% (wid%, fid%)
-
-  AssertIsPositive wid%, "CtlGetStyle", "wid"
-  AssertIsPositive fid%, "CtlGetStyle", "fid"
-
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
+FUNCTION CtlGetStyle% (cid%)
 
   DIM sid%
   LET sid% = gctl(cid%).sid
  
   IF sid% = 0 THEN
-    sid% = win(wid%).sid
+    '
+    ' Inherit from the parent control
+    '
+    DIM parentcid%
+    LET parentcid% = gctl(cid%).parentcid
+
+    sid% = CtlGetStyle%(parentcid%)
+
   END IF
 
   CtlGetStyle% = sid%
@@ -2230,13 +2233,8 @@ SUB CtlSetSizeY (cid%, sizeY%)
   gctl(cid%).sizeYX = (gctl(cid%).sizeYX% AND &HFF) OR (sizeY% * 256)
 END SUB
 
-SUB CtlSetStyle (wid%, fid%, sid%)
- 
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
-
+SUB CtlSetStyle (cid%, sid%)
   gctl(cid%).sid = sid%
-
 END SUB
 
 SUB CtlSetText (wid%, fid%, value$)
@@ -2858,7 +2856,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       CtlSetSizeY cid%, VAL(stoken$(1))
 
     CASE "style"
-      CtlSetStyle wid%, fid%, WinFindSid%(stoken$(1))
+      CtlSetStyle cid%, WinFindSid%(stoken$(1))
 
     CASE "text"
       IF LCASE$(stoken$(1)) = "bind" THEN
@@ -4487,8 +4485,11 @@ SUB WinSetName (wid%, wname$)
 END SUB
 
 SUB WinSetStyle (wid%, sid%)
-  AssertIsPositive wid%, "WinSetStyle", "wid"
-  win(wid%).sid = sid%
+ 
+  DIM cid%
+  LET cid% = gwin(wid%, 0)
+  CtlSetStyle cid%, sid%
+
 END SUB
 
 FUNCTION WorldAdd% (hid%, cx%, cy%)
