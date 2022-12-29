@@ -1821,6 +1821,9 @@ FUNCTION CtlGet% (cid%, pid%)
     CASE PropId.Parent
       CtlGet% = gctl(cid%).parentcid
 
+    CASE PropId.Popup
+      CtlGet% = gctl(cid%).popupcid
+
     CASE PropId.SizeX
       CtlGet% = gctl(cid%).sizeX
 
@@ -1923,7 +1926,7 @@ FUNCTION CtlGetParent% (cid%)
 END FUNCTION
 
 FUNCTION CtlGetPopup% (cid%)
-  CtlGetPopup% = gctl(cid%).popupcid
+  CtlGetPopup% = CtlGet(cid%, PropId.Popup)
 END FUNCTION
 
 FUNCTION CtlGetScreenX% (cid%)
@@ -2185,6 +2188,9 @@ SUB CtlSet (cid%, pid%, value%)
     CASE PropId.Parent
       gctl(cid%).parentcid = value%
 
+    CASE PropId.Popup
+      gctl(cid%).popupcid = value%
+
     CASE PropId.SizeX
       gctl(cid%).sizeX = value%
 
@@ -2262,7 +2268,7 @@ SUB CtlSetParent (cid%, parentcid%)
 END SUB
 
 SUB CtlSetPopup (cid%, popupcid%)
-  gctl(cid%).popupcid = popupcid%
+  CtlSet cid%, PropId.Popup, popupcid%
 END SUB
 
 SUB CtlSetPopupName (cid%, wname$)
