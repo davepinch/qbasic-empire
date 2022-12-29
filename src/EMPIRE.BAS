@@ -32,6 +32,7 @@ TYPE CtlType
   parentcid AS INTEGER
   kind      AS INTEGER
   cmdrid    AS INTEGER
+  namerid   AS INTEGER
   offsetX   AS INTEGER
   offsetY   AS INTEGER
   popupcid  AS INTEGER
@@ -184,6 +185,7 @@ DECLARE SUB CtlSetPopup (cid%, popupcid%)
 DECLARE SUB CtlSetPopupName (cid%, wname$)
 DECLARE SUB CtlSetSizeX (cid%, sizeX%)
 DECLARE SUB CtlSetSizeY (cid%, sizeY%)
+DECLARE SUB CtlSetString (cid%, pid%, value$)
 DECLARE SUB CtlSetStyle (cid%, sid%)
 DECLARE SUB CtlSetText (wid%, fid%, value$)
 DECLARE SUB CtlSetValueStr (wid%, fid%, value$)
@@ -193,6 +195,7 @@ DECLARE FUNCTION CtlGet% (cid%, pid%)
 DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS PropType)
 DECLARE FUNCTION CtlGetCmdRid% (cid%)
 DECLARE FUNCTION CtlGetKind% (cid%)
+DECLARE FUNCTION CtlGetName$ (cid%)
 DECLARE FUNCTION CtlGetOffsetX% (cid%)
 DECLARE FUNCTION CtlGetOffsetY% (cid%)
 DECLARE FUNCTION CtlGetParent% (cid%)
@@ -201,6 +204,7 @@ DECLARE FUNCTION CtlGetScreenX% (cid%)
 DECLARE FUNCTION CtlGetScreenY% (cid%)
 DECLARE FUNCTION CtlGetSizeX% (cid%)
 DECLARE FUNCTION CtlGetSizeY% (cid%)
+DECLARE FUNCTION CtlGetString$ (cid%, pid%)
 DECLARE FUNCTION CtlGetStyle% (cid%)
 DECLARE FUNCTION CtlGetText$ (wid%, fid%)
 DECLARE FUNCTION CtlGetValue$ (wid%, fid%)
@@ -426,14 +430,15 @@ CONST OpEquals = 1
 CONST PropId.Value = 0
 CONST PropId.Parent = 1
 CONST PropId.Kind = 2
-CONST PropId.Text = 3
-CONST PropId.Command = 4
-CONST PropId.OffsetX = 5
-CONST PropId.OffsetY = 6
-CONST PropId.Popup = 7
-CONST PropId.SizeX = 8
-CONST PropId.SizeY = 9
-CONST PropId.Style = 10
+CONST PropId.Name = 3
+CONST PropId.Text = 4
+CONST PropId.Command = 5
+CONST PropId.OffsetX = 6
+CONST PropId.OffsetY = 7
+CONST PropId.Popup = 8
+CONST PropId.SizeX = 9
+CONST PropId.SizeY = 10
+CONST PropId.Style = 11
 
 '
 ' ScanCode constants
@@ -1812,6 +1817,9 @@ FUNCTION CtlGet% (cid%, pid%)
     CASE PropId.Kind
       CtlGet% = gctl(cid%).kind
 
+    CASE PropId.Name
+      CtlGet% = gctl(cid%).namerid
+
     CASE PropId.OffsetX
       CtlGet% = gctl(cid%).offsetX
 
@@ -1916,6 +1924,10 @@ FUNCTION CtlGetKind% (cid%)
   CtlGetKind% = CtlGet%(cid%, PropId.Kind)
 END FUNCTION
 
+FUNCTION CtlGetName$ (cid%)
+  CtlGetName$ = CtlGetString$(cid%, PropId.Name)
+END FUNCTION
+
 FUNCTION CtlGetOffsetX% (cid%)
   CtlGetOffsetX% = CtlGet%(cid%, PropId.OffsetX)
 END FUNCTION
@@ -1964,6 +1976,15 @@ END FUNCTION
 
 FUNCTION CtlGetSizeY% (cid%)
   CtlGetSizeY% = CtlGet%(cid%, PropId.SizeY)
+END FUNCTION
+
+FUNCTION CtlGetString$ (cid%, pid%)
+
+  DIM rid%
+  LET rid% = CtlGet%(cid%, pid%)
+
+  CtlGetString$ = ResourceGet$(rid%)
+
 END FUNCTION
 
 FUNCTION CtlGetStyle% (cid%)
@@ -2182,6 +2203,9 @@ SUB CtlSet (cid%, pid%, value%)
     CASE PropId.Kind
       gctl(cid%).kind = value%
 
+    CASE PropId.Name
+      gctl(cid%).namerid = value%
+
     CASE PropId.OffsetX
       gctl(cid%).offsetX = value%
 
@@ -2261,6 +2285,10 @@ SUB CtlSetKind (cid%, kind%)
   CtlSet cid%, PropId.Kind, kind%
 END SUB
 
+SUB CtlSetName (cid%, value$)
+  CtlSetString cid%, PropId.Name, value$
+END SUB
+
 SUB CtlSetOffsetX (cid%, offsetX%)
   CtlSet cid%, PropId.OffsetX, offsetX%
 END SUB
@@ -2287,6 +2315,17 @@ END SUB
 
 SUB CtlSetSizeY (cid%, sizeY%)
   CtlSet cid%, PropId.SizeY, sizeY%
+END SUB
+
+SUB CtlSetString (cid%, pid%, value$)
+
+  DIM rid%
+  LET rid% = CtlGet(cid%, pid%)
+
+  ResourceSet rid%, value$
+
+  CtlSet cid%, pid%, rid%
+
 END SUB
 
 SUB CtlSetStyle (cid%, sid%)
