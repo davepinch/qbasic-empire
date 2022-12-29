@@ -188,7 +188,7 @@ DECLARE SUB CtlSetSizeY (cid%, sizeY%)
 DECLARE SUB CtlSetString (cid%, pid%, value$)
 DECLARE SUB CtlSetStyle (cid%, sid%)
 DECLARE SUB CtlSetText (wid%, fid%, value$)
-DECLARE SUB CtlSetValueStr (wid%, fid%, value$)
+DECLARE SUB CtlSetValue (wid%, fid%, value$)
 DECLARE FUNCTION CtlCreate% ()
 DECLARE FUNCTION CtlCreateChild% (wid%, kind%)
 DECLARE FUNCTION CtlFindName% (name$)
@@ -2370,10 +2370,10 @@ SUB CtlSetText (wid%, fid%, value$)
 
 END SUB
 
-SUB CtlSetValueStr (wid%, fid%, value$)
+SUB CtlSetValue (wid%, fid%, value$)
 
-  AssertIsPositive wid%, "CtlSetValueStr", "wid"
-  AssertIsPositive fid%, "CtlSetValueStr", "fid"
+  AssertIsPositive wid%, "CtlSetValue", "wid"
+  AssertIsPositive fid%, "CtlSetValue", "fid"
 
   DIM cid%
   LET cid% = gwin(wid%, fid%)
@@ -2990,7 +2990,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       IF LCASE$(stoken$(1)) = "bind" THEN
         CtlBindValue wid%, fid%, stoken$(2)
       ELSE
-        CtlSetValueStr wid%, fid%, stoken$(1)
+        CtlSetValue wid%, fid%, stoken$(1)
       END IF
 
     CASE ELSE
@@ -3973,7 +3973,7 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
   CtlSetSizeX cid%, sizeX%
   CtlSetSizeY cid%, 1
   CtlSetText wid%, fid%, text$
-  CtlSetValueStr wid%, fid%, value$
+  CtlSetValue wid%, fid%, value$
 
   WinAddButton% = fid%
 
