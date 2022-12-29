@@ -1837,34 +1837,60 @@ END FUNCTION
 
 FUNCTION CtlGet% (cid%, pid%)
 
+  DIM flags%
+  DIM value%
+
   SELECT CASE pid%
    
     CASE PropId.Kind
-      CtlGet% = gctl(cid%).kind
+      value% = gctl(cid%).kind
 
     CASE PropId.Name
-      CtlGet% = gctl(cid%).namerid
+      value% = gctl(cid%).namerid
 
     CASE PropId.OffsetX
-      CtlGet% = gctl(cid%).offsetX
+      value% = gctl(cid%).offsetX
 
     CASE PropId.OffsetY
-      CtlGet% = gctl(cid%).offsetY
+      value% = gctl(cid%).offsetY
 
     CASE PropId.Parent
-      CtlGet% = gctl(cid%).parentcid
+      value% = gctl(cid%).parentcid
 
     CASE PropId.Popup
-      CtlGet% = gctl(cid%).popupcid
+      value% = gctl(cid%).popupcid
 
     CASE PropId.SizeX
-      CtlGet% = gctl(cid%).sizeX
+      value% = gctl(cid%).sizeX
 
     CASE PropId.SizeY
-      CtlGet% = gctl(cid%).sizeY
+      value% = gctl(cid%).sizeY
 
     CASE PropId.Style
-      CtlGet% = gctl(cid%).sid
+      value% = gctl(cid%).sid
+
+    CASE PropId.Text
+      flags% = gctl(cid%).textbind.flags
+      value% = gctl(cid%).textbind.value
+
+    CASE PropId.Value
+      flags% = gctl(cid%).valuebind.flags
+      value% = gctl(cid%).valuebind.value
+
+  END SELECT
+
+  SELECT CASE flags
+ 
+    CASE BindingTarget.None
+      '
+      ' Field is not bound - return value
+      '
+      CtlGet% = value%
+    
+    CASE ELSE
+   
+      AssertFail "CtlGet", "Not implemented"
+      CtlGet% = value%
 
   END SELECT
 
