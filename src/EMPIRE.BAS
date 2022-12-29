@@ -1830,6 +1830,9 @@ FUNCTION CtlGet% (cid%, pid%)
     CASE PropId.SizeY
       CtlGet% = gctl(cid%).sizeY
 
+    CASE PropId.Style
+      CtlGet% = gctl(cid%).sid
+
   END SELECT
 
 END FUNCTION
@@ -1968,7 +1971,7 @@ FUNCTION CtlGetStyle% (cid%)
   AssertIsPositive cid%, "CtlGetStyle", "cid"
 
   DIM sid%
-  LET sid% = gctl(cid%).sid
+  LET sid% = CtlGet(cid%, PropId.Style)
  
   IF sid% = 0 THEN
     '
@@ -2197,6 +2200,9 @@ SUB CtlSet (cid%, pid%, value%)
     CASE PropId.SizeY
       gctl(cid%).sizeY = value%
 
+    CASE PropId.Style
+      gctl(cid%).sid = value%
+
   END SELECT
 
 END SUB
@@ -2284,7 +2290,7 @@ SUB CtlSetSizeY (cid%, sizeY%)
 END SUB
 
 SUB CtlSetStyle (cid%, sid%)
-  gctl(cid%).sid = sid%
+  CtlSet cid%, PropId.Style, sid%
 END SUB
 
 SUB CtlSetText (wid%, fid%, value$)
