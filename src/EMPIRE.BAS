@@ -179,7 +179,7 @@ DECLARE SUB CtlSetCmdStr (cid%, cmd$)
 DECLARE SUB CtlSetKind (cid%, kind%)
 DECLARE SUB CtlSetOffsetX (cid%, offsetX%)
 DECLARE SUB CtlSetOffsetY (cid%, offsetY%)
-DECLARE SUB CtlSetParentCid (cid%, parentcid%)
+DECLARE SUB CtlSetParent (cid%, parentcid%)
 DECLARE SUB CtlSetPopup (cid%, popupcid%)
 DECLARE SUB CtlSetPopupName (cid%, wname$)
 DECLARE SUB CtlSetSizeX (cid%, sizeX%)
@@ -195,7 +195,7 @@ DECLARE FUNCTION CtlGetCmdRid% (cid%)
 DECLARE FUNCTION CtlGetKind% (cid%)
 DECLARE FUNCTION CtlGetOffsetX% (cid%)
 DECLARE FUNCTION CtlGetOffsetY% (cid%)
-DECLARE FUNCTION CtlGetParentCid% (cid%)
+DECLARE FUNCTION CtlGetParent% (cid%)
 DECLARE FUNCTION CtlGetPopup% (cid%)
 DECLARE FUNCTION CtlGetScreenX% (cid%)
 DECLARE FUNCTION CtlGetScreenY% (cid%)
@@ -1320,7 +1320,7 @@ FUNCTION CtlCreateChild% (wid%, kind%)
   '
   ' Set the parent to the window control
   '
-  CtlSetParentCid cid%, gwin(wid%, 0)
+  CtlSetParent cid%, gwin(wid%, 0)
   CtlSetKind cid%, kind%
   CtlCreateChild% = fid%
 
@@ -1818,6 +1818,9 @@ FUNCTION CtlGet% (cid%, pid%)
     CASE PropId.OffsetY
       CtlGet% = gctl(cid%).offsetY
 
+    CASE PropId.Parent
+      CtlGet% = gctl(cid%).parentcid
+
     CASE PropId.SizeX
       CtlGet% = gctl(cid%).sizeX
 
@@ -1915,8 +1918,8 @@ FUNCTION CtlGetOffsetY% (cid%)
   CtlGetOffsetY% = CtlGet%(cid%, PropId.OffsetY)
 END FUNCTION
 
-FUNCTION CtlGetParentCid% (cid%)
-  CtlGetParentCid% = gctl(cid%).parentcid
+FUNCTION CtlGetParent% (cid%)
+  CtlGetParent% = CtlGet%(cid%, PropId.Parent)
 END FUNCTION
 
 FUNCTION CtlGetPopup% (cid%)
@@ -1926,7 +1929,7 @@ END FUNCTION
 FUNCTION CtlGetScreenX% (cid%)
 
   DIM parentcid%
-  LET parentcid% = CtlGetParentCid%(cid%)
+  LET parentcid% = CtlGetParent%(cid%)
 
   IF parentcid% = 0 THEN
     CtlGetScreenX% = CtlGetOffsetX%(cid%) + 1
@@ -1939,7 +1942,7 @@ END FUNCTION
 FUNCTION CtlGetScreenY% (cid%)
 
   DIM parentcid%
-  LET parentcid% = CtlGetParentCid%(cid%)
+  LET parentcid% = CtlGetParent%(cid%)
 
   IF parentcid% = 0 THEN
     CtlGetScreenY% = CtlGetOffsetY%(cid%) + 1
@@ -1959,6 +1962,8 @@ END FUNCTION
 
 FUNCTION CtlGetStyle% (cid%)
 
+  AssertIsPositive cid%, "CtlGetStyle", "cid"
+
   DIM sid%
   LET sid% = gctl(cid%).sid
  
@@ -1967,9 +1972,11 @@ FUNCTION CtlGetStyle% (cid%)
     ' Inherit from the parent control
     '
     DIM parentcid%
-    LET parentcid% = gctl(cid%).parentcid
+    LET parentcid% = CtlGetParent(cid%)
 
-    sid% = CtlGetStyle%(parentcid%)
+    IF parentcid% > 0 THEN
+      sid% = CtlGetStyle%(parentcid%)
+    END IF
 
   END IF
 
@@ -2175,6 +2182,9 @@ SUB CtlSet (cid%, pid%, value%)
     CASE PropId.OffsetY
       gctl(cid%).offsetY = value%
 
+    CASE PropId.Parent
+      gctl(cid%).parentcid = value%
+
     CASE PropId.SizeX
       gctl(cid%).sizeX = value%
 
@@ -2247,8 +2257,8 @@ SUB CtlSetOffsetY (cid%, offsetY%)
   CtlSet cid%, PropId.OffsetY, offsetY%
 END SUB
 
-SUB CtlSetParentCid (cid%, parentcid%)
-  gctl(cid%).parentcid = parentcid%
+SUB CtlSetParent (cid%, parentcid%)
+  CtlSet cid%, PropId.Parent, parentcid%
 END SUB
 
 SUB CtlSetPopup (cid%, popupcid%)
