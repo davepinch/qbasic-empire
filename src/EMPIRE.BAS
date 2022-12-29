@@ -36,6 +36,7 @@ TYPE CtlType
   offsetX   AS INTEGER
   offsetY   AS INTEGER
   popupcid  AS INTEGER
+  selected  AS INTEGER
   sid       AS INTEGER
   sizeX     AS INTEGER
   sizeY     AS INTEGER
@@ -203,6 +204,7 @@ DECLARE FUNCTION CtlGetParent% (cid%)
 DECLARE FUNCTION CtlGetPopup% (cid%)
 DECLARE FUNCTION CtlGetScreenX% (cid%)
 DECLARE FUNCTION CtlGetScreenY% (cid%)
+DECLARE FUNCTION CtlGetSelected% (cid%)
 DECLARE FUNCTION CtlGetSizeX% (cid%)
 DECLARE FUNCTION CtlGetSizeY% (cid%)
 DECLARE FUNCTION CtlGetString$ (cid%, pid%)
@@ -435,9 +437,10 @@ CONST PropId.Command = 5
 CONST PropId.OffsetX = 6
 CONST PropId.OffsetY = 7
 CONST PropId.Popup = 8
-CONST PropId.SizeX = 9
-CONST PropId.SizeY = 10
-CONST PropId.Style = 11
+CONST PropId.Selected = 9
+CONST PropId.SizeX = 10
+CONST PropId.SizeY = 11
+CONST PropId.Style = 12
 
 '
 ' ScanCode constants
@@ -1860,6 +1863,9 @@ FUNCTION CtlGet% (cid%, pid%)
     CASE PropId.Popup
       value% = gctl(cid%).popupcid
 
+    CASE PropId.Selected
+      value% = gctl(cid%).selected
+
     CASE PropId.SizeX
       value% = gctl(cid%).sizeX
 
@@ -2019,6 +2025,10 @@ FUNCTION CtlGetScreenY% (cid%)
     CtlGetScreenY% = CtlGetOffsetY%(cid%) + CtlGetScreenY%(parentcid%)
   END IF
 
+END FUNCTION
+
+FUNCTION CtlGetSelected% (cid%)
+  CtlGetSelected% = CtlGet%(cid%, PropId.Selected)
 END FUNCTION
 
 FUNCTION CtlGetSizeX% (cid%)
@@ -2269,6 +2279,9 @@ SUB CtlSet (cid%, pid%, value%)
     CASE PropId.Popup
       gctl(cid%).popupcid = value%
 
+    CASE PropId.Selected
+      gctl(cid%).selected = value%
+
     CASE PropId.SizeX
       gctl(cid%).sizeX = value%
 
@@ -2358,6 +2371,10 @@ END SUB
 
 SUB CtlSetPopupName (cid%, wname$)
   CtlSetPopup cid%, WinFindWid%(wname$)
+END SUB
+
+SUB CtlSetSelected (cid%, value%)
+  CtlSet cid%, PropId.Selected, value%
 END SUB
 
 SUB CtlSetSizeX (cid%, sizeX%)
