@@ -191,6 +191,7 @@ DECLARE SUB CtlSetText (wid%, fid%, value$)
 DECLARE SUB CtlSetValueStr (wid%, fid%, value$)
 DECLARE FUNCTION CtlCreate% ()
 DECLARE FUNCTION CtlCreateChild% (wid%, kind%)
+DECLARE FUNCTION CtlFindName% (name$)
 DECLARE FUNCTION CtlGet% (cid%, pid%)
 DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS PropType)
 DECLARE FUNCTION CtlGetCmdRid% (cid%)
@@ -1809,6 +1810,32 @@ SUB CtlDrawText (wid%, fid%)
   END IF
 
 END SUB
+
+FUNCTION CtlFindName% (name$)
+
+  IF LEN(name$) = 0 THEN
+
+    CtlFindName% = 0
+
+  ELSE
+
+    FOR cid% = 1 TO gcids
+     
+      DIM rid%
+      LET rid% = CtlGet(cid%, PropId.Name)
+
+      IF rid% > 0 THEN
+        IF value$ = ResourceGet$(rid%) THEN
+          CtlFindName% = cid%
+          EXIT FUNCTION
+        NEXT
+      END IF
+
+    NEXT
+
+  END IF
+
+END FUNCTION
 
 FUNCTION CtlGet% (cid%, pid%)
 
