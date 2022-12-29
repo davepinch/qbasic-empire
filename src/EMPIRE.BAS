@@ -98,7 +98,6 @@ END TYPE
 TYPE WinType
   arrowexit  AS INTEGER
   fields     AS INTEGER
-  namerid    AS INTEGER
   param      AS WinParamType
   selected   AS INTEGER
 END TYPE
@@ -178,6 +177,7 @@ DECLARE SUB CtlSetBound (wid%, fid%, b AS PropType, value$)
 DECLARE SUB CtlSetCmdRid (cid%, cmdrid%)
 DECLARE SUB CtlSetCmdStr (cid%, cmd$)
 DECLARE SUB CtlSetKind (cid%, kind%)
+DECLARE SUB CtlSetName (cid%, value$)
 DECLARE SUB CtlSetOffsetX (cid%, offsetX%)
 DECLARE SUB CtlSetOffsetY (cid%, offsetY%)
 DECLARE SUB CtlSetParent (cid%, parentcid%)
@@ -334,7 +334,6 @@ DECLARE SUB WinSelectNext (wid%)
 DECLARE SUB WinSelectFirst (wid%)
 DECLARE SUB WinSelectLast (wid%)
 DECLARE SUB WinSelectPrevious (wid%)
-DECLARE SUB WinSetName (wid%, wname$)
 DECLARE SUB WinSetStyle (wid%, sid%)
 DECLARE FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
 DECLARE FUNCTION WinCreate% ()
@@ -1828,7 +1827,7 @@ FUNCTION CtlFindName% (name$)
         IF value$ = ResourceGet$(rid%) THEN
           CtlFindName% = cid%
           EXIT FUNCTION
-        NEXT
+        END IF
       END IF
 
     NEXT
@@ -3311,7 +3310,7 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
       win(wid%).arrowexit = VAL(stoken$(1))
 
     CASE "name"
-      WinSetName wid%, stoken$(1)
+      CtlSetName widcid%, stoken$(1)
  
     CASE "param"
       SELECT CASE LCASE$(stoken$(1))
@@ -4070,7 +4069,11 @@ FUNCTION WinFindWid% (wname$)
   DIM wid%
 
   FOR wid% = 1 TO wincount
-    IF ResourceGet(win(wid%).namerid) = wname$ THEN
+   
+    DIM cid%
+    LET cid% = gwin(wid%, 0)
+   
+    IF CtlGetName$(cid%) = wname$ THEN
       WinFindWid% = wid%
       EXIT FUNCTION
     END IF
@@ -4604,10 +4607,6 @@ SUB WinSelectPrevious (wid%)
 
   WinSelect wid%, fid%
 
-END SUB
-
-SUB WinSetName (wid%, wname$)
-  ResourceSet win(wid%).namerid, wname$
 END SUB
 
 SUB WinSetStyle (wid%, sid%)
