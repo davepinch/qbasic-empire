@@ -334,7 +334,6 @@ DECLARE SUB WinSelectNext (wid%)
 DECLARE SUB WinSelectFirst (wid%)
 DECLARE SUB WinSelectLast (wid%)
 DECLARE SUB WinSelectPrevious (wid%)
-DECLARE SUB WinSetStyle (wid%, sid%)
 DECLARE FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
 DECLARE FUNCTION WinCreate% ()
 DECLARE FUNCTION WinFindSid% (stylename$)
@@ -3328,7 +3327,7 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
       CtlSetOffsetY widcid%, VAL(stoken$(1)) - 1
 
     CASE "style"
-      WinSetStyle wid%, WinFindSid%(stoken$(1))
+      CtlSetStyle widcid%, WinFindSid%(stoken$(1))
 
     CASE ELSE
       result = CmdResult.Malformed
@@ -4606,14 +4605,6 @@ SUB WinSelectPrevious (wid%)
   END IF
 
   WinSelect wid%, fid%
-
-END SUB
-
-SUB WinSetStyle (wid%, sid%)
- 
-  DIM cid%
-  LET cid% = gwin(wid%, 0)
-  CtlSetStyle cid%, sid%
 
 END SUB
 
