@@ -158,7 +158,7 @@ DECLARE SUB ConsolePrint (text$)
 '
 ' Controls
 '
-DECLARE SUB CtlBindText (wid%, fid%, expr$)
+DECLARE SUB CtlBindText (cid%, expr$)
 DECLARE SUB CtlBindValue (wid%, fid%, expr$)
 DECLARE SUB CtlDraw (wid%, fid%)
 DECLARE SUB CtlDrawBox (cid%)
@@ -1273,16 +1273,8 @@ SUB ConsolePrint (text$)
 
 END SUB
 
-SUB CtlBindText (wid%, fid%, expr$)
-
-  AssertIsPositive wid%, "CtlBindText", "wid"
-  AssertIsPositive fid%, "CtlBindText", "fid"
-
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
-
+SUB CtlBindText (cid%, expr$)
   CtlParseBinding expr$, gctl(cid%).textbind
-
 END SUB
 
 SUB CtlBindValue (wid%, fid%, expr$)
@@ -3023,7 +3015,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
 
     CASE "text"
       IF LCASE$(stoken$(1)) = "bind" THEN
-        CtlBindText wid%, fid%, stoken$(2)
+        CtlBindText cid%, stoken$(2)
       ELSE
         CtlSetText wid%, fid%, stoken$(1)
       END IF
