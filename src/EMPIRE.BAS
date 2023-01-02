@@ -100,7 +100,6 @@ TYPE WinType
   arrowexit  AS INTEGER
   fields     AS INTEGER
   param      AS WinParamType
-  selected   AS INTEGER
 END TYPE
 
 '
@@ -184,6 +183,7 @@ DECLARE SUB CtlSetOffsetY (cid%, offsetY%)
 DECLARE SUB CtlSetParent (cid%, parentcid%)
 DECLARE SUB CtlSetPopup (cid%, popupcid%)
 DECLARE SUB CtlSetPopupName (cid%, wname$)
+DECLARE SUB CtlSetSelected (cid%, value%)
 DECLARE SUB CtlSetSizeX (cid%, sizeX%)
 DECLARE SUB CtlSetSizeY (cid%, sizeY%)
 DECLARE SUB CtlSetString (cid%, pid%, value$)
@@ -1754,8 +1754,11 @@ SUB CtlDrawText (wid%, fid%)
   AssertIsPositive wid%, "CtlDrawText", "wid"
   AssertIsPositive fid%, "CtlDrawText", "fid"
 
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
+  DIM widcid%
+  LET widcid% = gwin(wid%, 0)
+
+  DIM fidcid%
+  LET fidcid% = gwin(wid%, fid%)
 
   DIM sid  AS INTEGER
   DIM size AS INTEGER
@@ -1766,15 +1769,15 @@ SUB CtlDrawText (wid%, fid%)
   '
   ' Get field position
   '
-  sx = CtlGetScreenX%(cid%)
-  sy = CtlGetScreenY%(cid%)
+  sx = CtlGetScreenX%(fidcid%)
+  sy = CtlGetScreenY%(fidcid%)
   LOCATE sy, sx
 
   '
   ' Set style of text
   '
-  sid% = CtlGetStyle(cid%)
-  IF win(wid%).selected = fid% THEN
+  sid% = CtlGetStyle(fidcid%)
+  IF CtlGetSelected(widcid%) = fid% THEN
     DrawColor winstyle(sid%).selectedcolor
   ELSE
     DrawColor winstyle(sid%).textcolor
@@ -1784,7 +1787,7 @@ SUB CtlDrawText (wid%, fid%)
   ' Print text clipped to size
   '
   text = CtlGetText(wid%, fid%)
-  size = CtlGetSizeX%(cid%)
+  size = CtlGetSizeX%(fidcid%)
   IF size < 1 THEN
     PRINT text;
   ELSE
@@ -1888,6 +1891,9 @@ END FUNCTION
 
 FUNCTION CtlGetBound$ (wid%, fid%, b AS PropType)
 
+  DIM widcid%
+  LET widcid% = gwin(wid%, 0)
+
   DIM value$: value$ = ResourceGet(b.value)
 
   SELECT CASE b.flags
@@ -1933,7 +1939,7 @@ FUNCTION CtlGetBound$ (wid%, fid%, b AS PropType)
     CASE BindingTarget.Selected
      
       DIM sel%
-      LET sel% = win(wid%).selected
+      LET sel% = CtlGetSelected(widcid%)
 
       IF sel% = 0 THEN
         '
@@ -1948,7 +1954,7 @@ FUNCTION CtlGetBound$ (wid%, fid%, b AS PropType)
         CtlGetBound$ = ""
       
       ELSE
-        CtlGetBound$ = CtlGetValue$(wid%, win(wid%).selected)
+        CtlGetBound$ = CtlGetValue$(wid%, sel%)
       END IF
 
   END SELECT
@@ -4109,6 +4115,9 @@ END FUNCTION
 
 FUNCTION WinMapKey% (wid%, pressed$)
 
+  DIM widcid%
+  LET widcid% = gwin(wid%, 0)
+
   DIM popupcid    AS INTEGER
   DIM cmdrid      AS INTEGER
   DIM exitLeft    AS INTEGER
@@ -4123,7 +4132,7 @@ FUNCTION WinMapKey% (wid%, pressed$)
   '
   exitLeft = win(wid%).arrowexit AND &H1
   exitRight = win(wid%).arrowexit AND &H2
-  selected = win(wid%).selected
+  selected = CtlGetSelected(widcid%)
   IF selected > 0 THEN
     selectedCid = gwin(wid%, selected)
     popupcid = CtlGetPopup%(selectedCid)
@@ -4195,6 +4204,9 @@ SUB WinOpen (wid%)
   ' Displays the window and gives it focus
   '
   
+  DIM widcid%
+  LET widcid% = gwin(wid%, 0)
+
   DIM backpage AS INTEGER
   DIM workpage AS INTEGER
 
@@ -4224,7 +4236,7 @@ SUB WinOpen (wid%)
   '
   ' Set focus to a field
   '
-  IF win(wid%).selected = 0 THEN
+  IF CtlGetSelected(widcid%) = 0 THEN
     WinSelectFirst wid%
   END IF
 
@@ -4265,6 +4277,9 @@ SUB WinRun (wid%, result AS WinResultType)
 
   AssertIsPositive wid%, "WinRun", "wid"
 
+  DIM widcid%
+  LET widcid% = gwin(wid%, 0)
+
   DIM nopopups AS INTEGER
   DIM pressed  AS STRING
 
@@ -4280,12 +4295,12 @@ SUB WinRun (wid%, result AS WinResultType)
 
       IF nopopups THEN
         EXIT DO
-      ELSEIF win(wid%).selected = 0 THEN
+      ELSEIF CtlGetSelected(widcid%) = 0 THEN
         EXIT DO
       END IF
 
       DIM selectedCid%
-      LET selectedCid% = gwin(wid%, win(wid%).selected)
+      LET selectedCid% = gwin(wid%, CtlGetSelected(widcid%))
 
       IF CtlGetKind%(selectedCid%) <> CtlKind.Popup THEN
        
@@ -4340,7 +4355,7 @@ SUB WinRun (wid%, result AS WinResultType)
         result.action = WinAction.Cancel
         result.canceled = True
         result.cmdrid = 0
-        result.selected = win(wid%).selected
+        result.selected = CtlGetSelected(widcid%)
         WinClose wid%
         EXIT SUB
 
@@ -4348,14 +4363,14 @@ SUB WinRun (wid%, result AS WinResultType)
         result.action = WinAction.Complete
         result.canceled = False
         result.cmdrid = 0
-        result.selected = win(wid%).selected
+        result.selected = CtlGetSelected(widcid%)
         WinClose wid%
         EXIT SUB
 
       CASE WinAction.Execute
         result.action = WinAction.Execute
         result.canceled = False
-        result.selected = win(wid%).selected
+        result.selected = CtlGetSelected(widcid%)
         result.cmdrid = CtlGetCmdRid%(gwin(wid%, result.selected))
         WinClose wid%
         EXIT SUB
@@ -4364,7 +4379,7 @@ SUB WinRun (wid%, result AS WinResultType)
         result.action = WinAction.ExitLeft
         result.canceled = True
         result.cmdrid = 0
-        result.selected = win(wid%).selected
+        result.selected = CtlGetSelected(widcid%)
         WinClose wid%
         EXIT SUB
 
@@ -4372,7 +4387,7 @@ SUB WinRun (wid%, result AS WinResultType)
         result.action = WinAction.ExitRight
         result.canceled = True
         result.cmdrid = 0
-        result.selected = win(wid%).selected
+        result.selected = CtlGetSelected(widcid%)
         WinClose wid%
         EXIT SUB
 
@@ -4392,8 +4407,8 @@ SUB WinRun (wid%, result AS WinResultType)
         WinSelectPrevious wid%
 
       CASE ELSE
-        CtlKey wid%, (win(wid%).selected), pressed
-        WinRefreshField wid%, win(wid%).selected
+        CtlKey wid%, CtlGetSelected(widcid%), pressed
+        WinRefreshField wid%, CtlGetSelected(widcid%)
 
     END SELECT
 
@@ -4421,8 +4436,14 @@ SUB WinSelect (wid%, fid%)
   AssertIsPositive wid%, "WinSelect", "wid"
   Assert fid% >= 0, "WinSelect", "fid cannot be negative"
 
+  DIM fidcid%
+  LET fidcid% = gwin(wid%, fid%)
+
+  DIM widcid%
+  LET widcid% = gwin(wid%, 0)
+
   DIM old%
-  LET old% = win(wid%).selected
+  LET old% = CtlGetSelected(widcid%)
 
   IF old% = fid% THEN
     '
@@ -4431,7 +4452,7 @@ SUB WinSelect (wid%, fid%)
     EXIT SUB
   END IF
 
-  win(wid%).selected = fid%
+  CtlSetSelected widcid%, fid%
 
   IF old% > 0 THEN
     WinRefreshField wid%, old%
@@ -4522,6 +4543,9 @@ SUB WinSelectNext (wid%)
 
   AssertIsPositive wid%, "WinSelectNext", "wid"
 
+  DIM widcid%
+  LET widcid% = gwin(wid%, 0)
+
   DIM fid%
   DIM firstFid%
 
@@ -4534,7 +4558,7 @@ SUB WinSelectNext (wid%)
     '
     ' Get the starting field
     '
-    LET firstFid% = win(wid%).selected
+    LET firstFid% = CtlGetSelected(widcid%)
     IF firstFid% = 0 THEN
       firstFid% = 1
     END IF
@@ -4551,10 +4575,10 @@ SUB WinSelectNext (wid%)
         fid% = 1
       END IF
 
-      DIM cid%
-      LET cid% = gwin(wid%, fid%)
+      DIM fidcid%
+      LET fidcid% = gwin(wid%, fid%)
 
-      IF CtlSelectable%(cid%) THEN
+      IF CtlSelectable%(fidcid%) THEN
         EXIT DO
       END IF
 
@@ -4581,6 +4605,9 @@ SUB WinSelectPrevious (wid%)
 
   AssertIsPositive wid%, "WinSelectPrevious", "wid"
 
+  DIM widcid%
+  LET widcid% = gwin(wid%, 0)
+
   DIM fid%
   DIM startingFid%
 
@@ -4593,7 +4620,7 @@ SUB WinSelectPrevious (wid%)
     '
     ' Get the starting field
     '
-    LET startingFid% = win(wid%).selected
+    LET startingFid% = CtlGetSelected(widcid%)
     IF startingFid% = 0 THEN
       startingFid% = 1
     END IF
@@ -4610,10 +4637,10 @@ SUB WinSelectPrevious (wid%)
         fid% = win(wid%).fields
       END IF
 
-      DIM cid%
-      LET cid% = gwin(wid%, fid%)
+      DIM fidcid%
+      LET fidcid% = gwin(wid%, fid%)
 
-      IF CtlSelectable%(cid%) THEN
+      IF CtlSelectable%(fidcid%) THEN
         EXIT DO
       END IF
 
