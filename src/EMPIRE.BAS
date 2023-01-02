@@ -395,7 +395,7 @@ CONST True = -1
 CONST False = NOT True
 
 CONST BindingTarget.None = 0
-CONST BindingTarget.Field = 1
+CONST BindingTarget.Selected = 1
 CONST BindingTarget.Param = 2
 
 '
@@ -1930,10 +1930,8 @@ FUNCTION CtlGetBound$ (wid%, fid%, b AS PropType)
 
       END SELECT
 
-    CASE BindingTarget.Field
-      '
-      ' TODO: support more than sel.value
-      '
+    CASE BindingTarget.Selected
+     
       DIM sel%
       LET sel% = win(wid%).selected
 
@@ -2178,7 +2176,7 @@ SUB CtlParseBinding (text$, outbind AS PropType)
         outbind.flags = BindingTarget.Param
 
       CASE "sel."
-        outbind.flags = BindingTarget.Field
+        outbind.flags = BindingTarget.Selected
 
     END SELECT
 
@@ -2198,10 +2196,10 @@ FUNCTION CtlRedirected% (cid%, pid%)
   SELECT CASE pid%
 
     CASE PropId.Text
-      CtlRedirected% = gctl(cid%).textbind.flags = BindingTarget.Field
+      CtlRedirected% = gctl(cid%).textbind.flags = BindingTarget.Selected
 
     CASE PropId.Value
-      CtlRedirected% = gctl(cid%).valuebind.flags = BindingTarget.Field
+      CtlRedirected% = gctl(cid%).valuebind.flags = BindingTarget.Selected
 
   END SELECT
 
