@@ -92,7 +92,7 @@ TYPE WinStyleType
   bordercolor   AS INTEGER
   bordertype    AS INTEGER
   selectedcolor AS INTEGER
-  stylename     AS STRING * 10
+  stylename     AS STRING * 20
   textcolor     AS INTEGER
 END TYPE
 
