@@ -35,6 +35,7 @@ TYPE CtlType
   namerid   AS INTEGER
   offsetX   AS INTEGER
   offsetY   AS INTEGER
+  param     AS INTEGER
   popupcid  AS INTEGER
   selected  AS INTEGER
   sid       AS INTEGER
@@ -200,6 +201,7 @@ DECLARE FUNCTION CtlGetKind% (cid%)
 DECLARE FUNCTION CtlGetName$ (cid%)
 DECLARE FUNCTION CtlGetOffsetX% (cid%)
 DECLARE FUNCTION CtlGetOffsetY% (cid%)
+DECLARE FUNCTION CtlGetParam% (cid%)
 DECLARE FUNCTION CtlGetParent% (cid%)
 DECLARE FUNCTION CtlGetPopup% (cid%)
 DECLARE FUNCTION CtlGetScreenX% (cid%)
@@ -435,11 +437,12 @@ CONST PropId.Text = 4
 CONST PropId.Command = 5
 CONST PropId.OffsetX = 6
 CONST PropId.OffsetY = 7
-CONST PropId.Popup = 8
-CONST PropId.Selected = 9
-CONST PropId.SizeX = 10
-CONST PropId.SizeY = 11
-CONST PropId.Style = 12
+CONST PropId.Param = 8
+CONST PropId.Popup = 9
+CONST PropId.Selected = 10
+CONST PropId.SizeX = 11
+CONST PropId.SizeY = 12
+CONST PropId.Style = 13
 
 '
 ' ScanCode constants
@@ -1842,6 +1845,9 @@ FUNCTION CtlGet% (cid%, pid%)
     CASE PropId.OffsetY
       value% = gctl(cid%).offsetY
 
+    CASE PropId.Param
+      value% = gctl(cid%).param
+
     CASE PropId.Parent
       value% = gctl(cid%).parentcid
 
@@ -1969,6 +1975,10 @@ END FUNCTION
 
 FUNCTION CtlGetOffsetY% (cid%)
   CtlGetOffsetY% = CtlGet%(cid%, PropId.OffsetY)
+END FUNCTION
+
+FUNCTION CtlGetParam% (cid%)
+  CtlGetParam = CtlGet%(cid%, PropId.Param)
 END FUNCTION
 
 FUNCTION CtlGetParent% (cid%)
@@ -2251,6 +2261,9 @@ SUB CtlSet (cid%, pid%, value%)
     CASE PropId.OffsetY
       gctl(cid%).offsetY = value%
 
+    CASE PropId.Param
+      gctl(cid%).param = value%
+
     CASE PropId.Parent
       gctl(cid%).parentcid = value%
 
@@ -2322,6 +2335,10 @@ END SUB
 
 SUB CtlSetOffsetY (cid%, offsetY%)
   CtlSet cid%, PropId.OffsetY, offsetY%
+END SUB
+
+SUB CtlSetParam (cid%, value%)
+  CtlSet cid%, PropId.Param, value%
 END SUB
 
 SUB CtlSetParent (cid%, parentcid%)
