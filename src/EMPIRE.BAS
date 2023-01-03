@@ -1868,14 +1868,32 @@ FUNCTION CtlGet% (cid%, pid%)
 
   END SELECT
 
+  IF flags% = 0 THEN
+    CtlGet% = value%
+    EXIT FUNCTION
+  END IF
+
+  DIM parentcid%
+  LET parentcid% = CtlGetParent%(cid%)
+  AssertIsPositive parentcid%, "CtlGet", "parentcid"
+
   SELECT CASE flags
  
-    CASE BindingTarget.None
+    CASE BindingKind.Param
       '
-      ' Field is not bound - return value
+      ' Bound to the parent window parameter
       '
-      CtlGet% = value%
-    
+      DIM hid%
+      LET hid% = CtlGetParam%(parentcid%)
+      IF hid% > 0 THEN
+        SELECT CASE ResourceGet$(value%)
+          CASE "backdrop"
+            CtlGet% = habitat(hid%).backdrop
+          CASE "title"
+            CtlGet% = habitat(hid%).namerid
+        END SELECT
+      END IF
+
     CASE ELSE
    
       AssertFail "CtlGet", "Not implemented"
