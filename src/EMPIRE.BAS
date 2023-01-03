@@ -71,11 +71,6 @@ TYPE TriggerType
   cmdrid   AS INTEGER
 END TYPE
 
-TYPE WinParamType
-  pkind AS INTEGER
-  value AS INTEGER
-END TYPE
-
 TYPE WinResultType
   action   AS INTEGER
   canceled AS INTEGER
@@ -100,7 +95,6 @@ END TYPE
 TYPE WinType
   arrowexit  AS INTEGER
   fields     AS INTEGER
-  param      AS WinParamType
 END TYPE
 
 '
@@ -181,6 +175,7 @@ DECLARE SUB CtlSetKind (cid%, kind%)
 DECLARE SUB CtlSetName (cid%, value$)
 DECLARE SUB CtlSetOffsetX (cid%, offsetX%)
 DECLARE SUB CtlSetOffsetY (cid%, offsetY%)
+DECLARE SUB CtlSetParam (cid%, value%)
 DECLARE SUB CtlSetParent (cid%, parentcid%)
 DECLARE SUB CtlSetPopup (cid%, popupcid%)
 DECLARE SUB CtlSetPopupName (cid%, wname$)
@@ -477,9 +472,6 @@ CONST WinAction.SelectFirst = 12
 CONST WinAction.SelectLast = 13
 CONST WinAction.SelectNext = 14
 CONST WinAction.SelectPrevious = 15
-
-CONST WinParamKind.None = 0
-CONST WinParamKind.Habitat = 2
 
 '
 ' Global atlas variables
@@ -1910,26 +1902,18 @@ FUNCTION CtlGetBound$ (wid%, fid%, b AS PropType)
     
     CASE BindingTarget.Param
       '
-      ' Field is bound to window parameter
+      ' Field is bound to habitat parameter
       '
       DIM pvalue%
-      LET pvalue% = win(wid%).param.value
+      LET pvalue% = CtlGetParam%(widcid%)
 
-      SELECT CASE win(wid%).param.pkind
-       
-        CASE WinParamKind.Habitat
-          SELECT CASE value$
-            CASE "backdrop"
-              CtlGetBound$ = HabitatGetBackdrop$(pvalue%)
-            CASE "title"
-              CtlGetBound$ = HabitatGetName$(pvalue%)
-            CASE ELSE
-              CtlGetBound$ = value$
-          END SELECT
-
+      SELECT CASE value$
+        CASE "backdrop"
+          CtlGetBound$ = HabitatGetBackdrop$(pvalue%)
+        CASE "title"
+          CtlGetBound$ = HabitatGetName$(pvalue%)
         CASE ELSE
           CtlGetBound$ = value$
-
       END SELECT
 
     CASE BindingTarget.Selected
@@ -3332,11 +3316,7 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
       CtlSetName widcid%, stoken$(1)
  
     CASE "param"
-      SELECT CASE LCASE$(stoken$(1))
-        CASE "habitat"
-          win(wid%).param.pkind = WinParamKind.Habitat
-      END SELECT
-      win(wid%).param.value = VAL(stoken$(2))
+      CtlSetParam widcid%, VAL(stoken$(2))
 
     CASE "posx"
       CtlSetOffsetX widcid%, VAL(stoken$(1)) - 1
@@ -3438,7 +3418,10 @@ SUB GameMoveOffset (offsetX%, offsetY%)
       '
       ' HACK: set window parameter value
       '
-      win(habitat(hid).wid).param.value = hid
+      DIM hidwidcid%
+      LET hidwidcid% = gwin(habitat(hid).wid, 0)
+      CtlSetParam hidwidcid%, hid
+     
       WinRun habitat(hid).wid, wresult
      
       IF wresult.action = WinAction.Execute THEN
