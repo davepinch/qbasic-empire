@@ -476,7 +476,6 @@ CONST WinAction.SelectNext = 14
 CONST WinAction.SelectPrevious = 15
 
 CONST WinParamKind.None = 0
-CONST WinParamKind.Area = 1
 CONST WinParamKind.Habitat = 2
 
 '
@@ -1912,14 +1911,6 @@ FUNCTION CtlGetBound$ (wid%, fid%, b AS PropType)
 
       SELECT CASE win(wid%).param.pkind
        
-        CASE WinParamKind.Area
-          SELECT CASE value$
-            CASE "energy"
-              CtlGetBound$ = STR$(area(pvalue%).energy)
-            CASE ELSE
-              CtlGetBound$ = value$
-          END SELECT
-
         CASE WinParamKind.Habitat
           SELECT CASE value$
             CASE "backdrop"
@@ -2293,22 +2284,7 @@ SUB CtlSetBound (wid%, fid%, b AS PropType, value$)
 
   ELSE
 
-    DIM xtext$
-    LET xtext$ = ResourceGet(b.value)
-
-    SELECT CASE b.flags
-     
-      CASE BindingTarget.Param
-
-        SELECT CASE win(wid%).param.pkind
-          CASE WinParamKind.Area
-            SELECT CASE xtext$
-              CASE "energy"
-                area(win(wid%).param.value).energy = VAL(value$)
-            END SELECT
-        END SELECT
-
-    END SELECT
+    AssertFail "CtlSetBound", "Binding type not supported"
 
   END IF
 
@@ -3340,8 +3316,6 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
  
     CASE "param"
       SELECT CASE LCASE$(stoken$(1))
-        CASE "area"
-          win(wid%).param.pkind = WinParamKind.Area
         CASE "habitat"
           win(wid%).param.pkind = WinParamKind.Habitat
       END SELECT
