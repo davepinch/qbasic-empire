@@ -261,7 +261,6 @@ DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 '
 ' Game
 '
-DECLARE SUB GameHarvest ()
 DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 
 '
@@ -3120,9 +3119,6 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
     CASE "habitat"
       hid% = HabitatCreate%
 
-    CASE "harvest"
-      GameHarvest
-
     CASE "listen"
       DIM listenhid%: listenhid% = VAL(stoken$(1))
       IF listenhid% = 0 THEN
@@ -3397,18 +3393,6 @@ FUNCTION ExecResource% (rid AS INTEGER)
   END IF
 
 END FUNCTION
-
-SUB GameHarvest
-
-  'DIM aid%
-  'DIM energy%
-
-  'aid% = GameArea%
-  'IF aid% > 0 THEN
-  '  WorldHarvest aid%
-  'END IF
-
-END SUB
 
 SUB GameMoveOffset (offsetX%, offsetY%)
  
