@@ -160,7 +160,7 @@ DECLARE SUB CtlDrawBox (cid%)
 DECLARE SUB CtlDrawBox0 (cid%)
 DECLARE SUB CtlDrawBox1 (cid%)
 DECLARE SUB CtlDrawBox2 (cid%)
-DECLARE SUB CtlDrawFile (wid%, fid%)
+DECLARE SUB CtlDrawFile (cid%)
 DECLARE SUB CtlDrawNebula (cid%)
 DECLARE SUB CtlDrawSeparator (cid%)
 DECLARE SUB CtlDrawText (wid%, fid%)
@@ -1336,7 +1336,7 @@ SUB CtlDraw (wid%, fid%)
       CtlDrawText wid%, fid%
 
     CASE CtlKind.File
-      CtlDrawFile wid%, fid%
+      CtlDrawFile cid%
 
     CASE CtlKind.Separator
       CtlDrawSeparator cid%
@@ -1543,13 +1543,7 @@ SUB CtlDrawBox2 (cid%)
 
 END SUB
 
-SUB CtlDrawFile (wid%, fid%)
-
-  AssertIsPositive wid%, "CtlDrawFile", "wid"
-  AssertIsPositive fid%, "CtlDrawFile", "fid"
-
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
+SUB CtlDrawFile (cid%)
 
   DIM filename AS STRING
   DIM sx AS INTEGER
