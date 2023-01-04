@@ -208,7 +208,7 @@ DECLARE FUNCTION CtlGetSizeX% (cid%)
 DECLARE FUNCTION CtlGetSizeY% (cid%)
 DECLARE FUNCTION CtlGetString$ (cid%, pid%)
 DECLARE FUNCTION CtlGetStyle% (cid%)
-DECLARE FUNCTION CtlGetText$ (wid%, fid%)
+DECLARE FUNCTION CtlGetText$ (cid%)
 DECLARE FUNCTION CtlGetValue$ (wid%, fid%)
 DECLARE FUNCTION CtlRedirected% (cid%, pid%)
 DECLARE FUNCTION CtlSelectable% (cid%)
@@ -1783,7 +1783,7 @@ SUB CtlDrawText (wid%, fid%)
   '
   ' Print text clipped to size
   '
-  text = CtlGetText(wid%, fid%)
+  text = CtlGetText(fidcid%)
   size = CtlGetSizeX%(fidcid%)
   IF size < 1 THEN
     PRINT text;
@@ -2032,13 +2032,8 @@ FUNCTION CtlGetStyle% (cid%)
   
 END FUNCTION
 
-FUNCTION CtlGetText$ (wid%, fid%)
-
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
-
+FUNCTION CtlGetText$ (cid%)
   CtlGetText$ = CtlGetString$(cid%, PropId.Text)
-
 END FUNCTION
 
 FUNCTION CtlGetValue$ (wid%, fid%)
@@ -2084,8 +2079,11 @@ SUB CtlKeyBoolean (wid%, fid%, keypress$)
   ' Sends a keystroke to a boolean field.
   '
  
+  DIM cid%
+  LET cid% = gwin(wid%, fid%)
+
   DIM text AS STRING
-  LET text = CtlGetText$(wid%, fid%)
+  LET text = CtlGetText$(cid%)
 
   SELECT CASE keypress$
 
@@ -2116,7 +2114,7 @@ SUB CtlKeyInteger (wid%, fid%, keypress$)
   LET cid% = gwin(wid%, fid%)
 
   DIM buf$
-  LET buf$ = CtlGetText$(wid%, fid%)
+  LET buf$ = CtlGetText$(cid%)
 
   SELECT CASE keypress$
    
