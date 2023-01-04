@@ -170,6 +170,7 @@ DECLARE SUB CtlKeyInteger (wid%, fid%, keypress$)
 DECLARE SUB CtlParseBinding (text$, outbind AS ANY)
 DECLARE SUB CtlSet (cid%, pid%, value%)
 DECLARE SUB CtlSetBound (wid%, fid%, b AS PropType, value$)
+DECLARE SUB CtlSetChildList (cid%, listcid%)
 DECLARE SUB CtlSetCmdRid (cid%, cmdrid%)
 DECLARE SUB CtlSetCmdStr (cid%, cmd$)
 DECLARE SUB CtlSetKind (cid%, kind%)
@@ -4039,13 +4040,14 @@ FUNCTION WinCreate%
   LET cid% = CtlCreate%
  
   CtlSetKind cid%, CtlKind.Window
- 
+  CtlSetChildList cid%, wincount
+
   '
   ' Track the control as field #0
   '
   gwin(wincount, 0) = cid%
-
   WinCreate% = wincount
+
 END FUNCTION
 
 SUB WinDraw (wid%)
