@@ -31,6 +31,7 @@ END TYPE
 TYPE CtlType
   parentcid AS INTEGER
   kind      AS INTEGER
+  childlist AS INTEGER
   cmdrid    AS INTEGER
   namerid   AS INTEGER
   offsetX   AS INTEGER
@@ -191,6 +192,7 @@ DECLARE FUNCTION CtlCreateChild% (wid%, kind%)
 DECLARE FUNCTION CtlFindName% (name$)
 DECLARE FUNCTION CtlGet% (cid%, pid%)
 DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS PropType)
+DECLARE FUNCTION CtlGetChildList% (cid%)
 DECLARE FUNCTION CtlGetCmdRid% (cid%)
 DECLARE FUNCTION CtlGetKind% (cid%)
 DECLARE FUNCTION CtlGetName$ (cid%)
@@ -429,15 +431,16 @@ CONST PropId.Parent = 1
 CONST PropId.Kind = 2
 CONST PropId.Name = 3
 CONST PropId.Text = 4
-CONST PropId.Command = 5
-CONST PropId.OffsetX = 6
-CONST PropId.OffsetY = 7
-CONST PropId.Param = 8
-CONST PropId.Popup = 9
-CONST PropId.Selected = 10
-CONST PropId.SizeX = 11
-CONST PropId.SizeY = 12
-CONST PropId.Style = 13
+CONST PropId.ChildList = 5
+CONST PropId.Command = 6
+CONST PropId.OffsetX = 7
+CONST PropId.OffsetY = 8
+CONST PropId.Param = 9
+CONST PropId.Popup = 10
+CONST PropId.Selected = 11
+CONST PropId.SizeX = 12
+CONST PropId.SizeY = 13
+CONST PropId.Style = 14
 
 '
 ' ScanCode constants
@@ -1826,6 +1829,9 @@ FUNCTION CtlGet% (cid%, pid%)
 
   SELECT CASE pid%
    
+    CASE PropId.ChildList
+      value% = gctl(cid%).childlist
+
     CASE PropId.Kind
       value% = gctl(cid%).kind
 
@@ -1958,6 +1964,10 @@ FUNCTION CtlGetBound$ (wid%, fid%, b AS PropType)
 
   END SELECT
 
+END FUNCTION
+
+FUNCTION CtlGetChildList% (cid%)
+  CtlGetChildList% = CtlGet%(cid%, PropId.ChildList)
 END FUNCTION
 
 FUNCTION CtlGetCmdRid% (cid%)
@@ -2252,6 +2262,9 @@ SUB CtlSet (cid%, pid%, value%)
 
   SELECT CASE pid%
 
+    CASE PropId.ChildList
+      gctl(cid%).childlist = value%
+
     CASE PropId.Kind
       gctl(cid%).kind = value%
 
@@ -2304,6 +2317,10 @@ SUB CtlSetBound (wid%, fid%, b AS PropType, value$)
 
   END IF
 
+END SUB
+
+SUB CtlSetChildList (cid%, listcid%)
+  CtlSet cid%, PropId.ChildList, listcid%
 END SUB
 
 SUB CtlSetCmdRid (cid%, cmdrid%)
