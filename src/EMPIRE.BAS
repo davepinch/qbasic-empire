@@ -486,7 +486,7 @@ DIM SHARED gwin(1 TO 20, 0 TO 13) AS INTEGER
 DIM SHARED gcids                  AS INTEGER
 
 DIM SHARED area(1 TO 35)         AS AreaType
-DIM SHARED atlasitem(1 TO 30)    AS AtlasItemType
+DIM SHARED atlasitem(1 TO 35)    AS AtlasItemType
 DIM SHARED atlaspage             AS INTEGER
 DIM SHARED event(1 TO 5)         AS EventType
 DIM SHARED events                AS INTEGER
