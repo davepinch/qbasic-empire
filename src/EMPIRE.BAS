@@ -209,7 +209,7 @@ DECLARE FUNCTION CtlGetSizeY% (cid%)
 DECLARE FUNCTION CtlGetString$ (cid%, pid%)
 DECLARE FUNCTION CtlGetStyle% (cid%)
 DECLARE FUNCTION CtlGetText$ (cid%)
-DECLARE FUNCTION CtlGetValue$ (wid%, fid%)
+DECLARE FUNCTION CtlGetValue$ (cid%)
 DECLARE FUNCTION CtlRedirected% (cid%, pid%)
 DECLARE FUNCTION CtlSelectable% (cid%)
 
@@ -1555,7 +1555,7 @@ SUB CtlDrawFile (wid%, fid%)
   DIM sx AS INTEGER
   DIM sy AS INTEGER
 
-  filename = CtlGetValue$(wid%, fid%)
+  filename = CtlGetValue$(cid%)
   IF LEN(filename) = 0 THEN
     EXIT SUB
   END IF
@@ -2036,16 +2036,8 @@ FUNCTION CtlGetText$ (cid%)
   CtlGetText$ = CtlGetString$(cid%, PropId.Text)
 END FUNCTION
 
-FUNCTION CtlGetValue$ (wid%, fid%)
-
-  AssertIsPositive wid%, "CtlGetValue", "wid"
-  AssertIsPositive fid%, "CtlGetValue", "fid"
-
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
-
+FUNCTION CtlGetValue$ (cid%)
   CtlGetValue$ = CtlGetString$(cid%, PropId.Value)
-
 END FUNCTION
 
 SUB CtlKey (wid%, fid%, keypress$)
