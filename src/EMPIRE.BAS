@@ -569,6 +569,7 @@ SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, labelrid AS IN
   '
   idx = AtlasNextIndex%
   IF idx = 0 THEN
+    AssertFail "AtlasAddItem", "AtlasNextIndex returned 0"
     EXIT SUB
   END IF
 
