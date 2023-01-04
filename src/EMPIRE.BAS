@@ -192,7 +192,6 @@ DECLARE FUNCTION CtlCreate% ()
 DECLARE FUNCTION CtlCreateChild% (wid%, kind%)
 DECLARE FUNCTION CtlFindName% (name$)
 DECLARE FUNCTION CtlGet% (cid%, pid%)
-DECLARE FUNCTION CtlGetBound$ (wid%, fid%, b AS PropType)
 DECLARE FUNCTION CtlGetChildList% (cid%)
 DECLARE FUNCTION CtlGetCmdRid% (cid%)
 DECLARE FUNCTION CtlGetKind% (cid%)
@@ -1885,9 +1884,9 @@ FUNCTION CtlGet% (cid%, pid%)
   LET parentcid% = CtlGetParent%(cid%)
   AssertIsPositive parentcid%, "CtlGet", "parentcid"
 
-  SELECT CASE flags
+  SELECT CASE flags%
  
-    CASE BindingKind.Param
+    CASE BindingTarget.Param
       '
       ' Bound to the parent window parameter
       '
@@ -1902,66 +1901,25 @@ FUNCTION CtlGet% (cid%, pid%)
         END SELECT
       END IF
 
+    CASE BindingTarget.Selected
+      '
+      ' Bound to selected control of parent window parameter
+      '
+      DIM sel%
+      LET sel% = CtlGetSelected%(parentcid%)
+      
+      DIM wid%
+      LET wid% = CtlGetChildList%(parentcid%)
+
+      DIM selcid%
+      LET selcid% = gwin(wid%, sel%)
+
+      CtlGet% = CtlGet%(selcid%, PropId.Value)
+
     CASE ELSE
    
       AssertFail "CtlGet", "Not implemented"
       CtlGet% = value%
-
-  END SELECT
-
-END FUNCTION
-
-FUNCTION CtlGetBound$ (wid%, fid%, b AS PropType)
-
-  DIM widcid%
-  LET widcid% = gwin(wid%, 0)
-
-  DIM value$: value$ = ResourceGet(b.value)
-
-  SELECT CASE b.flags
-   
-    CASE BindingTarget.None
-      '
-      ' Field is not bound - return value
-      '
-      CtlGetBound$ = value$
-    
-    CASE BindingTarget.Param
-      '
-      ' Field is bound to habitat parameter
-      '
-      DIM pvalue%
-      LET pvalue% = CtlGetParam%(widcid%)
-
-      SELECT CASE value$
-        CASE "backdrop"
-          CtlGetBound$ = HabitatGetBackdrop$(pvalue%)
-        CASE "title"
-          CtlGetBound$ = HabitatGetName$(pvalue%)
-        CASE ELSE
-          CtlGetBound$ = value$
-      END SELECT
-
-    CASE BindingTarget.Selected
-     
-      DIM sel%
-      LET sel% = CtlGetSelected(widcid%)
-
-      IF sel% = 0 THEN
-        '
-        ' No selected field to get a value
-        '
-        CtlGetBound$ = ""
-      
-      ELSEIF sel% = fid% THEN
-        '
-        ' Infinite recursion
-        '
-        CtlGetBound$ = ""
-      
-      ELSE
-        CtlGetBound$ = CtlGetValue$(wid%, sel%)
-      END IF
 
   END SELECT
 
@@ -2079,7 +2037,7 @@ FUNCTION CtlGetText$ (wid%, fid%)
   DIM cid%
   LET cid% = gwin(wid%, fid%)
 
-  CtlGetText$ = CtlGetBound$(wid%, fid%, gctl(cid%).textbind)
+  CtlGetText$ = CtlGetString$(cid%, PropId.Text)
 
 END FUNCTION
 
@@ -2091,7 +2049,7 @@ FUNCTION CtlGetValue$ (wid%, fid%)
   DIM cid%
   LET cid% = gwin(wid%, fid%)
 
-  CtlGetValue$ = CtlGetBound$(wid%, fid%, gctl(cid%).valuebind)
+  CtlGetValue$ = CtlGetString$(cid%, PropId.Value)
 
 END FUNCTION
 
