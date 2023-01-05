@@ -166,7 +166,7 @@ DECLARE SUB CtlDrawSeparator (cid%)
 DECLARE SUB CtlDrawText (wid%, fid%)
 DECLARE SUB CtlKey (wid%, fid%, keypress$)
 DECLARE SUB CtlKeyBoolean (wid%, fid%, keypress$)
-DECLARE SUB CtlKeyInteger (wid%, fid%, keypress$)
+DECLARE SUB CtlKeyInteger (cid%, keypress$)
 DECLARE SUB CtlParseBinding (text$, outbind AS ANY)
 DECLARE SUB CtlSet (cid%, pid%, value%)
 DECLARE SUB CtlSetChildList (cid%, listcid%)
@@ -2051,7 +2051,7 @@ SUB CtlKey (wid%, fid%, keypress$)
         CtlKeyBoolean wid%, fid%, keypress$
 
       CASE CtlKind.Integer
-        CtlKeyInteger wid%, fid%, keypress$
+        CtlKeyInteger cid%, keypress$
 
     END SELECT
  
@@ -2090,13 +2090,10 @@ SUB CtlKeyBoolean (wid%, fid%, keypress$)
 
 END SUB
 
-SUB CtlKeyInteger (wid%, fid%, keypress$)
+SUB CtlKeyInteger (cid%, keypress$)
   '
   ' Sends a key to an integer field
   '
-
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
 
   DIM buf$
   LET buf$ = CtlGetText$(cid%)
