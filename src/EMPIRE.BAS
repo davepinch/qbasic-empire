@@ -186,7 +186,7 @@ DECLARE SUB CtlSetSizeX (cid%, sizeX%)
 DECLARE SUB CtlSetSizeY (cid%, sizeY%)
 DECLARE SUB CtlSetString (cid%, pid%, value$)
 DECLARE SUB CtlSetStyle (cid%, sid%)
-DECLARE SUB CtlSetText (wid%, fid%, value$)
+DECLARE SUB CtlSetText (cid%, value$)
 DECLARE SUB CtlSetValue (wid%, fid%, value$)
 DECLARE FUNCTION CtlCreate% ()
 DECLARE FUNCTION CtlCreateChild% (wid%, kind%)
@@ -2076,16 +2076,16 @@ SUB CtlKeyBoolean (wid%, fid%, keypress$)
     CASE " "
       SELECT CASE text
         CASE "No"
-          CtlSetText wid%, fid%, "Yes"
+          CtlSetText cid%, "Yes"
         CASE "Yes"
-          CtlSetText wid%, fid%, "No"
+          CtlSetText cid%, "No"
       END SELECT
 
     CASE "n", "N"
-      CtlSetText wid%, fid%, "No"
+      CtlSetText cid%, "No"
 
     CASE "y", "Y"
-      CtlSetText wid%, fid%, "Yes"
+      CtlSetText cid%, "Yes"
 
   END SELECT
 
@@ -2118,7 +2118,7 @@ SUB CtlKeyInteger (wid%, fid%, keypress$)
 
   END SELECT
 
-  CtlSetText wid%, fid%, buf$
+  CtlSetText cid%, buf$
 
 END SUB
 
@@ -2241,6 +2241,12 @@ SUB CtlSet (cid%, pid%, value%)
     CASE PropId.Style
       gctl(cid%).sid = value%
 
+    CASE PropId.Text
+      gctl(cid%).textbind.value = value%
+
+    CASE PropId.Value
+      gctl(cid%).valuebind.value = value%
+
   END SELECT
 
 END SUB
@@ -2343,16 +2349,8 @@ SUB CtlSetStyle (cid%, sid%)
   CtlSet cid%, PropId.Style, sid%
 END SUB
 
-SUB CtlSetText (wid%, fid%, value$)
-
-  AssertIsPositive wid%, "CtlSetText", "wid"
-  AssertIsPositive fid%, "CtlSetText", "fid"
-
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
-
-  CtlSetBound wid%, fid%, gctl(cid%).textbind, value$
-
+SUB CtlSetText (cid%, value$)
+  CtlSetString cid%, PropId.Text, value$
 END SUB
 
 SUB CtlSetValue (wid%, fid%, value$)
@@ -2968,7 +2966,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       IF LCASE$(stoken$(1)) = "bind" THEN
         CtlBindText cid%, stoken$(2)
       ELSE
-        CtlSetText wid%, fid%, stoken$(1)
+        CtlSetText cid%, stoken$(1)
       END IF
 
     CASE "value"
@@ -3939,7 +3937,7 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
   CtlSetPopup cid%, 0
   CtlSetSizeX cid%, sizeX%
   CtlSetSizeY cid%, 1
-  CtlSetText wid%, fid%, text$
+  CtlSetText cid%, text$
   CtlSetValue wid%, fid%, value$
 
   WinAddButton% = fid%
