@@ -165,7 +165,7 @@ DECLARE SUB CtlDrawNebula (cid%)
 DECLARE SUB CtlDrawSeparator (cid%)
 DECLARE SUB CtlDrawText (wid%, fid%)
 DECLARE SUB CtlKey (wid%, fid%, keypress$)
-DECLARE SUB CtlKeyBoolean (wid%, fid%, keypress$)
+DECLARE SUB CtlKeyBoolean (cid%, keypress$)
 DECLARE SUB CtlKeyInteger (cid%, keypress$)
 DECLARE SUB CtlParseBinding (text$, outbind AS ANY)
 DECLARE SUB CtlSet (cid%, pid%, value%)
@@ -2048,7 +2048,7 @@ SUB CtlKey (wid%, fid%, keypress$)
     SELECT CASE CtlGetKind%(cid%)
   
       CASE CtlKind.Boolean
-        CtlKeyBoolean wid%, fid%, keypress$
+        CtlKeyBoolean cid%, keypress$
 
       CASE CtlKind.Integer
         CtlKeyInteger cid%, keypress$
@@ -2059,14 +2059,11 @@ SUB CtlKey (wid%, fid%, keypress$)
 
 END SUB
 
-SUB CtlKeyBoolean (wid%, fid%, keypress$)
+SUB CtlKeyBoolean (cid%, keypress$)
   '
   ' Sends a keystroke to a boolean field.
   '
  
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
-
   DIM text AS STRING
   LET text = CtlGetText$(cid%)
 
