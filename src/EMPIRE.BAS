@@ -164,7 +164,7 @@ DECLARE SUB CtlDrawFile (cid%)
 DECLARE SUB CtlDrawNebula (cid%)
 DECLARE SUB CtlDrawSeparator (cid%)
 DECLARE SUB CtlDrawText (wid%, fid%)
-DECLARE SUB CtlKey (wid%, fid%, keypress$)
+DECLARE SUB CtlKey (cid%, keypress$)
 DECLARE SUB CtlKeyBoolean (cid%, keypress$)
 DECLARE SUB CtlKeyInteger (cid%, keypress$)
 DECLARE SUB CtlParseBinding (text$, outbind AS ANY)
@@ -2033,29 +2033,20 @@ FUNCTION CtlGetValue$ (cid%)
   CtlGetValue$ = CtlGetString$(cid%, PropId.Value)
 END FUNCTION
 
-SUB CtlKey (wid%, fid%, keypress$)
+SUB CtlKey (cid%, keypress$)
   '
   ' Sends a keystroke to a field
   '
  
-  AssertIsPositive wid%, "CtlKey", "wid"
-
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
-
-  IF fid% > 0 THEN
-
-    SELECT CASE CtlGetKind%(cid%)
+  SELECT CASE CtlGetKind%(cid%)
   
-      CASE CtlKind.Boolean
-        CtlKeyBoolean cid%, keypress$
+    CASE CtlKind.Boolean
+      CtlKeyBoolean cid%, keypress$
 
-      CASE CtlKind.Integer
-        CtlKeyInteger cid%, keypress$
+    CASE CtlKind.Integer
+      CtlKeyInteger cid%, keypress$
 
-    END SELECT
- 
-  END IF
+  END SELECT
 
 END SUB
 
@@ -4311,7 +4302,7 @@ SUB WinRun (wid%, result AS WinResultType)
         WinSelectPrevious wid%
 
       CASE ELSE
-        CtlKey wid%, CtlGetSelected(widcid%), pressed
+        CtlKey gwin(wid%, CtlGetSelected(widcid%)), pressed
         WinRefreshField wid%, CtlGetSelected(widcid%)
 
     END SELECT
