@@ -169,7 +169,6 @@ DECLARE SUB CtlKeyBoolean (wid%, fid%, keypress$)
 DECLARE SUB CtlKeyInteger (wid%, fid%, keypress$)
 DECLARE SUB CtlParseBinding (text$, outbind AS ANY)
 DECLARE SUB CtlSet (cid%, pid%, value%)
-DECLARE SUB CtlSetBound (wid%, fid%, b AS PropType, value$)
 DECLARE SUB CtlSetChildList (cid%, listcid%)
 DECLARE SUB CtlSetCmdRid (cid%, cmdrid%)
 DECLARE SUB CtlSetCmdStr (cid%, cmd$)
@@ -187,7 +186,7 @@ DECLARE SUB CtlSetSizeY (cid%, sizeY%)
 DECLARE SUB CtlSetString (cid%, pid%, value$)
 DECLARE SUB CtlSetStyle (cid%, sid%)
 DECLARE SUB CtlSetText (cid%, value$)
-DECLARE SUB CtlSetValue (wid%, fid%, value$)
+DECLARE SUB CtlSetValue (cid%, value$)
 DECLARE FUNCTION CtlCreate% ()
 DECLARE FUNCTION CtlCreateChild% (wid%, kind%)
 DECLARE FUNCTION CtlFindName% (name$)
@@ -2251,23 +2250,6 @@ SUB CtlSet (cid%, pid%, value%)
 
 END SUB
 
-SUB CtlSetBound (wid%, fid%, b AS PropType, value$)
-
-  AssertIsPositive wid%, "CtlSetBound", "wid"
-  AssertIsPositive fid%, "CtlSetBound", "fid"
-
-  IF b.flags = BindingTarget.None THEN
-
-    ResourceSet b.value, value$
-
-  ELSE
-
-    AssertFail "CtlSetBound", "Binding type not supported"
-
-  END IF
-
-END SUB
-
 SUB CtlSetChildList (cid%, listcid%)
   CtlSet cid%, PropId.ChildList, listcid%
 END SUB
@@ -2353,16 +2335,8 @@ SUB CtlSetText (cid%, value$)
   CtlSetString cid%, PropId.Text, value$
 END SUB
 
-SUB CtlSetValue (wid%, fid%, value$)
-
-  AssertIsPositive wid%, "CtlSetValue", "wid"
-  AssertIsPositive fid%, "CtlSetValue", "fid"
-
-  DIM cid%
-  LET cid% = gwin(wid%, fid%)
-
-  CtlSetBound wid%, fid%, gctl(cid%).valuebind, value$
-
+SUB CtlSetValue (cid%, value$)
+  CtlSetString cid%, PropId.Value, value$
 END SUB
 
 FUNCTION DialogGarble$ (text$, percent!)
@@ -2973,7 +2947,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       IF LCASE$(stoken$(1)) = "bind" THEN
         CtlBindValue cid%, stoken$(2)
       ELSE
-        CtlSetValue wid%, fid%, stoken$(1)
+        CtlSetValue cid%, stoken$(1)
       END IF
 
     CASE ELSE
@@ -3938,7 +3912,7 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
   CtlSetSizeX cid%, sizeX%
   CtlSetSizeY cid%, 1
   CtlSetText cid%, text$
-  CtlSetValue wid%, fid%, value$
+  CtlSetValue cid%, value$
 
   WinAddButton% = fid%
 
