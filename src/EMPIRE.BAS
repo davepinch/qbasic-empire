@@ -483,9 +483,9 @@ DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS IN
 '
 ' Globals
 '
-DIM SHARED gctl(1 TO 200)         AS CtlType
-DIM SHARED gwin(1 TO 20, 0 TO 13) AS INTEGER
-DIM SHARED gcids                  AS INTEGER
+DIM SHARED gctl(1 TO 200, 0 TO 15) AS PropType
+DIM SHARED gwin(1 TO 20, 0 TO 13)  AS INTEGER
+DIM SHARED gcids                   AS INTEGER
 
 DIM SHARED area(1 TO 35)         AS AreaType
 DIM SHARED atlasitem(1 TO 35)    AS AtlasItemType
@@ -1270,16 +1270,16 @@ SUB ConsolePrint (text$)
 END SUB
 
 SUB CtlBindText (cid%, expr$)
-  CtlParseBinding expr$, gctl(cid%).textbind
+  CtlParseBinding expr$, gctl(cid%, PropId.Text)
 END SUB
 
 SUB CtlBindValue (cid%, expr$)
-  CtlParseBinding expr$, gctl(cid%).valuebind
+  CtlParseBinding expr$, gctl(cid%, PropId.Value)
 END SUB
 
 FUNCTION CtlCreate%
  
-  Assert gcids <= UBOUND(gctl), "CtlCreate", "Out of control space"
+  Assert gcids <= UBOUND(gctl, 1), "CtlCreate", "Out of control space"
 
   gcids = gcids + 1
   CtlCreate% = gcids
@@ -1818,55 +1818,10 @@ END FUNCTION
 FUNCTION CtlGet% (cid%, pid%)
 
   DIM flags%
+  LET flags% = gctl(cid%, pid%).flags
+
   DIM value%
-
-  SELECT CASE pid%
-   
-    CASE PropId.ChildList
-      value% = gctl(cid%).childlist
-
-    CASE PropId.Kind
-      value% = gctl(cid%).kind
-
-    CASE PropId.Name
-      value% = gctl(cid%).namerid
-
-    CASE PropId.OffsetX
-      value% = gctl(cid%).offsetX
-
-    CASE PropId.OffsetY
-      value% = gctl(cid%).offsetY
-
-    CASE PropId.Param
-      value% = gctl(cid%).param
-
-    CASE PropId.Parent
-      value% = gctl(cid%).parentcid
-
-    CASE PropId.Popup
-      value% = gctl(cid%).popupcid
-
-    CASE PropId.Selected
-      value% = gctl(cid%).selected
-
-    CASE PropId.SizeX
-      value% = gctl(cid%).sizeX
-
-    CASE PropId.SizeY
-      value% = gctl(cid%).sizeY
-
-    CASE PropId.Style
-      value% = gctl(cid%).sid
-
-    CASE PropId.Text
-      flags% = gctl(cid%).textbind.flags
-      value% = gctl(cid%).textbind.value
-
-    CASE PropId.Value
-      flags% = gctl(cid%).valuebind.flags
-      value% = gctl(cid%).valuebind.value
-
-  END SELECT
+  LET value% = gctl(cid%, pid%).value
 
   IF flags% = 0 THEN
     CtlGet% = value%
@@ -1923,7 +1878,7 @@ FUNCTION CtlGetChildList% (cid%)
 END FUNCTION
 
 FUNCTION CtlGetCmdRid% (cid%)
-  CtlGetCmdRid% = gctl(cid%).cmdrid
+  CtlGetCmdRid% = CtlGet%(cid%, PropId.Command)
 END FUNCTION
 
 FUNCTION CtlGetKind% (cid%)
@@ -2138,17 +2093,7 @@ SUB CtlParseBinding (text$, outbind AS PropType)
 END SUB
 
 FUNCTION CtlRedirected% (cid%, pid%)
-
-  SELECT CASE pid%
-
-    CASE PropId.Text
-      CtlRedirected% = gctl(cid%).textbind.flags = BindingTarget.Selected
-
-    CASE PropId.Value
-      CtlRedirected% = gctl(cid%).valuebind.flags = BindingTarget.Selected
-
-  END SELECT
-
+  CtlRedirected% = gctl(cid%, pid%).flags > 0
 END FUNCTION
 
 FUNCTION CtlSelectable% (cid%)
@@ -2157,7 +2102,7 @@ FUNCTION CtlSelectable% (cid%)
   ' field is selectable (i.e., can receive focus for input or
   ' selection).
   '
-  IF (cid% < 0) OR (cid% > UBOUND(gctl)) THEN
+  IF (cid% < 0) OR (cid% > UBOUND(gctl, 1)) THEN
 
     CtlSelectable% = False
  
@@ -2186,53 +2131,7 @@ FUNCTION CtlSelectable% (cid%)
 END FUNCTION
 
 SUB CtlSet (cid%, pid%, value%)
-
-  SELECT CASE pid%
-
-    CASE PropId.ChildList
-      gctl(cid%).childlist = value%
-
-    CASE PropId.Kind
-      gctl(cid%).kind = value%
-
-    CASE PropId.Name
-      gctl(cid%).namerid = value%
-
-    CASE PropId.OffsetX
-      gctl(cid%).offsetX = value%
-
-    CASE PropId.OffsetY
-      gctl(cid%).offsetY = value%
-
-    CASE PropId.Param
-      gctl(cid%).param = value%
-
-    CASE PropId.Parent
-      gctl(cid%).parentcid = value%
-
-    CASE PropId.Popup
-      gctl(cid%).popupcid = value%
-
-    CASE PropId.Selected
-      gctl(cid%).selected = value%
-
-    CASE PropId.SizeX
-      gctl(cid%).sizeX = value%
-
-    CASE PropId.SizeY
-      gctl(cid%).sizeY = value%
-
-    CASE PropId.Style
-      gctl(cid%).sid = value%
-
-    CASE PropId.Text
-      gctl(cid%).textbind.value = value%
-
-    CASE PropId.Value
-      gctl(cid%).valuebind.value = value%
-
-  END SELECT
-
+  gctl(cid%, pid%).value = value%
 END SUB
 
 SUB CtlSetChildList (cid%, listcid%)
@@ -2240,7 +2139,7 @@ SUB CtlSetChildList (cid%, listcid%)
 END SUB
 
 SUB CtlSetCmdRid (cid%, cmdrid%)
-  gctl(cid%).cmdrid = cmdrid%
+  CtlSet cid%, PropId.Command, cmdrid%
 END SUB
 
 SUB CtlSetCmdStr (cid%, cmd$)
