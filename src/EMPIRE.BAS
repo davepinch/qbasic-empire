@@ -240,9 +240,10 @@ DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 '
 DECLARE SUB HabitatSetBackdrop (hid%, backdrop$)
 DECLARE SUB HabitatSetLabel (hid%, label$)
-DECLARE SUB HabitatSetName (hid%, hname$)
+DECLARE SUB HabitatSetName (hid%, name$)
 DECLARE FUNCTION HabitatCreate% ()
 DECLARE FUNCTION HabitatGetBackdrop$ (hid%)
+DECLARE FUNCTION HabitatGetLabel$ (hid%)
 DECLARE FUNCTION HabitatGetName$ (hid%)
 DECLARE FUNCTION HabitatFind% (hname$)
 
@@ -3266,6 +3267,10 @@ FUNCTION HabitatGetBackdrop$ (hid%)
   END IF
 END FUNCTION
 
+FUNCTION HabitatGetLabel$ (hid%)
+  HabitatGetLabel$ = ResourceGet$(habitat(hid%).namerid)
+END FUNCTION
+
 FUNCTION HabitatGetName$ (hid%)
   IF hid% > 0 THEN
     HabitatGetName$ = ResourceGet$(habitat(hid%).namerid)
@@ -3280,8 +3285,8 @@ SUB HabitatSetLabel (hid%, label$)
   ResourceSet habitat(hid%).labelrid, label$
 END SUB
 
-SUB HabitatSetName (hid%, hname$)
-  ResourceSet habitat(hid%).namerid, hname$
+SUB HabitatSetName (hid%, name$)
+  ResourceSet habitat(hid%).namerid, name$
 END SUB
 
 SUB InboxAdd (subject AS STRING, filename AS STRING)
