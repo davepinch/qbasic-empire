@@ -28,24 +28,6 @@ TYPE PropType
   value AS INTEGER
 END TYPE
 
-TYPE CtlType
-  parentcid AS INTEGER
-  kind      AS INTEGER
-  childlist AS INTEGER
-  cmdrid    AS INTEGER
-  namerid   AS INTEGER
-  offsetX   AS INTEGER
-  offsetY   AS INTEGER
-  param     AS INTEGER
-  popupcid  AS INTEGER
-  selected  AS INTEGER
-  sid       AS INTEGER
-  sizeX     AS INTEGER
-  sizeY     AS INTEGER
-  textbind  AS PropType
-  valuebind AS PropType
-END TYPE
-
 TYPE EventType
   namerid AS INTEGER
   value   AS INTEGER
