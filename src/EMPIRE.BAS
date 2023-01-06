@@ -135,8 +135,7 @@ DECLARE SUB ConsolePrint (text$)
 '
 ' Controls
 '
-DECLARE SUB CtlBindText (cid%, expr$)
-DECLARE SUB CtlBindValue (cid%, expr$)
+DECLARE SUB CtlBind (cid%, pid%, expr$)
 DECLARE SUB CtlDraw (wid%, fid%)
 DECLARE SUB CtlDrawBox (cid%)
 DECLARE SUB CtlDrawBox0 (cid%)
@@ -149,7 +148,6 @@ DECLARE SUB CtlDrawText (wid%, fid%)
 DECLARE SUB CtlKey (cid%, keypress$)
 DECLARE SUB CtlKeyBoolean (cid%, keypress$)
 DECLARE SUB CtlKeyInteger (cid%, keypress$)
-DECLARE SUB CtlParseBinding (text$, outbind AS ANY)
 DECLARE SUB CtlSet (cid%, pid%, value%)
 DECLARE SUB CtlSetChildList (cid%, listcid%)
 DECLARE SUB CtlSetCmdRid (cid%, cmdrid%)
@@ -1251,12 +1249,34 @@ SUB ConsolePrint (text$)
 
 END SUB
 
-SUB CtlBindText (cid%, expr$)
-  CtlParseBinding expr$, gctl(cid%, PropId.Text)
-END SUB
+SUB CtlBind (cid%, pid%, expr$)
+  '
+  ' Binds a property index to a value such as a window parameter
+  '
+  DIM index%
+  LET index% = INSTR(expr$, ".")
 
-SUB CtlBindValue (cid%, expr$)
-  CtlParseBinding expr$, gctl(cid%, PropId.Value)
+  IF index% > 1 THEN
+  
+    SELECT CASE LCASE$(LEFT$(expr$, index%))
+
+      CASE "param."
+        gctl(cid%, pid%).flags = BindingTarget.Param
+
+      CASE "sel."
+        gctl(cid%, pid%).flags = BindingTarget.Selected
+
+    END SELECT
+
+    ResourceSet gctl(cid%, pid%).value, MID$(expr$, index% + 1)
+
+  ELSE
+
+    gctl(cid%, pid%).flags = BindingTarget.None
+    ResourceSet gctl(cid%, pid%).value, text$
+
+  END IF
+  
 END SUB
 
 FUNCTION CtlCreate%
@@ -2043,37 +2063,6 @@ SUB CtlKeyInteger (cid%, keypress$)
 
 END SUB
 
-SUB CtlParseBinding (text$, outbind AS PropType)
-
-  DIM pindex%
-  DIM tname$
-
-  pindex% = INSTR(text$, ".")
-  IF pindex% > 1 THEN
-   
-    tname$ = LCASE$(LEFT$(text$, pindex%))
-
-    SELECT CASE tname$
-
-      CASE "param."
-        outbind.flags = BindingTarget.Param
-
-      CASE "sel."
-        outbind.flags = BindingTarget.Selected
-
-    END SELECT
-
-    ResourceSet outbind.value, MID$(text$, pindex% + 1)
-
-  ELSE
-
-    outbind.flags = BindingTarget.None
-    ResourceSet outbind.value, text$
-
-  END IF
-
-END SUB
-
 FUNCTION CtlRedirected% (cid%, pid%)
   CtlRedirected% = gctl(cid%, pid%).flags > 0
 END FUNCTION
@@ -2804,14 +2793,14 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
 
     CASE "text"
       IF LCASE$(stoken$(1)) = "bind" THEN
-        CtlBindText cid%, stoken$(2)
+        CtlBind cid%, PropId.Text, stoken$(2)
       ELSE
         CtlSetText cid%, stoken$(1)
       END IF
 
     CASE "value"
       IF LCASE$(stoken$(1)) = "bind" THEN
-        CtlBindValue cid%, stoken$(2)
+        CtlBind cid%, PropId.Value, stoken$(2)
       ELSE
         CtlSetValue cid%, stoken$(1)
       END IF
