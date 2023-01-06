@@ -42,11 +42,6 @@ TYPE HabitatType
   wid       AS INTEGER
 END TYPE
 
-TYPE PersonaType
-  labelrid AS INTEGER
-  namerid  AS INTEGER
-END TYPE
-
 TYPE TriggerType
   eid      AS INTEGER
   operator AS INTEGER
@@ -265,13 +260,14 @@ DECLARE FUNCTION NebulaLabel$ (energy AS INTEGER)
 DECLARE FUNCTION NebulaLabelRid% (energy AS INTEGER)
 
 '
-' Persona
+' Persons
 '
-DECLARE SUB PersonaSetLabel (pid%, label$)
-DECLARE SUB PersonaSetName (pid%, text$)
-DECLARE FUNCTION PersonaCreate% ()
-DECLARE FUNCTION PersonaGetLabel$ (pid%)
-DECLARE FUNCTION PersonaGetName$ (pid%)
+DECLARE SUB PersonSetLabel (personid%, label$)
+DECLARE SUB PersonSetName (personid%, name$)
+DECLARE FUNCTION PersonCreate% ()
+DECLARE FUNCTION PersonGetLabel$ (personid%)
+DECLARE FUNCTION PersonGetName$ (personid%)
+DECLARE FUNCTION PersonRandomly% ()
 
 '
 ' Resources
@@ -382,7 +378,7 @@ CONST CmdResult.OK = 0
 CONST CmdResult.Malformed = 1
 
 '
-' Ctl Kinds
+' CtlKind.*
 '
 CONST CtlKind.None = 0
 CONST CtlKind.Window = 1
@@ -395,6 +391,7 @@ CONST CtlKind.Label = 7
 CONST CtlKind.Popup = 8
 CONST CtlKind.Separator = 9
 CONST CtlKind.Nebula = 100
+CONST CtlKind.Person = 200
 
 '
 ' Operators
@@ -420,6 +417,12 @@ CONST PropId.Selected = 11
 CONST PropId.SizeX = 12
 CONST PropId.SizeY = 13
 CONST PropId.Style = 14
+
+'
+' Properties of a Person object
+'
+CONST PersonPropId.Name = PropId.Name
+CONST PersonPropId.Label = PropId.Text
 
 '
 ' ScanCode constants
@@ -475,8 +478,6 @@ DIM SHARED events                AS INTEGER
 DIM SHARED habitat(1 TO 8)       AS HabitatType
 DIM SHARED Habitats              AS INTEGER
 DIM SHARED listening             AS INTEGER
-DIM SHARED persona(1 TO 10)      AS PersonaType
-DIM SHARED personas              AS INTEGER
 DIM SHARED playeraid             AS INTEGER
 REDIM SHARED resource(1 TO 100)    AS STRING
 DIM SHARED resources             AS INTEGER
@@ -1819,6 +1820,8 @@ END FUNCTION
 
 FUNCTION CtlGet% (cid%, pid%)
 
+  AssertIsPositive cid%, "CtlGet", "cid"
+
   DIM flags%
   LET flags% = gctl(cid%, pid%).flags
 
@@ -2064,7 +2067,7 @@ SUB CtlKeyInteger (cid%, keypress$)
 END SUB
 
 FUNCTION CtlRedirected% (cid%, pid%)
-  CtlRedirected% = gctl(cid%, pid%).flags > 0
+  CtlRedirected% = gctl(cid%, pid%).flags = BindingTarget.Selected
 END FUNCTION
 
 FUNCTION CtlSelectable% (cid%)
@@ -2245,12 +2248,13 @@ FUNCTION DialogGarble$ (text$, percent!)
 
 END FUNCTION
 
-SUB DialogNext (outpid%, outtext$)
+SUB DialogNext (outpersonid%, outtext$)
 
   STATIC loaded AS INTEGER
   STATIC lines() AS STRING
 
   IF loaded = 0 THEN
+
     REDIM lines(1 TO 100) AS STRING
     handle = FREEFILE
     OPEN "EMPIRE.DLG" FOR INPUT ACCESS READ AS #handle
@@ -2261,41 +2265,18 @@ SUB DialogNext (outpid%, outtext$)
     CLOSE #handle
   END IF
  
-  'DIM handle AS INTEGER
-  'DIM text   AS STRING
-
-  'handle = FREEFILE
-  'OPEN "EMPIRE.DLG" FOR INPUT ACCESS READ AS #handle
-
-  '
-  ' Start on a random line
-  '
-  'SEEK #handle, INT(RND * LOF(handle)) + 1
-  'LINE INPUT #handle, text
-  'IF EOF(handle) THEN
-  '  SEEK #handle, 1
-  'END IF
- 
-  '
-  ' Read the line
-  '
-  'LINE INPUT #handle, text
-  'CLOSE #handle
-
   outtext$ = lines(INT(RND * UBOUND(lines)) + 1)
-  'outtext$ = text
-  outpid% = INT(RND * personas) + 1
+  outpersonid% = PersonRandomly%
 
 END SUB
 
-SUB DialogPrint (pid%, text$)
+SUB DialogPrint (personid%, text$)
 
-  DIM label$
   DIM name$
-
-  name$ = PersonaGetName(pid%)
+  LET name$ = PersonGetName$(personid%)
  
-  label$ = PersonaGetLabel(pid%)
+  DIM label$
+  LET label$ = PersonGetLabel$(personid%)
   IF label$ = "" THEN
     label$ = "@X1F " + name$ + " @X07"
   END IF
@@ -2854,14 +2835,14 @@ FUNCTION ExecCmdPid% (ntoken%, stoken$(), pid%)
 
   SELECT CASE stoken$(0)
    
-    CASE "endpersona"
+    CASE "endperson", "endpersona"
       pid% = 0
 
     CASE "label"
-      PersonaSetLabel pid%, stoken$(1)
+      PersonSetLabel pid%, stoken$(1)
 
     CASE "name"
-      PersonaSetName pid%, stoken$(1)
+      PersonSetName pid%, stoken$(1)
 
   END SELECT
   
@@ -2917,8 +2898,8 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
     CASE "newgame"
       ExecFile "WORLD.CFG"
 
-    CASE "persona"
-      pid% = PersonaCreate%
+    CASE "person", "persona"
+      pid% = PersonCreate%
 
     CASE "print"
       ConsolePrint stoken$(1)
@@ -3389,25 +3370,53 @@ FUNCTION NebulaLabelRid% (energy AS INTEGER)
 
 END FUNCTION
 
-FUNCTION PersonaCreate%
-  personas = personas + 1
-  PersonaCreate% = personas
+FUNCTION PersonCreate%
+ 
+  DIM personid%
+  LET personid% = CtlCreate%
+  AssertIsPositive personid%, "PersonCreate%", "personid"
+
+  CtlSetKind personid%, CtlKind.Person
+  PersonCreate% = personid%
+
 END FUNCTION
 
-FUNCTION PersonaGetLabel$ (pid%)
-  PersonaGetLabel$ = ResourceGet$(persona(pid%).labelrid)
+FUNCTION PersonGetLabel$ (personid%)
+  PersonGetLabel$ = CtlGetString$(personid%, PersonPropId.Label)
 END FUNCTION
 
-FUNCTION PersonaGetName$ (pid%)
-  PersonaGetName$ = ResourceGet$(persona(pid%).namerid)
+FUNCTION PersonGetName$ (personid%)
+  PersonGetName$ = CtlGetString$(personid%, PersonPropId.Name)
 END FUNCTION
 
-SUB PersonaSetLabel (pid%, label$)
-  ResourceSet persona(pid%).labelrid, label$
+FUNCTION PersonRandomly%
+  '
+  ' Selects a person randomly
+  '
+ 
+  DIM count%
+  DIM items%(1 TO 100)
+
+  FOR index% = LBOUND(gctl, 1) TO UBOUND(gctl, 1)
+    IF CtlGetKind%(index%) = CtlKind.Person THEN
+      count% = count% + 1
+      items%(count%) = index%
+    END IF
+  NEXT
+
+  DIM personid%
+  LET personid% = items%(INT(RND * count%) + 1)
+
+  PersonRandomly% = personid%
+
+END FUNCTION
+
+SUB PersonSetLabel (personid%, label$)
+  CtlSetString personid%, PersonPropId.Label, label$
 END SUB
 
-SUB PersonaSetName (pid%, text$)
-  ResourceSet persona(pid%).namerid, text$
+SUB PersonSetName (personid%, name$)
+  CtlSetString personid%, PersonPropId.Name, name$
 END SUB
 
 FUNCTION ResourceCreate% (value$)
