@@ -34,7 +34,6 @@ TYPE EventType
 END TYPE
 
 TYPE HabitatType
-  actionrid AS INTEGER
   backdrop  AS INTEGER
   labelrid  AS INTEGER
   namerid   AS INTEGER
@@ -239,7 +238,6 @@ DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 '
 ' Habitats
 '
-DECLARE SUB HabitatSetAction (hid%, cmd$)
 DECLARE SUB HabitatSetBackdrop (hid%, backdrop$)
 DECLARE SUB HabitatSetLabel (hid%, label$)
 DECLARE SUB HabitatSetName (hid%, hname$)
@@ -2801,9 +2799,6 @@ FUNCTION ExecCmdHid% (ntoken%, stoken$(), hid%)
 
   SELECT CASE stoken$(0)
 
-    CASE "action"
-      HabitatSetAction hid%, stoken$(1)
-     
     CASE "backdrop"
       HabitatSetBackdrop hid%, stoken$(1)
 
@@ -3276,10 +3271,6 @@ FUNCTION HabitatGetName$ (hid%)
     HabitatGetName$ = ResourceGet$(habitat(hid%).namerid)
   END IF
 END FUNCTION
-
-SUB HabitatSetAction (hid%, cmd$)
-  ResourceSet habitat(hid%).actionrid, cmd$
-END SUB
 
 SUB HabitatSetBackdrop (hid%, backdrop$)
   ResourceSet habitat(hid%).backdrop, backdrop$
