@@ -258,6 +258,7 @@ DECLARE FUNCTION NebulaLabelRid% (energy AS INTEGER)
 DECLARE FUNCTION ObjCreate% (kind%)
 DECLARE FUNCTION ObjFindString% (kind%, pid%, value$)
 DECLARE FUNCTION ObjGet% (oid%, pid%)
+DECLARE FUNCTION ObjGetKind% (oid%)
 DECLARE FUNCTION ObjGetString$ (oid%, pid%)
 DECLARE SUB ObjSet (oid%, pid%, value%)
 DECLARE SUB ObjSetString (oid%, pid%, value$)
@@ -409,7 +410,6 @@ CONST CtlKind.Label = 7
 CONST CtlKind.Popup = 8
 CONST CtlKind.Separator = 9
 CONST CtlKind.Nebula = 100
-CONST CtlKind.Person = 200
 
 '
 ' Operators
@@ -3371,6 +3371,10 @@ FUNCTION ObjGet% (oid%, pid%)
 
 END FUNCTION
 
+FUNCTION ObjGetKind% (oid%)
+  ObjGetKind% = ObjGet%(oid%, ObjPropId.Kind)
+END FUNCTION
+
 FUNCTION ObjGetString$ (oid%, pid%)
 
   DIM rid%
@@ -3416,7 +3420,7 @@ FUNCTION PersonRandomly%
   DIM items%(1 TO 100)
 
   FOR index% = LBOUND(gobj, 1) TO UBOUND(gobj, 1)
-    IF CtlGetKind%(index%) = CtlKind.Person THEN
+    IF ObjGetKind%(index%) = ObjKind.Person THEN
       count% = count% + 1
       items%(count%) = index%
     END IF
