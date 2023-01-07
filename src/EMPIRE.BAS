@@ -417,11 +417,11 @@ CONST CtlKind.Nebula = 100
 '
 ' Habitat properties
 '
-CONST HabPropId.Backdrop = 1
-CONST HabPropId.Label = 2
-CONST HabPropId.Name = 3
-CONST HabPropId.StartFile = 4
-CONST HabPropId.Window = 5
+CONST HbPropId.Backdrop = 1
+CONST HbPropId.Label = 2
+CONST HbPropId.Name = 3
+CONST HbPropId.StartFile = 4
+CONST HbPropId.Window = 5
 
 '
 ' Operators
@@ -3169,51 +3169,51 @@ FUNCTION HbCreate%
 END FUNCTION
 
 FUNCTION HbFind% (name$)
-  HbFind% = ObFindString%(ObKind.Habitat, HabPropId.Name, name$)
+  HbFind% = ObFindString%(ObKind.Habitat, HbPropId.Name, name$)
 END FUNCTION
 
 FUNCTION HbGetBackdrop% (hid%)
   IF hid% > 0 THEN
-    HbGetBackdrop% = ObGet%(hid%, HabPropId.Backdrop)
+    HbGetBackdrop% = ObGet%(hid%, HbPropId.Backdrop)
   END IF
 END FUNCTION
 
 FUNCTION HbGetLabel% (hid%)
-  HbGetLabel% = ObGet%(hid%, HabPropId.Label)
+  HbGetLabel% = ObGet%(hid%, HbPropId.Label)
 END FUNCTION
 
 FUNCTION HbGetName% (hid%)
   IF hid% > 0 THEN
-    HbGetName% = ObGet%(hid%, HabPropId.Name)
+    HbGetName% = ObGet%(hid%, HbPropId.Name)
   END IF
 END FUNCTION
 
 FUNCTION HbGetStartFile% (hid%)
-  HbGetStartFile% = ObGet%(hid%, HabPropId.StartFile)
+  HbGetStartFile% = ObGet%(hid%, HbPropId.StartFile)
 END FUNCTION
 
 FUNCTION HbGetWindow% (hid%)
-  HbGetWindow% = ObGet%(hid%, HabPropId.Window)
+  HbGetWindow% = ObGet%(hid%, HbPropId.Window)
 END FUNCTION
 
 SUB HbSetBackdrop (hid%, backdrop$)
-  ObSetString hid%, HabPropId.Backdrop, backdrop$
+  ObSetString hid%, HbPropId.Backdrop, backdrop$
 END SUB
 
 SUB HbSetLabel (hid%, label$)
-  ObSetString hid%, HabPropId.Label, label$
+  ObSetString hid%, HbPropId.Label, label$
 END SUB
 
 SUB HbSetName (hid%, name$)
-  ObSetString hid%, HabPropId.Name, name$
+  ObSetString hid%, HbPropId.Name, name$
 END SUB
 
 SUB HbSetStartFile (hid%, startfile$)
-  ObSetString hid%, HabPropId.StartFile, startfile$
+  ObSetString hid%, HbPropId.StartFile, startfile$
 END SUB
 
 SUB HbSetWindow (hid%, wid%)
-  ObSet hid%, HabPropId.Window, wid%
+  ObSet hid%, HbPropId.Window, wid%
 END SUB
 
 SUB InboxAdd (subject AS STRING, filename AS STRING)
