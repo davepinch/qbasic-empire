@@ -503,6 +503,14 @@ CONST UIPage.Atlas = 1
 CONST UIPage.Terminal = 2
 
 '
+' Window properties
+'
+CONST WnPid.ArrowExit = 1
+CONST WnPid.Children = 2
+CONST WnPid.Name = 3
+CONST WnPid.Selected = 4
+
+'
 ' WinAction* constants
 '
 CONST WinAction.None = 0
