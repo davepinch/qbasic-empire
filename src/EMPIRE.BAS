@@ -174,7 +174,6 @@ DECLARE FUNCTION CtlGetScreenY% (cid%)
 DECLARE FUNCTION CtlGetSelected% (cid%)
 DECLARE FUNCTION CtlGetSizeX% (cid%)
 DECLARE FUNCTION CtlGetSizeY% (cid%)
-DECLARE FUNCTION CtlGetString$ (cid%, pid%)
 DECLARE FUNCTION CtlGetStyle% (cid%)
 DECLARE FUNCTION CtlGetText$ (cid%)
 DECLARE FUNCTION CtlGetValue$ (cid%)
@@ -259,6 +258,7 @@ DECLARE FUNCTION NebulaLabelRid% (energy AS INTEGER)
 DECLARE FUNCTION ObjCreate% (kind%)
 DECLARE FUNCTION ObjFindString% (kind%, pid%, value$)
 DECLARE FUNCTION ObjGet% (oid%, pid%)
+DECLARE FUNCTION ObjGetString$ (oid%, pid%)
 DECLARE SUB ObjSet (oid%, pid%, value%)
 DECLARE SUB ObjSetString (oid%, pid%, value$)
 
@@ -1814,7 +1814,7 @@ FUNCTION CtlGetKind% (cid%)
 END FUNCTION
 
 FUNCTION CtlGetName$ (cid%)
-  CtlGetName$ = CtlGetString$(cid%, PropId.Name)
+  CtlGetName$ = ObjGetString$(cid%, PropId.Name)
 END FUNCTION
 
 FUNCTION CtlGetOffsetX% (cid%)
@@ -1875,15 +1875,6 @@ FUNCTION CtlGetSizeY% (cid%)
   CtlGetSizeY% = ObjGet%(cid%, PropId.SizeY)
 END FUNCTION
 
-FUNCTION CtlGetString$ (cid%, pid%)
-
-  DIM rid%
-  LET rid% = ObjGet%(cid%, pid%)
-
-  CtlGetString$ = ResourceGet$(rid%)
-
-END FUNCTION
-
 FUNCTION CtlGetStyle% (cid%)
 
   AssertIsPositive cid%, "CtlGetStyle", "cid"
@@ -1909,11 +1900,11 @@ FUNCTION CtlGetStyle% (cid%)
 END FUNCTION
 
 FUNCTION CtlGetText$ (cid%)
-  CtlGetText$ = CtlGetString$(cid%, PropId.Text)
+  CtlGetText$ = ObjGetString$(cid%, PropId.Text)
 END FUNCTION
 
 FUNCTION CtlGetValue$ (cid%)
-  CtlGetValue$ = CtlGetString$(cid%, PropId.Value)
+  CtlGetValue$ = ObjGetString$(cid%, PropId.Value)
 END FUNCTION
 
 SUB CtlKey (cid%, keypress$)
@@ -3380,6 +3371,15 @@ FUNCTION ObjGet% (oid%, pid%)
 
 END FUNCTION
 
+FUNCTION ObjGetString$ (oid%, pid%)
+
+  DIM rid%
+  LET rid% = ObjGet%(oid%, pid%)
+
+  ObjGetString$ = ResourceGet$(rid%)
+
+END FUNCTION
+
 SUB ObjSet (oid%, pid%, value%)
   gobj(oid%, pid%).value = value%
 END SUB
@@ -3400,11 +3400,11 @@ FUNCTION PersonCreate%
 END FUNCTION
 
 FUNCTION PersonGetLabel$ (personid%)
-  PersonGetLabel$ = CtlGetString$(personid%, PersonPropId.Label)
+  PersonGetLabel$ = ObjGetString$(personid%, PersonPropId.Label)
 END FUNCTION
 
 FUNCTION PersonGetName$ (personid%)
-  PersonGetName$ = CtlGetString$(personid%, PersonPropId.Name)
+  PersonGetName$ = ObjGetString$(personid%, PersonPropId.Name)
 END FUNCTION
 
 FUNCTION PersonRandomly%
