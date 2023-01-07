@@ -160,7 +160,6 @@ DECLARE SUB CtlSetStyle (cid%, sid%)
 DECLARE SUB CtlSetText (cid%, value$)
 DECLARE SUB CtlSetValue (cid%, value$)
 DECLARE FUNCTION CtlCreateChild% (wid%, kind%)
-DECLARE FUNCTION CtlFindName% (name$)
 DECLARE FUNCTION CtlGet% (cid%, pid%)
 DECLARE FUNCTION CtlGetChildList% (cid%)
 DECLARE FUNCTION CtlGetCmdRid% (cid%)
@@ -259,6 +258,7 @@ DECLARE FUNCTION NebulaLabelRid% (energy AS INTEGER)
 ' Objects
 '
 DECLARE FUNCTION ObjCreate% (kind%)
+DECLARE FUNCTION ObjFindString% (kind%, pid%, value$)
 DECLARE SUB ObjSet (oid%, pid%, value%)
 DECLARE SUB ObjSetString (oid%, pid%, value$)
 
@@ -1800,32 +1800,6 @@ SUB CtlDrawText (wid%, fid%)
   END IF
 
 END SUB
-
-FUNCTION CtlFindName% (name$)
-
-  IF LEN(name$) = 0 THEN
-
-    CtlFindName% = 0
-
-  ELSE
-
-    FOR cid% = 1 TO goids
-     
-      DIM rid%
-      LET rid% = CtlGet(cid%, PropId.Name)
-
-      IF rid% > 0 THEN
-        IF value$ = ResourceGet$(rid%) THEN
-          CtlFindName% = cid%
-          EXIT FUNCTION
-        END IF
-      END IF
-
-    NEXT
-
-  END IF
-
-END FUNCTION
 
 FUNCTION CtlGet% (cid%, pid%)
 
@@ -3370,6 +3344,42 @@ FUNCTION ObjCreate% (kind%)
   ObjSet goids, ObjPropId.Kind, kind%
 
   ObjCreate% = goids
+
+END FUNCTION
+
+FUNCTION ObjFindString% (kind%, pid%, value$)
+  '
+  ' Finds the first object where a property has the specified string
+  '
+  FOR oid% = 1 TO UBOUND(gobj, 1)
+     
+    IF gobj(oid%, ObjPropId.Kind).value = kind% THEN
+      
+      DIM rid%
+      LET rid% = CtlGet(oid%, pid%)
+      
+      IF rid% = 0 THEN
+        '
+        ' The property on this object does not have a resource.
+        ' Treat it as an empty string "".
+        '
+        IF LEN(value$) = 0 THEN
+          ObjFindString% = oid%
+          EXIT FUNCTION
+        END IF
+
+      ELSE
+
+        IF value$ = ResourceGet$(rid%) THEN
+          ObjFindString% = oid%
+          EXIT FUNCTION
+        END IF
+
+      END IF
+
+    END IF
+
+  NEXT
 
 END FUNCTION
 
