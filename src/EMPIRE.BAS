@@ -225,6 +225,13 @@ DECLARE SUB HbSetWindow (hid%, wid%)
 DECLARE SUB InboxAdd (subject AS STRING, filename AS STRING)
 
 '
+' List API
+'
+DECLARE FUNCTION LsCreate% ()
+DECLARE FUNCTION LsCount% (lid%)
+DECLARE FUNCTION LsMaxIndex% ()
+
+'
 ' Nebula
 '
 DECLARE FUNCTION NebulaLabel$ (energy AS INTEGER)
@@ -433,15 +440,22 @@ CONST HbPropId.StartFile = 4
 CONST HbPropId.Window = 5
 
 '
+' List properties
+'
+CONST LsPropId.Count = 1
+CONST LsPropId.First = 2
+
+'
 ' Object kinds
 '
 CONST ObKind.None = 0
 CONST ObKind.Control = 1
 CONST ObKind.Event = 2
 CONST ObKind.Habitat = 3
-CONST ObKind.Person = 4
-CONST ObKind.Style = 5
-CONST ObKind.Window = 6
+CONST ObKind.List = 4
+CONST ObKind.Person = 5
+CONST ObKind.Style = 6
+CONST ObKind.Window = 7
 
 '
 ' Object properties
@@ -3192,6 +3206,33 @@ SUB InboxAdd (subject AS STRING, filename AS STRING)
   TrFile "NEWMAIL.PCB"
 
 END SUB
+
+SUB LsAdd (lid%, value%)
+ 
+  DIM index%
+  LET index% = LsCount%(lid%) + 1
+
+  IF index% > LsMaxIndex% THEN
+    AssertFail "LsAdd", "Maximum items"
+    EXIT SUB
+  END IF
+
+  ObSet lid%, LsPropId.Count, count%
+  ObSet lid%, index%, value%
+
+END SUB
+
+FUNCTION LsCount% (lid%)
+  LsCount% = ObGet%(lid%, LsPropId.Count)
+END FUNCTION
+
+FUNCTION LsCreate%
+  LsCreate% = ObCreate%(ObKind.List)
+END FUNCTION
+
+FUNCTION LsMaxIndex%
+  LsMaxItems% = UBOUND(gobj, 1) - LsPropId.First + 1
+END FUNCTION
 
 FUNCTION NebulaLabel$ (energy AS INTEGER)
 
