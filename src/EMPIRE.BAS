@@ -28,11 +28,6 @@ TYPE PropType
   value AS INTEGER
 END TYPE
 
-TYPE EventType
-  namerid AS INTEGER
-  value   AS INTEGER
-END TYPE
-
 TYPE TriggerType
   eid      AS INTEGER
   operator AS INTEGER
@@ -185,13 +180,17 @@ DECLARE SUB DrawText (text AS STRING)
 DECLARE FUNCTION DrawLength% (text$)
 
 '
-' Events
+' Event API
 '
-DECLARE SUB EventIncrement (ename$)
-DECLARE SUB EventFire (eid%)
-DECLARE FUNCTION EventFind% (name$)
-DECLARE FUNCTION EventParseOperator% (opname$)
-DECLARE FUNCTION EventTestTrigger% (eid%, tid%)
+DECLARE SUB EvIncrement (name$)
+DECLARE SUB EvFire (eid%)
+DECLARE SUB EvSetName (eid%, name$)
+DECLARE SUB EvSetValue (eid%, value%)
+DECLARE FUNCTION EvCreate% ()
+DECLARE FUNCTION EvFind% (name$)
+DECLARE FUNCTION EvGetValue% (eid%)
+DECLARE FUNCTION EvParseOperator% (opname$)
+DECLARE FUNCTION EvTestTrigger% (eid%, tid%)
 
 '
 ' Execution/commands
@@ -379,21 +378,6 @@ CONST BindingTarget.Selected = 1
 CONST BindingTarget.Param = 2
 
 '
-' Object kinds
-'
-CONST ObKind.None = 0
-CONST ObKind.Control = 1
-CONST ObKind.Habitat = 2
-CONST ObKind.Person = 3
-CONST ObKind.Style = 4
-CONST ObKind.Window = 5
-
-'
-' Object properties
-'
-CONST ObPropId.Kind = 0
-
-'
 ' Command Results
 '
 CONST CmdResult.OK = 0
@@ -434,6 +418,12 @@ CONST CtPropId.SizeY = 14
 CONST CtPropId.Style = 15
 
 '
+' Event properties
+'
+CONST EvPropId.Name = 1
+CONST EvPropId.Value = 2
+
+'
 ' Habitat properties
 '
 CONST HbPropId.Backdrop = 1
@@ -441,6 +431,22 @@ CONST HbPropId.Label = 2
 CONST HbPropId.Name = 3
 CONST HbPropId.StartFile = 4
 CONST HbPropId.Window = 5
+
+'
+' Object kinds
+'
+CONST ObKind.None = 0
+CONST ObKind.Control = 1
+CONST ObKind.Event = 2
+CONST ObKind.Habitat = 3
+CONST ObKind.Person = 4
+CONST ObKind.Style = 5
+CONST ObKind.Window = 6
+
+'
+' Object properties
+'
+CONST ObPropId.Kind = 0
 
 '
 ' Operators
@@ -512,8 +518,6 @@ DIM SHARED goids                   AS INTEGER
 DIM SHARED area(1 TO 35)         AS AreaType
 DIM SHARED atlasitem(1 TO 35)    AS AtlasItemType
 DIM SHARED atlaspage             AS INTEGER
-DIM SHARED event(1 TO 5)         AS EventType
-DIM SHARED events                AS INTEGER
 DIM SHARED listening             AS INTEGER
 DIM SHARED playeraid             AS INTEGER
 REDIM SHARED resource(1 TO 200)  AS STRING
@@ -2471,78 +2475,80 @@ SUB DrawText (text AS STRING)
 
 END SUB
 
-FUNCTION EventFind% (name$)
-
-  DIM eid%
-  DIM ename$
-
-  FOR eid% = 1 TO events
-   
-    ename$ = RsGet$(event(eid%).namerid)
-
-    IF name$ = ename$ THEN
-      EventFind% = eid%
-      EXIT FUNCTION
-    END IF
-
-  NEXT
-
-  EventFind% = 0
-
+FUNCTION EvCreate%
+  EvCreate% = ObCreate%(ObKind.Event)
 END FUNCTION
 
-SUB EventFire (eid%)
+FUNCTION EvFind% (name$)
+  EvFind% = ObFindString%(ObKind.Event, EvPropId.Name, name$)
+END FUNCTION
+
+SUB EvFire (eid%)
 
   DIM result%
   DIM tid%
  
   FOR tid% = 1 TO triggers
-    IF EventTestTrigger%(eid%, tid%) THEN
+    IF EvTestTrigger%(eid%, tid%) THEN
       result% = ExecResource(trigger(tid%).cmdrid)
     END IF
   NEXT
 
 END SUB
 
-SUB EventIncrement (ename$)
+FUNCTION EvGetValue% (eid%)
+  EvGetValue% = ObGet%(eid%, EvPropId.Value)
+END FUNCTION
+
+SUB EvIncrement (name$)
  
   DIM eid%
-  LET eid% = EventFind%(ename$)
+  LET eid% = EvFind%(name$)
  
   IF eid% > 0 THEN
-    event(eid%).value = event(eid%).value + 1
-    EventFire eid%
+    DIM value%
+    LET value% = EvGetValue%(eid%) + 1
+    EvSetValue eid%, value%
+    EvFire eid%
   END IF
 
 END SUB
 
-FUNCTION EventParseOperator% (opname$)
+FUNCTION EvParseOperator% (opname$)
 
   SELECT CASE opname$
     CASE "="
-      EventParseOperator% = OpEquals
+      EvParseOperator% = OpEquals
     CASE ELSE
-      EventParseOperator% = OpNone
+      EvParseOperator% = OpNone
   END SELECT
 
 END FUNCTION
 
-FUNCTION EventTestTrigger% (eid%, tid%)
+SUB EvSetName (eid%, name$)
+  ObSetString eid%, EvPropId.Name, name$
+END SUB
 
-  AssertIsPositive eid%, "EventTestTrigger", "eid"
-  AssertIsPositive eid%, "EventTestTrigger", "tid"
+SUB EvSetValue (eid%, value%)
+  ObSet eid%, EvPropId.Value, value%
+END SUB
+
+FUNCTION EvTestTrigger% (eid%, tid%)
+
+  AssertIsPositive eid%, "EvTestTrigger", "eid"
+  AssertIsPositive eid%, "EvTestTrigger", "tid"
 
   IF trigger(tid%).eid <> eid% THEN
    
-    EventTestTrigger = False
+    EvTestTrigger% = False
 
   ELSE
 
     SELECT CASE trigger(tid%).operator
       CASE OpEquals
-        EventTestTrigger = trigger(tid%).operand = event(eid%).value
+        EvTestTrigger% = trigger(tid%).operand = EvGetValue%(eid%)
       CASE ELSE
-        EventTestTrigger = False
+        EvTestTrigger% = False
     END SELECT
 
   END IF
@@ -2607,10 +2613,10 @@ FUNCTION ExecCmdEid% (ntoken%, stoken$(), eid%)
       eid% = 0
 
     CASE "name"
-      event(eid%).namerid = RsCreate(stoken$(1))
+      EvSetName eid%, stoken$(1)
 
     CASE "value"
-      event(eid%).value = VAL(stoken$(1))
+      EvSetValue eid%, VAL(stoken$(1))
 
     CASE ELSE
       ExecCmdEid% = CmdResult.Malformed
@@ -2784,8 +2790,7 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
       END
 
     CASE "event"
-      events = events + 1
-      eid% = events
+      eid% = EvCreate%
 
     CASE "habitat"
       hid% = HbCreate%
@@ -2931,8 +2936,8 @@ FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
       tid% = 0
 
     CASE "when"
-      trigger(tid%).eid = EventFind(stoken$(1))
-      trigger(tid%).operator = EventParseOperator(stoken$(2))
+      trigger(tid%).eid = EvFind%(stoken$(1))
+      trigger(tid%).operator = EvParseOperator%(stoken$(2))
       trigger(tid%).operand = VAL(stoken$(3))
 
     CASE ELSE
@@ -3096,7 +3101,7 @@ SUB GameMoveOffset (offsetX%, offsetY%)
   aid = AtlasGetValue(cx, cy, 0)
   IF aid = 0 THEN
     AtlasMoveItem idx, cx, cy
-    EventIncrement "AtlasMoves"
+    EvIncrement "AtlasMoves"
   ELSE
 
     hid = area(aid).hid
@@ -4566,7 +4571,7 @@ SUB WorldHarvest (aid%)
 
   IF energy% = 0 THEN
     WorldRemove aid%
-    EventIncrement "NebulaDepleted"
+    EvIncrement "NebulaDepleted"
   END IF
 
 END SUB
