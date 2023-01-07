@@ -33,14 +33,6 @@ TYPE EventType
   value   AS INTEGER
 END TYPE
 
-TYPE HabitatType
-  backdrop  AS INTEGER
-  labelrid  AS INTEGER
-  namerid   AS INTEGER
-  startfile AS INTEGER
-  wid       AS INTEGER
-END TYPE
-
 TYPE TriggerType
   eid      AS INTEGER
   operator AS INTEGER
@@ -232,14 +224,18 @@ DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 '
 ' Habitats
 '
-DECLARE SUB HabitatSetBackdrop (hid%, backdrop$)
-DECLARE SUB HabitatSetLabel (hid%, label$)
-DECLARE SUB HabitatSetName (hid%, name$)
-DECLARE FUNCTION HabitatCreate% ()
-DECLARE FUNCTION HabitatGetBackdrop$ (hid%)
-DECLARE FUNCTION HabitatGetLabel$ (hid%)
-DECLARE FUNCTION HabitatGetName$ (hid%)
-DECLARE FUNCTION HabitatFind% (hname$)
+DECLARE FUNCTION HabCreate% ()
+DECLARE FUNCTION HabFind% (name$)
+DECLARE FUNCTION HabGetBackdrop% (hid%)
+DECLARE FUNCTION HabGetLabel% (hid%)
+DECLARE FUNCTION HabGetName% (hid%)
+DECLARE FUNCTION HabGetStartFile% (hid%)
+DECLARE FUNCTION HabGetWindow% (hid%)
+DECLARE SUB HabSetBackdrop (hid%, backdrop$)
+DECLARE SUB HabSetLabel (hid%, label$)
+DECLARE SUB HabSetName (hid%, name$)
+DECLARE SUB HabSetStartFile (hid%, startfile$)
+DECLARE SUB HabSetWindow (hid%, wid%)
 
 '
 ' Inbox
@@ -412,6 +408,15 @@ CONST CtlKind.Separator = 9
 CONST CtlKind.Nebula = 100
 
 '
+' Habitat properties
+'
+CONST HabPropId.Backdrop = 1
+CONST HabPropId.Label = 2
+CONST HabPropId.Name = 3
+CONST HabPropId.StartFile = 4
+CONST HabPropId.Window = 5
+
+'
 ' Operators
 '
 CONST OpNone = 0
@@ -493,8 +498,6 @@ DIM SHARED atlasitem(1 TO 35)    AS AtlasItemType
 DIM SHARED atlaspage             AS INTEGER
 DIM SHARED event(1 TO 5)         AS EventType
 DIM SHARED events                AS INTEGER
-DIM SHARED habitat(1 TO 8)       AS HabitatType
-DIM SHARED Habitats              AS INTEGER
 DIM SHARED listening             AS INTEGER
 DIM SHARED playeraid             AS INTEGER
 REDIM SHARED resource(1 TO 100)    AS STRING
@@ -2226,7 +2229,7 @@ SUB DialogStart (hid%)
    
     listening = 0
 
-    startfile$ = ResourceGet(habitat(hid%).startfile)
+    startfile$ = ResourceGet(HabGetStartFile%(hid%))
     IF LEN(startfile$) > 0 THEN
       ConsoleFile startfile$
     END IF
@@ -2701,22 +2704,22 @@ FUNCTION ExecCmdHid% (ntoken%, stoken$(), hid%)
   SELECT CASE stoken$(0)
 
     CASE "backdrop"
-      HabitatSetBackdrop hid%, stoken$(1)
+      HabSetBackdrop hid%, stoken$(1)
 
     CASE "endhabitat"
       hid% = 0
 
     CASE "label"
-      HabitatSetLabel hid%, stoken$(1)
+      HabSetLabel hid%, stoken$(1)
 
     CASE "startfile"
-      ResourceSet habitat(hid%).startfile, stoken$(1)
+      HabSetStartFile hid%, stoken$(1)
 
     CASE "name"
-      HabitatSetName hid%, stoken$(1)
+      HabSetName hid%, stoken$(1)
 
     CASE "window"
-      habitat(hid%).wid = WinFindWid(stoken$(1))
+      HabSetWindow hid%, WinFindWid(stoken$(1))
 
     CASE ELSE
       ExecCmdHid = CmdResult.Malformed
@@ -2777,7 +2780,7 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
       eid% = events
 
     CASE "habitat"
-      hid% = HabitatCreate%
+      hid% = HabCreate%
 
     CASE "listen"
       DIM listenhid%: listenhid% = VAL(stoken$(1))
@@ -2827,7 +2830,7 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
     CASE "spawn"
       DIM aid%
       DIM shid%
-      shid% = HabitatFind(stoken$(1))
+      shid% = HabFind(stoken$(1))
       IF shid% > 0 THEN
         SELECT CASE LCASE$(stoken$(2))
          
@@ -3094,7 +3097,10 @@ SUB GameMoveOffset (offsetX%, offsetY%)
     '
     ' Run the window name handling this habitat
     '
-    IF habitat(hid).wid > 0 THEN
+    DIM hidwid%
+    LET hidwid% = HabGetWindow%(hid%)
+
+    IF hidwid% > 0 THEN
      
       AtlasDrawSelect cx, cy, 1
 
@@ -3102,10 +3108,10 @@ SUB GameMoveOffset (offsetX%, offsetY%)
       ' HACK: set window parameter value
       '
       DIM hidwidcid%
-      LET hidwidcid% = gwin(habitat(hid).wid, 0)
+      LET hidwidcid% = gwin(hidwid%, 0)
       CtlSetParam hidwidcid%, hid
      
-      WinRun habitat(hid).wid, wresult
+      WinRun hidwid%, wresult
      
       IF wresult.action = WinAction.Execute THEN
         '
@@ -3145,48 +3151,56 @@ FUNCTION GetKey$
 
 END FUNCTION
 
-FUNCTION HabitatCreate%
-  Habitats = Habitats + 1
-  HabitatCreate% = Habitats
+FUNCTION HabCreate%
+  HabCreate% = ObjCreate%(ObjKind.Habitat)
 END FUNCTION
 
-FUNCTION HabitatFind% (hname$)
-
-  DIM hid%
-  FOR hid% = 1 TO Habitats
-    IF ResourceGet(habitat(hid%).namerid) = hname$ THEN
-      HabitatFind% = hid%
-    END IF
-  NEXT
-
+FUNCTION HabFind% (name$)
+  HabFind% = ObjFindString%(ObjKind.Habitat, HabPropId.Name, name$)
 END FUNCTION
 
-FUNCTION HabitatGetBackdrop$ (hid%)
+FUNCTION HabGetBackdrop% (hid%)
   IF hid% > 0 THEN
-    HabitatGetBackdrop$ = ResourceGet(habitat(hid%).backdrop)
+    HabGetBackdrop% = ObjGet%(hid%, HabPropId.Backdrop)
   END IF
 END FUNCTION
 
-FUNCTION HabitatGetLabel$ (hid%)
-  HabitatGetLabel$ = ResourceGet$(habitat(hid%).namerid)
+FUNCTION HabGetLabel% (hid%)
+  HabGetLabel% = ObjGet%(hid%, HabPropId.Label)
 END FUNCTION
 
-FUNCTION HabitatGetName$ (hid%)
+FUNCTION HabGetName% (hid%)
   IF hid% > 0 THEN
-    HabitatGetName$ = ResourceGet$(habitat(hid%).namerid)
+    HabGetName% = ObjGet%(hid%, HabPropId.Name)
   END IF
 END FUNCTION
 
-SUB HabitatSetBackdrop (hid%, backdrop$)
-  ResourceSet habitat(hid%).backdrop, backdrop$
+FUNCTION HabGetStartFile% (hid%)
+  HabGetStartFile% = ObjGet%(hid%, HabPropId.StartFile)
+END FUNCTION
+
+FUNCTION HabGetWindow% (hid%)
+  HabGetWindow% = ObjGet%(hid%, HabPropId.Window)
+END FUNCTION
+
+SUB HabSetBackdrop (hid%, backdrop$)
+  ObjSetString hid%, HabPropId.Backdrop, backdrop$
 END SUB
 
-SUB HabitatSetLabel (hid%, label$)
-  ResourceSet habitat(hid%).labelrid, label$
+SUB HabSetLabel (hid%, label$)
+  ObjSetString hid%, HabPropId.Label, label$
 END SUB
 
-SUB HabitatSetName (hid%, name$)
-  ResourceSet habitat(hid%).namerid, name$
+SUB HabSetName (hid%, name$)
+  ObjSetString hid%, HabPropId.Name, name$
+END SUB
+
+SUB HabSetStartFile (hid%, startfile$)
+  ObjSetString hid%, HabPropId.StartFile, startfile$
+END SUB
+
+SUB HabSetWindow (hid%, wid%)
+  ObjSet hid%, HabPropId.Window, wid%
 END SUB
 
 SUB InboxAdd (subject AS STRING, filename AS STRING)
@@ -3341,9 +3355,9 @@ FUNCTION ObjGet% (oid%, pid%)
       IF hid% > 0 THEN
         SELECT CASE ResourceGet$(value%)
           CASE "backdrop"
-            ObjGet% = habitat(hid%).backdrop
+            ObjGet% = HabGetBackdrop%(hid%)
           CASE "title"
-            ObjGet% = habitat(hid%).namerid
+            ObjGet% = HabGetName%(hid%)
         END SELECT
       END IF
 
@@ -4465,7 +4479,7 @@ FUNCTION WorldAdd% (hid%, cx%, cy%)
   area(aid%).hid = hid%
   area(aid%).energy = 3
 
-  AtlasAddItem cx%, cy%, aid%, habitat(hid%).labelrid
+  AtlasAddItem cx%, cy%, aid%, HabGetLabel%(hid%)
   WorldAdd% = aid%
 
 END FUNCTION
