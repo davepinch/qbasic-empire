@@ -243,13 +243,13 @@ DECLARE FUNCTION NebulaLabelRid% (energy AS INTEGER)
 '
 ' Objects
 '
-DECLARE FUNCTION ObjCreate% (kind%)
-DECLARE FUNCTION ObjFindString% (kind%, pid%, value$)
-DECLARE FUNCTION ObjGet% (oid%, pid%)
-DECLARE FUNCTION ObjGetKind% (oid%)
-DECLARE FUNCTION ObjGetString$ (oid%, pid%)
-DECLARE SUB ObjSet (oid%, pid%, value%)
-DECLARE SUB ObjSetString (oid%, pid%, value$)
+DECLARE FUNCTION ObCreate% (kind%)
+DECLARE FUNCTION ObFindString% (kind%, pid%, value$)
+DECLARE FUNCTION ObGet% (oid%, pid%)
+DECLARE FUNCTION ObGetKind% (oid%)
+DECLARE FUNCTION ObGetString$ (oid%, pid%)
+DECLARE SUB ObSet (oid%, pid%, value%)
+DECLARE SUB ObSetString (oid%, pid%, value$)
 
 '
 ' Persons
@@ -1330,7 +1330,7 @@ FUNCTION CtlCreateChild% (wid%, kind%)
   ' Allocate a control
   '
   DIM cid%
-  LET cid% = ObjCreate%(ObjKind.Control)
+  LET cid% = ObCreate%(ObjKind.Control)
   gwin(wid%, fid%) = cid%
 
   '
@@ -1819,39 +1819,39 @@ SUB CtlDrawText (wid%, fid%)
 END SUB
 
 FUNCTION CtlGetChildList% (cid%)
-  CtlGetChildList% = ObjGet%(cid%, PropId.ChildList)
+  CtlGetChildList% = ObGet%(cid%, PropId.ChildList)
 END FUNCTION
 
 FUNCTION CtlGetCmdRid% (cid%)
-  CtlGetCmdRid% = ObjGet%(cid%, PropId.Command)
+  CtlGetCmdRid% = ObGet%(cid%, PropId.Command)
 END FUNCTION
 
 FUNCTION CtlGetKind% (cid%)
-  CtlGetKind% = ObjGet%(cid%, PropId.Kind)
+  CtlGetKind% = ObGet%(cid%, PropId.Kind)
 END FUNCTION
 
 FUNCTION CtlGetName$ (cid%)
-  CtlGetName$ = ObjGetString$(cid%, PropId.Name)
+  CtlGetName$ = ObGetString$(cid%, PropId.Name)
 END FUNCTION
 
 FUNCTION CtlGetOffsetX% (cid%)
-  CtlGetOffsetX% = ObjGet%(cid%, PropId.OffsetX)
+  CtlGetOffsetX% = ObGet%(cid%, PropId.OffsetX)
 END FUNCTION
 
 FUNCTION CtlGetOffsetY% (cid%)
-  CtlGetOffsetY% = ObjGet%(cid%, PropId.OffsetY)
+  CtlGetOffsetY% = ObGet%(cid%, PropId.OffsetY)
 END FUNCTION
 
 FUNCTION CtlGetParam% (cid%)
-  CtlGetParam = ObjGet%(cid%, PropId.Param)
+  CtlGetParam = ObGet%(cid%, PropId.Param)
 END FUNCTION
 
 FUNCTION CtlGetParent% (cid%)
-  CtlGetParent% = ObjGet%(cid%, PropId.Parent)
+  CtlGetParent% = ObGet%(cid%, PropId.Parent)
 END FUNCTION
 
 FUNCTION CtlGetPopup% (cid%)
-  CtlGetPopup% = ObjGet%(cid%, PropId.Popup)
+  CtlGetPopup% = ObGet%(cid%, PropId.Popup)
 END FUNCTION
 
 FUNCTION CtlGetScreenX% (cid%)
@@ -1881,15 +1881,15 @@ FUNCTION CtlGetScreenY% (cid%)
 END FUNCTION
 
 FUNCTION CtlGetSelected% (cid%)
-  CtlGetSelected% = ObjGet%(cid%, PropId.Selected)
+  CtlGetSelected% = ObGet%(cid%, PropId.Selected)
 END FUNCTION
 
 FUNCTION CtlGetSizeX% (cid%)
-  CtlGetSizeX% = ObjGet%(cid%, PropId.SizeX)
+  CtlGetSizeX% = ObGet%(cid%, PropId.SizeX)
 END FUNCTION
 
 FUNCTION CtlGetSizeY% (cid%)
-  CtlGetSizeY% = ObjGet%(cid%, PropId.SizeY)
+  CtlGetSizeY% = ObGet%(cid%, PropId.SizeY)
 END FUNCTION
 
 FUNCTION CtlGetStyle% (cid%)
@@ -1897,7 +1897,7 @@ FUNCTION CtlGetStyle% (cid%)
   AssertIsPositive cid%, "CtlGetStyle", "cid"
 
   DIM sid%
-  LET sid% = ObjGet%(cid%, PropId.Style)
+  LET sid% = ObGet%(cid%, PropId.Style)
  
   IF sid% = 0 THEN
     '
@@ -1917,11 +1917,11 @@ FUNCTION CtlGetStyle% (cid%)
 END FUNCTION
 
 FUNCTION CtlGetText$ (cid%)
-  CtlGetText$ = ObjGetString$(cid%, PropId.Text)
+  CtlGetText$ = ObGetString$(cid%, PropId.Text)
 END FUNCTION
 
 FUNCTION CtlGetValue$ (cid%)
-  CtlGetValue$ = ObjGetString$(cid%, PropId.Value)
+  CtlGetValue$ = ObGetString$(cid%, PropId.Value)
 END FUNCTION
 
 SUB CtlKey (cid%, keypress$)
@@ -2036,11 +2036,11 @@ FUNCTION CtlSelectable% (cid%)
 END FUNCTION
 
 SUB CtlSetChildList (cid%, listcid%)
-  ObjSet cid%, PropId.ChildList, listcid%
+  ObSet cid%, PropId.ChildList, listcid%
 END SUB
 
 SUB CtlSetCmdRid (cid%, cmdrid%)
-  ObjSet cid%, PropId.Command, cmdrid%
+  ObSet cid%, PropId.Command, cmdrid%
 END SUB
 
 SUB CtlSetCmdStr (cid%, cmd$)
@@ -2058,31 +2058,31 @@ SUB CtlSetCmdStr (cid%, cmd$)
 END SUB
 
 SUB CtlSetKind (cid%, kind%)
-  ObjSet cid%, PropId.Kind, kind%
+  ObSet cid%, PropId.Kind, kind%
 END SUB
 
 SUB CtlSetName (cid%, value$)
-  ObjSetString cid%, PropId.Name, value$
+  ObSetString cid%, PropId.Name, value$
 END SUB
 
 SUB CtlSetOffsetX (cid%, offsetX%)
-  ObjSet cid%, PropId.OffsetX, offsetX%
+  ObSet cid%, PropId.OffsetX, offsetX%
 END SUB
 
 SUB CtlSetOffsetY (cid%, offsetY%)
-  ObjSet cid%, PropId.OffsetY, offsetY%
+  ObSet cid%, PropId.OffsetY, offsetY%
 END SUB
 
 SUB CtlSetParam (cid%, value%)
-  ObjSet cid%, PropId.Param, value%
+  ObSet cid%, PropId.Param, value%
 END SUB
 
 SUB CtlSetParent (cid%, parentcid%)
-  ObjSet cid%, PropId.Parent, parentcid%
+  ObSet cid%, PropId.Parent, parentcid%
 END SUB
 
 SUB CtlSetPopup (cid%, popupcid%)
-  ObjSet cid%, PropId.Popup, popupcid%
+  ObSet cid%, PropId.Popup, popupcid%
 END SUB
 
 SUB CtlSetPopupName (cid%, wname$)
@@ -2090,27 +2090,27 @@ SUB CtlSetPopupName (cid%, wname$)
 END SUB
 
 SUB CtlSetSelected (cid%, value%)
-  ObjSet cid%, PropId.Selected, value%
+  ObSet cid%, PropId.Selected, value%
 END SUB
 
 SUB CtlSetSizeX (cid%, sizeX%)
-  ObjSet cid%, PropId.SizeX, sizeX%
+  ObSet cid%, PropId.SizeX, sizeX%
 END SUB
 
 SUB CtlSetSizeY (cid%, sizeY%)
-  ObjSet cid%, PropId.SizeY, sizeY%
+  ObSet cid%, PropId.SizeY, sizeY%
 END SUB
 
 SUB CtlSetStyle (cid%, sid%)
-  ObjSet cid%, PropId.Style, sid%
+  ObSet cid%, PropId.Style, sid%
 END SUB
 
 SUB CtlSetText (cid%, value$)
-  ObjSetString cid%, PropId.Text, value$
+  ObSetString cid%, PropId.Text, value$
 END SUB
 
 SUB CtlSetValue (cid%, value$)
-  ObjSetString cid%, PropId.Value, value$
+  ObSetString cid%, PropId.Value, value$
 END SUB
 
 FUNCTION DialogGarble$ (text$, percent!)
@@ -3165,55 +3165,55 @@ FUNCTION GetKey$
 END FUNCTION
 
 FUNCTION HbCreate%
-  HbCreate% = ObjCreate%(ObjKind.Habitat)
+  HbCreate% = ObCreate%(ObjKind.Habitat)
 END FUNCTION
 
 FUNCTION HbFind% (name$)
-  HbFind% = ObjFindString%(ObjKind.Habitat, HabPropId.Name, name$)
+  HbFind% = ObFindString%(ObjKind.Habitat, HabPropId.Name, name$)
 END FUNCTION
 
 FUNCTION HbGetBackdrop% (hid%)
   IF hid% > 0 THEN
-    HbGetBackdrop% = ObjGet%(hid%, HabPropId.Backdrop)
+    HbGetBackdrop% = ObGet%(hid%, HabPropId.Backdrop)
   END IF
 END FUNCTION
 
 FUNCTION HbGetLabel% (hid%)
-  HbGetLabel% = ObjGet%(hid%, HabPropId.Label)
+  HbGetLabel% = ObGet%(hid%, HabPropId.Label)
 END FUNCTION
 
 FUNCTION HbGetName% (hid%)
   IF hid% > 0 THEN
-    HbGetName% = ObjGet%(hid%, HabPropId.Name)
+    HbGetName% = ObGet%(hid%, HabPropId.Name)
   END IF
 END FUNCTION
 
 FUNCTION HbGetStartFile% (hid%)
-  HbGetStartFile% = ObjGet%(hid%, HabPropId.StartFile)
+  HbGetStartFile% = ObGet%(hid%, HabPropId.StartFile)
 END FUNCTION
 
 FUNCTION HbGetWindow% (hid%)
-  HbGetWindow% = ObjGet%(hid%, HabPropId.Window)
+  HbGetWindow% = ObGet%(hid%, HabPropId.Window)
 END FUNCTION
 
 SUB HbSetBackdrop (hid%, backdrop$)
-  ObjSetString hid%, HabPropId.Backdrop, backdrop$
+  ObSetString hid%, HabPropId.Backdrop, backdrop$
 END SUB
 
 SUB HbSetLabel (hid%, label$)
-  ObjSetString hid%, HabPropId.Label, label$
+  ObSetString hid%, HabPropId.Label, label$
 END SUB
 
 SUB HbSetName (hid%, name$)
-  ObjSetString hid%, HabPropId.Name, name$
+  ObSetString hid%, HabPropId.Name, name$
 END SUB
 
 SUB HbSetStartFile (hid%, startfile$)
-  ObjSetString hid%, HabPropId.StartFile, startfile$
+  ObSetString hid%, HabPropId.StartFile, startfile$
 END SUB
 
 SUB HbSetWindow (hid%, wid%)
-  ObjSet hid%, HabPropId.Window, wid%
+  ObSet hid%, HabPropId.Window, wid%
 END SUB
 
 SUB InboxAdd (subject AS STRING, filename AS STRING)
@@ -3293,19 +3293,19 @@ FUNCTION NebulaLabelRid% (energy AS INTEGER)
 
 END FUNCTION
 
-FUNCTION ObjCreate% (kind%)
+FUNCTION ObCreate% (kind%)
  
-  Assert goids <= UBOUND(gobj, 1), "ObjCreate", "Out of object space"
+  Assert goids <= UBOUND(gobj, 1), "ObCreate", "Out of object space"
 
   goids = goids + 1
  
-  ObjSet goids, ObjPropId.Kind, kind%
+  ObSet goids, ObjPropId.Kind, kind%
 
-  ObjCreate% = goids
+  ObCreate% = goids
 
 END FUNCTION
 
-FUNCTION ObjFindString% (kind%, pid%, value$)
+FUNCTION ObFindString% (kind%, pid%, value$)
   '
   ' Finds the first object where a property has the specified string
   '
@@ -3314,7 +3314,7 @@ FUNCTION ObjFindString% (kind%, pid%, value$)
     IF gobj(oid%, ObjPropId.Kind).value = kind% THEN
       
       DIM rid%
-      LET rid% = ObjGet%(oid%, pid%)
+      LET rid% = ObGet%(oid%, pid%)
       
       IF rid% = 0 THEN
         '
@@ -3322,14 +3322,14 @@ FUNCTION ObjFindString% (kind%, pid%, value$)
         ' Treat it as an empty string "".
         '
         IF LEN(value$) = 0 THEN
-          ObjFindString% = oid%
+          ObFindString% = oid%
           EXIT FUNCTION
         END IF
 
       ELSE
 
         IF value$ = ResourceGet$(rid%) THEN
-          ObjFindString% = oid%
+          ObFindString% = oid%
           EXIT FUNCTION
         END IF
 
@@ -3341,7 +3341,7 @@ FUNCTION ObjFindString% (kind%, pid%, value$)
 
 END FUNCTION
 
-FUNCTION ObjGet% (oid%, pid%)
+FUNCTION ObGet% (oid%, pid%)
 
   DIM flags%
   LET flags% = gobj(oid%, pid%).flags
@@ -3350,7 +3350,7 @@ FUNCTION ObjGet% (oid%, pid%)
   LET value% = gobj(oid%, pid%).value
 
   IF flags% = 0 THEN
-    ObjGet% = value%
+    ObGet% = value%
     EXIT FUNCTION
   END IF
 
@@ -3368,9 +3368,9 @@ FUNCTION ObjGet% (oid%, pid%)
       IF hid% > 0 THEN
         SELECT CASE ResourceGet$(value%)
           CASE "backdrop"
-            ObjGet% = HbGetBackdrop%(hid%)
+            ObGet% = HbGetBackdrop%(hid%)
           CASE "title"
-            ObjGet% = HbGetName%(hid%)
+            ObGet% = HbGetName%(hid%)
         END SELECT
       END IF
 
@@ -3387,55 +3387,55 @@ FUNCTION ObjGet% (oid%, pid%)
       DIM selcid%
       LET selcid% = gwin(wid%, sel%)
 
-      ObjGet% = ObjGet%(selcid%, PropId.Value)
+      ObGet% = ObGet%(selcid%, PropId.Value)
 
     CASE ELSE
    
-      AssertFail "ObjGet%", "Not implemented"
-      ObjGet% = value%
+      AssertFail "ObGet%", "Not implemented"
+      ObGet% = value%
 
   END SELECT
 
 END FUNCTION
 
-FUNCTION ObjGetKind% (oid%)
-  ObjGetKind% = ObjGet%(oid%, ObjPropId.Kind)
+FUNCTION ObGetKind% (oid%)
+  ObGetKind% = ObGet%(oid%, ObjPropId.Kind)
 END FUNCTION
 
-FUNCTION ObjGetString$ (oid%, pid%)
+FUNCTION ObGetString$ (oid%, pid%)
 
   DIM rid%
-  LET rid% = ObjGet%(oid%, pid%)
+  LET rid% = ObGet%(oid%, pid%)
 
-  ObjGetString$ = ResourceGet$(rid%)
+  ObGetString$ = ResourceGet$(rid%)
 
 END FUNCTION
 
-SUB ObjSet (oid%, pid%, value%)
+SUB ObSet (oid%, pid%, value%)
   gobj(oid%, pid%).value = value%
 END SUB
 
-SUB ObjSetString (oid%, pid%, value$)
+SUB ObSetString (oid%, pid%, value$)
 
   DIM rid%
-  LET rid% = ObjGet%(oid%, pid%)
+  LET rid% = ObGet%(oid%, pid%)
 
   ResourceSet rid%, value$
 
-  ObjSet oid%, pid%, rid%
+  ObSet oid%, pid%, rid%
 
 END SUB
 
 FUNCTION PersonCreate%
-  PersonCreate% = ObjCreate%(ObjKind.Person)
+  PersonCreate% = ObCreate%(ObjKind.Person)
 END FUNCTION
 
 FUNCTION PersonGetLabel$ (personid%)
-  PersonGetLabel$ = ObjGetString$(personid%, PersonPropId.Label)
+  PersonGetLabel$ = ObGetString$(personid%, PersonPropId.Label)
 END FUNCTION
 
 FUNCTION PersonGetName$ (personid%)
-  PersonGetName$ = ObjGetString$(personid%, PersonPropId.Name)
+  PersonGetName$ = ObGetString$(personid%, PersonPropId.Name)
 END FUNCTION
 
 FUNCTION PersonRandomly%
@@ -3447,7 +3447,7 @@ FUNCTION PersonRandomly%
   DIM items%(1 TO 100)
 
   FOR index% = LBOUND(gobj, 1) TO UBOUND(gobj, 1)
-    IF ObjGetKind%(index%) = ObjKind.Person THEN
+    IF ObGetKind%(index%) = ObjKind.Person THEN
       count% = count% + 1
       items%(count%) = index%
     END IF
@@ -3461,11 +3461,11 @@ FUNCTION PersonRandomly%
 END FUNCTION
 
 SUB PersonSetLabel (personid%, label$)
-  ObjSetString personid%, PersonPropId.Label, label$
+  ObSetString personid%, PersonPropId.Label, label$
 END SUB
 
 SUB PersonSetName (personid%, name$)
-  ObjSetString personid%, PersonPropId.Name, name$
+  ObSetString personid%, PersonPropId.Name, name$
 END SUB
 
 FUNCTION ResourceCreate% (value$)
@@ -3634,47 +3634,47 @@ FUNCTION Split% (text AS STRING, tokens() AS STRING)
 END FUNCTION
 
 FUNCTION StCreate%
-  StCreate% = ObjCreate%(ObjKind.Style)
+  StCreate% = ObCreate%(ObjKind.Style)
 END FUNCTION
 
 FUNCTION StGetBorderColor% (sid%)
-  StGetBorderColor% = ObjGet%(sid%, StylePropId.BorderColor)
+  StGetBorderColor% = ObGet%(sid%, StylePropId.BorderColor)
 END FUNCTION
 
 FUNCTION StGetBorderType% (sid%)
-  StGetBorderType% = ObjGet%(sid%, StylePropId.BorderType)
+  StGetBorderType% = ObGet%(sid%, StylePropId.BorderType)
 END FUNCTION
 
 FUNCTION StGetName$ (sid%)
-  StGetName$ = ObjGetString$(sid%, StylePropId.Name)
+  StGetName$ = ObGetString$(sid%, StylePropId.Name)
 END FUNCTION
 
 FUNCTION StGetSelectedColor% (sid%)
-  StGetSelectedColor% = ObjGet%(sid%, StylePropId.SelectedColor)
+  StGetSelectedColor% = ObGet%(sid%, StylePropId.SelectedColor)
 END FUNCTION
 
 FUNCTION StGetTextColor% (sid%)
-  StGetTextColor% = ObjGet%(sid%, StylePropId.TextColor)
+  StGetTextColor% = ObGet%(sid%, StylePropId.TextColor)
 END FUNCTION
 
 SUB StSetBorderColor (sid%, bordercolor%)
-  ObjSet sid%, StylePropId.BorderColor, bordercolor%
+  ObSet sid%, StylePropId.BorderColor, bordercolor%
 END SUB
 
 SUB StSetBorderType (sid%, bordertype%)
-  ObjSet sid%, StylePropId.BorderType, bordertype%
+  ObSet sid%, StylePropId.BorderType, bordertype%
 END SUB
 
 SUB StSetName (sid%, name$)
-  ObjSetString sid%, StylePropId.Name, name$
+  ObSetString sid%, StylePropId.Name, name$
 END SUB
 
 SUB StSetSelectedColor (sid%, selectedcolor%)
-  ObjSet sid%, StylePropId.SelectedColor, selectedcolor%
+  ObSet sid%, StylePropId.SelectedColor, selectedcolor%
 END SUB
 
 SUB StSetTextColor (sid%, textcolor%)
-  ObjSet sid%, StylePropId.TextColor, textcolor%
+  ObSet sid%, StylePropId.TextColor, textcolor%
 END SUB
 
 SUB UI.Run
@@ -3908,7 +3908,7 @@ FUNCTION WinCreate%
   ' Create a control to represent the window
   '
   DIM cid%
-  LET cid% = ObjCreate%(ObjKind.Window)
+  LET cid% = ObCreate%(ObjKind.Window)
  
   CtlSetKind cid%, CtlKind.Window
   CtlSetChildList cid%, wincount
@@ -3933,7 +3933,7 @@ SUB WinDraw (wid%)
 END SUB
 
 FUNCTION WinFindSid% (stylename$)
-  WinFindSid% = ObjFindString%(ObjKind.Style, StylePropId.Name, stylename$)
+  WinFindSid% = ObFindString%(ObjKind.Style, StylePropId.Name, stylename$)
 END FUNCTION
 
 FUNCTION WinFindWid% (wname$)
