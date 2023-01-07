@@ -113,56 +113,56 @@ DECLARE SUB ConsolePrint (text$)
 '
 ' Controls
 '
-DECLARE SUB CtlBind (cid%, pid%, expr$)
-DECLARE SUB CtlDraw (wid%, fid%)
-DECLARE SUB CtlDrawBox (cid%)
-DECLARE SUB CtlDrawBox0 (cid%)
-DECLARE SUB CtlDrawBox1 (cid%)
-DECLARE SUB CtlDrawBox2 (cid%)
-DECLARE SUB CtlDrawFile (cid%)
-DECLARE SUB CtlDrawNebula (cid%)
-DECLARE SUB CtlDrawSeparator (cid%)
-DECLARE SUB CtlDrawText (wid%, fid%)
-DECLARE SUB CtlKey (cid%, keypress$)
-DECLARE SUB CtlKeyBoolean (cid%, keypress$)
-DECLARE SUB CtlKeyInteger (cid%, keypress$)
-DECLARE SUB CtlSetChildList (cid%, listcid%)
-DECLARE SUB CtlSetCmdRid (cid%, cmdrid%)
-DECLARE SUB CtlSetCmdStr (cid%, cmd$)
-DECLARE SUB CtlSetKind (cid%, kind%)
-DECLARE SUB CtlSetName (cid%, value$)
-DECLARE SUB CtlSetOffsetX (cid%, offsetX%)
-DECLARE SUB CtlSetOffsetY (cid%, offsetY%)
-DECLARE SUB CtlSetParam (cid%, value%)
-DECLARE SUB CtlSetParent (cid%, parentcid%)
-DECLARE SUB CtlSetPopup (cid%, popupcid%)
-DECLARE SUB CtlSetPopupName (cid%, wname$)
-DECLARE SUB CtlSetSelected (cid%, value%)
-DECLARE SUB CtlSetSizeX (cid%, sizeX%)
-DECLARE SUB CtlSetSizeY (cid%, sizeY%)
-DECLARE SUB CtlSetStyle (cid%, sid%)
-DECLARE SUB CtlSetText (cid%, value$)
-DECLARE SUB CtlSetValue (cid%, value$)
-DECLARE FUNCTION CtlCreateChild% (wid%, kind%)
-DECLARE FUNCTION CtlGetChildList% (cid%)
-DECLARE FUNCTION CtlGetCmdRid% (cid%)
-DECLARE FUNCTION CtlGetKind% (cid%)
-DECLARE FUNCTION CtlGetName$ (cid%)
-DECLARE FUNCTION CtlGetOffsetX% (cid%)
-DECLARE FUNCTION CtlGetOffsetY% (cid%)
-DECLARE FUNCTION CtlGetParam% (cid%)
-DECLARE FUNCTION CtlGetParent% (cid%)
-DECLARE FUNCTION CtlGetPopup% (cid%)
-DECLARE FUNCTION CtlGetScreenX% (cid%)
-DECLARE FUNCTION CtlGetScreenY% (cid%)
-DECLARE FUNCTION CtlGetSelected% (cid%)
-DECLARE FUNCTION CtlGetSizeX% (cid%)
-DECLARE FUNCTION CtlGetSizeY% (cid%)
-DECLARE FUNCTION CtlGetStyle% (cid%)
-DECLARE FUNCTION CtlGetText$ (cid%)
-DECLARE FUNCTION CtlGetValue$ (cid%)
-DECLARE FUNCTION CtlRedirected% (cid%, pid%)
-DECLARE FUNCTION CtlSelectable% (cid%)
+DECLARE SUB CtBind (cid%, pid%, expr$)
+DECLARE SUB CtDraw (wid%, fid%)
+DECLARE SUB CtDrawBox (cid%)
+DECLARE SUB CtDrawBox0 (cid%)
+DECLARE SUB CtDrawBox1 (cid%)
+DECLARE SUB CtDrawBox2 (cid%)
+DECLARE SUB CtDrawFile (cid%)
+DECLARE SUB CtDrawNebula (cid%)
+DECLARE SUB CtDrawSeparator (cid%)
+DECLARE SUB CtDrawText (wid%, fid%)
+DECLARE SUB CtKey (cid%, keypress$)
+DECLARE SUB CtKeyBoolean (cid%, keypress$)
+DECLARE SUB CtKeyInteger (cid%, keypress$)
+DECLARE SUB CtSetChildList (cid%, listcid%)
+DECLARE SUB CtSetCmdRid (cid%, cmdrid%)
+DECLARE SUB CtSetCmdStr (cid%, cmd$)
+DECLARE SUB CtSetKind (cid%, kind%)
+DECLARE SUB CtSetName (cid%, value$)
+DECLARE SUB CtSetOffsetX (cid%, offsetX%)
+DECLARE SUB CtSetOffsetY (cid%, offsetY%)
+DECLARE SUB CtSetParam (cid%, value%)
+DECLARE SUB CtSetParent (cid%, parentcid%)
+DECLARE SUB CtSetPopup (cid%, popupcid%)
+DECLARE SUB CtSetPopupName (cid%, wname$)
+DECLARE SUB CtSetSelected (cid%, value%)
+DECLARE SUB CtSetSizeX (cid%, sizeX%)
+DECLARE SUB CtSetSizeY (cid%, sizeY%)
+DECLARE SUB CtSetStyle (cid%, sid%)
+DECLARE SUB CtSetText (cid%, value$)
+DECLARE SUB CtSetValue (cid%, value$)
+DECLARE FUNCTION CtCreateChild% (wid%, kind%)
+DECLARE FUNCTION CtGetChildList% (cid%)
+DECLARE FUNCTION CtGetCmdRid% (cid%)
+DECLARE FUNCTION CtGetKind% (cid%)
+DECLARE FUNCTION CtGetName$ (cid%)
+DECLARE FUNCTION CtGetOffsetX% (cid%)
+DECLARE FUNCTION CtGetOffsetY% (cid%)
+DECLARE FUNCTION CtGetParam% (cid%)
+DECLARE FUNCTION CtGetParent% (cid%)
+DECLARE FUNCTION CtGetPopup% (cid%)
+DECLARE FUNCTION CtGetScreenX% (cid%)
+DECLARE FUNCTION CtGetScreenY% (cid%)
+DECLARE FUNCTION CtGetSelected% (cid%)
+DECLARE FUNCTION CtGetSizeX% (cid%)
+DECLARE FUNCTION CtGetSizeY% (cid%)
+DECLARE FUNCTION CtGetStyle% (cid%)
+DECLARE FUNCTION CtGetText$ (cid%)
+DECLARE FUNCTION CtGetValue$ (cid%)
+DECLARE FUNCTION CtRedirected% (cid%, pid%)
+DECLARE FUNCTION CtSelectable% (cid%)
 
 '
 ' Dialog
@@ -400,19 +400,19 @@ CONST CmdResult.OK = 0
 CONST CmdResult.Malformed = 1
 
 '
-' CtlKind.*
+' Control kinds
 '
-CONST CtlKind.None = 0
-CONST CtlKind.Window = 1
-CONST CtlKind.Boolean = 2
-CONST CtlKind.Box = 3
-CONST CtlKind.Button = 4
-CONST CtlKind.File = 5
-CONST CtlKind.Integer = 6
-CONST CtlKind.Label = 7
-CONST CtlKind.Popup = 8
-CONST CtlKind.Separator = 9
-CONST CtlKind.Nebula = 100
+CONST CtKind.None = 0
+CONST CtKind.Window = 1
+CONST CtKind.Boolean = 2
+CONST CtKind.Box = 3
+CONST CtKind.Button = 4
+CONST CtKind.File = 5
+CONST CtKind.Integer = 6
+CONST CtKind.Label = 7
+CONST CtKind.Popup = 8
+CONST CtKind.Separator = 9
+CONST CtKind.Nebula = 100
 
 '
 ' Habitat properties
@@ -1285,7 +1285,7 @@ SUB ConsolePrint (text$)
 
 END SUB
 
-SUB CtlBind (cid%, pid%, expr$)
+SUB CtBind (cid%, pid%, expr$)
   '
   ' Binds a property index to a value such as a window parameter
   '
@@ -1315,9 +1315,9 @@ SUB CtlBind (cid%, pid%, expr$)
   
 END SUB
 
-FUNCTION CtlCreateChild% (wid%, kind%)
+FUNCTION CtCreateChild% (wid%, kind%)
 
-  Assert wid% > 0, "CtlCreateChild", "wid cannot be 0"
+  Assert wid% > 0, "CtCreateChild", "wid cannot be 0"
 
   '
   ' Get a new field index
@@ -1336,92 +1336,89 @@ FUNCTION CtlCreateChild% (wid%, kind%)
   '
   ' Set the parent to the window control
   '
-  CtlSetParent cid%, gwin(wid%, 0)
-  CtlSetKind cid%, kind%
-  CtlCreateChild% = fid%
+  CtSetParent cid%, gwin(wid%, 0)
+  CtSetKind cid%, kind%
+  CtCreateChild% = fid%
 
 END FUNCTION
 
-SUB CtlDraw (wid%, fid%)
-
-  AssertIsPositive wid%, "CtlDraw", "wid"
-  AssertIsPositive fid%, "CtlDraw", "fid"
+SUB CtDraw (wid%, fid%)
 
   DIM cid%
   LET cid% = gwin(wid%, fid%)
 
-  SELECT CASE CtlGetKind%(cid%)
+  SELECT CASE CtGetKind%(cid%)
     '
     ' Check the most common kinds first
     '
-    CASE CtlKind.Button
-      CtlDrawText wid%, fid%
+    CASE CtKind.Button
+      CtDrawText wid%, fid%
 
-    CASE CtlKind.Box
-      CtlDrawBox cid%
+    CASE CtKind.Box
+      CtDrawBox cid%
 
-    CASE CtlKind.Label
-      CtlDrawText wid%, fid%
+    CASE CtKind.Label
+      CtDrawText wid%, fid%
 
-    CASE CtlKind.File
-      CtlDrawFile cid%
+    CASE CtKind.File
+      CtDrawFile cid%
 
-    CASE CtlKind.Separator
-      CtlDrawSeparator cid%
+    CASE CtKind.Separator
+      CtDrawSeparator cid%
 
-    CASE CtlKind.Nebula
-      CtlDrawNebula cid%
+    CASE CtKind.Nebula
+      CtDrawNebula cid%
 
     CASE ELSE
-      CtlDrawText wid%, fid%
+      CtDrawText wid%, fid%
 
   END SELECT
 
 END SUB
 
-SUB CtlDrawBox (cid%)
+SUB CtDrawBox (cid%)
 
   DIM sid%
-  LET sid% = CtlGetStyle(cid%)
+  LET sid% = CtGetStyle(cid%)
 
   SELECT CASE StGetBorderType%(sid%)
  
     CASE 0:
-      CtlDrawBox0 cid%
+      CtDrawBox0 cid%
 
     CASE 1:
-      CtlDrawBox1 cid%
+      CtDrawBox1 cid%
 
     CASE 2:
-      CtlDrawBox2 cid%
+      CtDrawBox2 cid%
 
   END SELECT
 
 END SUB
 
-SUB CtlDrawBox0 (cid%)
+SUB CtDrawBox0 (cid%)
 
   DIM row AS INTEGER
   DIM sid AS INTEGER
   DIM sx  AS INTEGER
   DIM sy  AS INTEGER
 
-  sid = CtlGetStyle(cid%)
+  sid = CtGetStyle(cid%)
   DrawColor StGetTextColor(sid)
  
-  FOR row = 1 TO CtlGetSizeY%(cid%)
+  FOR row = 1 TO CtGetSizeY%(cid%)
    
-    sx = CtlGetScreenX%(cid%)
-    sy = CtlGetScreenY%(cid%) + row - 1
+    sx = CtGetScreenX%(cid%)
+    sy = CtGetScreenY%(cid%) + row - 1
 
     LOCATE sy, sx
-    PRINT STRING$(CtlGetSizeX%(cid%), " ");
+    PRINT STRING$(CtGetSizeX%(cid%), " ");
  
   NEXT
 
 END SUB
 
-SUB CtlDrawBox1 (cid%)
+SUB CtDrawBox1 (cid%)
 
   CONST lowerFlat = "Ä"   ' CHR$(196)
   CONST lowerLeft = "À"   ' CHR$(192)
@@ -1443,13 +1440,13 @@ SUB CtlDrawBox1 (cid%)
   '
   ' Calculate screen coordinates
   '
-  sizeX = CtlGetSizeX%(cid%)
-  sx1 = CtlGetScreenX%(cid%)
-  sy1 = CtlGetScreenY%(cid%)
+  sizeX = CtGetSizeX%(cid%)
+  sx1 = CtGetScreenX%(cid%)
+  sy1 = CtGetScreenY%(cid%)
   sx2 = sx1 + sizeX - 1
-  sy2 = sy1 + CtlGetSizeY%(cid%) - 1
+  sy2 = sy1 + CtGetSizeY%(cid%) - 1
 
-  sid = CtlGetStyle(cid%)
+  sid = CtGetStyle(cid%)
 
   '
   ' Draw the top border
@@ -1480,7 +1477,7 @@ SUB CtlDrawBox1 (cid%)
 
 END SUB
 
-SUB CtlDrawBox2 (cid%)
+SUB CtDrawBox2 (cid%)
 
   DIM idx   AS INTEGER
   DIM row   AS INTEGER
@@ -1488,14 +1485,14 @@ SUB CtlDrawBox2 (cid%)
   DIM sizeX AS INTEGER
   DIM sizeY AS INTEGER
 
-  sizeX = CtlGetSizeX%(cid%)
-  sizeY = CtlGetSizeY%(cid%)
+  sizeX = CtGetSizeX%(cid%)
+  sizeY = CtGetSizeY%(cid%)
  
   '
   ' Calculate screen coordinates
   '
-  DIM sx%: sx% = CtlGetScreenX%(cid%)
-  DIM sy%: sy% = CtlGetScreenY%(cid%)
+  DIM sx%: sx% = CtGetScreenX%(cid%)
+  DIM sy%: sy% = CtGetScreenY%(cid%)
 
   '
   ' Initialize special border characters
@@ -1571,25 +1568,25 @@ SUB CtlDrawBox2 (cid%)
 
 END SUB
 
-SUB CtlDrawFile (cid%)
+SUB CtDrawFile (cid%)
 
   DIM filename AS STRING
   DIM sx AS INTEGER
   DIM sy AS INTEGER
 
-  filename = CtlGetValue$(cid%)
+  filename = CtGetValue$(cid%)
   IF LEN(filename) = 0 THEN
     EXIT SUB
   END IF
 
-  sx = CtlGetScreenX%(cid%)
-  sy = CtlGetScreenY%(cid%)
+  sx = CtGetScreenX%(cid%)
+  sy = CtGetScreenY%(cid%)
 
   DrawFileAt filename, sx, sy
 
 END SUB
 
-SUB CtlDrawNebula (cid%)
+SUB CtDrawNebula (cid%)
 
   DIM p     AS INTEGER
   DIM sizeX AS INTEGER
@@ -1598,17 +1595,17 @@ SUB CtlDrawNebula (cid%)
   DIM x     AS INTEGER
   DIM y     AS INTEGER
 
-  sizeX = CtlGetSizeX%(cid%)
+  sizeX = CtGetSizeX%(cid%)
 
   COLOR 7, 0
 
-  FOR y = 1 TO CtlGetSizeY%(cid%)
+  FOR y = 1 TO CtGetSizeY%(cid%)
  
     x = INT(RND * sizeX) + 1
     p = 1
 
-    sx = CtlGetScreenX%(cid%) + x - 1
-    sy = CtlGetScreenY%(cid%) + y - 1
+    sx = CtGetScreenX%(cid%) + x - 1
+    sy = CtGetScreenY%(cid%) + y - 1
     LOCATE sy, sx
 
     DO
@@ -1684,7 +1681,7 @@ SUB CtlDrawNebula (cid%)
 
 END SUB
 
-SUB CtlDrawSeparator (cid%)
+SUB CtDrawSeparator (cid%)
 
   DIM row   AS INTEGER
   DIM sid   AS INTEGER
@@ -1693,11 +1690,11 @@ SUB CtlDrawSeparator (cid%)
   DIM sx    AS INTEGER
   DIM sy    AS INTEGER
 
-  sid = CtlGetStyle(cid%)
-  sizeX = CtlGetSizeX%(cid%)
-  sizeY = CtlGetSizeY%(cid%)
-  sx = CtlGetScreenX%(cid%)
-  sy = CtlGetScreenY%(cid%)
+  sid = CtGetStyle(cid%)
+  sizeX = CtGetSizeX%(cid%)
+  sizeY = CtGetSizeY%(cid%)
+  sx = CtGetScreenX%(cid%)
+  sy = CtGetScreenY%(cid%)
 
   LOCATE sy, sx
   DrawColor StGetBorderColor%(sid)
@@ -1768,10 +1765,7 @@ SUB CtlDrawSeparator (cid%)
 
 END SUB
 
-SUB CtlDrawText (wid%, fid%)
-
-  AssertIsPositive wid%, "CtlDrawText", "wid"
-  AssertIsPositive fid%, "CtlDrawText", "fid"
+SUB CtDrawText (wid%, fid%)
 
   DIM widcid%
   LET widcid% = gwin(wid%, 0)
@@ -1788,15 +1782,15 @@ SUB CtlDrawText (wid%, fid%)
   '
   ' Get field position
   '
-  sx = CtlGetScreenX%(fidcid%)
-  sy = CtlGetScreenY%(fidcid%)
+  sx = CtGetScreenX%(fidcid%)
+  sy = CtGetScreenY%(fidcid%)
   LOCATE sy, sx
 
   '
   ' Set style of text
   '
-  sid% = CtlGetStyle(fidcid%)
-  IF CtlGetSelected(widcid%) = fid% THEN
+  sid% = CtGetStyle(fidcid%)
+  IF CtGetSelected(widcid%) = fid% THEN
     DrawColor StGetSelectedColor%(sid%)
   ELSE
     DrawColor StGetTextColor%(sid%)
@@ -1805,8 +1799,8 @@ SUB CtlDrawText (wid%, fid%)
   '
   ' Print text clipped to size
   '
-  text = CtlGetText(fidcid%)
-  size = CtlGetSizeX%(fidcid%)
+  text = CtGetText(fidcid%)
+  size = CtGetSizeX%(fidcid%)
   IF size < 1 THEN
     PRINT text;
   ELSE
@@ -1818,83 +1812,83 @@ SUB CtlDrawText (wid%, fid%)
 
 END SUB
 
-FUNCTION CtlGetChildList% (cid%)
-  CtlGetChildList% = ObGet%(cid%, PropId.ChildList)
+FUNCTION CtGetChildList% (cid%)
+  CtGetChildList% = ObGet%(cid%, PropId.ChildList)
 END FUNCTION
 
-FUNCTION CtlGetCmdRid% (cid%)
-  CtlGetCmdRid% = ObGet%(cid%, PropId.Command)
+FUNCTION CtGetCmdRid% (cid%)
+  CtGetCmdRid% = ObGet%(cid%, PropId.Command)
 END FUNCTION
 
-FUNCTION CtlGetKind% (cid%)
-  CtlGetKind% = ObGet%(cid%, PropId.Kind)
+FUNCTION CtGetKind% (cid%)
+  CtGetKind% = ObGet%(cid%, PropId.Kind)
 END FUNCTION
 
-FUNCTION CtlGetName$ (cid%)
-  CtlGetName$ = ObGetString$(cid%, PropId.Name)
+FUNCTION CtGetName$ (cid%)
+  CtGetName$ = ObGetString$(cid%, PropId.Name)
 END FUNCTION
 
-FUNCTION CtlGetOffsetX% (cid%)
-  CtlGetOffsetX% = ObGet%(cid%, PropId.OffsetX)
+FUNCTION CtGetOffsetX% (cid%)
+  CtGetOffsetX% = ObGet%(cid%, PropId.OffsetX)
 END FUNCTION
 
-FUNCTION CtlGetOffsetY% (cid%)
-  CtlGetOffsetY% = ObGet%(cid%, PropId.OffsetY)
+FUNCTION CtGetOffsetY% (cid%)
+  CtGetOffsetY% = ObGet%(cid%, PropId.OffsetY)
 END FUNCTION
 
-FUNCTION CtlGetParam% (cid%)
-  CtlGetParam = ObGet%(cid%, PropId.Param)
+FUNCTION CtGetParam% (cid%)
+  CtGetParam = ObGet%(cid%, PropId.Param)
 END FUNCTION
 
-FUNCTION CtlGetParent% (cid%)
-  CtlGetParent% = ObGet%(cid%, PropId.Parent)
+FUNCTION CtGetParent% (cid%)
+  CtGetParent% = ObGet%(cid%, PropId.Parent)
 END FUNCTION
 
-FUNCTION CtlGetPopup% (cid%)
-  CtlGetPopup% = ObGet%(cid%, PropId.Popup)
+FUNCTION CtGetPopup% (cid%)
+  CtGetPopup% = ObGet%(cid%, PropId.Popup)
 END FUNCTION
 
-FUNCTION CtlGetScreenX% (cid%)
+FUNCTION CtGetScreenX% (cid%)
 
   DIM parentcid%
-  LET parentcid% = CtlGetParent%(cid%)
+  LET parentcid% = CtGetParent%(cid%)
 
   IF parentcid% = 0 THEN
-    CtlGetScreenX% = CtlGetOffsetX%(cid%) + 1
+    CtGetScreenX% = CtGetOffsetX%(cid%) + 1
   ELSE
-    CtlGetScreenX% = CtlGetOffsetX%(cid%) + CtlGetScreenX%(parentcid%)
+    CtGetScreenX% = CtGetOffsetX%(cid%) + CtGetScreenX%(parentcid%)
   END IF
 
 END FUNCTION
 
-FUNCTION CtlGetScreenY% (cid%)
+FUNCTION CtGetScreenY% (cid%)
 
   DIM parentcid%
-  LET parentcid% = CtlGetParent%(cid%)
+  LET parentcid% = CtGetParent%(cid%)
 
   IF parentcid% = 0 THEN
-    CtlGetScreenY% = CtlGetOffsetY%(cid%) + 1
+    CtGetScreenY% = CtGetOffsetY%(cid%) + 1
   ELSE
-    CtlGetScreenY% = CtlGetOffsetY%(cid%) + CtlGetScreenY%(parentcid%)
+    CtGetScreenY% = CtGetOffsetY%(cid%) + CtGetScreenY%(parentcid%)
   END IF
 
 END FUNCTION
 
-FUNCTION CtlGetSelected% (cid%)
-  CtlGetSelected% = ObGet%(cid%, PropId.Selected)
+FUNCTION CtGetSelected% (cid%)
+  CtGetSelected% = ObGet%(cid%, PropId.Selected)
 END FUNCTION
 
-FUNCTION CtlGetSizeX% (cid%)
-  CtlGetSizeX% = ObGet%(cid%, PropId.SizeX)
+FUNCTION CtGetSizeX% (cid%)
+  CtGetSizeX% = ObGet%(cid%, PropId.SizeX)
 END FUNCTION
 
-FUNCTION CtlGetSizeY% (cid%)
-  CtlGetSizeY% = ObGet%(cid%, PropId.SizeY)
+FUNCTION CtGetSizeY% (cid%)
+  CtGetSizeY% = ObGet%(cid%, PropId.SizeY)
 END FUNCTION
 
-FUNCTION CtlGetStyle% (cid%)
+FUNCTION CtGetStyle% (cid%)
 
-  AssertIsPositive cid%, "CtlGetStyle", "cid"
+  AssertIsPositive cid%, "CtGetStyle", "cid"
 
   DIM sid%
   LET sid% = ObGet%(cid%, PropId.Style)
@@ -1904,78 +1898,78 @@ FUNCTION CtlGetStyle% (cid%)
     ' Inherit from the parent control
     '
     DIM parentcid%
-    LET parentcid% = CtlGetParent(cid%)
+    LET parentcid% = CtGetParent(cid%)
 
     IF parentcid% > 0 THEN
-      sid% = CtlGetStyle%(parentcid%)
+      sid% = CtGetStyle%(parentcid%)
     END IF
 
   END IF
 
-  CtlGetStyle% = sid%
+  CtGetStyle% = sid%
   
 END FUNCTION
 
-FUNCTION CtlGetText$ (cid%)
-  CtlGetText$ = ObGetString$(cid%, PropId.Text)
+FUNCTION CtGetText$ (cid%)
+  CtGetText$ = ObGetString$(cid%, PropId.Text)
 END FUNCTION
 
-FUNCTION CtlGetValue$ (cid%)
-  CtlGetValue$ = ObGetString$(cid%, PropId.Value)
+FUNCTION CtGetValue$ (cid%)
+  CtGetValue$ = ObGetString$(cid%, PropId.Value)
 END FUNCTION
 
-SUB CtlKey (cid%, keypress$)
+SUB CtKey (cid%, keypress$)
   '
   ' Sends a keystroke to a field
   '
  
-  SELECT CASE CtlGetKind%(cid%)
+  SELECT CASE CtGetKind%(cid%)
   
-    CASE CtlKind.Boolean
-      CtlKeyBoolean cid%, keypress$
+    CASE CtKind.Boolean
+      CtKeyBoolean cid%, keypress$
 
-    CASE CtlKind.Integer
-      CtlKeyInteger cid%, keypress$
+    CASE CtKind.Integer
+      CtKeyInteger cid%, keypress$
 
   END SELECT
 
 END SUB
 
-SUB CtlKeyBoolean (cid%, keypress$)
+SUB CtKeyBoolean (cid%, keypress$)
   '
   ' Sends a keystroke to a boolean field.
   '
  
   DIM text AS STRING
-  LET text = CtlGetText$(cid%)
+  LET text = CtGetText$(cid%)
 
   SELECT CASE keypress$
 
     CASE " "
       SELECT CASE text
         CASE "No"
-          CtlSetText cid%, "Yes"
+          CtSetText cid%, "Yes"
         CASE "Yes"
-          CtlSetText cid%, "No"
+          CtSetText cid%, "No"
       END SELECT
 
     CASE "n", "N"
-      CtlSetText cid%, "No"
+      CtSetText cid%, "No"
 
     CASE "y", "Y"
-      CtlSetText cid%, "Yes"
+      CtSetText cid%, "Yes"
 
   END SELECT
 
 END SUB
 
-SUB CtlKeyInteger (cid%, keypress$)
+SUB CtKeyInteger (cid%, keypress$)
   '
   ' Sends a key to an integer field
   '
 
   DIM buf$
-  LET buf$ = CtlGetText$(cid%)
+  LET buf$ = CtGetText$(cid%)
 
   SELECT CASE keypress$
    
@@ -1987,21 +1981,21 @@ SUB CtlKeyInteger (cid%, keypress$)
 
     CASE "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
 
-      IF LEN(buf$) < CtlGetSizeX%(cid%) THEN
+      IF LEN(buf$) < CtGetSizeX%(cid%) THEN
         buf$ = buf$ + keypress$
       END IF
 
   END SELECT
 
-  CtlSetText cid%, buf$
+  CtSetText cid%, buf$
 
 END SUB
 
-FUNCTION CtlRedirected% (cid%, pid%)
-  CtlRedirected% = gobj(cid%, pid%).flags = BindingTarget.Selected
+FUNCTION CtRedirected% (cid%, pid%)
+  CtRedirected% = gobj(cid%, pid%).flags = BindingTarget.Selected
 END FUNCTION
 
-FUNCTION CtlSelectable% (cid%)
+FUNCTION CtSelectable% (cid%)
   '
   ' Returns True or False depending on whether the specified
   ' field is selectable (i.e., can receive focus for input or
@@ -2009,25 +2003,25 @@ FUNCTION CtlSelectable% (cid%)
   '
   IF (cid% < 0) OR (cid% > UBOUND(gobj, 1)) THEN
 
-    CtlSelectable% = False
+    CtSelectable% = False
  
   ELSE
 
-    SELECT CASE CtlGetKind%(cid%)
-      CASE CtlKind.Button
-        CtlSelectable% = True
+    SELECT CASE CtGetKind%(cid%)
+      CASE CtKind.Button
+        CtSelectable% = True
 
-      CASE CtlKind.Boolean
-        CtlSelectable% = True
+      CASE CtKind.Boolean
+        CtSelectable% = True
 
-      CASE CtlKind.Integer
-        CtlSelectable% = True
+      CASE CtKind.Integer
+        CtSelectable% = True
 
-      CASE CtlKind.Popup
-        CtlSelectable% = True
+      CASE CtKind.Popup
+        CtSelectable% = True
 
       CASE ELSE
-        CtlSelectable% = False
+        CtSelectable% = False
 
     END SELECT
 
@@ -2035,81 +2029,81 @@ FUNCTION CtlSelectable% (cid%)
 
 END FUNCTION
 
-SUB CtlSetChildList (cid%, listcid%)
+SUB CtSetChildList (cid%, listcid%)
   ObSet cid%, PropId.ChildList, listcid%
 END SUB
 
-SUB CtlSetCmdRid (cid%, cmdrid%)
+SUB CtSetCmdRid (cid%, cmdrid%)
   ObSet cid%, PropId.Command, cmdrid%
 END SUB
 
-SUB CtlSetCmdStr (cid%, cmd$)
+SUB CtSetCmdStr (cid%, cmd$)
 
   DIM rid%
-  LET rid% = CtlGetCmdRid%(cid%)
+  LET rid% = CtGetCmdRid%(cid%)
 
   '
   ' rid% is an output parameter
   '
   RsSet rid%, cmd$
 
-  CtlSetCmdRid cid%, rid%
+  CtSetCmdRid cid%, rid%
 
 END SUB
 
-SUB CtlSetKind (cid%, kind%)
+SUB CtSetKind (cid%, kind%)
   ObSet cid%, PropId.Kind, kind%
 END SUB
 
-SUB CtlSetName (cid%, value$)
+SUB CtSetName (cid%, value$)
   ObSetString cid%, PropId.Name, value$
 END SUB
 
-SUB CtlSetOffsetX (cid%, offsetX%)
+SUB CtSetOffsetX (cid%, offsetX%)
   ObSet cid%, PropId.OffsetX, offsetX%
 END SUB
 
-SUB CtlSetOffsetY (cid%, offsetY%)
+SUB CtSetOffsetY (cid%, offsetY%)
   ObSet cid%, PropId.OffsetY, offsetY%
 END SUB
 
-SUB CtlSetParam (cid%, value%)
+SUB CtSetParam (cid%, value%)
   ObSet cid%, PropId.Param, value%
 END SUB
 
-SUB CtlSetParent (cid%, parentcid%)
+SUB CtSetParent (cid%, parentcid%)
   ObSet cid%, PropId.Parent, parentcid%
 END SUB
 
-SUB CtlSetPopup (cid%, popupcid%)
+SUB CtSetPopup (cid%, popupcid%)
   ObSet cid%, PropId.Popup, popupcid%
 END SUB
 
-SUB CtlSetPopupName (cid%, wname$)
-  CtlSetPopup cid%, WinFindWid%(wname$)
+SUB CtSetPopupName (cid%, wname$)
+  CtSetPopup cid%, WinFindWid%(wname$)
 END SUB
 
-SUB CtlSetSelected (cid%, value%)
+SUB CtSetSelected (cid%, value%)
   ObSet cid%, PropId.Selected, value%
 END SUB
 
-SUB CtlSetSizeX (cid%, sizeX%)
+SUB CtSetSizeX (cid%, sizeX%)
   ObSet cid%, PropId.SizeX, sizeX%
 END SUB
 
-SUB CtlSetSizeY (cid%, sizeY%)
+SUB CtSetSizeY (cid%, sizeY%)
   ObSet cid%, PropId.SizeY, sizeY%
 END SUB
 
-SUB CtlSetStyle (cid%, sid%)
+SUB CtSetStyle (cid%, sid%)
   ObSet cid%, PropId.Style, sid%
 END SUB
 
-SUB CtlSetText (cid%, value$)
+SUB CtSetText (cid%, value$)
   ObSetString cid%, PropId.Text, value$
 END SUB
 
-SUB CtlSetValue (cid%, value$)
+SUB CtSetValue (cid%, value$)
   ObSetString cid%, PropId.Value, value$
 END SUB
 
@@ -2635,26 +2629,26 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
 
   DIM endtag AS STRING
   DIM kind%
-  LET kind% = CtlGetKind(cid%)
+  LET kind% = CtGetKind(cid%)
 
   SELECT CASE kind%
-    CASE CtlKind.Button
+    CASE CtKind.Button
       endtag = "endbutton"
-    CASE CtlKind.Box
+    CASE CtKind.Box
       endtag = "endbox"
-    CASE CtlKind.File
+    CASE CtKind.File
       endtag = "endfile"
-    CASE CtlKind.Label
+    CASE CtKind.Label
       endtag = "endlabel"
-    CASE CtlKind.Popup
+    CASE CtKind.Popup
       endtag = "endpopup"
-    CASE CtlKind.Separator
+    CASE CtKind.Separator
       endtag = "endseparator"
-    CASE CtlKind.Boolean
+    CASE CtKind.Boolean
       endtag = "endboolean"
-    CASE CtlKind.Integer
+    CASE CtKind.Integer
       endtag = "endinteger"
-    CASE CtlKind.Nebula
+    CASE CtKind.Nebula
       endtag = "endnebula"
     CASE ELSE
       AssertFail "ExecCmdFid", "Unknown kind:" + STR$(kind%)
@@ -2668,38 +2662,38 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       fid% = 0
 
     CASE "child"
-      CtlSetPopupName cid%, stoken$(1)
+      CtSetPopupName cid%, stoken$(1)
 
     CASE "command"
-      CtlSetCmdStr cid%, stoken$(1)
+      CtSetCmdStr cid%, stoken$(1)
 
     CASE "offsetx"
-      CtlSetOffsetX cid%, VAL(stoken$(1))
+      CtSetOffsetX cid%, VAL(stoken$(1))
 
     CASE "offsety"
-      CtlSetOffsetY cid%, VAL(stoken$(1))
+      CtSetOffsetY cid%, VAL(stoken$(1))
 
     CASE "sizex"
-      CtlSetSizeX cid%, VAL(stoken$(1))
+      CtSetSizeX cid%, VAL(stoken$(1))
 
     CASE "sizey"
-      CtlSetSizeY cid%, VAL(stoken$(1))
+      CtSetSizeY cid%, VAL(stoken$(1))
 
     CASE "style"
-      CtlSetStyle cid%, WinFindSid%(stoken$(1))
+      CtSetStyle cid%, WinFindSid%(stoken$(1))
 
     CASE "text"
       IF LCASE$(stoken$(1)) = "bind" THEN
-        CtlBind cid%, PropId.Text, stoken$(2)
+        CtBind cid%, PropId.Text, stoken$(2)
       ELSE
-        CtlSetText cid%, stoken$(1)
+        CtSetText cid%, stoken$(1)
       END IF
 
     CASE "value"
       IF LCASE$(stoken$(1)) = "bind" THEN
-        CtlBind cid%, PropId.Value, stoken$(2)
+        CtBind cid%, PropId.Value, stoken$(2)
       ELSE
-        CtlSetValue cid%, stoken$(1)
+        CtSetValue cid%, stoken$(1)
       END IF
 
     CASE ELSE
@@ -2967,31 +2961,31 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
         widcid% = 0
 
       CASE "boolean"
-        fid% = CtlCreateChild%(wid%, CtlKind.Boolean)
+        fid% = CtCreateChild%(wid%, CtKind.Boolean)
 
       CASE "box"
-        fid% = CtlCreateChild%(wid%, CtlKind.Box)
+        fid% = CtCreateChild%(wid%, CtKind.Box)
 
       CASE "button"
-        fid% = CtlCreateChild%(wid%, CtlKind.Button)
+        fid% = CtCreateChild%(wid%, CtKind.Button)
    
       CASE "file"
-        fid% = CtlCreateChild%(wid%, CtlKind.File)
+        fid% = CtCreateChild%(wid%, CtKind.File)
 
       CASE "integer"
-        fid% = CtlCreateChild%(wid%, CtlKind.Integer)
+        fid% = CtCreateChild%(wid%, CtKind.Integer)
 
       CASE "label"
-        fid% = CtlCreateChild%(wid%, CtlKind.Label)
+        fid% = CtCreateChild%(wid%, CtKind.Label)
    
       CASE "nebula"
-        fid% = CtlCreateChild%(wid%, CtlKind.Nebula)
+        fid% = CtCreateChild%(wid%, CtKind.Nebula)
 
       CASE "popup"
-        fid% = CtlCreateChild%(wid%, CtlKind.Popup)
+        fid% = CtCreateChild%(wid%, CtKind.Popup)
 
       CASE "separator"
-        fid% = CtlCreateChild%(wid%, CtlKind.Separator)
+        fid% = CtCreateChild%(wid%, CtKind.Separator)
 
       CASE ELSE
         ExecuteCommandWid% = CmdResult.Malformed
@@ -3012,19 +3006,19 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
       win(wid%).arrowexit = VAL(stoken$(1))
 
     CASE "name"
-      CtlSetName widcid%, stoken$(1)
+      CtSetName widcid%, stoken$(1)
  
     CASE "param"
-      CtlSetParam widcid%, VAL(stoken$(2))
+      CtSetParam widcid%, VAL(stoken$(2))
 
     CASE "posx"
-      CtlSetOffsetX widcid%, VAL(stoken$(1)) - 1
+      CtSetOffsetX widcid%, VAL(stoken$(1)) - 1
 
     CASE "posy"
-      CtlSetOffsetY widcid%, VAL(stoken$(1)) - 1
+      CtSetOffsetY widcid%, VAL(stoken$(1)) - 1
 
     CASE "style"
-      CtlSetStyle widcid%, WinFindSid%(stoken$(1))
+      CtSetStyle widcid%, WinFindSid%(stoken$(1))
 
     CASE ELSE
       result = CmdResult.Malformed
@@ -3122,7 +3116,7 @@ SUB GameMoveOffset (offsetX%, offsetY%)
       '
       DIM hidwidcid%
       LET hidwidcid% = gwin(hidwid%, 0)
-      CtlSetParam hidwidcid%, hid
+      CtSetParam hidwidcid%, hid
      
       WinRun hidwid%, wresult
      
@@ -3355,7 +3349,7 @@ FUNCTION ObGet% (oid%, pid%)
   END IF
 
   DIM parentcid%
-  LET parentcid% = CtlGetParent%(oid%)
+  LET parentcid% = CtGetParent%(oid%)
 
   SELECT CASE flags%
  
@@ -3364,7 +3358,7 @@ FUNCTION ObGet% (oid%, pid%)
       ' Bound to the parent window parameter
       '
       DIM hid%
-      LET hid% = CtlGetParam%(parentcid%)
+      LET hid% = CtGetParam%(parentcid%)
       IF hid% > 0 THEN
         SELECT CASE RsGet$(value%)
           CASE "backdrop"
@@ -3379,10 +3373,10 @@ FUNCTION ObGet% (oid%, pid%)
       ' Bound to selected control of parent window parameter
       '
       DIM sel%
-      LET sel% = CtlGetSelected%(parentcid%)
+      LET sel% = CtGetSelected%(parentcid%)
       
       DIM wid%
-      LET wid% = CtlGetChildList%(parentcid%)
+      LET wid% = CtGetChildList%(parentcid%)
 
       DIM selcid%
       LET selcid% = gwin(wid%, sel%)
@@ -3857,19 +3851,19 @@ FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
   AssertIsPositive wid%, "WinAddButton", "wid"
 
   DIM fid%
-  LET fid% = CtlCreateChild(wid%, CtlKind.Button)
+  LET fid% = CtCreateChild(wid%, CtKind.Button)
 
   DIM cid%
   LET cid% = gwin(wid%, fid%)
 
-  CtlSetCmdRid cid%, 0
-  CtlSetOffsetX cid%, offsetX%
-  CtlSetOffsetY cid%, offsetY%
-  CtlSetPopup cid%, 0
-  CtlSetSizeX cid%, sizeX%
-  CtlSetSizeY cid%, 1
-  CtlSetText cid%, text$
-  CtlSetValue cid%, value$
+  CtSetCmdRid cid%, 0
+  CtSetOffsetX cid%, offsetX%
+  CtSetOffsetY cid%, offsetY%
+  CtSetPopup cid%, 0
+  CtSetSizeX cid%, sizeX%
+  CtSetSizeY cid%, 1
+  CtSetText cid%, text$
+  CtSetValue cid%, value$
 
   WinAddButton% = fid%
 
@@ -3910,8 +3904,8 @@ FUNCTION WinCreate%
   DIM cid%
   LET cid% = ObCreate%(ObKind.Window)
  
-  CtlSetKind cid%, CtlKind.Window
-  CtlSetChildList cid%, wincount
+  CtSetKind cid%, CtKind.Window
+  CtSetChildList cid%, wincount
 
   '
   ' Track the control as field #0
@@ -3927,7 +3921,7 @@ SUB WinDraw (wid%)
 
   DIM fid%
   FOR fid% = 1 TO win(wid%).fields
-    CtlDraw wid%, fid%
+    CtDraw wid%, fid%
   NEXT
 
 END SUB
@@ -3945,7 +3939,7 @@ FUNCTION WinFindWid% (wname$)
     DIM cid%
     LET cid% = gwin(wid%, 0)
    
-    IF CtlGetName$(cid%) = wname$ THEN
+    IF CtGetName$(cid%) = wname$ THEN
       WinFindWid% = wid%
       EXIT FUNCTION
     END IF
@@ -3974,11 +3968,11 @@ FUNCTION WinMapKey% (wid%, pressed$)
   '
   exitLeft = win(wid%).arrowexit AND &H1
   exitRight = win(wid%).arrowexit AND &H2
-  selected = CtlGetSelected(widcid%)
+  selected = CtGetSelected(widcid%)
   IF selected > 0 THEN
     selectedCid = gwin(wid%, selected)
-    popupcid = CtlGetPopup%(selectedCid)
-    cmdrid = CtlGetCmdRid%(selectedCid)
+    popupcid = CtGetPopup%(selectedCid)
+    cmdrid = CtGetCmdRid%(selectedCid)
   END IF
 
   SELECT CASE pressed$
@@ -4078,7 +4072,7 @@ SUB WinOpen (wid%)
   '
   ' Set focus to a field
   '
-  IF CtlGetSelected(widcid%) = 0 THEN
+  IF CtGetSelected(widcid%) = 0 THEN
     WinSelectFirst wid%
   END IF
 
@@ -4102,11 +4096,11 @@ SUB WinRefreshField (wid%, fid%)
         cid% = gwin(wid%, n)
 
         IF n = fid% THEN
-          CtlDraw wid%, n
-        ELSEIF CtlRedirected%(cid%, PropId.Text) THEN
-          CtlDraw wid%, n
-        ELSEIF CtlRedirected%(cid%, PropId.Value) THEN
-          CtlDraw wid%, n
+          CtDraw wid%, n
+        ELSEIF CtRedirected%(cid%, PropId.Text) THEN
+          CtDraw wid%, n
+        ELSEIF CtRedirected%(cid%, PropId.Value) THEN
+          CtDraw wid%, n
         END IF
       NEXT
 
@@ -4137,24 +4131,24 @@ SUB WinRun (wid%, result AS WinResultType)
 
       IF nopopups THEN
         EXIT DO
-      ELSEIF CtlGetSelected(widcid%) = 0 THEN
+      ELSEIF CtGetSelected(widcid%) = 0 THEN
         EXIT DO
       END IF
 
       DIM selectedCid%
-      LET selectedCid% = gwin(wid%, CtlGetSelected(widcid%))
+      LET selectedCid% = gwin(wid%, CtGetSelected(widcid%))
 
-      IF CtlGetKind%(selectedCid%) <> CtlKind.Popup THEN
+      IF CtGetKind%(selectedCid%) <> CtKind.Popup THEN
        
         EXIT DO
 
-      ELSEIF CtlGetPopup%(selectedCid%) = 0 THEN
+      ELSEIF CtGetPopup%(selectedCid%) = 0 THEN
        
         EXIT DO
 
       ELSE
      
-        WinRun CtlGetPopup%(selectedCid%), result
+        WinRun CtGetPopup%(selectedCid%), result
        
         SELECT CASE result.action
          
@@ -4197,7 +4191,7 @@ SUB WinRun (wid%, result AS WinResultType)
         result.action = WinAction.Cancel
         result.canceled = True
         result.cmdrid = 0
-        result.selected = CtlGetSelected(widcid%)
+        result.selected = CtGetSelected(widcid%)
         WinClose wid%
         EXIT SUB
 
@@ -4205,15 +4199,15 @@ SUB WinRun (wid%, result AS WinResultType)
         result.action = WinAction.Complete
         result.canceled = False
         result.cmdrid = 0
-        result.selected = CtlGetSelected(widcid%)
+        result.selected = CtGetSelected(widcid%)
         WinClose wid%
         EXIT SUB
 
       CASE WinAction.Execute
         result.action = WinAction.Execute
         result.canceled = False
-        result.selected = CtlGetSelected(widcid%)
-        result.cmdrid = CtlGetCmdRid%(gwin(wid%, result.selected))
+        result.selected = CtGetSelected(widcid%)
+        result.cmdrid = CtGetCmdRid%(gwin(wid%, result.selected))
         WinClose wid%
         EXIT SUB
 
@@ -4221,7 +4215,7 @@ SUB WinRun (wid%, result AS WinResultType)
         result.action = WinAction.ExitLeft
         result.canceled = True
         result.cmdrid = 0
-        result.selected = CtlGetSelected(widcid%)
+        result.selected = CtGetSelected(widcid%)
         WinClose wid%
         EXIT SUB
 
@@ -4229,7 +4223,7 @@ SUB WinRun (wid%, result AS WinResultType)
         result.action = WinAction.ExitRight
         result.canceled = True
         result.cmdrid = 0
-        result.selected = CtlGetSelected(widcid%)
+        result.selected = CtGetSelected(widcid%)
         WinClose wid%
         EXIT SUB
 
@@ -4249,8 +4243,8 @@ SUB WinRun (wid%, result AS WinResultType)
         WinSelectPrevious wid%
 
       CASE ELSE
-        CtlKey gwin(wid%, CtlGetSelected(widcid%)), pressed
-        WinRefreshField wid%, CtlGetSelected(widcid%)
+        CtKey gwin(wid%, CtGetSelected(widcid%)), pressed
+        WinRefreshField wid%, CtGetSelected(widcid%)
 
     END SELECT
 
@@ -4285,7 +4279,7 @@ SUB WinSelect (wid%, fid%)
   LET widcid% = gwin(wid%, 0)
 
   DIM old%
-  LET old% = CtlGetSelected(widcid%)
+  LET old% = CtGetSelected(widcid%)
 
   IF old% = fid% THEN
     '
@@ -4294,7 +4288,7 @@ SUB WinSelect (wid%, fid%)
     EXIT SUB
   END IF
 
-  CtlSetSelected widcid%, fid%
+  CtSetSelected widcid%, fid%
 
   IF old% > 0 THEN
     WinRefreshField wid%, old%
@@ -4327,7 +4321,7 @@ SUB WinSelectFirst (wid%)
       DIM cid%
       LET cid% = gwin(wid%, fid%)
 
-      IF CtlSelectable%(cid%) THEN
+      IF CtSelectable%(cid%) THEN
         WinSelect wid%, fid%
         EXIT SUB
       END IF
@@ -4363,7 +4357,7 @@ SUB WinSelectLast (wid%)
       DIM cid%
       LET cid% = gwin(wid%, fid%)
 
-      IF CtlSelectable%(cid%) THEN
+      IF CtSelectable%(cid%) THEN
         WinSelect wid%, fid%
         EXIT SUB
       END IF
@@ -4400,7 +4394,7 @@ SUB WinSelectNext (wid%)
     '
     ' Get the starting field
     '
-    LET firstFid% = CtlGetSelected(widcid%)
+    LET firstFid% = CtGetSelected(widcid%)
     IF firstFid% = 0 THEN
       firstFid% = 1
     END IF
@@ -4420,7 +4414,7 @@ SUB WinSelectNext (wid%)
       DIM fidcid%
       LET fidcid% = gwin(wid%, fid%)
 
-      IF CtlSelectable%(fidcid%) THEN
+      IF CtSelectable%(fidcid%) THEN
         EXIT DO
       END IF
 
@@ -4462,7 +4456,7 @@ SUB WinSelectPrevious (wid%)
     '
     ' Get the starting field
     '
-    LET startingFid% = CtlGetSelected(widcid%)
+    LET startingFid% = CtGetSelected(widcid%)
     IF startingFid% = 0 THEN
       startingFid% = 1
     END IF
@@ -4482,7 +4476,7 @@ SUB WinSelectPrevious (wid%)
       DIM fidcid%
       LET fidcid% = gwin(wid%, fid%)
 
-      IF CtlSelectable%(fidcid%) THEN
+      IF CtSelectable%(fidcid%) THEN
         EXIT DO
       END IF
 
