@@ -53,14 +53,6 @@ TYPE WinStackItem
   workpage AS INTEGER
 END TYPE
 
-TYPE WinStyleType
-  bordercolor   AS INTEGER
-  bordertype    AS INTEGER
-  selectedcolor AS INTEGER
-  stylename     AS STRING * 20
-  textcolor     AS INTEGER
-END TYPE
-
 TYPE WinType
   arrowexit  AS INTEGER
   fields     AS INTEGER
@@ -285,6 +277,21 @@ DECLARE SUB UI.RunConsole ()
 DECLARE SUB UI.SetPage (page AS INTEGER)
 
 '
+' Style API
+'
+DECLARE FUNCTION StCreate% ()
+DECLARE FUNCTION StGetBorderColor% (sid%)
+DECLARE FUNCTION StGetBorderType% (sid%)
+DECLARE FUNCTION StGetName$ (sid%)
+DECLARE FUNCTION StGetSelectedColor% (sid%)
+DECLARE FUNCTION StGetTextColor% (sid%)
+DECLARE SUB StSetBorderColor (sid%, bordercolor%)
+DECLARE SUB StSetBorderType (sid%, bordertype%)
+DECLARE SUB StSetName (sid%, name$)
+DECLARE SUB StSetSelectedColor (sid%, selectedcolor%)
+DECLARE SUB StSetTextColor (sid%, textcolor%)
+
+'
 ' Video pages
 '
 DECLARE SUB VideoFree (pagenum%)
@@ -382,7 +389,7 @@ CONST ObjKind.Style = 4
 CONST ObjKind.Window = 5
 
 '
-' Core object properties
+' Object properties
 '
 CONST ObjPropId.Kind = 0
 
@@ -460,6 +467,15 @@ CONST ScanCode.Down = 80
 CONST ScanCode.PageDown = 81
 
 '
+' Style properties
+'
+CONST StylePropId.BorderColor = 1
+CONST StylePropId.BorderType = 2
+CONST StylePropId.Name = 3
+CONST StylePropId.SelectedColor = 4
+CONST StylePropId.TextColor = 5
+
+'
 ' UIPage.* constants
 '
 CONST UIPage.None = 0
@@ -500,7 +516,7 @@ DIM SHARED event(1 TO 5)         AS EventType
 DIM SHARED events                AS INTEGER
 DIM SHARED listening             AS INTEGER
 DIM SHARED playeraid             AS INTEGER
-REDIM SHARED resource(1 TO 100)    AS STRING
+REDIM SHARED resource(1 TO 200)  AS STRING
 DIM SHARED resources             AS INTEGER
 DIM SHARED trigger(1 TO 5)       AS TriggerType
 DIM SHARED triggers              AS INTEGER
@@ -512,8 +528,6 @@ DIM SHARED win(1 TO 15)          AS WinType
 DIM SHARED wincount              AS INTEGER
 DIM SHARED winstack(1 TO 3)      AS WinStackItem
 DIM SHARED winstacked            AS INTEGER
-DIM SHARED winstyle(1 TO 10)     AS WinStyleType
-DIM SHARED winstyles             AS INTEGER
 
 ON TIMER(1) GOSUB HandleTimer
 
@@ -1370,7 +1384,7 @@ SUB CtlDrawBox (cid%)
   DIM sid%
   LET sid% = CtlGetStyle(cid%)
 
-  SELECT CASE winstyle(sid%).bordertype
+  SELECT CASE StGetBorderType%(sid%)
  
     CASE 0:
       CtlDrawBox0 cid%
@@ -1393,7 +1407,7 @@ SUB CtlDrawBox0 (cid%)
   DIM sy  AS INTEGER
 
   sid = CtlGetStyle(cid%)
-  DrawColor winstyle(sid).textcolor
+  DrawColor StGetTextColor(sid)
  
   FOR row = 1 TO CtlGetSizeY%(cid%)
    
@@ -1441,7 +1455,7 @@ SUB CtlDrawBox1 (cid%)
   ' Draw the top border
   '
   LOCATE sy1, sx1
-  DrawColor winstyle(sid).bordercolor
+  DrawColor StGetBorderColor%(sid)
   PRINT upperLeft; STRING$(sizeX - 2, upperFlat); upperRight;
 
   '
@@ -1451,10 +1465,10 @@ SUB CtlDrawBox1 (cid%)
     LOCATE r, sx1
     PRINT sideLeft;
   
-    DrawColor winstyle(sid).textcolor
+    DrawColor StGetTextColor%(sid)
     PRINT STRING$(sizeX - 2, " ");
   
-    DrawColor winstyle(sid).bordercolor
+    DrawColor StGetBorderColor%(sid)
     PRINT sideRight;
   NEXT
  
@@ -1686,7 +1700,7 @@ SUB CtlDrawSeparator (cid%)
   sy = CtlGetScreenY%(cid%)
 
   LOCATE sy, sx
-  DrawColor winstyle(sid).bordercolor
+  DrawColor StGetBorderColor%(sid)
 
   IF sizeX > 0 THEN
     '
@@ -1783,9 +1797,9 @@ SUB CtlDrawText (wid%, fid%)
   '
   sid% = CtlGetStyle(fidcid%)
   IF CtlGetSelected(widcid%) = fid% THEN
-    DrawColor winstyle(sid%).selectedcolor
+    DrawColor StGetSelectedColor%(sid%)
   ELSE
-    DrawColor winstyle(sid%).textcolor
+    DrawColor StGetTextColor%(sid%)
   END IF
 
   '
@@ -2858,8 +2872,7 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
       END IF
 
     CASE "style"
-      winstyles = winstyles + 1
-      sid% = winstyles
+      sid% = StCreate%
 
     CASE "trigger"
       triggers = triggers + 1
@@ -2887,22 +2900,22 @@ FUNCTION ExecCmdSid% (ntoken%, stoken$(), sid%)
   SELECT CASE stoken$(0)
    
     CASE "bordercolor"
-      winstyle(sid%).bordercolor = VAL(stoken$(1))
+      StSetBorderColor sid%, VAL(stoken$(1))
 
     CASE "bordertype"
-      winstyle(sid%).bordertype = VAL(stoken$(1))
+      StSetBorderType sid%, VAL(stoken$(1))
 
     CASE "endstyle"
       sid% = 0
 
     CASE "name"
-      winstyle(sid%).stylename = stoken$(1)
+      StSetName sid%, stoken$(1)
   
     CASE "selectedcolor"
-      winstyle(sid%).selectedcolor = VAL(stoken$(1))
+      StSetSelectedColor sid%, VAL(stoken$(1))
 
     CASE "textcolor"
-      winstyle(sid%).textcolor = VAL(stoken$(1))
+      StSetTextColor sid%, VAL(stoken$(1))
 
     CASE ELSE
       ExecuteCommandSid% = CmdResult.Malformed
@@ -3620,6 +3633,50 @@ FUNCTION Split% (text AS STRING, tokens() AS STRING)
 
 END FUNCTION
 
+FUNCTION StCreate%
+  StCreate% = ObjCreate%(ObjKind.Style)
+END FUNCTION
+
+FUNCTION StGetBorderColor% (sid%)
+  StGetBorderColor% = ObjGet%(sid%, StylePropId.BorderColor)
+END FUNCTION
+
+FUNCTION StGetBorderType% (sid%)
+  StGetBorderType% = ObjGet%(sid%, StylePropId.BorderType)
+END FUNCTION
+
+FUNCTION StGetName$ (sid%)
+  StGetName$ = ObjGetString$(sid%, StylePropId.Name)
+END FUNCTION
+
+FUNCTION StGetSelectedColor% (sid%)
+  StGetSelectedColor% = ObjGet%(sid%, StylePropId.SelectedColor)
+END FUNCTION
+
+FUNCTION StGetTextColor% (sid%)
+  StGetTextColor% = ObjGet%(sid%, StylePropId.TextColor)
+END FUNCTION
+
+SUB StSetBorderColor (sid%, bordercolor%)
+  ObjSet sid%, StylePropId.BorderColor, bordercolor%
+END SUB
+
+SUB StSetBorderType (sid%, bordertype%)
+  ObjSet sid%, StylePropId.BorderType, bordertype%
+END SUB
+
+SUB StSetName (sid%, name$)
+  ObjSetString sid%, StylePropId.Name, name$
+END SUB
+
+SUB StSetSelectedColor (sid%, selectedcolor%)
+  ObjSet sid%, StylePropId.SelectedColor, selectedcolor%
+END SUB
+
+SUB StSetTextColor (sid%, textcolor%)
+  ObjSet sid%, StylePropId.TextColor, textcolor%
+END SUB
+
 SUB UI.Run
  
   DIM menuwid AS INTEGER
@@ -3875,33 +3932,8 @@ SUB WinDraw (wid%)
 
 END SUB
 
-FUNCTION WinFindSid% (sname$)
-
-  DIM sid%
- 
-  '
-  ' Check for numeric ID
-  '
-  sid% = VAL(sname$)
-  IF sid% > 0 THEN
-    IF sid% >= LBOUND(winstyle) AND sid% <= UBOUND(winstyle) THEN
-      WinFindSid% = sid%
-      EXIT FUNCTION
-    END IF
-  END IF
-
-  '
-  ' Search by name
-  '
-  FOR sid% = LBOUND(winstyle) TO UBOUND(winstyle)
-    IF RTRIM$(winstyle(sid%).stylename) = sname$ THEN
-      WinFindSid% = sid%
-      EXIT FUNCTION
-    END IF
-  NEXT
-
-  WinFindSid% = 0
-
+FUNCTION WinFindSid% (stylename$)
+  WinFindSid% = ObjFindString%(ObjKind.Style, StylePropId.Name, stylename$)
 END FUNCTION
 
 FUNCTION WinFindWid% (wname$)
