@@ -486,7 +486,7 @@ DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS IN
 '
 DIM SHARED gobj(1 TO 200, 0 TO 15) AS PropType
 DIM SHARED gwin(1 TO 20, 0 TO 13)  AS INTEGER
-DIM SHARED gcids                   AS INTEGER
+DIM SHARED goids                   AS INTEGER
 
 DIM SHARED area(1 TO 35)         AS AreaType
 DIM SHARED atlasitem(1 TO 35)    AS AtlasItemType
@@ -1809,7 +1809,7 @@ FUNCTION CtlFindName% (name$)
 
   ELSE
 
-    FOR cid% = 1 TO gcids
+    FOR cid% = 1 TO goids
      
       DIM rid%
       LET rid% = CtlGet(cid%, PropId.Name)
@@ -3363,13 +3363,13 @@ END FUNCTION
 
 FUNCTION ObjCreate% (kind%)
  
-  Assert gcids <= UBOUND(gobj, 1), "ObjCreate", "Out of object space"
+  Assert goids <= UBOUND(gobj, 1), "ObjCreate", "Out of object space"
 
-  gcids = gcids + 1
+  goids = goids + 1
  
-  ObjSet gcids, ObjPropId.Kind, kind%
+  ObjSet goids, ObjPropId.Kind, kind%
 
-  ObjCreate% = gcids
+  ObjCreate% = goids
 
 END FUNCTION
 
