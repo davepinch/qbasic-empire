@@ -379,7 +379,7 @@ CONST BindingTarget.Selected = 1
 CONST BindingTarget.Param = 2
 
 '
-' Kinds of objects
+' Object kinds
 '
 CONST ObKind.None = 0
 CONST ObKind.Control = 1
@@ -391,7 +391,7 @@ CONST ObKind.Window = 5
 '
 ' Object properties
 '
-CONST ObjPropId.Kind = 0
+CONST ObPropId.Kind = 0
 
 '
 ' Command Results
@@ -3299,7 +3299,7 @@ FUNCTION ObCreate% (kind%)
 
   goids = goids + 1
  
-  ObSet goids, ObjPropId.Kind, kind%
+  ObSet goids, ObPropId.Kind, kind%
 
   ObCreate% = goids
 
@@ -3311,7 +3311,7 @@ FUNCTION ObFindString% (kind%, pid%, value$)
   '
   FOR oid% = 1 TO UBOUND(gobj, 1)
      
-    IF gobj(oid%, ObjPropId.Kind).value = kind% THEN
+    IF gobj(oid%, ObPropId.Kind).value = kind% THEN
       
       DIM rid%
       LET rid% = ObGet%(oid%, pid%)
@@ -3399,7 +3399,7 @@ FUNCTION ObGet% (oid%, pid%)
 END FUNCTION
 
 FUNCTION ObGetKind% (oid%)
-  ObGetKind% = ObGet%(oid%, ObjPropId.Kind)
+  ObGetKind% = ObGet%(oid%, ObPropId.Kind)
 END FUNCTION
 
 FUNCTION ObGetString$ (oid%, pid%)
