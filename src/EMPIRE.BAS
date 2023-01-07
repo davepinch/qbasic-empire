@@ -142,7 +142,6 @@ DECLARE SUB CtlDrawText (wid%, fid%)
 DECLARE SUB CtlKey (cid%, keypress$)
 DECLARE SUB CtlKeyBoolean (cid%, keypress$)
 DECLARE SUB CtlKeyInteger (cid%, keypress$)
-DECLARE SUB CtlSet (cid%, pid%, value%)
 DECLARE SUB CtlSetChildList (cid%, listcid%)
 DECLARE SUB CtlSetCmdRid (cid%, cmdrid%)
 DECLARE SUB CtlSetCmdStr (cid%, cmd$)
@@ -257,6 +256,11 @@ DECLARE SUB InboxAdd (subject AS STRING, filename AS STRING)
 '
 DECLARE FUNCTION NebulaLabel$ (energy AS INTEGER)
 DECLARE FUNCTION NebulaLabelRid% (energy AS INTEGER)
+
+'
+' Objects
+'
+DECLARE SUB ObjSet (oid%, pid%, value%)
 
 '
 ' Persons
@@ -2117,16 +2121,12 @@ FUNCTION CtlSelectable% (cid%)
 
 END FUNCTION
 
-SUB CtlSet (cid%, pid%, value%)
-  gobj(cid%, pid%).value = value%
-END SUB
-
 SUB CtlSetChildList (cid%, listcid%)
-  CtlSet cid%, PropId.ChildList, listcid%
+  ObjSet cid%, PropId.ChildList, listcid%
 END SUB
 
 SUB CtlSetCmdRid (cid%, cmdrid%)
-  CtlSet cid%, PropId.Command, cmdrid%
+  ObjSet cid%, PropId.Command, cmdrid%
 END SUB
 
 SUB CtlSetCmdStr (cid%, cmd$)
@@ -2144,7 +2144,7 @@ SUB CtlSetCmdStr (cid%, cmd$)
 END SUB
 
 SUB CtlSetKind (cid%, kind%)
-  CtlSet cid%, PropId.Kind, kind%
+  ObjSet cid%, PropId.Kind, kind%
 END SUB
 
 SUB CtlSetName (cid%, value$)
@@ -2152,23 +2152,23 @@ SUB CtlSetName (cid%, value$)
 END SUB
 
 SUB CtlSetOffsetX (cid%, offsetX%)
-  CtlSet cid%, PropId.OffsetX, offsetX%
+  ObjSet cid%, PropId.OffsetX, offsetX%
 END SUB
 
 SUB CtlSetOffsetY (cid%, offsetY%)
-  CtlSet cid%, PropId.OffsetY, offsetY%
+  ObjSet cid%, PropId.OffsetY, offsetY%
 END SUB
 
 SUB CtlSetParam (cid%, value%)
-  CtlSet cid%, PropId.Param, value%
+  ObjSet cid%, PropId.Param, value%
 END SUB
 
 SUB CtlSetParent (cid%, parentcid%)
-  CtlSet cid%, PropId.Parent, parentcid%
+  ObjSet cid%, PropId.Parent, parentcid%
 END SUB
 
 SUB CtlSetPopup (cid%, popupcid%)
-  CtlSet cid%, PropId.Popup, popupcid%
+  ObjSet cid%, PropId.Popup, popupcid%
 END SUB
 
 SUB CtlSetPopupName (cid%, wname$)
@@ -2176,15 +2176,15 @@ SUB CtlSetPopupName (cid%, wname$)
 END SUB
 
 SUB CtlSetSelected (cid%, value%)
-  CtlSet cid%, PropId.Selected, value%
+  ObjSet cid%, PropId.Selected, value%
 END SUB
 
 SUB CtlSetSizeX (cid%, sizeX%)
-  CtlSet cid%, PropId.SizeX, sizeX%
+  ObjSet cid%, PropId.SizeX, sizeX%
 END SUB
 
 SUB CtlSetSizeY (cid%, sizeY%)
-  CtlSet cid%, PropId.SizeY, sizeY%
+  ObjSet cid%, PropId.SizeY, sizeY%
 END SUB
 
 SUB CtlSetString (cid%, pid%, value$)
@@ -2194,12 +2194,12 @@ SUB CtlSetString (cid%, pid%, value$)
 
   ResourceSet rid%, value$
 
-  CtlSet cid%, pid%, rid%
+  ObjSet cid%, pid%, rid%
 
 END SUB
 
 SUB CtlSetStyle (cid%, sid%)
-  CtlSet cid%, PropId.Style, sid%
+  ObjSet cid%, PropId.Style, sid%
 END SUB
 
 SUB CtlSetText (cid%, value$)
@@ -3379,6 +3379,10 @@ FUNCTION NebulaLabelRid% (energy AS INTEGER)
   NebulaLabelRid% = lrid(energy)
 
 END FUNCTION
+
+SUB ObjSet (oid%, pid%, value%)
+  gobj(oid%, pid%).value = value%
+END SUB
 
 FUNCTION PersonCreate%
  
