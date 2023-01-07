@@ -165,14 +165,14 @@ DECLARE FUNCTION CtRedirected% (cid%, pid%)
 DECLARE FUNCTION CtSelectable% (cid%)
 
 '
-' Dialog
+' Dialog API
 '
-DECLARE SUB DialogNext (outpid%, outtext$)
-DECLARE SUB DialogPrint (pid%, text$)
-DECLARE SUB DialogStart (hid%)
-DECLARE SUB DialogStop ()
-DECLARE SUB DialogTimer ()
-DECLARE FUNCTION DialogGarble$ (text$, percent!)
+DECLARE SUB DgNext (outpid%, outtext$)
+DECLARE SUB DgPrint (pid%, text$)
+DECLARE SUB DgStart (hid%)
+DECLARE SUB DgStop ()
+DECLARE SUB DgTimer ()
+DECLARE FUNCTION DgGarble$ (text$, percent!)
 
 '
 ' Drawing
@@ -540,7 +540,7 @@ HandleTimer:
   ' Executed when the game needs to perform periodic tasks
   '
   IF listening > 0 THEN
-    DialogTimer
+    DgTimer
   END IF
   RETURN
 
@@ -2107,7 +2107,7 @@ SUB CtSetValue (cid%, value$)
   ObSetString cid%, CtPropId.Value, value$
 END SUB
 
-FUNCTION DialogGarble$ (text$, percent!)
+FUNCTION DgGarble$ (text$, percent!)
 
   CONST GarbleCode = 250
   CONST InSpaces = 0
@@ -2154,11 +2154,11 @@ FUNCTION DialogGarble$ (text$, percent!)
 
   NEXT
 
-  DialogGarble$ = g + "@X07"
+  DgGarble$ = g + "@X07"
 
 END FUNCTION
 
-SUB DialogNext (outpersonid%, outtext$)
+SUB DgNext (outpersonid%, outtext$)
 
   STATIC loaded AS INTEGER
   STATIC lines() AS STRING
@@ -2180,7 +2180,7 @@ SUB DialogNext (outpersonid%, outtext$)
 
 END SUB
 
-SUB DialogPrint (personid%, text$)
+SUB DgPrint (personid%, text$)
 
   DIM name$
   LET name$ = PrGetName$(personid%)
@@ -2205,7 +2205,7 @@ SUB DialogPrint (personid%, text$)
         '
         ' Left justified
         '
-        q$ = DialogGarble(text$, .2)
+        q$ = DgGarble(text$, .2)
 
         ConsolePrint label$
         ConsolePrint "@X07" + text$ + "@X07"
@@ -2215,7 +2215,7 @@ SUB DialogPrint (personid%, text$)
         '
         ' Right justified
         '
-        q$ = DialogGarble(text$, .7)
+        q$ = DgGarble(text$, .7)
       
         ConsolePrint STRING$(78 - DrawLength(label$), " ") + label$
         ConsolePrint STRING$(78 - DrawLength(text$), " ") + "@X07" + q$ + "@X07"
@@ -2229,7 +2229,7 @@ SUB DialogPrint (personid%, text$)
 
 END SUB
 
-SUB DialogStart (hid%)
+SUB DgStart (hid%)
  
   DIM startfile$
 
@@ -2248,11 +2248,11 @@ SUB DialogStart (hid%)
 
 END SUB
 
-SUB DialogStop
+SUB DgStop
   listening = 0
 END SUB
 
-SUB DialogTimer
+SUB DgTimer
   '
   ' Executed periodically
   '
@@ -2268,12 +2268,12 @@ SUB DialogTimer
   '
   ' Grab the next dialog
   '
-  DialogNext pid%, text$
+  DgNext pid%, text$
  
   '
   ' Print the dialog to the console
   '
-  DialogPrint pid%, text$
+  DgPrint pid%, text$
 
 END SUB
 
@@ -2793,10 +2793,10 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
     CASE "listen"
       DIM listenhid%: listenhid% = VAL(stoken$(1))
       IF listenhid% = 0 THEN
-        DialogStop
+        DgStop
       ELSE
         UI.SetPage UIPage.Console
-        DialogStart listenhid%
+        DgStart listenhid%
       END IF
 
     CASE "mail"
