@@ -252,14 +252,14 @@ DECLARE SUB ObSet (oid%, pid%, value%)
 DECLARE SUB ObSetString (oid%, pid%, value$)
 
 '
-' Persons
+' Person API
 '
-DECLARE SUB PersonSetLabel (personid%, label$)
-DECLARE SUB PersonSetName (personid%, name$)
-DECLARE FUNCTION PersonCreate% ()
-DECLARE FUNCTION PersonGetLabel$ (personid%)
-DECLARE FUNCTION PersonGetName$ (personid%)
-DECLARE FUNCTION PersonRandomly% ()
+DECLARE SUB PrSetLabel (personid%, label$)
+DECLARE SUB PrSetName (personid%, name$)
+DECLARE FUNCTION PrCreate% ()
+DECLARE FUNCTION PrGetLabel$ (personid%)
+DECLARE FUNCTION PrGetName$ (personid%)
+DECLARE FUNCTION PrRandomly% ()
 
 '
 ' Resources
@@ -449,10 +449,10 @@ CONST PropId.SizeY = 14
 CONST PropId.Style = 15
 
 '
-' Properties of a Person object
+' Person properties
 '
-CONST PersonPropId.Name = PropId.Name
-CONST PersonPropId.Label = PropId.Text
+CONST PrPropId.Name = PropId.Name
+CONST PrPropId.Label = PropId.Text
 
 '
 ' ScanCode constants
@@ -2182,17 +2182,17 @@ SUB DialogNext (outpersonid%, outtext$)
   END IF
  
   outtext$ = lines(INT(RND * UBOUND(lines)) + 1)
-  outpersonid% = PersonRandomly%
+  outpersonid% = PrRandomly%
 
 END SUB
 
 SUB DialogPrint (personid%, text$)
 
   DIM name$
-  LET name$ = PersonGetName$(personid%)
+  LET name$ = PrGetName$(personid%)
  
   DIM label$
-  LET label$ = PersonGetLabel$(personid%)
+  LET label$ = PrGetLabel$(personid%)
   IF label$ = "" THEN
     label$ = "@X1F " + name$ + " @X07"
   END IF
@@ -2752,10 +2752,10 @@ FUNCTION ExecCmdPid% (ntoken%, stoken$(), pid%)
       pid% = 0
 
     CASE "label"
-      PersonSetLabel pid%, stoken$(1)
+      PrSetLabel pid%, stoken$(1)
 
     CASE "name"
-      PersonSetName pid%, stoken$(1)
+      PrSetName pid%, stoken$(1)
 
   END SELECT
   
@@ -2812,7 +2812,7 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
       ExecFile "WORLD.CFG"
 
     CASE "person", "persona"
-      pid% = PersonCreate%
+      pid% = PrCreate%
 
     CASE "print"
       ConsolePrint stoken$(1)
@@ -3426,19 +3426,19 @@ SUB ObSetString (oid%, pid%, value$)
 
 END SUB
 
-FUNCTION PersonCreate%
-  PersonCreate% = ObCreate%(ObKind.Person)
+FUNCTION PrCreate%
+  PrCreate% = ObCreate%(ObKind.Person)
 END FUNCTION
 
-FUNCTION PersonGetLabel$ (personid%)
-  PersonGetLabel$ = ObGetString$(personid%, PersonPropId.Label)
+FUNCTION PrGetLabel$ (personid%)
+  PrGetLabel$ = ObGetString$(personid%, PrPropId.Label)
 END FUNCTION
 
-FUNCTION PersonGetName$ (personid%)
-  PersonGetName$ = ObGetString$(personid%, PersonPropId.Name)
+FUNCTION PrGetName$ (personid%)
+  PrGetName$ = ObGetString$(personid%, PrPropId.Name)
 END FUNCTION
 
-FUNCTION PersonRandomly%
+FUNCTION PrRandomly%
   '
   ' Selects a person randomly
   '
@@ -3456,16 +3456,16 @@ FUNCTION PersonRandomly%
   DIM personid%
   LET personid% = items%(INT(RND * count%) + 1)
 
-  PersonRandomly% = personid%
+  PrRandomly% = personid%
 
 END FUNCTION
 
-SUB PersonSetLabel (personid%, label$)
-  ObSetString personid%, PersonPropId.Label, label$
+SUB PrSetLabel (personid%, label$)
+  ObSetString personid%, PrPropId.Label, label$
 END SUB
 
-SUB PersonSetName (personid%, name$)
-  ObSetString personid%, PersonPropId.Name, name$
+SUB PrSetName (personid%, name$)
+  ObSetString personid%, PrPropId.Name, name$
 END SUB
 
 FUNCTION ResourceCreate% (value$)
