@@ -214,7 +214,7 @@ DECLARE FUNCTION ExecResource% (rid AS INTEGER)
 DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 
 '
-' Habitats
+' Habitat API
 '
 DECLARE FUNCTION HbCreate% ()
 DECLARE FUNCTION HbFind% (name$)
@@ -241,7 +241,7 @@ DECLARE FUNCTION NebulaLabel$ (energy AS INTEGER)
 DECLARE FUNCTION NebulaLabelRid% (energy AS INTEGER)
 
 '
-' Objects
+' Object API
 '
 DECLARE FUNCTION ObCreate% (kind%)
 DECLARE FUNCTION ObFindString% (kind%, pid%, value$)
