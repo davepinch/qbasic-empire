@@ -262,11 +262,11 @@ DECLARE FUNCTION PrGetName$ (personid%)
 DECLARE FUNCTION PrRandomly% ()
 
 '
-' Resources
+' Resource API
 '
-DECLARE SUB ResourceSet (rid AS INTEGER, value AS STRING)
-DECLARE FUNCTION ResourceCreate% (value$)
-DECLARE FUNCTION ResourceGet$ (rid%)
+DECLARE SUB RsSet (rid AS INTEGER, value AS STRING)
+DECLARE FUNCTION RsCreate% (value$)
+DECLARE FUNCTION RsGet$ (rid%)
 
 '
 ' UI
@@ -646,7 +646,7 @@ SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
     PRINT STRING$(AtlasStyle.CellSizeX, " ");
   ELSE
     DIM label AS STRING
-    LET label = ResourceGet(atlasitem(idx).labelrid)
+    LET label = RsGet$(atlasitem(idx).labelrid)
     DrawText label
   END IF
 
@@ -1304,12 +1304,12 @@ SUB CtlBind (cid%, pid%, expr$)
 
     END SELECT
 
-    ResourceSet gobj(cid%, pid%).value, MID$(expr$, index% + 1)
+    RsSet gobj(cid%, pid%).value, MID$(expr$, index% + 1)
 
   ELSE
 
     gobj(cid%, pid%).flags = BindingTarget.None
-    ResourceSet gobj(cid%, pid%).value, text$
+    RsSet gobj(cid%, pid%).value, text$
 
   END IF
   
@@ -2051,7 +2051,7 @@ SUB CtlSetCmdStr (cid%, cmd$)
   '
   ' rid% is an output parameter
   '
-  ResourceSet rid%, cmd$
+  RsSet rid%, cmd$
 
   CtlSetCmdRid cid%, rid%
 
@@ -2243,7 +2243,7 @@ SUB DialogStart (hid%)
    
     listening = 0
 
-    startfile$ = ResourceGet(HbGetStartFile%(hid%))
+    startfile$ = RsGet$(HbGetStartFile%(hid%))
     IF LEN(startfile$) > 0 THEN
       ConsoleFile startfile$
     END IF
@@ -2484,7 +2484,7 @@ FUNCTION EventFind% (name$)
 
   FOR eid% = 1 TO events
    
-    ename$ = ResourceGet(event(eid%).namerid)
+    ename$ = RsGet$(event(eid%).namerid)
 
     IF name$ = ename$ THEN
       EventFind% = eid%
@@ -2613,7 +2613,7 @@ FUNCTION ExecCmdEid% (ntoken%, stoken$(), eid%)
       eid% = 0
 
     CASE "name"
-      event(eid%).namerid = ResourceCreate(stoken$(1))
+      event(eid%).namerid = RsCreate(stoken$(1))
 
     CASE "value"
       event(eid%).value = VAL(stoken$(1))
@@ -2931,7 +2931,7 @@ FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
   SELECT CASE LCASE$(stoken$(0))
 
     CASE "command"
-      trigger(tid%).cmdrid = ResourceCreate(stoken$(1))
+      trigger(tid%).cmdrid = RsCreate(stoken$(1))
 
     CASE "endtrigger"
       tid% = 0
@@ -3056,7 +3056,7 @@ FUNCTION ExecResource% (rid AS INTEGER)
   AssertIsPositive rid, "ExecResource", "rid"
 
   DIM cmd$
-  LET cmd$ = ResourceGet$(rid)
+  LET cmd$ = RsGet$(rid)
 
   IF LEN(cmd$) > 0 THEN
     ExecResource% = ExecCmd%(cmd$)
@@ -3130,7 +3130,7 @@ SUB GameMoveOffset (offsetX%, offsetY%)
         '
         ' HACK: expand command parameter
         '
-        DIM cmd$: cmd$ = ResourceGet$(wresult.cmdrid)
+        DIM cmd$: cmd$ = RsGet$(wresult.cmdrid)
         DIM pdx%: pdx% = INSTR(cmd$, "{param.name}")
         IF pdx% > 0 THEN
           MID$(cmd$, pdx%) = STR$(hid)
@@ -3285,7 +3285,7 @@ FUNCTION NebulaLabelRid% (energy AS INTEGER)
   IF created = 0 THEN
     REDIM lrid(0 TO 3)
     FOR created = 0 TO 3
-      lrid(created) = ResourceCreate(NebulaLabel$(created))
+      lrid(created) = RsCreate(NebulaLabel$(created))
     NEXT
   END IF
 
@@ -3328,7 +3328,7 @@ FUNCTION ObFindString% (kind%, pid%, value$)
 
       ELSE
 
-        IF value$ = ResourceGet$(rid%) THEN
+        IF value$ = RsGet$(rid%) THEN
           ObFindString% = oid%
           EXIT FUNCTION
         END IF
@@ -3366,7 +3366,7 @@ FUNCTION ObGet% (oid%, pid%)
       DIM hid%
       LET hid% = CtlGetParam%(parentcid%)
       IF hid% > 0 THEN
-        SELECT CASE ResourceGet$(value%)
+        SELECT CASE RsGet$(value%)
           CASE "backdrop"
             ObGet% = HbGetBackdrop%(hid%)
           CASE "title"
@@ -3407,7 +3407,7 @@ FUNCTION ObGetString$ (oid%, pid%)
   DIM rid%
   LET rid% = ObGet%(oid%, pid%)
 
-  ObGetString$ = ResourceGet$(rid%)
+  ObGetString$ = RsGet$(rid%)
 
 END FUNCTION
 
@@ -3420,7 +3420,7 @@ SUB ObSetString (oid%, pid%, value$)
   DIM rid%
   LET rid% = ObGet%(oid%, pid%)
 
-  ResourceSet rid%, value$
+  RsSet rid%, value$
 
   ObSet oid%, pid%, rid%
 
@@ -3468,44 +3468,44 @@ SUB PrSetName (personid%, name$)
   ObSetString personid%, PrPropId.Name, name$
 END SUB
 
-FUNCTION ResourceCreate% (value$)
+FUNCTION RsCreate% (value$)
 
   IF resources = UBOUND(resource) THEN
    
-    AssertFail "ResourceCreate", "Out of resource space"
-    ResourceCreate% = 0
+    AssertFail "RsCreate", "Out of resource space"
+    RsCreate% = 0
 
   ELSEIF LEN(value$) = 0 THEN
     '
     ' Resource zero is reserved for the empty string
     '
-    ResourceCreate% = 0
+    RsCreate% = 0
 
   ELSE
 
     resources = resources + 1
     resource(resources) = value$
-    ResourceCreate% = resources
+    RsCreate% = resources
 
   END IF
 
 END FUNCTION
 
-FUNCTION ResourceGet$ (rid%)
+FUNCTION RsGet$ (rid%)
   IF rid% = 0 THEN
     '
     ' Resource 0 is always an empty string
     '
-    ResourceGet$ = ""
+    RsGet$ = ""
   ELSE
-    ResourceGet$ = resource(rid%)
+    RsGet$ = resource(rid%)
   END IF
 END FUNCTION
 
-SUB ResourceSet (outrid AS INTEGER, value AS STRING)
+SUB RsSet (outrid AS INTEGER, value AS STRING)
 
   IF outrid = 0 THEN
-    outrid = ResourceCreate(value)
+    outrid = RsCreate(value)
   ELSE
     resource(outrid) = value
   END IF
