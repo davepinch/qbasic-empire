@@ -160,7 +160,6 @@ DECLARE SUB CtlSetStyle (cid%, sid%)
 DECLARE SUB CtlSetText (cid%, value$)
 DECLARE SUB CtlSetValue (cid%, value$)
 DECLARE FUNCTION CtlCreateChild% (wid%, kind%)
-DECLARE FUNCTION CtlGet% (cid%, pid%)
 DECLARE FUNCTION CtlGetChildList% (cid%)
 DECLARE FUNCTION CtlGetCmdRid% (cid%)
 DECLARE FUNCTION CtlGetKind% (cid%)
@@ -259,6 +258,7 @@ DECLARE FUNCTION NebulaLabelRid% (energy AS INTEGER)
 '
 DECLARE FUNCTION ObjCreate% (kind%)
 DECLARE FUNCTION ObjFindString% (kind%, pid%, value$)
+DECLARE FUNCTION ObjGet% (oid%, pid%)
 DECLARE SUB ObjSet (oid%, pid%, value%)
 DECLARE SUB ObjSetString (oid%, pid%, value$)
 
@@ -1801,76 +1801,16 @@ SUB CtlDrawText (wid%, fid%)
 
 END SUB
 
-FUNCTION CtlGet% (cid%, pid%)
-
-  AssertIsPositive cid%, "CtlGet", "cid"
-
-  DIM flags%
-  LET flags% = gobj(cid%, pid%).flags
-
-  DIM value%
-  LET value% = gobj(cid%, pid%).value
-
-  IF flags% = 0 THEN
-    CtlGet% = value%
-    EXIT FUNCTION
-  END IF
-
-  DIM parentcid%
-  LET parentcid% = CtlGetParent%(cid%)
-  AssertIsPositive parentcid%, "CtlGet", "parentcid"
-
-  SELECT CASE flags%
- 
-    CASE BindingTarget.Param
-      '
-      ' Bound to the parent window parameter
-      '
-      DIM hid%
-      LET hid% = CtlGetParam%(parentcid%)
-      IF hid% > 0 THEN
-        SELECT CASE ResourceGet$(value%)
-          CASE "backdrop"
-            CtlGet% = habitat(hid%).backdrop
-          CASE "title"
-            CtlGet% = habitat(hid%).namerid
-        END SELECT
-      END IF
-
-    CASE BindingTarget.Selected
-      '
-      ' Bound to selected control of parent window parameter
-      '
-      DIM sel%
-      LET sel% = CtlGetSelected%(parentcid%)
-      
-      DIM wid%
-      LET wid% = CtlGetChildList%(parentcid%)
-
-      DIM selcid%
-      LET selcid% = gwin(wid%, sel%)
-
-      CtlGet% = CtlGet%(selcid%, PropId.Value)
-
-    CASE ELSE
-   
-      AssertFail "CtlGet", "Not implemented"
-      CtlGet% = value%
-
-  END SELECT
-
-END FUNCTION
-
 FUNCTION CtlGetChildList% (cid%)
-  CtlGetChildList% = CtlGet%(cid%, PropId.ChildList)
+  CtlGetChildList% = ObjGet%(cid%, PropId.ChildList)
 END FUNCTION
 
 FUNCTION CtlGetCmdRid% (cid%)
-  CtlGetCmdRid% = CtlGet%(cid%, PropId.Command)
+  CtlGetCmdRid% = ObjGet%(cid%, PropId.Command)
 END FUNCTION
 
 FUNCTION CtlGetKind% (cid%)
-  CtlGetKind% = CtlGet%(cid%, PropId.Kind)
+  CtlGetKind% = ObjGet%(cid%, PropId.Kind)
 END FUNCTION
 
 FUNCTION CtlGetName$ (cid%)
@@ -1878,23 +1818,23 @@ FUNCTION CtlGetName$ (cid%)
 END FUNCTION
 
 FUNCTION CtlGetOffsetX% (cid%)
-  CtlGetOffsetX% = CtlGet%(cid%, PropId.OffsetX)
+  CtlGetOffsetX% = ObjGet%(cid%, PropId.OffsetX)
 END FUNCTION
 
 FUNCTION CtlGetOffsetY% (cid%)
-  CtlGetOffsetY% = CtlGet%(cid%, PropId.OffsetY)
+  CtlGetOffsetY% = ObjGet%(cid%, PropId.OffsetY)
 END FUNCTION
 
 FUNCTION CtlGetParam% (cid%)
-  CtlGetParam = CtlGet%(cid%, PropId.Param)
+  CtlGetParam = ObjGet%(cid%, PropId.Param)
 END FUNCTION
 
 FUNCTION CtlGetParent% (cid%)
-  CtlGetParent% = CtlGet%(cid%, PropId.Parent)
+  CtlGetParent% = ObjGet%(cid%, PropId.Parent)
 END FUNCTION
 
 FUNCTION CtlGetPopup% (cid%)
-  CtlGetPopup% = CtlGet(cid%, PropId.Popup)
+  CtlGetPopup% = ObjGet%(cid%, PropId.Popup)
 END FUNCTION
 
 FUNCTION CtlGetScreenX% (cid%)
@@ -1924,21 +1864,21 @@ FUNCTION CtlGetScreenY% (cid%)
 END FUNCTION
 
 FUNCTION CtlGetSelected% (cid%)
-  CtlGetSelected% = CtlGet%(cid%, PropId.Selected)
+  CtlGetSelected% = ObjGet%(cid%, PropId.Selected)
 END FUNCTION
 
 FUNCTION CtlGetSizeX% (cid%)
-  CtlGetSizeX% = CtlGet%(cid%, PropId.SizeX)
+  CtlGetSizeX% = ObjGet%(cid%, PropId.SizeX)
 END FUNCTION
 
 FUNCTION CtlGetSizeY% (cid%)
-  CtlGetSizeY% = CtlGet%(cid%, PropId.SizeY)
+  CtlGetSizeY% = ObjGet%(cid%, PropId.SizeY)
 END FUNCTION
 
 FUNCTION CtlGetString$ (cid%, pid%)
 
   DIM rid%
-  LET rid% = CtlGet%(cid%, pid%)
+  LET rid% = ObjGet%(cid%, pid%)
 
   CtlGetString$ = ResourceGet$(rid%)
 
@@ -1949,7 +1889,7 @@ FUNCTION CtlGetStyle% (cid%)
   AssertIsPositive cid%, "CtlGetStyle", "cid"
 
   DIM sid%
-  LET sid% = CtlGet(cid%, PropId.Style)
+  LET sid% = ObjGet%(cid%, PropId.Style)
  
   IF sid% = 0 THEN
     '
@@ -3356,7 +3296,7 @@ FUNCTION ObjFindString% (kind%, pid%, value$)
     IF gobj(oid%, ObjPropId.Kind).value = kind% THEN
       
       DIM rid%
-      LET rid% = CtlGet(oid%, pid%)
+      LET rid% = ObjGet%(oid%, pid%)
       
       IF rid% = 0 THEN
         '
@@ -3383,6 +3323,63 @@ FUNCTION ObjFindString% (kind%, pid%, value$)
 
 END FUNCTION
 
+FUNCTION ObjGet% (oid%, pid%)
+
+  DIM flags%
+  LET flags% = gobj(oid%, pid%).flags
+
+  DIM value%
+  LET value% = gobj(oid%, pid%).value
+
+  IF flags% = 0 THEN
+    ObjGet% = value%
+    EXIT FUNCTION
+  END IF
+
+  DIM parentcid%
+  LET parentcid% = CtlGetParent%(oid%)
+
+  SELECT CASE flags%
+ 
+    CASE BindingTarget.Param
+      '
+      ' Bound to the parent window parameter
+      '
+      DIM hid%
+      LET hid% = CtlGetParam%(parentcid%)
+      IF hid% > 0 THEN
+        SELECT CASE ResourceGet$(value%)
+          CASE "backdrop"
+            ObjGet% = habitat(hid%).backdrop
+          CASE "title"
+            ObjGet% = habitat(hid%).namerid
+        END SELECT
+      END IF
+
+    CASE BindingTarget.Selected
+      '
+      ' Bound to selected control of parent window parameter
+      '
+      DIM sel%
+      LET sel% = CtlGetSelected%(parentcid%)
+      
+      DIM wid%
+      LET wid% = CtlGetChildList%(parentcid%)
+
+      DIM selcid%
+      LET selcid% = gwin(wid%, sel%)
+
+      ObjGet% = ObjGet%(selcid%, PropId.Value)
+
+    CASE ELSE
+   
+      AssertFail "ObjGet%", "Not implemented"
+      ObjGet% = value%
+
+  END SELECT
+
+END FUNCTION
+
 SUB ObjSet (oid%, pid%, value%)
   gobj(oid%, pid%).value = value%
 END SUB
@@ -3390,7 +3387,7 @@ END SUB
 SUB ObjSetString (oid%, pid%, value$)
 
   DIM rid%
-  LET rid% = CtlGet(oid%, pid%)
+  LET rid% = ObjGet%(oid%, pid%)
 
   ResourceSet rid%, value$
 
