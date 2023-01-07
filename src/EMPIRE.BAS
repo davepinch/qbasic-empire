@@ -97,15 +97,6 @@ DECLARE FUNCTION AtlasIndexOf% (value AS INTEGER)
 DECLARE FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS INTEGER, outpress AS STRING)
 
 '
-' Console
-'
-DECLARE SUB ConsoleBegin ()
-DECLARE SUB ConsoleClear ()
-DECLARE SUB ConsoleEnd ()
-DECLARE SUB ConsoleFile (filename$)
-DECLARE SUB ConsolePrint (text$)
-
-'
 ' Control API
 '
 DECLARE SUB CtBind (cid%, pid%, expr$)
@@ -272,7 +263,7 @@ DECLARE FUNCTION RsGet$ (rid%)
 '
 DECLARE SUB UI.Run ()
 DECLARE SUB UI.RunAtlas ()
-DECLARE SUB UI.RunConsole ()
+DECLARE SUB UI.RunTerminal ()
 DECLARE SUB UI.SetPage (page AS INTEGER)
 
 '
@@ -289,6 +280,15 @@ DECLARE SUB StSetBorderType (sid%, bordertype%)
 DECLARE SUB StSetName (sid%, name$)
 DECLARE SUB StSetSelectedColor (sid%, selectedcolor%)
 DECLARE SUB StSetTextColor (sid%, textcolor%)
+
+'
+' Terminal API
+'
+DECLARE SUB TrBegin ()
+DECLARE SUB TrClear ()
+DECLARE SUB TrEnd ()
+DECLARE SUB TrFile (filename$)
+DECLARE SUB TrPrint (text$)
 
 '
 ' Video pages
@@ -486,7 +486,7 @@ CONST StPropId.TextColor = 5
 '
 CONST UIPage.None = 0
 CONST UIPage.Atlas = 1
-CONST UIPage.Console = 2
+CONST UIPage.Terminal = 2
 
 '
 ' WinAction* constants
@@ -556,7 +556,7 @@ SUB Assert (truth AS INTEGER, where AS STRING, what AS STRING)
     LET message = where + ": " + what
 
     AtlasSetStatusEx message, &H4F
-    ConsolePrint "@X4F" + message + "@X07"
+    TrPrint "@X4F" + message + "@X07"
 
     IF GetKey$ <> CHR$(ASCII.Escape) THEN
       END
@@ -1247,45 +1247,6 @@ SUB AtlasSetStatusEx (text$, attr%)
   VIEW PRINT
  
   AtlasDrawEnd
-
-END SUB
-
-SUB ConsoleBegin
-  VideoPushActive 0
-END SUB
-
-SUB ConsoleClear
-  ConsoleBegin
-  CLS
-  ConsoleEnd
-END SUB
-
-SUB ConsoleEnd
-  VideoPop
-END SUB
-
-SUB ConsoleFile (filename$)
-  ConsoleBegin
-  LOCATE 24, 1
-  DrawFile filename$
-  PRINT
-  ConsoleEnd
-END SUB
-
-SUB ConsolePrint (text$)
-
-  DIM x AS INTEGER
-  DIM y AS INTEGER
-
-  ConsoleBegin
-  x = POS(0)
-  y = CSRLIN
- 
-  LOCATE 24, 1
-  DrawText text$
-  PRINT
-  LOCATE y, x
-  ConsoleEnd
 
 END SUB
 
@@ -2197,8 +2158,8 @@ SUB DgPrint (personid%, text$)
 
   IF LEFT$(text$, 1) = "(" THEN
 
-    ConsolePrint STRING$((80 - DrawLength(text$)) / 2, " ") + "@X04" + text$ + "@X07"
-    ConsolePrint ""
+    TrPrint STRING$((80 - DrawLength(text$)) / 2, " ") + "@X04" + text$ + "@X07"
+    TrPrint ""
 
   ELSE
 
@@ -2211,9 +2172,9 @@ SUB DgPrint (personid%, text$)
         '
         q$ = DgGarble(text$, .2)
 
-        ConsolePrint label$
-        ConsolePrint "@X07" + text$ + "@X07"
-        ConsolePrint ""
+        TrPrint label$
+        TrPrint "@X07" + text$ + "@X07"
+        TrPrint ""
 
       CASE 1:
         '
@@ -2221,9 +2182,9 @@ SUB DgPrint (personid%, text$)
         '
         q$ = DgGarble(text$, .7)
       
-        ConsolePrint STRING$(78 - DrawLength(label$), " ") + label$
-        ConsolePrint STRING$(78 - DrawLength(text$), " ") + "@X07" + q$ + "@X07"
-        ConsolePrint ""
+        TrPrint STRING$(78 - DrawLength(label$), " ") + label$
+        TrPrint STRING$(78 - DrawLength(text$), " ") + "@X07" + q$ + "@X07"
+        TrPrint ""
 
     END SELECT
 
@@ -2243,7 +2204,7 @@ SUB DgStart (hid%)
 
     startfile$ = RsGet$(HbGetStartFile%(hid%))
     IF LEN(startfile$) > 0 THEN
-      ConsoleFile startfile$
+      TrFile startfile$
     END IF
 
     listening = hid%
@@ -2275,7 +2236,7 @@ SUB DgTimer
   DgNext pid%, text$
  
   '
-  ' Print the dialog to the console
+  ' Print the dialog to the terminal
   '
   DgPrint pid%, text$
 
@@ -2781,10 +2742,10 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
       CHAIN stoken$(1)
 
     CASE "cls"
-      ConsoleClear
+      TrClear
 
-    CASE "console"
-      UI.SetPage UIPage.Console
+    CASE "terminal", "console"
+      UI.SetPage UIPage.Terminal
 
     CASE "endgame"
       END
@@ -2800,7 +2761,7 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
       IF listenhid% = 0 THEN
         DgStop
       ELSE
-        UI.SetPage UIPage.Console
+        UI.SetPage UIPage.Terminal
         DgStart listenhid%
       END IF
 
@@ -2814,10 +2775,10 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
       pid% = PrCreate%
 
     CASE "print"
-      ConsolePrint stoken$(1)
+      TrPrint stoken$(1)
 
     CASE "printfile"
-      ConsoleFile stoken$(1)
+      TrFile stoken$(1)
 
     CASE "replot"
       '
@@ -3228,7 +3189,7 @@ SUB InboxAdd (subject AS STRING, filename AS STRING)
   fid% = WinAddButton(wid%, 1, count, 20, " " + subject, filename)
 
   AtlasSetStatus "Mail arrived"
-  ConsoleFile "NEWMAIL.PCB"
+  TrFile "NEWMAIL.PCB"
 
 END SUB
 
@@ -3520,9 +3481,9 @@ SUB SetupGame
   '
   ExecFile "EMPIRE.CFG"
  
-  ConsolePrint "String Space:" + STR$(FRE(""))
-  ConsolePrint "Unused Stack Space:" + STR$(FRE(-2))
-  ConsolePrint "Array Space:" + STR$(FRE(-1))
+  TrPrint "String Space:" + STR$(FRE(""))
+  TrPrint "Unused Stack Space:" + STR$(FRE(-2))
+  TrPrint "Array Space:" + STR$(FRE(-1))
 
   '
   ' Setup atlas
@@ -3676,6 +3637,45 @@ SUB StSetTextColor (sid%, textcolor%)
   ObSet sid%, StPropId.TextColor, textcolor%
 END SUB
 
+SUB TrBegin
+  VideoPushActive 0
+END SUB
+
+SUB TrClear
+  TrBegin
+  CLS
+  TrEnd
+END SUB
+
+SUB TrEnd
+  VideoPop
+END SUB
+
+SUB TrFile (filename$)
+  TrBegin
+  LOCATE 24, 1
+  DrawFile filename$
+  PRINT
+  TrEnd
+END SUB
+
+SUB TrPrint (text$)
+
+  DIM x AS INTEGER
+  DIM y AS INTEGER
+
+  TrBegin
+  x = POS(0)
+  y = CSRLIN
+ 
+  LOCATE 24, 1
+  DrawText text$
+  PRINT
+  LOCATE y, x
+  TrEnd
+
+END SUB
+
 SUB UI.Run
  
   DIM menuwid AS INTEGER
@@ -3695,8 +3695,8 @@ SUB UI.Run
       CASE UIPage.Atlas
         UI.RunAtlas
 
-      CASE UIPage.Console
-        UI.RunConsole
+      CASE UIPage.Terminal
+        UI.RunTerminal
 
     END SELECT
 
@@ -3742,9 +3742,9 @@ SUB UI.RunAtlas
  
 END SUB
 
-SUB UI.RunConsole
+SUB UI.RunTerminal
 
-  Assert uiCurrentPage = UIPage.Console, "UI.RunConsole", "Wrong UI page"
+  Assert uiCurrentPage = UIPage.Terminal, "UI.RunTerminal", "Wrong UI page"
 
   DIM keypress$: keypress$ = GetKey$
 
@@ -3759,7 +3759,7 @@ SUB UI.SetPage (page AS INTEGER)
     CASE UIPage.Atlas
       VideoScreen atlaspage, atlaspage
 
-    CASE UIPage.Console
+    CASE UIPage.Terminal
       VideoScreen 0, 0
 
     CASE ELSE
