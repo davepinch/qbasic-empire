@@ -258,7 +258,7 @@ DECLARE FUNCTION NebulaLabelRid% (energy AS INTEGER)
 '
 ' Objects
 '
-DECLARE FUNCTION ObjCreate% ()
+DECLARE FUNCTION ObjCreate% (kind%)
 DECLARE SUB ObjSet (oid%, pid%, value%)
 DECLARE SUB ObjSetString (oid%, pid%, value$)
 
@@ -382,6 +382,7 @@ CONST ObjKind.Control = 1
 CONST ObjKind.Habitat = 2
 CONST ObjKind.Person = 3
 CONST ObjKind.Style = 4
+CONST ObjKind.Window = 5
 
 '
 ' Core object properties
@@ -419,21 +420,21 @@ CONST OpEquals = 1
 '
 ' PropId.*
 '
-CONST PropId.Value = 0
-CONST PropId.Parent = 1
-CONST PropId.Kind = 2
-CONST PropId.Name = 3
-CONST PropId.Text = 4
-CONST PropId.ChildList = 5
-CONST PropId.Command = 6
-CONST PropId.OffsetX = 7
-CONST PropId.OffsetY = 8
-CONST PropId.Param = 9
-CONST PropId.Popup = 10
-CONST PropId.Selected = 11
-CONST PropId.SizeX = 12
-CONST PropId.SizeY = 13
-CONST PropId.Style = 14
+CONST PropId.Value = 1
+CONST PropId.Parent = 2
+CONST PropId.Kind = 3
+CONST PropId.Name = 4
+CONST PropId.Text = 5
+CONST PropId.ChildList = 6
+CONST PropId.Command = 7
+CONST PropId.OffsetX = 8
+CONST PropId.OffsetY = 9
+CONST PropId.Param = 10
+CONST PropId.Popup = 11
+CONST PropId.Selected = 12
+CONST PropId.SizeX = 13
+CONST PropId.SizeY = 14
+CONST PropId.Style = 15
 
 '
 ' Properties of a Person object
@@ -1312,7 +1313,7 @@ FUNCTION CtlCreateChild% (wid%, kind%)
   ' Allocate a control
   '
   DIM cid%
-  LET cid% = ObjCreate%
+  LET cid% = ObjCreate%(ObjKind.Control)
   gwin(wid%, fid%) = cid%
 
   '
@@ -3360,11 +3361,14 @@ FUNCTION NebulaLabelRid% (energy AS INTEGER)
 
 END FUNCTION
 
-FUNCTION ObjCreate%
+FUNCTION ObjCreate% (kind%)
  
   Assert gcids <= UBOUND(gobj, 1), "ObjCreate", "Out of object space"
 
   gcids = gcids + 1
+ 
+  ObjSet gcids, ObjPropId.Kind, kind%
+
   ObjCreate% = gcids
 
 END FUNCTION
@@ -3385,14 +3389,7 @@ SUB ObjSetString (oid%, pid%, value$)
 END SUB
 
 FUNCTION PersonCreate%
- 
-  DIM personid%
-  LET personid% = ObjCreate%
-  AssertIsPositive personid%, "PersonCreate%", "personid"
-
-  CtlSetKind personid%, CtlKind.Person
-  PersonCreate% = personid%
-
+  PersonCreate% = ObjCreate%(ObjKind.Person)
 END FUNCTION
 
 FUNCTION PersonGetLabel$ (personid%)
@@ -3829,7 +3826,7 @@ FUNCTION WinCreate%
   ' Create a control to represent the window
   '
   DIM cid%
-  LET cid% = ObjCreate%
+  LET cid% = ObjCreate%(ObjKind.Window)
  
   CtlSetKind cid%, CtlKind.Window
   CtlSetChildList cid%, wincount
