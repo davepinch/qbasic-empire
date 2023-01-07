@@ -371,6 +371,20 @@ CONST BindingTarget.Selected = 1
 CONST BindingTarget.Param = 2
 
 '
+' Kinds of objects
+'
+CONST ObjKind.None = 0
+CONST ObjKind.Control = 1
+CONST ObjKind.Habitat = 2
+CONST ObjKind.Person = 3
+CONST ObjKind.Style = 4
+
+'
+' Core object properties
+'
+CONST ObjPropId.Kind = 0
+
+'
 ' Command Results
 '
 CONST CmdResult.OK = 0
@@ -465,7 +479,7 @@ DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS IN
 '
 ' Globals
 '
-DIM SHARED gctl(1 TO 200, 0 TO 15) AS PropType
+DIM SHARED gobj(1 TO 200, 0 TO 15) AS PropType
 DIM SHARED gwin(1 TO 20, 0 TO 13)  AS INTEGER
 DIM SHARED gcids                   AS INTEGER
 
@@ -1261,19 +1275,19 @@ SUB CtlBind (cid%, pid%, expr$)
     SELECT CASE LCASE$(LEFT$(expr$, index%))
 
       CASE "param."
-        gctl(cid%, pid%).flags = BindingTarget.Param
+        gobj(cid%, pid%).flags = BindingTarget.Param
 
       CASE "sel."
-        gctl(cid%, pid%).flags = BindingTarget.Selected
+        gobj(cid%, pid%).flags = BindingTarget.Selected
 
     END SELECT
 
-    ResourceSet gctl(cid%, pid%).value, MID$(expr$, index% + 1)
+    ResourceSet gobj(cid%, pid%).value, MID$(expr$, index% + 1)
 
   ELSE
 
-    gctl(cid%, pid%).flags = BindingTarget.None
-    ResourceSet gctl(cid%, pid%).value, text$
+    gobj(cid%, pid%).flags = BindingTarget.None
+    ResourceSet gobj(cid%, pid%).value, text$
 
   END IF
   
@@ -1281,7 +1295,7 @@ END SUB
 
 FUNCTION CtlCreate%
  
-  Assert gcids <= UBOUND(gctl, 1), "CtlCreate", "Out of control space"
+  Assert gcids <= UBOUND(gobj, 1), "CtlCreate", "Out of control space"
 
   gcids = gcids + 1
   CtlCreate% = gcids
@@ -1822,10 +1836,10 @@ FUNCTION CtlGet% (cid%, pid%)
   AssertIsPositive cid%, "CtlGet", "cid"
 
   DIM flags%
-  LET flags% = gctl(cid%, pid%).flags
+  LET flags% = gobj(cid%, pid%).flags
 
   DIM value%
-  LET value% = gctl(cid%, pid%).value
+  LET value% = gobj(cid%, pid%).value
 
   IF flags% = 0 THEN
     CtlGet% = value%
@@ -2066,7 +2080,7 @@ SUB CtlKeyInteger (cid%, keypress$)
 END SUB
 
 FUNCTION CtlRedirected% (cid%, pid%)
-  CtlRedirected% = gctl(cid%, pid%).flags = BindingTarget.Selected
+  CtlRedirected% = gobj(cid%, pid%).flags = BindingTarget.Selected
 END FUNCTION
 
 FUNCTION CtlSelectable% (cid%)
@@ -2075,7 +2089,7 @@ FUNCTION CtlSelectable% (cid%)
   ' field is selectable (i.e., can receive focus for input or
   ' selection).
   '
-  IF (cid% < 0) OR (cid% > UBOUND(gctl, 1)) THEN
+  IF (cid% < 0) OR (cid% > UBOUND(gobj, 1)) THEN
 
     CtlSelectable% = False
  
@@ -2104,7 +2118,7 @@ FUNCTION CtlSelectable% (cid%)
 END FUNCTION
 
 SUB CtlSet (cid%, pid%, value%)
-  gctl(cid%, pid%).value = value%
+  gobj(cid%, pid%).value = value%
 END SUB
 
 SUB CtlSetChildList (cid%, listcid%)
@@ -3393,7 +3407,7 @@ FUNCTION PersonRandomly%
   DIM count%
   DIM items%(1 TO 100)
 
-  FOR index% = LBOUND(gctl, 1) TO UBOUND(gctl, 1)
+  FOR index% = LBOUND(gobj, 1) TO UBOUND(gobj, 1)
     IF CtlGetKind%(index%) = CtlKind.Person THEN
       count% = count% + 1
       items%(count%) = index%
