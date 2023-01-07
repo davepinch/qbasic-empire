@@ -254,7 +254,7 @@ DECLARE FUNCTION PrRandomly% ()
 '
 ' Resource API
 '
-DECLARE SUB RsSet (rid AS INTEGER, value AS STRING)
+DECLARE SUB RsSet (outrid%, value$)
 DECLARE FUNCTION RsCreate% (value$)
 DECLARE FUNCTION RsGet$ (rid%)
 
@@ -3462,12 +3462,12 @@ FUNCTION RsGet$ (rid%)
   END IF
 END FUNCTION
 
-SUB RsSet (outrid AS INTEGER, value AS STRING)
+SUB RsSet (outrid%, value$)
 
-  IF outrid = 0 THEN
-    outrid = RsCreate(value)
+  IF outrid% = 0 THEN
+    outrid% = RsCreate%(value$)
   ELSE
-    resource(outrid) = value
+    resource(outrid) = value$
   END IF
 
 END SUB
