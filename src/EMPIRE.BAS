@@ -159,7 +159,6 @@ DECLARE SUB CtlSetSizeY (cid%, sizeY%)
 DECLARE SUB CtlSetStyle (cid%, sid%)
 DECLARE SUB CtlSetText (cid%, value$)
 DECLARE SUB CtlSetValue (cid%, value$)
-DECLARE FUNCTION CtlCreate% ()
 DECLARE FUNCTION CtlCreateChild% (wid%, kind%)
 DECLARE FUNCTION CtlFindName% (name$)
 DECLARE FUNCTION CtlGet% (cid%, pid%)
@@ -259,6 +258,7 @@ DECLARE FUNCTION NebulaLabelRid% (energy AS INTEGER)
 '
 ' Objects
 '
+DECLARE FUNCTION ObjCreate% ()
 DECLARE SUB ObjSet (oid%, pid%, value%)
 DECLARE SUB ObjSetString (oid%, pid%, value$)
 
@@ -1297,15 +1297,6 @@ SUB CtlBind (cid%, pid%, expr$)
   
 END SUB
 
-FUNCTION CtlCreate%
- 
-  Assert gcids <= UBOUND(gobj, 1), "CtlCreate", "Out of control space"
-
-  gcids = gcids + 1
-  CtlCreate% = gcids
-
-END FUNCTION
-
 FUNCTION CtlCreateChild% (wid%, kind%)
 
   Assert wid% > 0, "CtlCreateChild", "wid cannot be 0"
@@ -1321,7 +1312,7 @@ FUNCTION CtlCreateChild% (wid%, kind%)
   ' Allocate a control
   '
   DIM cid%
-  LET cid% = CtlCreate%
+  LET cid% = ObjCreate%
   gwin(wid%, fid%) = cid%
 
   '
@@ -3369,6 +3360,15 @@ FUNCTION NebulaLabelRid% (energy AS INTEGER)
 
 END FUNCTION
 
+FUNCTION ObjCreate%
+ 
+  Assert gcids <= UBOUND(gobj, 1), "ObjCreate", "Out of object space"
+
+  gcids = gcids + 1
+  ObjCreate% = gcids
+
+END FUNCTION
+
 SUB ObjSet (oid%, pid%, value%)
   gobj(oid%, pid%).value = value%
 END SUB
@@ -3387,7 +3387,7 @@ END SUB
 FUNCTION PersonCreate%
  
   DIM personid%
-  LET personid% = CtlCreate%
+  LET personid% = ObjCreate%
   AssertIsPositive personid%, "PersonCreate%", "personid"
 
   CtlSetKind personid%, CtlKind.Person
@@ -3829,7 +3829,7 @@ FUNCTION WinCreate%
   ' Create a control to represent the window
   '
   DIM cid%
-  LET cid% = CtlCreate%
+  LET cid% = ObjCreate%
  
   CtlSetKind cid%, CtlKind.Window
   CtlSetChildList cid%, wincount
