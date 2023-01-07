@@ -381,12 +381,12 @@ CONST BindingTarget.Param = 2
 '
 ' Kinds of objects
 '
-CONST ObjKind.None = 0
-CONST ObjKind.Control = 1
-CONST ObjKind.Habitat = 2
-CONST ObjKind.Person = 3
-CONST ObjKind.Style = 4
-CONST ObjKind.Window = 5
+CONST ObKind.None = 0
+CONST ObKind.Control = 1
+CONST ObKind.Habitat = 2
+CONST ObKind.Person = 3
+CONST ObKind.Style = 4
+CONST ObKind.Window = 5
 
 '
 ' Object properties
@@ -1330,7 +1330,7 @@ FUNCTION CtlCreateChild% (wid%, kind%)
   ' Allocate a control
   '
   DIM cid%
-  LET cid% = ObCreate%(ObjKind.Control)
+  LET cid% = ObCreate%(ObKind.Control)
   gwin(wid%, fid%) = cid%
 
   '
@@ -3165,11 +3165,11 @@ FUNCTION GetKey$
 END FUNCTION
 
 FUNCTION HbCreate%
-  HbCreate% = ObCreate%(ObjKind.Habitat)
+  HbCreate% = ObCreate%(ObKind.Habitat)
 END FUNCTION
 
 FUNCTION HbFind% (name$)
-  HbFind% = ObFindString%(ObjKind.Habitat, HabPropId.Name, name$)
+  HbFind% = ObFindString%(ObKind.Habitat, HabPropId.Name, name$)
 END FUNCTION
 
 FUNCTION HbGetBackdrop% (hid%)
@@ -3427,7 +3427,7 @@ SUB ObSetString (oid%, pid%, value$)
 END SUB
 
 FUNCTION PersonCreate%
-  PersonCreate% = ObCreate%(ObjKind.Person)
+  PersonCreate% = ObCreate%(ObKind.Person)
 END FUNCTION
 
 FUNCTION PersonGetLabel$ (personid%)
@@ -3447,7 +3447,7 @@ FUNCTION PersonRandomly%
   DIM items%(1 TO 100)
 
   FOR index% = LBOUND(gobj, 1) TO UBOUND(gobj, 1)
-    IF ObGetKind%(index%) = ObjKind.Person THEN
+    IF ObGetKind%(index%) = ObKind.Person THEN
       count% = count% + 1
       items%(count%) = index%
     END IF
@@ -3634,7 +3634,7 @@ FUNCTION Split% (text AS STRING, tokens() AS STRING)
 END FUNCTION
 
 FUNCTION StCreate%
-  StCreate% = ObCreate%(ObjKind.Style)
+  StCreate% = ObCreate%(ObKind.Style)
 END FUNCTION
 
 FUNCTION StGetBorderColor% (sid%)
@@ -3908,7 +3908,7 @@ FUNCTION WinCreate%
   ' Create a control to represent the window
   '
   DIM cid%
-  LET cid% = ObCreate%(ObjKind.Window)
+  LET cid% = ObCreate%(ObKind.Window)
  
   CtlSetKind cid%, CtlKind.Window
   CtlSetChildList cid%, wincount
@@ -3933,7 +3933,7 @@ SUB WinDraw (wid%)
 END SUB
 
 FUNCTION WinFindSid% (stylename$)
-  WinFindSid% = ObFindString%(ObjKind.Style, StylePropId.Name, stylename$)
+  WinFindSid% = ObFindString%(ObKind.Style, StylePropId.Name, stylename$)
 END FUNCTION
 
 FUNCTION WinFindWid% (wname$)
