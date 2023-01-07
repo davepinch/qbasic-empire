@@ -156,7 +156,6 @@ DECLARE SUB CtlSetPopupName (cid%, wname$)
 DECLARE SUB CtlSetSelected (cid%, value%)
 DECLARE SUB CtlSetSizeX (cid%, sizeX%)
 DECLARE SUB CtlSetSizeY (cid%, sizeY%)
-DECLARE SUB CtlSetString (cid%, pid%, value$)
 DECLARE SUB CtlSetStyle (cid%, sid%)
 DECLARE SUB CtlSetText (cid%, value$)
 DECLARE SUB CtlSetValue (cid%, value$)
@@ -261,6 +260,7 @@ DECLARE FUNCTION NebulaLabelRid% (energy AS INTEGER)
 ' Objects
 '
 DECLARE SUB ObjSet (oid%, pid%, value%)
+DECLARE SUB ObjSetString (oid%, pid%, value$)
 
 '
 ' Persons
@@ -2148,7 +2148,7 @@ SUB CtlSetKind (cid%, kind%)
 END SUB
 
 SUB CtlSetName (cid%, value$)
-  CtlSetString cid%, PropId.Name, value$
+  ObjSetString cid%, PropId.Name, value$
 END SUB
 
 SUB CtlSetOffsetX (cid%, offsetX%)
@@ -2187,27 +2187,16 @@ SUB CtlSetSizeY (cid%, sizeY%)
   ObjSet cid%, PropId.SizeY, sizeY%
 END SUB
 
-SUB CtlSetString (cid%, pid%, value$)
-
-  DIM rid%
-  LET rid% = CtlGet(cid%, pid%)
-
-  ResourceSet rid%, value$
-
-  ObjSet cid%, pid%, rid%
-
-END SUB
-
 SUB CtlSetStyle (cid%, sid%)
   ObjSet cid%, PropId.Style, sid%
 END SUB
 
 SUB CtlSetText (cid%, value$)
-  CtlSetString cid%, PropId.Text, value$
+  ObjSetString cid%, PropId.Text, value$
 END SUB
 
 SUB CtlSetValue (cid%, value$)
-  CtlSetString cid%, PropId.Value, value$
+  ObjSetString cid%, PropId.Value, value$
 END SUB
 
 FUNCTION DialogGarble$ (text$, percent!)
@@ -3384,6 +3373,17 @@ SUB ObjSet (oid%, pid%, value%)
   gobj(oid%, pid%).value = value%
 END SUB
 
+SUB ObjSetString (oid%, pid%, value$)
+
+  DIM rid%
+  LET rid% = CtlGet(oid%, pid%)
+
+  ResourceSet rid%, value$
+
+  ObjSet oid%, pid%, rid%
+
+END SUB
+
 FUNCTION PersonCreate%
  
   DIM personid%
@@ -3426,11 +3426,11 @@ FUNCTION PersonRandomly%
 END FUNCTION
 
 SUB PersonSetLabel (personid%, label$)
-  CtlSetString personid%, PersonPropId.Label, label$
+  ObjSetString personid%, PersonPropId.Label, label$
 END SUB
 
 SUB PersonSetName (personid%, name$)
-  CtlSetString personid%, PersonPropId.Name, name$
+  ObjSetString personid%, PersonPropId.Name, name$
 END SUB
 
 FUNCTION ResourceCreate% (value$)
