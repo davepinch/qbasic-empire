@@ -111,7 +111,7 @@ DECLARE SUB ConsoleFile (filename$)
 DECLARE SUB ConsolePrint (text$)
 
 '
-' Controls
+' Control API
 '
 DECLARE SUB CtBind (cid%, pid%, expr$)
 DECLARE SUB CtDraw (wid%, fid%)
@@ -415,6 +415,25 @@ CONST CtKind.Separator = 9
 CONST CtKind.Nebula = 100
 
 '
+' Control properties
+'
+CONST CtPropId.Value = 1
+CONST CtPropId.Parent = 2
+CONST CtPropId.Kind = 3
+CONST CtPropId.Name = 4
+CONST CtPropId.Text = 5
+CONST CtPropId.ChildList = 6
+CONST CtPropId.Command = 7
+CONST CtPropId.OffsetX = 8
+CONST CtPropId.OffsetY = 9
+CONST CtPropId.Param = 10
+CONST CtPropId.Popup = 11
+CONST CtPropId.Selected = 12
+CONST CtPropId.SizeX = 13
+CONST CtPropId.SizeY = 14
+CONST CtPropId.Style = 15
+
+'
 ' Habitat properties
 '
 CONST HbPropId.Backdrop = 1
@@ -430,29 +449,10 @@ CONST OpNone = 0
 CONST OpEquals = 1
 
 '
-' PropId.*
-'
-CONST PropId.Value = 1
-CONST PropId.Parent = 2
-CONST PropId.Kind = 3
-CONST PropId.Name = 4
-CONST PropId.Text = 5
-CONST PropId.ChildList = 6
-CONST PropId.Command = 7
-CONST PropId.OffsetX = 8
-CONST PropId.OffsetY = 9
-CONST PropId.Param = 10
-CONST PropId.Popup = 11
-CONST PropId.Selected = 12
-CONST PropId.SizeX = 13
-CONST PropId.SizeY = 14
-CONST PropId.Style = 15
-
-'
 ' Person properties
 '
-CONST PrPropId.Name = PropId.Name
-CONST PrPropId.Label = PropId.Text
+CONST PrPropId.Name = CtPropId.Name
+CONST PrPropId.Label = CtPropId.Text
 
 '
 ' ScanCode constants
@@ -1813,39 +1813,39 @@ SUB CtDrawText (wid%, fid%)
 END SUB
 
 FUNCTION CtGetChildList% (cid%)
-  CtGetChildList% = ObGet%(cid%, PropId.ChildList)
+  CtGetChildList% = ObGet%(cid%, CtPropId.ChildList)
 END FUNCTION
 
 FUNCTION CtGetCmdRid% (cid%)
-  CtGetCmdRid% = ObGet%(cid%, PropId.Command)
+  CtGetCmdRid% = ObGet%(cid%, CtPropId.Command)
 END FUNCTION
 
 FUNCTION CtGetKind% (cid%)
-  CtGetKind% = ObGet%(cid%, PropId.Kind)
+  CtGetKind% = ObGet%(cid%, CtPropId.Kind)
 END FUNCTION
 
 FUNCTION CtGetName$ (cid%)
-  CtGetName$ = ObGetString$(cid%, PropId.Name)
+  CtGetName$ = ObGetString$(cid%, CtPropId.Name)
 END FUNCTION
 
 FUNCTION CtGetOffsetX% (cid%)
-  CtGetOffsetX% = ObGet%(cid%, PropId.OffsetX)
+  CtGetOffsetX% = ObGet%(cid%, CtPropId.OffsetX)
 END FUNCTION
 
 FUNCTION CtGetOffsetY% (cid%)
-  CtGetOffsetY% = ObGet%(cid%, PropId.OffsetY)
+  CtGetOffsetY% = ObGet%(cid%, CtPropId.OffsetY)
 END FUNCTION
 
 FUNCTION CtGetParam% (cid%)
-  CtGetParam = ObGet%(cid%, PropId.Param)
+  CtGetParam = ObGet%(cid%, CtPropId.Param)
 END FUNCTION
 
 FUNCTION CtGetParent% (cid%)
-  CtGetParent% = ObGet%(cid%, PropId.Parent)
+  CtGetParent% = ObGet%(cid%, CtPropId.Parent)
 END FUNCTION
 
 FUNCTION CtGetPopup% (cid%)
-  CtGetPopup% = ObGet%(cid%, PropId.Popup)
+  CtGetPopup% = ObGet%(cid%, CtPropId.Popup)
 END FUNCTION
 
 FUNCTION CtGetScreenX% (cid%)
@@ -1875,15 +1875,15 @@ FUNCTION CtGetScreenY% (cid%)
 END FUNCTION
 
 FUNCTION CtGetSelected% (cid%)
-  CtGetSelected% = ObGet%(cid%, PropId.Selected)
+  CtGetSelected% = ObGet%(cid%, CtPropId.Selected)
 END FUNCTION
 
 FUNCTION CtGetSizeX% (cid%)
-  CtGetSizeX% = ObGet%(cid%, PropId.SizeX)
+  CtGetSizeX% = ObGet%(cid%, CtPropId.SizeX)
 END FUNCTION
 
 FUNCTION CtGetSizeY% (cid%)
-  CtGetSizeY% = ObGet%(cid%, PropId.SizeY)
+  CtGetSizeY% = ObGet%(cid%, CtPropId.SizeY)
 END FUNCTION
 
 FUNCTION CtGetStyle% (cid%)
@@ -1891,7 +1891,7 @@ FUNCTION CtGetStyle% (cid%)
   AssertIsPositive cid%, "CtGetStyle", "cid"
 
   DIM sid%
-  LET sid% = ObGet%(cid%, PropId.Style)
+  LET sid% = ObGet%(cid%, CtPropId.Style)
  
   IF sid% = 0 THEN
     '
@@ -1911,11 +1911,11 @@ FUNCTION CtGetStyle% (cid%)
 END FUNCTION
 
 FUNCTION CtGetText$ (cid%)
-  CtGetText$ = ObGetString$(cid%, PropId.Text)
+  CtGetText$ = ObGetString$(cid%, CtPropId.Text)
 END FUNCTION
 
 FUNCTION CtGetValue$ (cid%)
-  CtGetValue$ = ObGetString$(cid%, PropId.Value)
+  CtGetValue$ = ObGetString$(cid%, CtPropId.Value)
 END FUNCTION
 
 SUB CtKey (cid%, keypress$)
@@ -2030,11 +2030,11 @@ FUNCTION CtSelectable% (cid%)
 END FUNCTION
 
 SUB CtSetChildList (cid%, listcid%)
-  ObSet cid%, PropId.ChildList, listcid%
+  ObSet cid%, CtPropId.ChildList, listcid%
 END SUB
 
 SUB CtSetCmdRid (cid%, cmdrid%)
-  ObSet cid%, PropId.Command, cmdrid%
+  ObSet cid%, CtPropId.Command, cmdrid%
 END SUB
 
 SUB CtSetCmdStr (cid%, cmd$)
@@ -2052,31 +2052,31 @@ SUB CtSetCmdStr (cid%, cmd$)
 END SUB
 
 SUB CtSetKind (cid%, kind%)
-  ObSet cid%, PropId.Kind, kind%
+  ObSet cid%, CtPropId.Kind, kind%
 END SUB
 
 SUB CtSetName (cid%, value$)
-  ObSetString cid%, PropId.Name, value$
+  ObSetString cid%, CtPropId.Name, value$
 END SUB
 
 SUB CtSetOffsetX (cid%, offsetX%)
-  ObSet cid%, PropId.OffsetX, offsetX%
+  ObSet cid%, CtPropId.OffsetX, offsetX%
 END SUB
 
 SUB CtSetOffsetY (cid%, offsetY%)
-  ObSet cid%, PropId.OffsetY, offsetY%
+  ObSet cid%, CtPropId.OffsetY, offsetY%
 END SUB
 
 SUB CtSetParam (cid%, value%)
-  ObSet cid%, PropId.Param, value%
+  ObSet cid%, CtPropId.Param, value%
 END SUB
 
 SUB CtSetParent (cid%, parentcid%)
-  ObSet cid%, PropId.Parent, parentcid%
+  ObSet cid%, CtPropId.Parent, parentcid%
 END SUB
 
 SUB CtSetPopup (cid%, popupcid%)
-  ObSet cid%, PropId.Popup, popupcid%
+  ObSet cid%, CtPropId.Popup, popupcid%
 END SUB
 
 SUB CtSetPopupName (cid%, wname$)
@@ -2084,27 +2084,27 @@ SUB CtSetPopupName (cid%, wname$)
 END SUB
 
 SUB CtSetSelected (cid%, value%)
-  ObSet cid%, PropId.Selected, value%
+  ObSet cid%, CtPropId.Selected, value%
 END SUB
 
 SUB CtSetSizeX (cid%, sizeX%)
-  ObSet cid%, PropId.SizeX, sizeX%
+  ObSet cid%, CtPropId.SizeX, sizeX%
 END SUB
 
 SUB CtSetSizeY (cid%, sizeY%)
-  ObSet cid%, PropId.SizeY, sizeY%
+  ObSet cid%, CtPropId.SizeY, sizeY%
 END SUB
 
 SUB CtSetStyle (cid%, sid%)
-  ObSet cid%, PropId.Style, sid%
+  ObSet cid%, CtPropId.Style, sid%
 END SUB
 
 SUB CtSetText (cid%, value$)
-  ObSetString cid%, PropId.Text, value$
+  ObSetString cid%, CtPropId.Text, value$
 END SUB
 
 SUB CtSetValue (cid%, value$)
-  ObSetString cid%, PropId.Value, value$
+  ObSetString cid%, CtPropId.Value, value$
 END SUB
 
 FUNCTION DialogGarble$ (text$, percent!)
@@ -2684,14 +2684,14 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
 
     CASE "text"
       IF LCASE$(stoken$(1)) = "bind" THEN
-        CtBind cid%, PropId.Text, stoken$(2)
+        CtBind cid%, CtPropId.Text, stoken$(2)
       ELSE
         CtSetText cid%, stoken$(1)
       END IF
 
     CASE "value"
       IF LCASE$(stoken$(1)) = "bind" THEN
-        CtBind cid%, PropId.Value, stoken$(2)
+        CtBind cid%, CtPropId.Value, stoken$(2)
       ELSE
         CtSetValue cid%, stoken$(1)
       END IF
@@ -3381,7 +3381,7 @@ FUNCTION ObGet% (oid%, pid%)
       DIM selcid%
       LET selcid% = gwin(wid%, sel%)
 
-      ObGet% = ObGet%(selcid%, PropId.Value)
+      ObGet% = ObGet%(selcid%, CtPropId.Value)
 
     CASE ELSE
    
@@ -4097,9 +4097,9 @@ SUB WinRefreshField (wid%, fid%)
 
         IF n = fid% THEN
           CtDraw wid%, n
-        ELSEIF CtRedirected%(cid%, PropId.Text) THEN
+        ELSEIF CtRedirected%(cid%, CtPropId.Text) THEN
           CtDraw wid%, n
-        ELSEIF CtRedirected%(cid%, PropId.Value) THEN
+        ELSEIF CtRedirected%(cid%, CtPropId.Value) THEN
           CtDraw wid%, n
         END IF
       NEXT
