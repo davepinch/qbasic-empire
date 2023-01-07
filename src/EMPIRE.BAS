@@ -216,18 +216,18 @@ DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 '
 ' Habitats
 '
-DECLARE FUNCTION HabCreate% ()
-DECLARE FUNCTION HabFind% (name$)
-DECLARE FUNCTION HabGetBackdrop% (hid%)
-DECLARE FUNCTION HabGetLabel% (hid%)
-DECLARE FUNCTION HabGetName% (hid%)
-DECLARE FUNCTION HabGetStartFile% (hid%)
-DECLARE FUNCTION HabGetWindow% (hid%)
-DECLARE SUB HabSetBackdrop (hid%, backdrop$)
-DECLARE SUB HabSetLabel (hid%, label$)
-DECLARE SUB HabSetName (hid%, name$)
-DECLARE SUB HabSetStartFile (hid%, startfile$)
-DECLARE SUB HabSetWindow (hid%, wid%)
+DECLARE FUNCTION HbCreate% ()
+DECLARE FUNCTION HbFind% (name$)
+DECLARE FUNCTION HbGetBackdrop% (hid%)
+DECLARE FUNCTION HbGetLabel% (hid%)
+DECLARE FUNCTION HbGetName% (hid%)
+DECLARE FUNCTION HbGetStartFile% (hid%)
+DECLARE FUNCTION HbGetWindow% (hid%)
+DECLARE SUB HbSetBackdrop (hid%, backdrop$)
+DECLARE SUB HbSetLabel (hid%, label$)
+DECLARE SUB HbSetName (hid%, name$)
+DECLARE SUB HbSetStartFile (hid%, startfile$)
+DECLARE SUB HbSetWindow (hid%, wid%)
 
 '
 ' Inbox
@@ -2243,7 +2243,7 @@ SUB DialogStart (hid%)
    
     listening = 0
 
-    startfile$ = ResourceGet(HabGetStartFile%(hid%))
+    startfile$ = ResourceGet(HbGetStartFile%(hid%))
     IF LEN(startfile$) > 0 THEN
       ConsoleFile startfile$
     END IF
@@ -2718,22 +2718,22 @@ FUNCTION ExecCmdHid% (ntoken%, stoken$(), hid%)
   SELECT CASE stoken$(0)
 
     CASE "backdrop"
-      HabSetBackdrop hid%, stoken$(1)
+      HbSetBackdrop hid%, stoken$(1)
 
     CASE "endhabitat"
       hid% = 0
 
     CASE "label"
-      HabSetLabel hid%, stoken$(1)
+      HbSetLabel hid%, stoken$(1)
 
     CASE "startfile"
-      HabSetStartFile hid%, stoken$(1)
+      HbSetStartFile hid%, stoken$(1)
 
     CASE "name"
-      HabSetName hid%, stoken$(1)
+      HbSetName hid%, stoken$(1)
 
     CASE "window"
-      HabSetWindow hid%, WinFindWid(stoken$(1))
+      HbSetWindow hid%, WinFindWid(stoken$(1))
 
     CASE ELSE
       ExecCmdHid = CmdResult.Malformed
@@ -2794,7 +2794,7 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
       eid% = events
 
     CASE "habitat"
-      hid% = HabCreate%
+      hid% = HbCreate%
 
     CASE "listen"
       DIM listenhid%: listenhid% = VAL(stoken$(1))
@@ -2844,7 +2844,7 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
     CASE "spawn"
       DIM aid%
       DIM shid%
-      shid% = HabFind(stoken$(1))
+      shid% = HbFind%(stoken$(1))
       IF shid% > 0 THEN
         SELECT CASE LCASE$(stoken$(2))
          
@@ -3111,7 +3111,7 @@ SUB GameMoveOffset (offsetX%, offsetY%)
     ' Run the window name handling this habitat
     '
     DIM hidwid%
-    LET hidwid% = HabGetWindow%(hid%)
+    LET hidwid% = HbGetWindow%(hid%)
 
     IF hidwid% > 0 THEN
      
@@ -3164,55 +3164,55 @@ FUNCTION GetKey$
 
 END FUNCTION
 
-FUNCTION HabCreate%
-  HabCreate% = ObjCreate%(ObjKind.Habitat)
+FUNCTION HbCreate%
+  HbCreate% = ObjCreate%(ObjKind.Habitat)
 END FUNCTION
 
-FUNCTION HabFind% (name$)
-  HabFind% = ObjFindString%(ObjKind.Habitat, HabPropId.Name, name$)
+FUNCTION HbFind% (name$)
+  HbFind% = ObjFindString%(ObjKind.Habitat, HabPropId.Name, name$)
 END FUNCTION
 
-FUNCTION HabGetBackdrop% (hid%)
+FUNCTION HbGetBackdrop% (hid%)
   IF hid% > 0 THEN
-    HabGetBackdrop% = ObjGet%(hid%, HabPropId.Backdrop)
+    HbGetBackdrop% = ObjGet%(hid%, HabPropId.Backdrop)
   END IF
 END FUNCTION
 
-FUNCTION HabGetLabel% (hid%)
-  HabGetLabel% = ObjGet%(hid%, HabPropId.Label)
+FUNCTION HbGetLabel% (hid%)
+  HbGetLabel% = ObjGet%(hid%, HabPropId.Label)
 END FUNCTION
 
-FUNCTION HabGetName% (hid%)
+FUNCTION HbGetName% (hid%)
   IF hid% > 0 THEN
-    HabGetName% = ObjGet%(hid%, HabPropId.Name)
+    HbGetName% = ObjGet%(hid%, HabPropId.Name)
   END IF
 END FUNCTION
 
-FUNCTION HabGetStartFile% (hid%)
-  HabGetStartFile% = ObjGet%(hid%, HabPropId.StartFile)
+FUNCTION HbGetStartFile% (hid%)
+  HbGetStartFile% = ObjGet%(hid%, HabPropId.StartFile)
 END FUNCTION
 
-FUNCTION HabGetWindow% (hid%)
-  HabGetWindow% = ObjGet%(hid%, HabPropId.Window)
+FUNCTION HbGetWindow% (hid%)
+  HbGetWindow% = ObjGet%(hid%, HabPropId.Window)
 END FUNCTION
 
-SUB HabSetBackdrop (hid%, backdrop$)
+SUB HbSetBackdrop (hid%, backdrop$)
   ObjSetString hid%, HabPropId.Backdrop, backdrop$
 END SUB
 
-SUB HabSetLabel (hid%, label$)
+SUB HbSetLabel (hid%, label$)
   ObjSetString hid%, HabPropId.Label, label$
 END SUB
 
-SUB HabSetName (hid%, name$)
+SUB HbSetName (hid%, name$)
   ObjSetString hid%, HabPropId.Name, name$
 END SUB
 
-SUB HabSetStartFile (hid%, startfile$)
+SUB HbSetStartFile (hid%, startfile$)
   ObjSetString hid%, HabPropId.StartFile, startfile$
 END SUB
 
-SUB HabSetWindow (hid%, wid%)
+SUB HbSetWindow (hid%, wid%)
   ObjSet hid%, HabPropId.Window, wid%
 END SUB
 
@@ -3368,9 +3368,9 @@ FUNCTION ObjGet% (oid%, pid%)
       IF hid% > 0 THEN
         SELECT CASE ResourceGet$(value%)
           CASE "backdrop"
-            ObjGet% = HabGetBackdrop%(hid%)
+            ObjGet% = HbGetBackdrop%(hid%)
           CASE "title"
-            ObjGet% = HabGetName%(hid%)
+            ObjGet% = HbGetName%(hid%)
         END SELECT
       END IF
 
@@ -4511,7 +4511,7 @@ FUNCTION WorldAdd% (hid%, cx%, cy%)
   area(aid%).hid = hid%
   area(aid%).energy = 3
 
-  AtlasAddItem cx%, cy%, aid%, HabGetLabel%(hid%)
+  AtlasAddItem cx%, cy%, aid%, HbGetLabel%(hid%)
   WorldAdd% = aid%
 
 END FUNCTION
