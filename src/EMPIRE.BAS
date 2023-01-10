@@ -19,7 +19,7 @@ TYPE AtlasItemType
   allocated AS INTEGER
   cx        AS INTEGER
   cy        AS INTEGER
-  labelrid  AS INTEGER
+  labelrsid AS INTEGER
   value     AS INTEGER
 END TYPE
 
@@ -32,13 +32,13 @@ TYPE TriggerType
   evid     AS INTEGER
   operator AS INTEGER
   operand  AS INTEGER
-  cmdrid   AS INTEGER
+  cmdrsid  AS INTEGER
 END TYPE
 
 TYPE WinResultType
   action   AS INTEGER
   canceled AS INTEGER
-  cmdrid   AS INTEGER
+  cmdrsid  AS INTEGER
   selected AS INTEGER
 END TYPE
 
@@ -65,7 +65,7 @@ DECLARE SUB AssertIsZero (value%, where$, what$)
 '
 ' Atlas
 '
-DECLARE SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, labelrid AS INTEGER)
+DECLARE SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, labelrsid AS INTEGER)
 DECLARE SUB AtlasDraw ()
 DECLARE SUB AtlasDrawBegin ()
 DECLARE SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
@@ -87,7 +87,7 @@ DECLARE SUB AtlasPlotManual ()
 DECLARE SUB AtlasPlotRandom ()
 DECLARE SUB AtlasRemoveItem (idx AS INTEGER)
 DECLARE SUB AtlasRemoveValue (value AS INTEGER)
-DECLARE SUB AtlasSetLabel (idx AS INTEGER, labelrid AS INTEGER)
+DECLARE SUB AtlasSetLabel (idx AS INTEGER, labelrsid AS INTEGER)
 DECLARE SUB AtlasSetStatus (text$)
 DECLARE SUB AtlasSetStatusEx (text$, attr%)
 DECLARE FUNCTION AtlasNextIndex% ()
@@ -114,7 +114,7 @@ DECLARE SUB CtKey (ctid%, keypress$)
 DECLARE SUB CtKeyBoolean (ctid%, keypress$)
 DECLARE SUB CtKeyInteger (ctid%, keypress$)
 DECLARE SUB CtSetChildList (ctid%, listctid%)
-DECLARE SUB CtSetCmdRid (ctid%, cmdrid%)
+DECLARE SUB CtSetCmdRsid (ctid%, cmdrsid%)
 DECLARE SUB CtSetCmdStr (ctid%, cmd$)
 DECLARE SUB CtSetKind (ctid%, kind%)
 DECLARE SUB CtSetName (ctid%, value$)
@@ -132,7 +132,7 @@ DECLARE SUB CtSetText (ctid%, value$)
 DECLARE SUB CtSetValue (ctid%, value$)
 DECLARE FUNCTION CtCreateChild% (wnid%, kind%)
 DECLARE FUNCTION CtGetChildList% (ctid%)
-DECLARE FUNCTION CtGetCmdRid% (ctid%)
+DECLARE FUNCTION CtGetCmdRsid% (ctid%)
 DECLARE FUNCTION CtGetKind% (ctid%)
 DECLARE FUNCTION CtGetName$ (ctid%)
 DECLARE FUNCTION CtGetOffsetX% (ctid%)
@@ -197,7 +197,7 @@ DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hid%, pid%, stid%, tid
 DECLARE FUNCTION ExecCmdStid% (ntoken%, stoken$(), stid%)
 DECLARE FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
 DECLARE FUNCTION ExecCmdWnid% (ntoken%, stoken$(), wnid%, fid%)
-DECLARE FUNCTION ExecResource% (rid AS INTEGER)
+DECLARE FUNCTION ExecResource% (rsid%)
 
 '
 ' Game
@@ -236,7 +236,7 @@ DECLARE FUNCTION LsMaxIndex% ()
 ' Nebula
 '
 DECLARE FUNCTION NebulaLabel$ (energy AS INTEGER)
-DECLARE FUNCTION NebulaLabelRid% (energy AS INTEGER)
+DECLARE FUNCTION NebulaLabelRsid% (energy AS INTEGER)
 
 '
 ' Object API
@@ -262,9 +262,9 @@ DECLARE FUNCTION PrRandomly% ()
 '
 ' Resource API
 '
-DECLARE SUB RsSet (outrid%, value$)
+DECLARE SUB RsSet (outrsid%, value$)
 DECLARE FUNCTION RsCreate% (value$)
-DECLARE FUNCTION RsGet$ (rid%)
+DECLARE FUNCTION RsGet$ (rsid%)
 
 '
 ' UI
@@ -337,7 +337,7 @@ DECLARE SUB WorldAddCluster (hid AS INTEGER, size AS INTEGER)
 DECLARE SUB WorldAddRandom (hid%, count%)
 DECLARE SUB WorldHarvest (aid%)
 DECLARE SUB WorldRemove (aid%)
-DECLARE SUB WorldSetLabel (aid%, labelrid%)
+DECLARE SUB WorldSetLabel (aid%, labelrsid%)
 DECLARE FUNCTION WorldAdd% (hid%, cx%, cy%)
 DECLARE FUNCTION WorldNextId% ()
 
@@ -616,7 +616,7 @@ SUB AssertIsZero (value%, where$, what$)
   Assert value% = 0, where$, what$ + " must be 0 but value =" + STR$(value%)
 END SUB
 
-SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, labelrid AS INTEGER)
+SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, labelrsid AS INTEGER)
   '
   ' Adds an item to the atlas at the specified position.
   '
@@ -637,7 +637,7 @@ SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, labelrid AS IN
   atlasitem(idx).allocated = -1
   atlasitem(idx).cx = cx
   atlasitem(idx).cy = cy
-  atlasitem(idx).labelrid = labelrid
+  atlasitem(idx).labelrsid = labelrsid
   atlasitem(idx).value = value
 
   '
@@ -686,7 +686,7 @@ SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
     PRINT STRING$(AtlasStyle.CellSizeX, " ");
   ELSE
     DIM label AS STRING
-    LET label = RsGet$(atlasitem(idx).labelrid)
+    LET label = RsGet$(atlasitem(idx).labelrsid)
     DrawText label
   END IF
 
@@ -1259,11 +1259,11 @@ SUB AtlasRemoveValue (value AS INTEGER)
 
 END SUB
 
-SUB AtlasSetLabel (idx AS INTEGER, labelrid AS INTEGER)
+SUB AtlasSetLabel (idx AS INTEGER, labelrsid AS INTEGER)
  
   AssertIsPositive idx, "AtlasSetLabel", "idx"
 
-  atlasitem(idx).labelrid = labelrid
+  atlasitem(idx).labelrsid = labelrsid
   AtlasDrawItem idx
 
 END SUB
@@ -1818,8 +1818,8 @@ FUNCTION CtGetChildList% (ctid%)
   CtGetChildList% = ObGet%(ctid%, CtPropId.ChildList)
 END FUNCTION
 
-FUNCTION CtGetCmdRid% (ctid%)
-  CtGetCmdRid% = ObGet%(ctid%, CtPropId.Command)
+FUNCTION CtGetCmdRsid% (ctid%)
+  CtGetCmdRsid% = ObGet%(ctid%, CtPropId.Command)
 END FUNCTION
 
 FUNCTION CtGetKind% (ctid%)
@@ -2035,21 +2035,21 @@ SUB CtSetChildList (ctid%, listctid%)
   ObSet ctid%, CtPropId.ChildList, listctid%
 END SUB
 
-SUB CtSetCmdRid (ctid%, cmdrid%)
-  ObSet ctid%, CtPropId.Command, cmdrid%
+SUB CtSetCmdRsid (ctid%, cmdrsid%)
+  ObSet ctid%, CtPropId.Command, cmdrsid%
 END SUB
 
 SUB CtSetCmdStr (ctid%, cmd$)
 
-  DIM rid%
-  LET rid% = CtGetCmdRid%(ctid%)
+  DIM rsid%
+  LET rsid% = CtGetCmdRsid%(ctid%)
 
   '
-  ' rid% is an output parameter
+  ' rsid% is an output parameter
   '
-  RsSet rid%, cmd$
+  RsSet rsid%, cmd$
 
-  CtSetCmdRid ctid%, rid%
+  CtSetCmdRsid ctid%, rsid%
 
 END SUB
 
@@ -2488,7 +2488,7 @@ SUB EvFire (evid%)
  
   FOR tid% = 1 TO triggers
     IF EvTestTrigger%(evid%, tid%) THEN
-      result% = ExecResource(trigger(tid%).cmdrid)
+      result% = ExecResource(trigger(tid%).cmdrsid)
     END IF
   NEXT
 
@@ -2928,7 +2928,7 @@ FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
   SELECT CASE LCASE$(stoken$(0))
 
     CASE "command"
-      trigger(tid%).cmdrid = RsCreate(stoken$(1))
+      trigger(tid%).cmdrsid = RsCreate(stoken$(1))
 
     CASE "endtrigger"
       tid% = 0
@@ -3048,12 +3048,12 @@ SUB ExecFile (filename AS STRING)
 
 END SUB
 
-FUNCTION ExecResource% (rid AS INTEGER)
+FUNCTION ExecResource% (rsid%)
 
-  AssertIsPositive rid, "ExecResource", "rid"
+  AssertIsPositive rsid%, "ExecResource", "rsid%"
 
   DIM cmd$
-  LET cmd$ = RsGet$(rid)
+  LET cmd$ = RsGet$(rsid%)
 
   IF LEN(cmd$) > 0 THEN
     ExecResource% = ExecCmd%(cmd$)
@@ -3127,7 +3127,7 @@ SUB GameMoveOffset (offsetX%, offsetY%)
         '
         ' HACK: expand command parameter
         '
-        DIM cmd$: cmd$ = RsGet$(wresult.cmdrid)
+        DIM cmd$: cmd$ = RsGet$(wresult.cmdrsid)
         DIM pdx%: pdx% = INSTR(cmd$, "{param.name}")
         IF pdx% > 0 THEN
           MID$(cmd$, pdx%) = STR$(hid)
@@ -3298,22 +3298,22 @@ FUNCTION NebulaLabel$ (energy AS INTEGER)
 
 END FUNCTION
 
-FUNCTION NebulaLabelRid% (energy AS INTEGER)
+FUNCTION NebulaLabelRsid% (energy AS INTEGER)
 
-  Assert energy >= 0, "NebulaLabelRid", "energy must be 0 or greater"
-  Assert energy <= 3, "NebulaLabelRid", "energy must be 3 or less"
+  Assert energy >= 0, "NebulaLabelRsid", "energy must be 0 or greater"
+  Assert energy <= 3, "NebulaLabelRsid", "energy must be 3 or less"
 
   STATIC created AS INTEGER
-  STATIC lrid() AS INTEGER
+  STATIC lrsid() AS INTEGER
 
   IF created = 0 THEN
-    REDIM lrid(0 TO 3)
+    REDIM lrsid(0 TO 3)
     FOR created = 0 TO 3
-      lrid(created) = RsCreate(NebulaLabel$(created))
+      lrsid(created) = RsCreate(NebulaLabel$(created))
     NEXT
   END IF
 
-  NebulaLabelRid% = lrid(energy)
+  NebulaLabelRsid% = lrsid(energy)
 
 END FUNCTION
 
@@ -3337,10 +3337,10 @@ FUNCTION ObFindString% (kind%, pid%, value$)
      
     IF gobj(oid%, ObPropId.Kind).value = kind% THEN
       
-      DIM rid%
-      LET rid% = ObGet%(oid%, pid%)
+      DIM rsid%
+      LET rsid% = ObGet%(oid%, pid%)
       
-      IF rid% = 0 THEN
+      IF rsid% = 0 THEN
         '
         ' The property on this object does not have a resource.
         ' Treat it as an empty string "".
@@ -3352,7 +3352,7 @@ FUNCTION ObFindString% (kind%, pid%, value$)
 
       ELSE
 
-        IF value$ = RsGet$(rid%) THEN
+        IF value$ = RsGet$(rsid%) THEN
           ObFindString% = oid%
           EXIT FUNCTION
         END IF
@@ -3428,10 +3428,10 @@ END FUNCTION
 
 FUNCTION ObGetString$ (oid%, pid%)
 
-  DIM rid%
-  LET rid% = ObGet%(oid%, pid%)
+  DIM rsid%
+  LET rsid% = ObGet%(oid%, pid%)
 
-  ObGetString$ = RsGet$(rid%)
+  ObGetString$ = RsGet$(rsid%)
 
 END FUNCTION
 
@@ -3441,12 +3441,12 @@ END SUB
 
 SUB ObSetString (oid%, pid%, value$)
 
-  DIM rid%
-  LET rid% = ObGet%(oid%, pid%)
+  DIM rsid%
+  LET rsid% = ObGet%(oid%, pid%)
 
-  RsSet rid%, value$
+  RsSet rsid%, value$
 
-  ObSet oid%, pid%, rid%
+  ObSet oid%, pid%, rsid%
 
 END SUB
 
@@ -3515,23 +3515,23 @@ FUNCTION RsCreate% (value$)
 
 END FUNCTION
 
-FUNCTION RsGet$ (rid%)
-  IF rid% = 0 THEN
+FUNCTION RsGet$ (rsid%)
+  IF rsid% = 0 THEN
     '
     ' Resource 0 is always an empty string
     '
     RsGet$ = ""
   ELSE
-    RsGet$ = resource(rid%)
+    RsGet$ = resource(rsid%)
   END IF
 END FUNCTION
 
-SUB RsSet (outrid%, value$)
+SUB RsSet (outrsid%, value$)
 
-  IF outrid% = 0 THEN
-    outrid% = RsCreate%(value$)
+  IF outrsid% = 0 THEN
+    outrsid% = RsCreate%(value$)
   ELSE
-    resource(outrid) = value$
+    resource(outrsid%) = value$
   END IF
 
 END SUB
@@ -3564,7 +3564,7 @@ SUB SetupGame
   WinRun WinFindWnid("Start"), wresult
  
   IF wresult.action = WinAction.Execute THEN
-    cresult = ExecResource%(wresult.cmdrid)
+    cresult = ExecResource%(wresult.cmdrsid)
   END IF
 
   TIMER ON
@@ -3766,7 +3766,7 @@ SUB UI.Run
 
     WinRun menuwnid, wresult
     IF wresult.action = WinAction.Execute THEN
-      cresult = ExecResource%(wresult.cmdrid)
+      cresult = ExecResource%(wresult.cmdrsid)
     END IF
 
   LOOP
@@ -3925,7 +3925,7 @@ FUNCTION WinAddButton% (wnid%, offsetX%, offsetY%, sizeX%, text$, value$)
   DIM ctid%
   LET ctid% = gwin(wnid%, fid%)
 
-  CtSetCmdRid ctid%, 0
+  CtSetCmdRsid ctid%, 0
   CtSetOffsetX ctid%, offsetX%
   CtSetOffsetY ctid%, offsetY%
   CtSetPopup ctid%, 0
@@ -4024,7 +4024,7 @@ FUNCTION WinMapKey% (wnid%, pressed$)
   LET wnidctid% = gwin(wnid%, 0)
 
   DIM popupctid    AS INTEGER
-  DIM cmdrid       AS INTEGER
+  DIM cmdrsid      AS INTEGER
   DIM exitLeft     AS INTEGER
   DIM exitRight    AS INTEGER
   DIM selected     AS INTEGER
@@ -4041,7 +4041,7 @@ FUNCTION WinMapKey% (wnid%, pressed$)
   IF selected > 0 THEN
     selectedCtid = gwin(wnid%, selected)
     popupctid = CtGetPopup%(selectedCtid)
-    cmdrid = CtGetCmdRid%(selectedCtid)
+    cmdrsid = CtGetCmdRsid%(selectedCtid)
   END IF
 
   SELECT CASE pressed$
@@ -4049,7 +4049,7 @@ FUNCTION WinMapKey% (wnid%, pressed$)
     CASE CHR$(ASCII.Return)
       IF popupctid > 0 THEN
         WinMapKey% = WinAction.OpenPopup
-      ELSEIF cmdrid > 0 THEN
+      ELSEIF cmdrsid > 0 THEN
         WinMapKey% = WinAction.Execute
       ELSE
         WinMapKey% = WinAction.Complete
@@ -4259,7 +4259,7 @@ SUB WinRun (wnid%, result AS WinResultType)
       CASE WinAction.Cancel
         result.action = WinAction.Cancel
         result.canceled = True
-        result.cmdrid = 0
+        result.cmdrsid = 0
         result.selected = CtGetSelected(wnidctid%)
         WinClose wnid%
         EXIT SUB
@@ -4267,7 +4267,7 @@ SUB WinRun (wnid%, result AS WinResultType)
       CASE WinAction.Complete
         result.action = WinAction.Complete
         result.canceled = False
-        result.cmdrid = 0
+        result.cmdrsid = 0
         result.selected = CtGetSelected(wnidctid%)
         WinClose wnid%
         EXIT SUB
@@ -4276,14 +4276,14 @@ SUB WinRun (wnid%, result AS WinResultType)
         result.action = WinAction.Execute
         result.canceled = False
         result.selected = CtGetSelected(wnidctid%)
-        result.cmdrid = CtGetCmdRid%(gwin(wnid%, result.selected))
+        result.cmdrsid = CtGetCmdRsid%(gwin(wnid%, result.selected))
         WinClose wnid%
         EXIT SUB
 
       CASE WinAction.ExitLeft
         result.action = WinAction.ExitLeft
         result.canceled = True
-        result.cmdrid = 0
+        result.cmdrsid = 0
         result.selected = CtGetSelected(wnidctid%)
         WinClose wnid%
         EXIT SUB
@@ -4291,7 +4291,7 @@ SUB WinRun (wnid%, result AS WinResultType)
       CASE WinAction.ExitRight
         result.action = WinAction.ExitRight
         result.canceled = True
-        result.cmdrid = 0
+        result.cmdrsid = 0
         result.selected = CtGetSelected(wnidctid%)
         WinClose wnid%
         EXIT SUB
@@ -4691,18 +4691,18 @@ SUB WorldRemove (aid%)
 
 END SUB
 
-SUB WorldSetLabel (aid%, labelrid%)
+SUB WorldSetLabel (aid%, labelrsid%)
   '
   ' Updates the label for the specified area
   '
-  AssertIsPositive aid%, "WorldSetLabel", "aid"
-  AssertIsPositive labelrid%, "WorldSetLabel", "labelrid"
+  AssertIsPositive aid%, "WorldSetLabel", "aid%"
+  AssertIsPositive labelrsid%, "WorldSetLabel", "labelrsid%"
 
   DIM idx AS INTEGER
  
   idx = AtlasIndexOf(aid%)
   IF idx > 0 THEN
-    AtlasSetLabel idx, labelrid%
+    AtlasSetLabel idx, labelrsid%
   END IF
 
 END SUB
