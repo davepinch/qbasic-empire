@@ -471,8 +471,8 @@ CONST OpEquals = 1
 '
 ' Person properties
 '
-CONST PrPropId.Name = CtPropId.Name
-CONST PrPropId.Label = CtPropId.Text
+CONST PrIndex.Name = CtPropId.Name
+CONST PrIndex.Label = CtPropId.Text
 
 '
 ' ScanCode constants
@@ -3454,11 +3454,11 @@ FUNCTION PrCreate%
 END FUNCTION
 
 FUNCTION PrGetLabel$ (prid%)
-  PrGetLabel$ = ObGetString$(prid%, PrPropId.Label)
+  PrGetLabel$ = ObGetString$(prid%, PrIndex.Label)
 END FUNCTION
 
 FUNCTION PrGetName$ (prid%)
-  PrGetName$ = ObGetString$(prid%, PrPropId.Name)
+  PrGetName$ = ObGetString$(prid%, PrIndex.Name)
 END FUNCTION
 
 FUNCTION PrRandomly%
@@ -3484,11 +3484,11 @@ FUNCTION PrRandomly%
 END FUNCTION
 
 SUB PrSetLabel (prid%, label$)
-  ObSetString prid%, PrPropId.Label, label$
+  ObSetString prid%, PrIndex.Label, label$
 END SUB
 
 SUB PrSetName (prid%, name$)
-  ObSetString prid%, PrPropId.Name, name$
+  ObSetString prid%, PrIndex.Name, name$
 END SUB
 
 FUNCTION RsCreate% (value$)
