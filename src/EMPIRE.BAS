@@ -4320,12 +4320,12 @@ SUB WnRun (wnid%, result AS WnResultType)
 
 END SUB
 
-SUB WnRunName (idname$)
+SUB WnRunName (name$)
  
   DIM wnid%
   DIM result AS WnResultType
 
-  wnid% = WnFindWnid(idname$)
+  wnid% = WnFindWnid(name$)
   Assert wnid% <> 0, "WnRunName", "wnid cannot be 0"
 
   WnRun wnid%, result
