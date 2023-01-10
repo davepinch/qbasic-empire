@@ -219,9 +219,11 @@ DECLARE SUB InboxAdd (subject AS STRING, filename AS STRING)
 '
 ' List API
 '
+DECLARE FUNCTION LsAdd% (lsid%, value%)
+DECLARE FUNCTION LsCapacity% ()
 DECLARE FUNCTION LsCreate% ()
 DECLARE FUNCTION LsCount% (lsid%)
-DECLARE FUNCTION LsMaxIndex% ()
+DECLARE FUNCTION LsItem% (lsid%, n%)
 
 '
 ' Nebula
@@ -3186,20 +3188,38 @@ SUB InboxAdd (subject AS STRING, filename AS STRING)
 
 END SUB
 
-SUB LsAdd (lsid%, value%)
- 
-  DIM index%
-  LET index% = LsCount%(lsid%) + 1
+FUNCTION LsAdd% (lsid%, value%)
+  '
+  ' Adds a value to a list and returns the 1-based position of the value.
+  '
+  AssertIsPositive lsid%, "LsAdd%", "lsid%"
 
-  IF index% > LsMaxIndex% THEN
-    AssertFail "LsAdd", "Maximum items"
-    EXIT SUB
-  END IF
+  '
+  ' Get the 1-based position of the new value
+  '
+  DIM n%
+  LET n% = LsCount%(lsid%) + 1
+  Assert n% <= LsCapacity%, "LsAdd%", "n%"
 
-  ObSet lsid%, LsIndex.Count, count%
-  ObSet lsid%, index%, value%
+  '
+  ' Convert the 1-based position to a property index.
+  '
+  DIM lsix%
+  LET lsix% = n% + LsIndex.First - 1
 
-END SUB
+  '
+  ' Update the list count and set the value
+  '
+  ObSet lsid%, LsIndex.Count, n%
+  ObSet lsid%, lsix%, value%
+
+  LsAdd% = n%
+
+END FUNCTION
+
+FUNCTION LsCapacity%
+  LsCapacity% = UBOUND(gobj, 1) - LsIndex.First + 1
+END FUNCTION
 
 FUNCTION LsCount% (lsid%)
   LsCount% = ObGet%(lsid%, LsIndex.Count)
@@ -3209,8 +3229,21 @@ FUNCTION LsCreate%
   LsCreate% = ObCreate%(ObKind.List)
 END FUNCTION
 
-FUNCTION LsMaxIndex%
-  LsMaxItems% = UBOUND(gobj, 1) - LsIndex.First + 1
+FUNCTION LsItem% (lsid%, n%)
+  '
+  ' Gets the specified 1-based list item
+  '
+  AssertIsPositive lsid%, "LsItem%", "lsid%"
+  AssertIsPositive lsid%, "LsItem%", "n%"
+
+  '
+  ' Convert the 1-based position to a property index
+  '
+  DIM lsix%
+  LET lsix% = n% + LsIndex.First - 1
+ 
+  LsItem% = ObGet%(lsid%, lsix%)
+
 END FUNCTION
 
 FUNCTION NebulaLabel$ (energy AS INTEGER)
