@@ -209,11 +209,7 @@ DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 DECLARE FUNCTION HbCreate% ()
 DECLARE FUNCTION HbFind% (name$)
 DECLARE FUNCTION HbGet% (hbid%, hbix%)
-DECLARE SUB HbSetBackdrop (hbid%, backdrop$)
-DECLARE SUB HbSetLabel (hbid%, label$)
-DECLARE SUB HbSetName (hbid%, name$)
-DECLARE SUB HbSetStartFile (hbid%, startfile$)
-DECLARE SUB HbSetWindow (hbid%, wnid%)
+DECLARE SUB HbSet (hbid%, hbix%, value%)
 
 '
 ' Inbox
@@ -2711,22 +2707,22 @@ FUNCTION ExecCmdHbid% (ntoken%, stoken$(), hbid%)
   SELECT CASE stoken$(0)
 
     CASE "backdrop"
-      HbSetBackdrop hbid%, stoken$(1)
+      HbSet hbid%, HbIndex.Backdrop, RsCreate%(stoken$(1))
 
     CASE "endhabitat"
       hbid% = 0
 
     CASE "label"
-      HbSetLabel hbid%, stoken$(1)
+      HbSet hbid%, HbIndex.Label, RsCreate%(stoken$(1))
 
     CASE "startfile"
-      HbSetStartFile hbid%, stoken$(1)
+      HbSet hbid%, HbIndex.StartFile, RsCreate%(stoken$(1))
 
     CASE "name"
-      HbSetName hbid%, stoken$(1)
+      HbSet hbid%, HbIndex.Name, RsCreate%(stoken$(1))
 
     CASE "window"
-      HbSetWindow hbid%, WnFindWnid(stoken$(1))
+      HbSet hbid%, HbIndex.Window, WnFindWnid%(stoken$(1))
 
     CASE ELSE
       ExecCmdHbid = CmdResult.Malformed
@@ -3169,24 +3165,9 @@ FUNCTION HbGet% (hbid%, hbix%)
   HbGet% = ObGet%(hbid%, hbix%)
 END FUNCTION
 
-SUB HbSetBackdrop (hbid%, backdrop$)
-  ObSetString hbid%, HbIndex.Backdrop, backdrop$
-END SUB
-
-SUB HbSetLabel (hbid%, label$)
-  ObSetString hbid%, HbIndex.Label, label$
-END SUB
-
-SUB HbSetName (hbid%, name$)
-  ObSetString hbid%, HbIndex.Name, name$
-END SUB
-
-SUB HbSetStartFile (hbid%, startfile$)
-  ObSetString hbid%, HbIndex.StartFile, startfile$
-END SUB
-
-SUB HbSetWindow (hbid%, wnid%)
-  ObSet hbid%, HbIndex.Window, wnid%
+SUB HbSet (hbid%, hbix%, value%)
+  AssertExpected ObKind.Habitat, gobj(hbid%, ObIndex.Kind).value, "HbSet", "ObKind"
+  ObSet hbid%, hbix%, value%
 END SUB
 
 SUB InboxAdd (subject AS STRING, filename AS STRING)
@@ -3472,7 +3453,7 @@ FUNCTION RsCreate% (value$)
 
   IF resources = UBOUND(resource) THEN
    
-    AssertFail "RsCreate", "Out of resource space"
+    AssertFail "RsCreate%", "Out of resource space"
     RsCreate% = 0
 
   ELSEIF LEN(value$) = 0 THEN
