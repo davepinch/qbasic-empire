@@ -1,5 +1,5 @@
 
-' Emporer
+' Emperor
 ' By David Pinch, 1991-2020
 '
 ' MIT License
@@ -57,6 +57,7 @@ END TYPE
 ' Assertions
 '
 DECLARE SUB Assert (truth AS INTEGER, where AS STRING, what AS STRING)
+DECLARE SUB AssertExpected (expected%, actual%, where$, what$)
 DECLARE SUB AssertFail (where$, what$)
 DECLARE SUB AssertIsPositive (value%, where$, what$)
 DECLARE SUB AssertIsZero (value%, where$, what$)
@@ -584,6 +585,19 @@ SUB Assert (truth AS INTEGER, where AS STRING, what AS STRING)
       END
     END IF
  
+  END IF
+
+END SUB
+
+SUB AssertExpected (expected%, actual%, where$, what$)
+
+  IF expected% <> actual% THEN
+ 
+    DIM msg$
+    msg$ = what$ + " expected:" + STR$(expected%) + " actually:" + STR$(actual%)
+
+    AssertFail where$, msg$
+
   END IF
 
 END SUB
