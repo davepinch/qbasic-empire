@@ -4608,14 +4608,14 @@ END SUB
 
 SUB WorldAddRandom (hbid%, count%)
 
-  DIM aid   AS INTEGER
-  DIM outcx AS INTEGER
-  DIM outcy AS INTEGER
-  DIM n     AS INTEGER
+  DIM aid%
+  DIM outcx%
+  DIM outcy%
 
-  FOR n = 1 TO count%
-    AtlasNextRandom outcx, outcy
-    aid = WorldAdd%(hbid%, outcx, outcy)
+  DIM n%
+  FOR n% = 1 TO count%
+    AtlasNextRandom outcx%, outcy%
+    aid% = WorldAdd%(hbid%, outcx%, outcy%)
   NEXT
 
 END SUB
