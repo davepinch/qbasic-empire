@@ -489,11 +489,11 @@ CONST ScanCode.PageDown = 81
 '
 ' Style properties
 '
-CONST StPropId.BorderColor = 1
-CONST StPropId.BorderType = 2
-CONST StPropId.Name = 3
-CONST StPropId.SelectedColor = 4
-CONST StPropId.TextColor = 5
+CONST StIndex.BorderColor = 1
+CONST StIndex.BorderType = 2
+CONST StIndex.Name = 3
+CONST StIndex.SelectedColor = 4
+CONST StIndex.TextColor = 5
 
 '
 ' UIPage.* constants
@@ -3661,43 +3661,43 @@ FUNCTION StCreate%
 END FUNCTION
 
 FUNCTION StGetBorderColor% (stid%)
-  StGetBorderColor% = ObGet%(stid%, StPropId.BorderColor)
+  StGetBorderColor% = ObGet%(stid%, StIndex.BorderColor)
 END FUNCTION
 
 FUNCTION StGetBorderType% (stid%)
-  StGetBorderType% = ObGet%(stid%, StPropId.BorderType)
+  StGetBorderType% = ObGet%(stid%, StIndex.BorderType)
 END FUNCTION
 
 FUNCTION StGetName$ (stid%)
-  StGetName$ = ObGetString$(stid%, StPropId.Name)
+  StGetName$ = ObGetString$(stid%, StIndex.Name)
 END FUNCTION
 
 FUNCTION StGetSelectedColor% (stid%)
-  StGetSelectedColor% = ObGet%(stid%, StPropId.SelectedColor)
+  StGetSelectedColor% = ObGet%(stid%, StIndex.SelectedColor)
 END FUNCTION
 
 FUNCTION StGetTextColor% (stid%)
-  StGetTextColor% = ObGet%(stid%, StPropId.TextColor)
+  StGetTextColor% = ObGet%(stid%, StIndex.TextColor)
 END FUNCTION
 
 SUB StSetBorderColor (stid%, bordercolor%)
-  ObSet stid%, StPropId.BorderColor, bordercolor%
+  ObSet stid%, StIndex.BorderColor, bordercolor%
 END SUB
 
 SUB StSetBorderType (stid%, bordertype%)
-  ObSet stid%, StPropId.BorderType, bordertype%
+  ObSet stid%, StIndex.BorderType, bordertype%
 END SUB
 
 SUB StSetName (stid%, name$)
-  ObSetString stid%, StPropId.Name, name$
+  ObSetString stid%, StIndex.Name, name$
 END SUB
 
 SUB StSetSelectedColor (stid%, selectedcolor%)
-  ObSet stid%, StPropId.SelectedColor, selectedcolor%
+  ObSet stid%, StIndex.SelectedColor, selectedcolor%
 END SUB
 
 SUB StSetTextColor (stid%, textcolor%)
-  ObSet stid%, StPropId.TextColor, textcolor%
+  ObSet stid%, StIndex.TextColor, textcolor%
 END SUB
 
 SUB TrBegin
@@ -3995,7 +3995,7 @@ SUB WinDraw (wnid%)
 END SUB
 
 FUNCTION WinFindStid% (stylename$)
-  WinFindStid% = ObFindString%(ObKind.Style, StPropId.Name, stylename$)
+  WinFindStid% = ObFindString%(ObKind.Style, StIndex.Name, stylename$)
 END FUNCTION
 
 FUNCTION WinFindWnid% (wname$)
