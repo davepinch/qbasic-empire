@@ -208,11 +208,7 @@ DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 '
 DECLARE FUNCTION HbCreate% ()
 DECLARE FUNCTION HbFind% (name$)
-DECLARE FUNCTION HbGetBackdrop% (hbid%)
-DECLARE FUNCTION HbGetLabel% (hbid%)
-DECLARE FUNCTION HbGetName% (hbid%)
-DECLARE FUNCTION HbGetStartFile% (hbid%)
-DECLARE FUNCTION HbGetWindow% (hbid%)
+DECLARE FUNCTION HbGet% (hbid%, hbix%)
 DECLARE SUB HbSetBackdrop (hbid%, backdrop$)
 DECLARE SUB HbSetLabel (hbid%, label$)
 DECLARE SUB HbSetName (hbid%, name$)
@@ -2238,7 +2234,7 @@ SUB DgStart (hbid%)
    
     listening = 0
 
-    startfile$ = RsGet$(HbGetStartFile%(hbid%))
+    startfile$ = RsGet$(HbGet%(hbid%, HbIndex.StartFile))
     IF LEN(startfile$) > 0 THEN
       TrFile startfile$
     END IF
@@ -3107,7 +3103,7 @@ SUB GameMoveOffset (offsetX%, offsetY%)
     ' Run the window name handling this habitat
     '
     DIM hbidwnid%
-    LET hbidwnid% = HbGetWindow%(hbid%)
+    LET hbidwnid% = HbGet%(hbid%, HbIndex.Window)
 
     IF hbidwnid% > 0 THEN
      
@@ -3168,28 +3164,9 @@ FUNCTION HbFind% (name$)
   HbFind% = ObFindString%(ObKind.Habitat, HbIndex.Name, name$)
 END FUNCTION
 
-FUNCTION HbGetBackdrop% (hbid%)
-  IF hbid% > 0 THEN
-    HbGetBackdrop% = ObGet%(hbid%, HbIndex.Backdrop)
-  END IF
-END FUNCTION
-
-FUNCTION HbGetLabel% (hbid%)
-  HbGetLabel% = ObGet%(hbid%, HbIndex.Label)
-END FUNCTION
-
-FUNCTION HbGetName% (hbid%)
-  IF hbid% > 0 THEN
-    HbGetName% = ObGet%(hbid%, HbIndex.Name)
-  END IF
-END FUNCTION
-
-FUNCTION HbGetStartFile% (hbid%)
-  HbGetStartFile% = ObGet%(hbid%, HbIndex.StartFile)
-END FUNCTION
-
-FUNCTION HbGetWindow% (hbid%)
-  HbGetWindow% = ObGet%(hbid%, HbIndex.Window)
+FUNCTION HbGet% (hbid%, hbix%)
+  AssertExpected ObKind.Habitat, gobj(hbid%, ObIndex.Kind).value, "HbGet%", "ObKind"
+  HbGet% = ObGet%(hbid%, hbix%)
 END FUNCTION
 
 SUB HbSetBackdrop (hbid%, backdrop$)
@@ -3391,9 +3368,9 @@ FUNCTION ObGet% (obid%, obix%)
       IF hbid% > 0 THEN
         SELECT CASE RsGet$(value%)
           CASE "backdrop"
-            ObGet% = HbGetBackdrop%(hbid%)
+            ObGet% = HbGet%(hbid%, HbIndex.Backdrop)
           CASE "title"
-            ObGet% = HbGetName%(hbid%)
+            ObGet% = HbGet%(hbid%, HbIndex.Name)
         END SELECT
       END IF
 
@@ -4573,7 +4550,7 @@ FUNCTION WorldAdd% (hbid%, cx%, cy%)
   area(aid%).hbid = hbid%
   area(aid%).energy = 3
 
-  AtlasAddItem cx%, cy%, aid%, HbGetLabel%(hbid%)
+  AtlasAddItem cx%, cy%, aid%, HbGet%(hbid%, HbIndex.Label)
   WorldAdd% = aid%
 
 END FUNCTION
