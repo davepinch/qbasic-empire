@@ -2750,11 +2750,11 @@ FUNCTION ExecCmdPrid% (ntoken%, stoken$(), prid%)
   
 END FUNCTION
 
-FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, pid%, stid%, tid%, wnid%)
+FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wnid%)
 
   AssertIsZero evid%, "ExecCmdRoot%", "evid%"
   AssertIsZero hbid%, "ExecCmdRoot%", "hbid%"
-  AssertIsZero pid%, "ExecCmdRoot%", "pid%"
+  AssertIsZero prid%, "ExecCmdRoot%", "prid%"
   AssertIsZero stid%, "ExecCmdRoot%", "stid%"
   AssertIsZero tid%, "ExecCmdRoot%", "tid%"
   AssertIsZero wnid%, "ExecCmdRoot%", "wnid%"
@@ -2800,7 +2800,7 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, pid%, stid%, tid%, wnid
       ExecFile "WORLD.CFG"
 
     CASE "person", "persona"
-      pid% = PrCreate%
+      prid% = PrCreate%
 
     CASE "print"
       TrPrint stoken$(1)
