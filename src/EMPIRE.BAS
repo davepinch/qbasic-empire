@@ -1,6 +1,5 @@
-
 ' Emperor
-' By David Pinch, 1991-2020
+' By David Pinch, 1991, 2020-2023
 '
 ' MIT License
 ' https://github.com/davepinch/qbasic-empire
@@ -11,7 +10,7 @@
 
 TYPE AreaType
   allocated AS INTEGER
-  hid       AS INTEGER
+  hbid      AS INTEGER
   energy    AS INTEGER
 END TYPE
 
@@ -156,7 +155,7 @@ DECLARE FUNCTION CtSelectable% (ctid%)
 '
 DECLARE SUB DgNext (outpid%, outtext$)
 DECLARE SUB DgPrint (pid%, text$)
-DECLARE SUB DgStart (hid%)
+DECLARE SUB DgStart (hbid%)
 DECLARE SUB DgStop ()
 DECLARE SUB DgTimer ()
 DECLARE FUNCTION DgGarble$ (text$, percent!)
@@ -191,9 +190,9 @@ DECLARE SUB ExecFile (filename AS STRING)
 DECLARE FUNCTION ExecCmd% (text AS STRING)
 DECLARE FUNCTION ExecCmdEvid% (ntoken%, stoken$(), evid%)
 DECLARE FUNCTION ExecCmdFid% (ntoken%, stoken$(), wnid%, fid%)
-DECLARE FUNCTION ExecCmdHid% (ntoken%, stoken$(), hid%)
+DECLARE FUNCTION ExecCmdHbid% (ntoken%, stoken$(), hbid%)
 DECLARE FUNCTION ExecCmdPid% (ntoken%, stoken$(), pid%)
-DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hid%, pid%, stid%, tid%, wnid%)
+DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, pid%, stid%, tid%, wnid%)
 DECLARE FUNCTION ExecCmdStid% (ntoken%, stoken$(), stid%)
 DECLARE FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
 DECLARE FUNCTION ExecCmdWnid% (ntoken%, stoken$(), wnid%, fid%)
@@ -209,16 +208,16 @@ DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 '
 DECLARE FUNCTION HbCreate% ()
 DECLARE FUNCTION HbFind% (name$)
-DECLARE FUNCTION HbGetBackdrop% (hid%)
-DECLARE FUNCTION HbGetLabel% (hid%)
-DECLARE FUNCTION HbGetName% (hid%)
-DECLARE FUNCTION HbGetStartFile% (hid%)
-DECLARE FUNCTION HbGetWindow% (hid%)
-DECLARE SUB HbSetBackdrop (hid%, backdrop$)
-DECLARE SUB HbSetLabel (hid%, label$)
-DECLARE SUB HbSetName (hid%, name$)
-DECLARE SUB HbSetStartFile (hid%, startfile$)
-DECLARE SUB HbSetWindow (hid%, wnid%)
+DECLARE FUNCTION HbGetBackdrop% (hbid%)
+DECLARE FUNCTION HbGetLabel% (hbid%)
+DECLARE FUNCTION HbGetName% (hbid%)
+DECLARE FUNCTION HbGetStartFile% (hbid%)
+DECLARE FUNCTION HbGetWindow% (hbid%)
+DECLARE SUB HbSetBackdrop (hbid%, backdrop$)
+DECLARE SUB HbSetLabel (hbid%, label$)
+DECLARE SUB HbSetName (hbid%, name$)
+DECLARE SUB HbSetStartFile (hbid%, startfile$)
+DECLARE SUB HbSetWindow (hbid%, wnid%)
 
 '
 ' Inbox
@@ -332,13 +331,13 @@ DECLARE FUNCTION WinMapKey% (wnid%, pressed$)
 '
 ' World
 '
-DECLARE SUB WorldAddBanded (hid AS INTEGER, count AS INTEGER)
-DECLARE SUB WorldAddCluster (hid AS INTEGER, size AS INTEGER)
-DECLARE SUB WorldAddRandom (hid%, count%)
+DECLARE SUB WorldAddBanded (hbid AS INTEGER, count AS INTEGER)
+DECLARE SUB WorldAddCluster (hbid AS INTEGER, size AS INTEGER)
+DECLARE SUB WorldAddRandom (hbid%, count%)
 DECLARE SUB WorldHarvest (aid%)
 DECLARE SUB WorldRemove (aid%)
 DECLARE SUB WorldSetLabel (aid%, labelrsid%)
-DECLARE FUNCTION WorldAdd% (hid%, cx%, cy%)
+DECLARE FUNCTION WorldAdd% (hbid%, cx%, cy%)
 DECLARE FUNCTION WorldNextId% ()
 
 '
@@ -2231,20 +2230,20 @@ SUB DgPrint (personid%, text$)
 
 END SUB
 
-SUB DgStart (hid%)
+SUB DgStart (hbid%)
  
   DIM startfile$
 
-  IF hid% <> listening THEN
+  IF hbid% <> listening THEN
    
     listening = 0
 
-    startfile$ = RsGet$(HbGetStartFile%(hid%))
+    startfile$ = RsGet$(HbGetStartFile%(hbid%))
     IF LEN(startfile$) > 0 THEN
       TrFile startfile$
     END IF
 
-    listening = hid%
+    listening = hbid%
 
   END IF
 
@@ -2557,7 +2556,7 @@ FUNCTION ExecCmd% (text AS STRING)
 
   SHARED evid%
   SHARED fid%
-  SHARED hid%
+  SHARED hbid%
   SHARED pid%
   SHARED stid%
   SHARED tid%
@@ -2581,8 +2580,8 @@ FUNCTION ExecCmd% (text AS STRING)
     result% = ExecCmdWnid%(ntoken%, stoken$(), wnid%, fid%)
   ELSEIF evid% > 0 THEN
     result% = ExecCmdEvid%(ntoken%, stoken$(), evid%)
-  ELSEIF hid% > 0 THEN
-    result% = ExecCmdHid%(ntoken%, stoken$(), hid%)
+  ELSEIF hbid% > 0 THEN
+    result% = ExecCmdHbid%(ntoken%, stoken$(), hbid%)
   ELSEIF pid% > 0 THEN
     result% = ExecCmdPid%(ntoken%, stoken$(), pid%)
   ELSEIF stid% > 0 THEN
@@ -2590,7 +2589,7 @@ FUNCTION ExecCmd% (text AS STRING)
   ELSEIF tid% > 0 THEN
     result% = ExecCmdTid%(ntoken%, stoken$(), tid%)
   ELSE
-    result% = ExecCmdRoot%(ntoken%, stoken$(), evid%, hid%, pid%, stid%, tid%, wnid%)
+    result% = ExecCmdRoot%(ntoken%, stoken$(), evid%, hbid%, pid%, stid%, tid%, wnid%)
   END IF
 
   Assert result% = CmdResult.OK, "ExecCmd", "Malformed: " + text
@@ -2707,34 +2706,34 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wnid%, fid%)
 
 END FUNCTION
 
-FUNCTION ExecCmdHid% (ntoken%, stoken$(), hid%)
+FUNCTION ExecCmdHbid% (ntoken%, stoken$(), hbid%)
 
-  AssertIsPositive hid%, "ExecCmdHid", "hid"
+  AssertIsPositive hbid%, "ExecCmdHbid%", "hbid%"
 
-  ExecCmdHid% = CmdResult.OK
+  ExecCmdHbid% = CmdResult.OK
 
   SELECT CASE stoken$(0)
 
     CASE "backdrop"
-      HbSetBackdrop hid%, stoken$(1)
+      HbSetBackdrop hbid%, stoken$(1)
 
     CASE "endhabitat"
-      hid% = 0
+      hbid% = 0
 
     CASE "label"
-      HbSetLabel hid%, stoken$(1)
+      HbSetLabel hbid%, stoken$(1)
 
     CASE "startfile"
-      HbSetStartFile hid%, stoken$(1)
+      HbSetStartFile hbid%, stoken$(1)
 
     CASE "name"
-      HbSetName hid%, stoken$(1)
+      HbSetName hbid%, stoken$(1)
 
     CASE "window"
-      HbSetWindow hid%, WinFindWnid(stoken$(1))
+      HbSetWindow hbid%, WinFindWnid(stoken$(1))
 
     CASE ELSE
-      ExecCmdHid = CmdResult.Malformed
+      ExecCmdHbid = CmdResult.Malformed
 
   END SELECT
 
@@ -2759,10 +2758,10 @@ FUNCTION ExecCmdPid% (ntoken%, stoken$(), pid%)
   
 END FUNCTION
 
-FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hid%, pid%, stid%, tid%, wnid%)
+FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, pid%, stid%, tid%, wnid%)
 
   AssertIsZero evid%, "ExecCmdRoot%", "evid%"
-  AssertIsZero hid%, "ExecCmdRoot%", "hid%"
+  AssertIsZero hbid%, "ExecCmdRoot%", "hbid%"
   AssertIsZero pid%, "ExecCmdRoot%", "pid%"
   AssertIsZero stid%, "ExecCmdRoot%", "stid%"
   AssertIsZero tid%, "ExecCmdRoot%", "tid%"
@@ -2791,15 +2790,15 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hid%, pid%, stid%, tid%, wnid%
       evid% = EvCreate%
 
     CASE "habitat"
-      hid% = HbCreate%
+      hbid% = HbCreate%
 
     CASE "listen"
-      DIM listenhid%: listenhid% = VAL(stoken$(1))
-      IF listenhid% = 0 THEN
+      DIM listenhbid%: listenhbid% = VAL(stoken$(1))
+      IF listenhbid% = 0 THEN
         DgStop
       ELSE
         UI.SetPage UIPage.Terminal
-        DgStart listenhid%
+        DgStart listenhbid%
       END IF
 
     CASE "mail"
@@ -2840,31 +2839,31 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hid%, pid%, stid%, tid%, wnid%
    
     CASE "spawn"
       DIM aid%
-      DIM shid%
-      shid% = HbFind%(stoken$(1))
-      IF shid% > 0 THEN
+      DIM shbid%
+      shbid% = HbFind%(stoken$(1))
+      IF shbid% > 0 THEN
         SELECT CASE LCASE$(stoken$(2))
          
           CASE "at"
-            aid% = WorldAdd%(shid%, VAL(stoken$(3)), VAL(stoken$(4)))
+            aid% = WorldAdd%(shbid%, VAL(stoken$(3)), VAL(stoken$(4)))
          
           CASE "b", "band", "banded"
-            WorldAddBanded shid%, VAL(stoken$(3))
+            WorldAddBanded shbid%, VAL(stoken$(3))
          
           CASE "c", "cluster", "clustered"
-            WorldAddCluster shid%, VAL(stoken$(3))
+            WorldAddCluster shbid%, VAL(stoken$(3))
          
           CASE "p", "player"
             DIM pcx%: pcx% = VAL(stoken$(3)): IF pcx% = 0 THEN pcx% = 1
             DIM pcy%: pcx% = VAL(stoken$(4)): IF pcy% = 0 THEN pcy% = 1
             IF playeraid = 0 THEN
-              playeraid = WorldAdd%(shid%, pcx%, pcy%)
+              playeraid = WorldAdd%(shbid%, pcx%, pcy%)
             ELSE
               AtlasMoveItem AtlasIndexOf%(playeraid), pcx%, pcy%
             END IF
 
           CASE "r", "random"
-            WorldAddRandom shid%, VAL(stoken$(3))
+            WorldAddRandom shbid%, VAL(stoken$(3))
         END SELECT
       END IF
 
@@ -3066,7 +3065,7 @@ SUB GameMoveOffset (offsetX%, offsetY%)
   DIM aid     AS INTEGER
   DIM cx      AS INTEGER
   DIM cy      AS INTEGER
-  DIM hid     AS INTEGER
+  DIM hbid     AS INTEGER
   DIM idx     AS INTEGER
   DIM wresult AS WinResultType
 
@@ -3102,26 +3101,26 @@ SUB GameMoveOffset (offsetX%, offsetY%)
     EvIncrement "AtlasMoves"
   ELSE
 
-    hid = area(aid).hid
+    hbid = area(aid).hbid
       
     '
     ' Run the window name handling this habitat
     '
-    DIM hidwnid%
-    LET hidwnid% = HbGetWindow%(hid%)
+    DIM hbidwnid%
+    LET hbidwnid% = HbGetWindow%(hbid%)
 
-    IF hidwnid% > 0 THEN
+    IF hbidwnid% > 0 THEN
      
       AtlasDrawSelect cx, cy, 1
 
       '
       ' HACK: set window parameter value
       '
-      DIM hidwnidctid%
-      LET hidwnidctid% = gwin(hidwnid%, 0)
-      CtSetParam hidwnidctid%, hid
+      DIM hbidwnidctid%
+      LET hbidwnidctid% = gwin(hbidwnid%, 0)
+      CtSetParam hbidwnidctid%, hbid
      
-      WinRun hidwnid%, wresult
+      WinRun hbidwnid%, wresult
      
       IF wresult.action = WinAction.Execute THEN
         '
@@ -3130,7 +3129,7 @@ SUB GameMoveOffset (offsetX%, offsetY%)
         DIM cmd$: cmd$ = RsGet$(wresult.cmdrsid)
         DIM pdx%: pdx% = INSTR(cmd$, "{param.name}")
         IF pdx% > 0 THEN
-          MID$(cmd$, pdx%) = STR$(hid)
+          MID$(cmd$, pdx%) = STR$(hbid)
         END IF
         cresult = ExecCmd(cmd$)
       END IF
@@ -3169,48 +3168,48 @@ FUNCTION HbFind% (name$)
   HbFind% = ObFindString%(ObKind.Habitat, HbPropId.Name, name$)
 END FUNCTION
 
-FUNCTION HbGetBackdrop% (hid%)
-  IF hid% > 0 THEN
-    HbGetBackdrop% = ObGet%(hid%, HbPropId.Backdrop)
+FUNCTION HbGetBackdrop% (hbid%)
+  IF hbid% > 0 THEN
+    HbGetBackdrop% = ObGet%(hbid%, HbPropId.Backdrop)
   END IF
 END FUNCTION
 
-FUNCTION HbGetLabel% (hid%)
-  HbGetLabel% = ObGet%(hid%, HbPropId.Label)
+FUNCTION HbGetLabel% (hbid%)
+  HbGetLabel% = ObGet%(hbid%, HbPropId.Label)
 END FUNCTION
 
-FUNCTION HbGetName% (hid%)
-  IF hid% > 0 THEN
-    HbGetName% = ObGet%(hid%, HbPropId.Name)
+FUNCTION HbGetName% (hbid%)
+  IF hbid% > 0 THEN
+    HbGetName% = ObGet%(hbid%, HbPropId.Name)
   END IF
 END FUNCTION
 
-FUNCTION HbGetStartFile% (hid%)
-  HbGetStartFile% = ObGet%(hid%, HbPropId.StartFile)
+FUNCTION HbGetStartFile% (hbid%)
+  HbGetStartFile% = ObGet%(hbid%, HbPropId.StartFile)
 END FUNCTION
 
-FUNCTION HbGetWindow% (hid%)
-  HbGetWindow% = ObGet%(hid%, HbPropId.Window)
+FUNCTION HbGetWindow% (hbid%)
+  HbGetWindow% = ObGet%(hbid%, HbPropId.Window)
 END FUNCTION
 
-SUB HbSetBackdrop (hid%, backdrop$)
-  ObSetString hid%, HbPropId.Backdrop, backdrop$
+SUB HbSetBackdrop (hbid%, backdrop$)
+  ObSetString hbid%, HbPropId.Backdrop, backdrop$
 END SUB
 
-SUB HbSetLabel (hid%, label$)
-  ObSetString hid%, HbPropId.Label, label$
+SUB HbSetLabel (hbid%, label$)
+  ObSetString hbid%, HbPropId.Label, label$
 END SUB
 
-SUB HbSetName (hid%, name$)
-  ObSetString hid%, HbPropId.Name, name$
+SUB HbSetName (hbid%, name$)
+  ObSetString hbid%, HbPropId.Name, name$
 END SUB
 
-SUB HbSetStartFile (hid%, startfile$)
-  ObSetString hid%, HbPropId.StartFile, startfile$
+SUB HbSetStartFile (hbid%, startfile$)
+  ObSetString hbid%, HbPropId.StartFile, startfile$
 END SUB
 
-SUB HbSetWindow (hid%, wnid%)
-  ObSet hid%, HbPropId.Window, wnid%
+SUB HbSetWindow (hbid%, wnid%)
+  ObSet hbid%, HbPropId.Window, wnid%
 END SUB
 
 SUB InboxAdd (subject AS STRING, filename AS STRING)
@@ -3387,14 +3386,14 @@ FUNCTION ObGet% (oid%, pid%)
       '
       ' Bound to the parent window parameter
       '
-      DIM hid%
-      LET hid% = CtGetParam%(parentctid%)
-      IF hid% > 0 THEN
+      DIM hbid%
+      LET hbid% = CtGetParam%(parentctid%)
+      IF hbid% > 0 THEN
         SELECT CASE RsGet$(value%)
           CASE "backdrop"
-            ObGet% = HbGetBackdrop%(hid%)
+            ObGet% = HbGetBackdrop%(hbid%)
           CASE "title"
-            ObGet% = HbGetName%(hid%)
+            ObGet% = HbGetName%(hbid%)
         END SELECT
       END IF
 
@@ -4565,21 +4564,21 @@ SUB WinSelectPrevious (wnid%)
 
 END SUB
 
-FUNCTION WorldAdd% (hid%, cx%, cy%)
+FUNCTION WorldAdd% (hbid%, cx%, cy%)
 
   DIM aid%
 
   aid% = WorldNextId%
   area(aid%).allocated = True
-  area(aid%).hid = hid%
+  area(aid%).hbid = hbid%
   area(aid%).energy = 3
 
-  AtlasAddItem cx%, cy%, aid%, HbGetLabel%(hid%)
+  AtlasAddItem cx%, cy%, aid%, HbGetLabel%(hbid%)
   WorldAdd% = aid%
 
 END FUNCTION
 
-SUB WorldAddBanded (hid AS INTEGER, count AS INTEGER)
+SUB WorldAddBanded (hbid AS INTEGER, count AS INTEGER)
 
   DIM aid   AS INTEGER
   DIM outcx AS INTEGER
@@ -4588,12 +4587,12 @@ SUB WorldAddBanded (hid AS INTEGER, count AS INTEGER)
 
   FOR n = 1 TO count
     AtlasNextBanded outcx, outcy
-    aid = WorldAdd%(hid, outcx, outcy)
+    aid = WorldAdd%(hbid, outcx, outcy)
   NEXT
 
 END SUB
 
-SUB WorldAddCluster (hid AS INTEGER, count AS INTEGER)
+SUB WorldAddCluster (hbid AS INTEGER, count AS INTEGER)
 
   DIM aid   AS INTEGER
   DIM outcx AS INTEGER
@@ -4602,12 +4601,12 @@ SUB WorldAddCluster (hid AS INTEGER, count AS INTEGER)
  
   FOR n = 1 TO count
     AtlasNextClustered outcx, outcy
-    aid = WorldAdd%(hid, outcx, outcy)
+    aid = WorldAdd%(hbid, outcx, outcy)
   NEXT
   
 END SUB
 
-SUB WorldAddRandom (hid%, count%)
+SUB WorldAddRandom (hbid%, count%)
 
   DIM aid   AS INTEGER
   DIM outcx AS INTEGER
@@ -4616,7 +4615,7 @@ SUB WorldAddRandom (hid%, count%)
 
   FOR n = 1 TO count%
     AtlasNextRandom outcx, outcy
-    aid = WorldAdd%(hid%, outcx, outcy)
+    aid = WorldAdd%(hbid%, outcx, outcy)
   NEXT
 
 END SUB
