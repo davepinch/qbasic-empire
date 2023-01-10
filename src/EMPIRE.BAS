@@ -442,8 +442,8 @@ CONST HbIndex.Window = 5
 '
 ' List properties
 '
-CONST LsPropId.Count = 1
-CONST LsPropId.First = 2
+CONST LsIndex.Count = 1
+CONST LsIndex.First = 2
 
 '
 ' Object kinds
@@ -3239,13 +3239,13 @@ SUB LsAdd (lsid%, value%)
     EXIT SUB
   END IF
 
-  ObSet lsid%, LsPropId.Count, count%
+  ObSet lsid%, LsIndex.Count, count%
   ObSet lsid%, index%, value%
 
 END SUB
 
 FUNCTION LsCount% (lsid%)
-  LsCount% = ObGet%(lsid%, LsPropId.Count)
+  LsCount% = ObGet%(lsid%, LsIndex.Count)
 END FUNCTION
 
 FUNCTION LsCreate%
@@ -3253,7 +3253,7 @@ FUNCTION LsCreate%
 END FUNCTION
 
 FUNCTION LsMaxIndex%
-  LsMaxItems% = UBOUND(gobj, 1) - LsPropId.First + 1
+  LsMaxItems% = UBOUND(gobj, 1) - LsIndex.First + 1
 END FUNCTION
 
 FUNCTION NebulaLabel$ (energy AS INTEGER)
