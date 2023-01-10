@@ -245,11 +245,10 @@ DECLARE SUB ObSetString (obid%, obix%, value$)
 '
 ' Person API
 '
-DECLARE SUB PrSetLabel (prid%, label$)
-DECLARE SUB PrSetName (prid%, name$)
 DECLARE FUNCTION PrCreate% ()
 DECLARE FUNCTION PrGet% (prid%, prix%)
 DECLARE FUNCTION PrRandomly% ()
+DECLARE SUB PrSet (prid%, prix%, value%)
 
 '
 ' Resource API
@@ -2742,10 +2741,10 @@ FUNCTION ExecCmdPrid% (ntoken%, stoken$(), prid%)
       prid% = 0
 
     CASE "label"
-      PrSetLabel prid%, stoken$(1)
+      PrSet prid%, PrIndex.Label, RsCreate%(stoken$(1))
 
     CASE "name"
-      PrSetName prid%, stoken$(1)
+      PrSet prid%, PrIndex.Name, RsCreate%(stoken$(1))
 
   END SELECT
   
@@ -3470,12 +3469,9 @@ FUNCTION PrRandomly%
 
 END FUNCTION
 
-SUB PrSetLabel (prid%, label$)
-  ObSetString prid%, PrIndex.Label, label$
-END SUB
-
-SUB PrSetName (prid%, name$)
-  ObSetString prid%, PrIndex.Name, name$
+SUB PrSet (prid%, prix%, value%)
+  AssertExpected ObKind.Person, gobj(prid%, ObIndex.Kind).value, "PrSet%", "ObKind"
+  ObSet prid%, prix%, value%
 END SUB
 
 FUNCTION RsCreate% (value$)
