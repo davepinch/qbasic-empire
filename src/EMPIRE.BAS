@@ -126,7 +126,7 @@ DECLARE SUB CtSetPopupName (ctid%, wname$)
 DECLARE SUB CtSetSelected (ctid%, value%)
 DECLARE SUB CtSetSizeX (ctid%, sizeX%)
 DECLARE SUB CtSetSizeY (ctid%, sizeY%)
-DECLARE SUB CtSetStyle (ctid%, sid%)
+DECLARE SUB CtSetStyle (ctid%, stid%)
 DECLARE SUB CtSetText (ctid%, value$)
 DECLARE SUB CtSetValue (ctid%, value$)
 DECLARE FUNCTION CtCreateChild% (wid%, kind%)
@@ -192,8 +192,8 @@ DECLARE FUNCTION ExecCmdEvid% (ntoken%, stoken$(), evid%)
 DECLARE FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
 DECLARE FUNCTION ExecCmdHid% (ntoken%, stoken$(), hid%)
 DECLARE FUNCTION ExecCmdPid% (ntoken%, stoken$(), pid%)
-DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hid%, pid%, sid%, tid%, wid%)
-DECLARE FUNCTION ExecCmdSid% (ntoken%, stoken$(), sid%)
+DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hid%, pid%, stid%, tid%, wid%)
+DECLARE FUNCTION ExecCmdStid% (ntoken%, stoken$(), stid%)
 DECLARE FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
 DECLARE FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
 DECLARE FUNCTION ExecResource% (rid AS INTEGER)
@@ -277,16 +277,16 @@ DECLARE SUB UI.SetPage (page AS INTEGER)
 ' Style API
 '
 DECLARE FUNCTION StCreate% ()
-DECLARE FUNCTION StGetBorderColor% (sid%)
-DECLARE FUNCTION StGetBorderType% (sid%)
-DECLARE FUNCTION StGetName$ (sid%)
-DECLARE FUNCTION StGetSelectedColor% (sid%)
-DECLARE FUNCTION StGetTextColor% (sid%)
-DECLARE SUB StSetBorderColor (sid%, bordercolor%)
-DECLARE SUB StSetBorderType (sid%, bordertype%)
-DECLARE SUB StSetName (sid%, name$)
-DECLARE SUB StSetSelectedColor (sid%, selectedcolor%)
-DECLARE SUB StSetTextColor (sid%, textcolor%)
+DECLARE FUNCTION StGetBorderColor% (stid%)
+DECLARE FUNCTION StGetBorderType% (stid%)
+DECLARE FUNCTION StGetName$ (stid%)
+DECLARE FUNCTION StGetSelectedColor% (stid%)
+DECLARE FUNCTION StGetTextColor% (stid%)
+DECLARE SUB StSetBorderColor (stid%, bordercolor%)
+DECLARE SUB StSetBorderType (stid%, bordertype%)
+DECLARE SUB StSetName (stid%, name$)
+DECLARE SUB StSetSelectedColor (stid%, selectedcolor%)
+DECLARE SUB StSetTextColor (stid%, textcolor%)
 
 '
 ' Terminal API
@@ -324,7 +324,7 @@ DECLARE SUB WinSelectLast (wid%)
 DECLARE SUB WinSelectPrevious (wid%)
 DECLARE FUNCTION WinAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
 DECLARE FUNCTION WinCreate% ()
-DECLARE FUNCTION WinFindSid% (stylename$)
+DECLARE FUNCTION WinFindStid% (stylename$)
 DECLARE FUNCTION WinFindWid% (wname$)
 DECLARE FUNCTION WinMapKey% (wid%, pressed$)
 
@@ -1365,10 +1365,10 @@ END SUB
 
 SUB CtDrawBox (ctid%)
 
-  DIM sid%
-  LET sid% = CtGetStyle(ctid%)
+  DIM stid%
+  LET stid% = CtGetStyle(ctid%)
 
-  SELECT CASE StGetBorderType%(sid%)
+  SELECT CASE StGetBorderType%(stid%)
  
     CASE 0:
       CtDrawBox0 ctid%
@@ -1386,12 +1386,12 @@ END SUB
 SUB CtDrawBox0 (ctid%)
 
   DIM row AS INTEGER
-  DIM sid AS INTEGER
   DIM sx  AS INTEGER
   DIM sy  AS INTEGER
 
-  sid = CtGetStyle(ctid%)
-  DrawColor StGetTextColor(sid)
+  DIM stid%
+  LET stid% = CtGetStyle(ctid%)
+  DrawColor StGetTextColor(stid%)
  
   FOR row = 1 TO CtGetSizeY%(ctid%)
    
@@ -1417,7 +1417,6 @@ SUB CtDrawBox1 (ctid%)
   CONST upperRight = "¿"  ' CHR$(191)
 
   DIM r     AS INTEGER
-  DIM sid   AS INTEGER
   DIM sizeX AS INTEGER
   DIM sx1   AS INTEGER ' Upper-left x-coord
   DIM sy1   AS INTEGER ' Upper-left y-coord
@@ -1433,13 +1432,14 @@ SUB CtDrawBox1 (ctid%)
   sx2 = sx1 + sizeX - 1
   sy2 = sy1 + CtGetSizeY%(ctid%) - 1
 
-  sid = CtGetStyle(ctid%)
+  DIM stid%
+  LET stid% = CtGetStyle(ctid%)
 
   '
   ' Draw the top border
   '
   LOCATE sy1, sx1
-  DrawColor StGetBorderColor%(sid)
+  DrawColor StGetBorderColor%(stid%)
   PRINT upperLeft; STRING$(sizeX - 2, upperFlat); upperRight;
 
   '
@@ -1449,10 +1449,10 @@ SUB CtDrawBox1 (ctid%)
     LOCATE r, sx1
     PRINT sideLeft;
   
-    DrawColor StGetTextColor%(sid)
+    DrawColor StGetTextColor%(stid%)
     PRINT STRING$(sizeX - 2, " ");
   
-    DrawColor StGetBorderColor%(sid)
+    DrawColor StGetBorderColor%(stid%)
     PRINT sideRight;
   NEXT
  
@@ -1671,20 +1671,21 @@ END SUB
 SUB CtDrawSeparator (ctid%)
 
   DIM row   AS INTEGER
-  DIM sid   AS INTEGER
   DIM sizeX AS INTEGER
   DIM sizeY AS INTEGER
   DIM sx    AS INTEGER
   DIM sy    AS INTEGER
 
-  sid = CtGetStyle(ctid%)
+  DIM stid%
+  LET stid% = CtGetStyle(ctid%)
+ 
   sizeX = CtGetSizeX%(ctid%)
   sizeY = CtGetSizeY%(ctid%)
   sx = CtGetScreenX%(ctid%)
   sy = CtGetScreenY%(ctid%)
 
   LOCATE sy, sx
-  DrawColor StGetBorderColor%(sid)
+  DrawColor StGetBorderColor%(stid%)
 
   IF sizeX > 0 THEN
     '
@@ -1760,7 +1761,6 @@ SUB CtDrawText (wid%, fid%)
   DIM fidctid%
   LET fidctid% = gwin(wid%, fid%)
 
-  DIM sid  AS INTEGER
   DIM size AS INTEGER
   DIM sx   AS INTEGER
   DIM sy   AS INTEGER
@@ -1776,11 +1776,12 @@ SUB CtDrawText (wid%, fid%)
   '
   ' Set style of text
   '
-  sid% = CtGetStyle(fidctid%)
+  DIM stid%
+  LET stid% = CtGetStyle(fidctid%)
   IF CtGetSelected(widctid%) = fid% THEN
-    DrawColor StGetSelectedColor%(sid%)
+    DrawColor StGetSelectedColor%(stid%)
   ELSE
-    DrawColor StGetTextColor%(sid%)
+    DrawColor StGetTextColor%(stid%)
   END IF
 
   '
@@ -1875,12 +1876,12 @@ END FUNCTION
 
 FUNCTION CtGetStyle% (ctid%)
 
-  AssertIsPositive ctid%, "CtGetStyle%", "ctid"
+  AssertIsPositive ctid%, "CtGetStyle%", "ctid%"
 
-  DIM sid%
-  LET sid% = ObGet%(ctid%, CtPropId.Style)
+  DIM stid%
+  LET stid% = ObGet%(ctid%, CtPropId.Style)
  
-  IF sid% = 0 THEN
+  IF stid% = 0 THEN
     '
     ' Inherit from the parent control
     '
@@ -1888,12 +1889,12 @@ FUNCTION CtGetStyle% (ctid%)
     LET parentctid% = CtGetParent(ctid%)
 
     IF parentctid% > 0 THEN
-      sid% = CtGetStyle%(parentctid%)
+      stid% = CtGetStyle%(parentctid%)
     END IF
 
   END IF
 
-  CtGetStyle% = sid%
+  CtGetStyle% = stid%
   
 END FUNCTION
 
@@ -2082,8 +2083,8 @@ SUB CtSetSizeY (ctid%, sizeY%)
   ObSet ctid%, CtPropId.SizeY, sizeY%
 END SUB
 
-SUB CtSetStyle (ctid%, sid%)
-  ObSet ctid%, CtPropId.Style, sid%
+SUB CtSetStyle (ctid%, stid%)
+  ObSet ctid%, CtPropId.Style, stid%
 END SUB
 
 SUB CtSetText (ctid%, value$)
@@ -2544,7 +2545,7 @@ FUNCTION ExecCmd% (text AS STRING)
   SHARED fid%
   SHARED hid%
   SHARED pid%
-  SHARED sid%
+  SHARED stid%
   SHARED tid%
   SHARED wid%
 
@@ -2570,12 +2571,12 @@ FUNCTION ExecCmd% (text AS STRING)
     result% = ExecCmdHid%(ntoken%, stoken$(), hid%)
   ELSEIF pid% > 0 THEN
     result% = ExecCmdPid%(ntoken%, stoken$(), pid%)
-  ELSEIF sid% > 0 THEN
-    result% = ExecCmdSid%(ntoken%, stoken$(), sid%)
+  ELSEIF stid% > 0 THEN
+    result% = ExecCmdStid%(ntoken%, stoken$(), stid%)
   ELSEIF tid% > 0 THEN
     result% = ExecCmdTid%(ntoken%, stoken$(), tid%)
   ELSE
-    result% = ExecCmdRoot%(ntoken%, stoken$(), evid%, hid%, pid%, sid%, tid%, wid%)
+    result% = ExecCmdRoot%(ntoken%, stoken$(), evid%, hid%, pid%, stid%, tid%, wid%)
   END IF
 
   Assert result% = CmdResult.OK, "ExecCmd", "Malformed: " + text
@@ -2669,7 +2670,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       CtSetSizeY ctid%, VAL(stoken$(1))
 
     CASE "style"
-      CtSetStyle ctid%, WinFindSid%(stoken$(1))
+      CtSetStyle ctid%, WinFindStid%(stoken$(1))
 
     CASE "text"
       IF LCASE$(stoken$(1)) = "bind" THEN
@@ -2744,12 +2745,12 @@ FUNCTION ExecCmdPid% (ntoken%, stoken$(), pid%)
   
 END FUNCTION
 
-FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hid%, pid%, sid%, tid%, wid%)
+FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hid%, pid%, stid%, tid%, wid%)
 
   AssertIsZero evid%, "ExecCmdRoot%", "evid%"
   AssertIsZero hid%, "ExecCmdRoot%", "hid%"
   AssertIsZero pid%, "ExecCmdRoot%", "pid%"
-  AssertIsZero sid%, "ExecCmdRoot%", "sid%"
+  AssertIsZero stid%, "ExecCmdRoot%", "stid%"
   AssertIsZero tid%, "ExecCmdRoot%", "tid%"
   AssertIsZero wid%, "ExecCmdRoot%", "wid%"
 
@@ -2854,7 +2855,7 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hid%, pid%, sid%, tid%, wid%)
       END IF
 
     CASE "style"
-      sid% = StCreate%
+      stid% = StCreate%
 
     CASE "trigger"
       triggers = triggers + 1
@@ -2873,34 +2874,34 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hid%, pid%, sid%, tid%, wid%)
 
 END FUNCTION
 
-FUNCTION ExecCmdSid% (ntoken%, stoken$(), sid%)
+FUNCTION ExecCmdStid% (ntoken%, stoken$(), stid%)
 
-  AssertIsPositive sid%, "ExecCmdSid", "sid"
+  AssertIsPositive stid%, "ExecCmdStid", "stid%"
 
-  ExecuteCommandSid% = CmdResult.OK
+  ExecuteCommandStid% = CmdResult.OK
 
   SELECT CASE stoken$(0)
    
     CASE "bordercolor"
-      StSetBorderColor sid%, VAL(stoken$(1))
+      StSetBorderColor stid%, VAL(stoken$(1))
 
     CASE "bordertype"
-      StSetBorderType sid%, VAL(stoken$(1))
+      StSetBorderType stid%, VAL(stoken$(1))
 
     CASE "endstyle"
-      sid% = 0
+      stid% = 0
 
     CASE "name"
-      StSetName sid%, stoken$(1)
+      StSetName stid%, stoken$(1)
   
     CASE "selectedcolor"
-      StSetSelectedColor sid%, VAL(stoken$(1))
+      StSetSelectedColor stid%, VAL(stoken$(1))
 
     CASE "textcolor"
-      StSetTextColor sid%, VAL(stoken$(1))
+      StSetTextColor stid%, VAL(stoken$(1))
 
     CASE ELSE
-      ExecuteCommandSid% = CmdResult.Malformed
+      ExecuteCommandStid% = CmdResult.Malformed
 
   END SELECT
   
@@ -3006,7 +3007,7 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
       CtSetOffsetY widctid%, VAL(stoken$(1)) - 1
 
     CASE "style"
-      CtSetStyle widctid%, WinFindSid%(stoken$(1))
+      CtSetStyle widctid%, WinFindStid%(stoken$(1))
 
     CASE ELSE
       result = CmdResult.Malformed
@@ -3646,44 +3647,44 @@ FUNCTION StCreate%
   StCreate% = ObCreate%(ObKind.Style)
 END FUNCTION
 
-FUNCTION StGetBorderColor% (sid%)
-  StGetBorderColor% = ObGet%(sid%, StPropId.BorderColor)
+FUNCTION StGetBorderColor% (stid%)
+  StGetBorderColor% = ObGet%(stid%, StPropId.BorderColor)
 END FUNCTION
 
-FUNCTION StGetBorderType% (sid%)
-  StGetBorderType% = ObGet%(sid%, StPropId.BorderType)
+FUNCTION StGetBorderType% (stid%)
+  StGetBorderType% = ObGet%(stid%, StPropId.BorderType)
 END FUNCTION
 
-FUNCTION StGetName$ (sid%)
-  StGetName$ = ObGetString$(sid%, StPropId.Name)
+FUNCTION StGetName$ (stid%)
+  StGetName$ = ObGetString$(stid%, StPropId.Name)
 END FUNCTION
 
-FUNCTION StGetSelectedColor% (sid%)
-  StGetSelectedColor% = ObGet%(sid%, StPropId.SelectedColor)
+FUNCTION StGetSelectedColor% (stid%)
+  StGetSelectedColor% = ObGet%(stid%, StPropId.SelectedColor)
 END FUNCTION
 
-FUNCTION StGetTextColor% (sid%)
-  StGetTextColor% = ObGet%(sid%, StPropId.TextColor)
+FUNCTION StGetTextColor% (stid%)
+  StGetTextColor% = ObGet%(stid%, StPropId.TextColor)
 END FUNCTION
 
-SUB StSetBorderColor (sid%, bordercolor%)
-  ObSet sid%, StPropId.BorderColor, bordercolor%
+SUB StSetBorderColor (stid%, bordercolor%)
+  ObSet stid%, StPropId.BorderColor, bordercolor%
 END SUB
 
-SUB StSetBorderType (sid%, bordertype%)
-  ObSet sid%, StPropId.BorderType, bordertype%
+SUB StSetBorderType (stid%, bordertype%)
+  ObSet stid%, StPropId.BorderType, bordertype%
 END SUB
 
-SUB StSetName (sid%, name$)
-  ObSetString sid%, StPropId.Name, name$
+SUB StSetName (stid%, name$)
+  ObSetString stid%, StPropId.Name, name$
 END SUB
 
-SUB StSetSelectedColor (sid%, selectedcolor%)
-  ObSet sid%, StPropId.SelectedColor, selectedcolor%
+SUB StSetSelectedColor (stid%, selectedcolor%)
+  ObSet stid%, StPropId.SelectedColor, selectedcolor%
 END SUB
 
-SUB StSetTextColor (sid%, textcolor%)
-  ObSet sid%, StPropId.TextColor, textcolor%
+SUB StSetTextColor (stid%, textcolor%)
+  ObSet stid%, StPropId.TextColor, textcolor%
 END SUB
 
 SUB TrBegin
@@ -3980,8 +3981,8 @@ SUB WinDraw (wid%)
 
 END SUB
 
-FUNCTION WinFindSid% (stylename$)
-  WinFindSid% = ObFindString%(ObKind.Style, StPropId.Name, stylename$)
+FUNCTION WinFindStid% (stylename$)
+  WinFindStid% = ObFindString%(ObKind.Style, StPropId.Name, stylename$)
 END FUNCTION
 
 FUNCTION WinFindWid% (wname$)
