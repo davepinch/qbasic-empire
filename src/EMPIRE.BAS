@@ -191,8 +191,8 @@ DECLARE FUNCTION ExecCmd% (cmd$)
 DECLARE FUNCTION ExecCmdEvid% (ntoken%, stoken$(), evid%)
 DECLARE FUNCTION ExecCmdFid% (ntoken%, stoken$(), wnid%, fid%)
 DECLARE FUNCTION ExecCmdHbid% (ntoken%, stoken$(), hbid%)
-DECLARE FUNCTION ExecCmdPid% (ntoken%, stoken$(), pid%)
-DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, pid%, stid%, tid%, wnid%)
+DECLARE FUNCTION ExecCmdPrid% (ntoken%, stoken$(), prid%)
+DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wnid%)
 DECLARE FUNCTION ExecCmdStid% (ntoken%, stoken$(), stid%)
 DECLARE FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
 DECLARE FUNCTION ExecCmdWnid% (ntoken%, stoken$(), wnid%, fid%)
@@ -251,11 +251,11 @@ DECLARE SUB ObSetString (obid%, obix%, value$)
 '
 ' Person API
 '
-DECLARE SUB PrSetLabel (personid%, label$)
-DECLARE SUB PrSetName (personid%, name$)
+DECLARE SUB PrSetLabel (prid%, label$)
+DECLARE SUB PrSetName (prid%, name$)
 DECLARE FUNCTION PrCreate% ()
-DECLARE FUNCTION PrGetLabel$ (personid%)
-DECLARE FUNCTION PrGetName$ (personid%)
+DECLARE FUNCTION PrGetLabel$ (prid%)
+DECLARE FUNCTION PrGetName$ (prid%)
 DECLARE FUNCTION PrRandomly% ()
 
 '
@@ -2159,7 +2159,7 @@ FUNCTION DgGarble$ (text$, percent!)
 
 END FUNCTION
 
-SUB DgNext (outpersonid%, outtext$)
+SUB DgNext (outprid%, outtext$)
 
   STATIC loaded AS INTEGER
   STATIC lines() AS STRING
@@ -2177,17 +2177,17 @@ SUB DgNext (outpersonid%, outtext$)
   END IF
  
   outtext$ = lines(INT(RND * UBOUND(lines)) + 1)
-  outpersonid% = PrRandomly%
+  outprid% = PrRandomly%
 
 END SUB
 
-SUB DgPrint (personid%, text$)
+SUB DgPrint (prid%, text$)
 
   DIM name$
-  LET name$ = PrGetName$(personid%)
+  LET name$ = PrGetName$(prid%)
  
   DIM label$
-  LET label$ = PrGetLabel$(personid%)
+  LET label$ = PrGetLabel$(prid%)
   IF label$ = "" THEN
     label$ = "@X1F " + name$ + " @X07"
   END IF
@@ -2557,7 +2557,7 @@ FUNCTION ExecCmd% (cmd$)
   SHARED evid%
   SHARED fid%
   SHARED hbid%
-  SHARED pid%
+  SHARED prid%
   SHARED stid%
   SHARED tid%
   SHARED wnid%
@@ -2582,14 +2582,14 @@ FUNCTION ExecCmd% (cmd$)
     result% = ExecCmdEvid%(ntoken%, stoken$(), evid%)
   ELSEIF hbid% > 0 THEN
     result% = ExecCmdHbid%(ntoken%, stoken$(), hbid%)
-  ELSEIF pid% > 0 THEN
-    result% = ExecCmdPid%(ntoken%, stoken$(), pid%)
+  ELSEIF prid% > 0 THEN
+    result% = ExecCmdPrid%(ntoken%, stoken$(), prid%)
   ELSEIF stid% > 0 THEN
     result% = ExecCmdStid%(ntoken%, stoken$(), stid%)
   ELSEIF tid% > 0 THEN
     result% = ExecCmdTid%(ntoken%, stoken$(), tid%)
   ELSE
-    result% = ExecCmdRoot%(ntoken%, stoken$(), evid%, hbid%, pid%, stid%, tid%, wnid%)
+    result% = ExecCmdRoot%(ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wnid%)
   END IF
 
   Assert result% = CmdResult.OK, "ExecCmd", "Malformed: " + cmd$
@@ -2739,20 +2739,20 @@ FUNCTION ExecCmdHbid% (ntoken%, stoken$(), hbid%)
 
 END FUNCTION
 
-FUNCTION ExecCmdPid% (ntoken%, stoken$(), pid%)
+FUNCTION ExecCmdPrid% (ntoken%, stoken$(), prid%)
 
-  AssertIsPositive pid%, "ExecCmdPid", "pid"
+  AssertIsPositive prid%, "ExecCmdPrid%", "prid%"
 
   SELECT CASE stoken$(0)
    
     CASE "endperson", "endpersona"
-      pid% = 0
+      prid% = 0
 
     CASE "label"
-      PrSetLabel pid%, stoken$(1)
+      PrSetLabel prid%, stoken$(1)
 
     CASE "name"
-      PrSetName pid%, stoken$(1)
+      PrSetName prid%, stoken$(1)
 
   END SELECT
   
@@ -3453,12 +3453,12 @@ FUNCTION PrCreate%
   PrCreate% = ObCreate%(ObKind.Person)
 END FUNCTION
 
-FUNCTION PrGetLabel$ (personid%)
-  PrGetLabel$ = ObGetString$(personid%, PrPropId.Label)
+FUNCTION PrGetLabel$ (prid%)
+  PrGetLabel$ = ObGetString$(prid%, PrPropId.Label)
 END FUNCTION
 
-FUNCTION PrGetName$ (personid%)
-  PrGetName$ = ObGetString$(personid%, PrPropId.Name)
+FUNCTION PrGetName$ (prid%)
+  PrGetName$ = ObGetString$(prid%, PrPropId.Name)
 END FUNCTION
 
 FUNCTION PrRandomly%
@@ -3476,19 +3476,19 @@ FUNCTION PrRandomly%
     END IF
   NEXT
 
-  DIM personid%
-  LET personid% = items%(INT(RND * count%) + 1)
+  DIM prid%
+  LET prid% = items%(INT(RND * count%) + 1)
 
-  PrRandomly% = personid%
+  PrRandomly% = prid%
 
 END FUNCTION
 
-SUB PrSetLabel (personid%, label$)
-  ObSetString personid%, PrPropId.Label, label$
+SUB PrSetLabel (prid%, label$)
+  ObSetString prid%, PrPropId.Label, label$
 END SUB
 
-SUB PrSetName (personid%, name$)
-  ObSetString personid%, PrPropId.Name, name$
+SUB PrSetName (prid%, name$)
+  ObSetString prid%, PrPropId.Name, name$
 END SUB
 
 FUNCTION RsCreate% (value$)
