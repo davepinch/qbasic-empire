@@ -4518,6 +4518,11 @@ SUB WnSelectPrevious (wnid%)
 
 END SUB
 
+SUB WnSet (wnid%, wnix%, value%)
+  AssertExpected ObKind.Window, gobj(wnid%, ObKind.Window).value, "WnSet", "ObKind"
+  ObSet wnid%, wnix%, value%
+END SUB
+
 FUNCTION WorldAdd% (hbid%, cx%, cy%)
 
   DIM aid%
