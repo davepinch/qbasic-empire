@@ -460,7 +460,7 @@ CONST ObKind.Window = 7
 '
 ' Object properties
 '
-CONST ObPropId.Kind = 0
+CONST ObIndex.Kind = 0
 
 '
 ' Operators
@@ -3322,7 +3322,7 @@ FUNCTION ObCreate% (kind%)
 
   gobids = gobids + 1
  
-  ObSet gobids, ObPropId.Kind, kind%
+  ObSet gobids, ObIndex.Kind, kind%
 
   ObCreate% = gobids
 
@@ -3334,7 +3334,7 @@ FUNCTION ObFindString% (kind%, obix%, value$)
   '
   FOR obid% = 1 TO UBOUND(gobj, 1)
      
-    IF gobj(obid%, ObPropId.Kind).value = kind% THEN
+    IF gobj(obid%, ObIndex.Kind).value = kind% THEN
       
       DIM rsid%
       LET rsid% = ObGet%(obid%, obix%)
@@ -3422,7 +3422,7 @@ FUNCTION ObGet% (obid%, obix%)
 END FUNCTION
 
 FUNCTION ObGetKind% (obid%)
-  ObGetKind% = ObGet%(obid%, ObPropId.Kind)
+  ObGetKind% = ObGet%(obid%, ObIndex.Kind)
 END FUNCTION
 
 FUNCTION ObGetString$ (obid%, obix%)
