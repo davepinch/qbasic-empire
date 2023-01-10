@@ -228,7 +228,7 @@ DECLARE SUB InboxAdd (subject AS STRING, filename AS STRING)
 ' List API
 '
 DECLARE FUNCTION LsCreate% ()
-DECLARE FUNCTION LsCount% (lid%)
+DECLARE FUNCTION LsCount% (lsid%)
 DECLARE FUNCTION LsMaxIndex% ()
 
 '
@@ -3216,23 +3216,23 @@ SUB InboxAdd (subject AS STRING, filename AS STRING)
 
 END SUB
 
-SUB LsAdd (lid%, value%)
+SUB LsAdd (lsid%, value%)
  
   DIM index%
-  LET index% = LsCount%(lid%) + 1
+  LET index% = LsCount%(lsid%) + 1
 
   IF index% > LsMaxIndex% THEN
     AssertFail "LsAdd", "Maximum items"
     EXIT SUB
   END IF
 
-  ObSet lid%, LsPropId.Count, count%
-  ObSet lid%, index%, value%
+  ObSet lsid%, LsPropId.Count, count%
+  ObSet lsid%, index%, value%
 
 END SUB
 
-FUNCTION LsCount% (lid%)
-  LsCount% = ObGet%(lid%, LsPropId.Count)
+FUNCTION LsCount% (lsid%)
+  LsCount% = ObGet%(lsid%, LsPropId.Count)
 END FUNCTION
 
 FUNCTION LsCreate%
