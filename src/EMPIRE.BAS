@@ -332,7 +332,7 @@ DECLARE FUNCTION WinMapKey% (wnid%, pressed$)
 ' World
 '
 DECLARE SUB WorldAddBanded (hbid%, count%)
-DECLARE SUB WorldAddCluster (hbid%, size%)
+DECLARE SUB WorldAddCluster (hbid%, count%)
 DECLARE SUB WorldAddRandom (hbid%, count%)
 DECLARE SUB WorldHarvest (aid%)
 DECLARE SUB WorldRemove (aid%)
@@ -433,11 +433,11 @@ CONST EvPropId.Value = 2
 '
 ' Habitat properties
 '
-CONST HbPropId.Backdrop = 1
-CONST HbPropId.Label = 2
-CONST HbPropId.Name = 3
-CONST HbPropId.StartFile = 4
-CONST HbPropId.Window = 5
+CONST HbIndex.Backdrop = 1
+CONST HbIndex.Label = 2
+CONST HbIndex.Name = 3
+CONST HbIndex.StartFile = 4
+CONST HbIndex.Window = 5
 
 '
 ' List properties
@@ -3165,51 +3165,51 @@ FUNCTION HbCreate%
 END FUNCTION
 
 FUNCTION HbFind% (name$)
-  HbFind% = ObFindString%(ObKind.Habitat, HbPropId.Name, name$)
+  HbFind% = ObFindString%(ObKind.Habitat, HbIndex.Name, name$)
 END FUNCTION
 
 FUNCTION HbGetBackdrop% (hbid%)
   IF hbid% > 0 THEN
-    HbGetBackdrop% = ObGet%(hbid%, HbPropId.Backdrop)
+    HbGetBackdrop% = ObGet%(hbid%, HbIndex.Backdrop)
   END IF
 END FUNCTION
 
 FUNCTION HbGetLabel% (hbid%)
-  HbGetLabel% = ObGet%(hbid%, HbPropId.Label)
+  HbGetLabel% = ObGet%(hbid%, HbIndex.Label)
 END FUNCTION
 
 FUNCTION HbGetName% (hbid%)
   IF hbid% > 0 THEN
-    HbGetName% = ObGet%(hbid%, HbPropId.Name)
+    HbGetName% = ObGet%(hbid%, HbIndex.Name)
   END IF
 END FUNCTION
 
 FUNCTION HbGetStartFile% (hbid%)
-  HbGetStartFile% = ObGet%(hbid%, HbPropId.StartFile)
+  HbGetStartFile% = ObGet%(hbid%, HbIndex.StartFile)
 END FUNCTION
 
 FUNCTION HbGetWindow% (hbid%)
-  HbGetWindow% = ObGet%(hbid%, HbPropId.Window)
+  HbGetWindow% = ObGet%(hbid%, HbIndex.Window)
 END FUNCTION
 
 SUB HbSetBackdrop (hbid%, backdrop$)
-  ObSetString hbid%, HbPropId.Backdrop, backdrop$
+  ObSetString hbid%, HbIndex.Backdrop, backdrop$
 END SUB
 
 SUB HbSetLabel (hbid%, label$)
-  ObSetString hbid%, HbPropId.Label, label$
+  ObSetString hbid%, HbIndex.Label, label$
 END SUB
 
 SUB HbSetName (hbid%, name$)
-  ObSetString hbid%, HbPropId.Name, name$
+  ObSetString hbid%, HbIndex.Name, name$
 END SUB
 
 SUB HbSetStartFile (hbid%, startfile$)
-  ObSetString hbid%, HbPropId.StartFile, startfile$
+  ObSetString hbid%, HbIndex.StartFile, startfile$
 END SUB
 
 SUB HbSetWindow (hbid%, wnid%)
-  ObSet hbid%, HbPropId.Window, wnid%
+  ObSet hbid%, HbIndex.Window, wnid%
 END SUB
 
 SUB InboxAdd (subject AS STRING, filename AS STRING)
