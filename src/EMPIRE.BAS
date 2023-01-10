@@ -241,12 +241,12 @@ DECLARE FUNCTION NebulaLabelRsid% (energy AS INTEGER)
 ' Object API
 '
 DECLARE FUNCTION ObCreate% (kind%)
-DECLARE FUNCTION ObFindString% (kind%, pid%, value$)
-DECLARE FUNCTION ObGet% (oid%, pid%)
-DECLARE FUNCTION ObGetKind% (oid%)
-DECLARE FUNCTION ObGetString$ (oid%, pid%)
-DECLARE SUB ObSet (oid%, pid%, value%)
-DECLARE SUB ObSetString (oid%, pid%, value$)
+DECLARE FUNCTION ObFindString% (kind%, obix%, value$)
+DECLARE FUNCTION ObGet% (obid%, obix%)
+DECLARE FUNCTION ObGetKind% (obid%)
+DECLARE FUNCTION ObGetString$ (obid%, obix%)
+DECLARE SUB ObSet (obid%, obix%, value%)
+DECLARE SUB ObSetString (obid%, obix%, value$)
 
 '
 ' Person API
@@ -535,7 +535,7 @@ DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS IN
 '
 DIM SHARED gobj(1 TO 200, 0 TO 15) AS PropType
 DIM SHARED gwin(1 TO 20, 0 TO 13)  AS INTEGER
-DIM SHARED goids                   AS INTEGER
+DIM SHARED gobids                  AS INTEGER
 
 DIM SHARED area(1 TO 35)         AS AreaType
 DIM SHARED atlasitem(1 TO 35)    AS AtlasItemType
@@ -3318,26 +3318,26 @@ END FUNCTION
 
 FUNCTION ObCreate% (kind%)
  
-  Assert goids <= UBOUND(gobj, 1), "ObCreate", "Out of object space"
+  Assert gobids <= UBOUND(gobj, 1), "ObCreate%", "Out of object space"
 
-  goids = goids + 1
+  gobids = gobids + 1
  
-  ObSet goids, ObPropId.Kind, kind%
+  ObSet gobids, ObPropId.Kind, kind%
 
-  ObCreate% = goids
+  ObCreate% = gobids
 
 END FUNCTION
 
-FUNCTION ObFindString% (kind%, pid%, value$)
+FUNCTION ObFindString% (kind%, obix%, value$)
   '
   ' Finds the first object where a property has the specified string
   '
-  FOR oid% = 1 TO UBOUND(gobj, 1)
+  FOR obid% = 1 TO UBOUND(gobj, 1)
      
-    IF gobj(oid%, ObPropId.Kind).value = kind% THEN
+    IF gobj(obid%, ObPropId.Kind).value = kind% THEN
       
       DIM rsid%
-      LET rsid% = ObGet%(oid%, pid%)
+      LET rsid% = ObGet%(obid%, obix%)
       
       IF rsid% = 0 THEN
         '
@@ -3345,14 +3345,14 @@ FUNCTION ObFindString% (kind%, pid%, value$)
         ' Treat it as an empty string "".
         '
         IF LEN(value$) = 0 THEN
-          ObFindString% = oid%
+          ObFindString% = obid%
           EXIT FUNCTION
         END IF
 
       ELSE
 
         IF value$ = RsGet$(rsid%) THEN
-          ObFindString% = oid%
+          ObFindString% = obid%
           EXIT FUNCTION
         END IF
 
@@ -3364,13 +3364,13 @@ FUNCTION ObFindString% (kind%, pid%, value$)
 
 END FUNCTION
 
-FUNCTION ObGet% (oid%, pid%)
+FUNCTION ObGet% (obid%, obix%)
 
   DIM flags%
-  LET flags% = gobj(oid%, pid%).flags
+  LET flags% = gobj(obid%, obix%).flags
 
   DIM value%
-  LET value% = gobj(oid%, pid%).value
+  LET value% = gobj(obid%, obix%).value
 
   IF flags% = 0 THEN
     ObGet% = value%
@@ -3378,7 +3378,7 @@ FUNCTION ObGet% (oid%, pid%)
   END IF
 
   DIM parentctid%
-  LET parentctid% = CtGetParent%(oid%)
+  LET parentctid% = CtGetParent%(obid%)
 
   SELECT CASE flags%
  
@@ -3421,31 +3421,31 @@ FUNCTION ObGet% (oid%, pid%)
 
 END FUNCTION
 
-FUNCTION ObGetKind% (oid%)
-  ObGetKind% = ObGet%(oid%, ObPropId.Kind)
+FUNCTION ObGetKind% (obid%)
+  ObGetKind% = ObGet%(obid%, ObPropId.Kind)
 END FUNCTION
 
-FUNCTION ObGetString$ (oid%, pid%)
+FUNCTION ObGetString$ (obid%, obix%)
 
   DIM rsid%
-  LET rsid% = ObGet%(oid%, pid%)
+  LET rsid% = ObGet%(obid%, obix%)
 
   ObGetString$ = RsGet$(rsid%)
 
 END FUNCTION
 
-SUB ObSet (oid%, pid%, value%)
-  gobj(oid%, pid%).value = value%
+SUB ObSet (obid%, obix%, value%)
+  gobj(obid%, obix%).value = value%
 END SUB
 
-SUB ObSetString (oid%, pid%, value$)
+SUB ObSetString (obid%, obix%, value$)
 
   DIM rsid%
-  LET rsid% = ObGet%(oid%, pid%)
+  LET rsid% = ObGet%(obid%, obix%)
 
   RsSet rsid%, value$
 
-  ObSet oid%, pid%, rsid%
+  ObSet obid%, obix%, rsid%
 
 END SUB
 
