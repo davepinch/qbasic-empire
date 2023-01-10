@@ -29,7 +29,7 @@ TYPE PropType
 END TYPE
 
 TYPE TriggerType
-  eid      AS INTEGER
+  evid     AS INTEGER
   operator AS INTEGER
   operand  AS INTEGER
   cmdrid   AS INTEGER
@@ -174,25 +174,25 @@ DECLARE FUNCTION DrawLength% (text$)
 ' Event API
 '
 DECLARE SUB EvIncrement (name$)
-DECLARE SUB EvFire (eid%)
-DECLARE SUB EvSetName (eid%, name$)
-DECLARE SUB EvSetValue (eid%, value%)
+DECLARE SUB EvFire (evid%)
+DECLARE SUB EvSetName (evid%, name$)
+DECLARE SUB EvSetValue (evid%, value%)
 DECLARE FUNCTION EvCreate% ()
 DECLARE FUNCTION EvFind% (name$)
-DECLARE FUNCTION EvGetValue% (eid%)
+DECLARE FUNCTION EvGetValue% (evid%)
 DECLARE FUNCTION EvParseOperator% (opname$)
-DECLARE FUNCTION EvTestTrigger% (eid%, tid%)
+DECLARE FUNCTION EvTestTrigger% (evid%, tid%)
 
 '
 ' Execution/commands
 '
 DECLARE SUB ExecFile (filename AS STRING)
 DECLARE FUNCTION ExecCmd% (text AS STRING)
-DECLARE FUNCTION ExecCmdEid% (ntoken%, stoken$(), eid%)
+DECLARE FUNCTION ExecCmdEvid% (ntoken%, stoken$(), evid%)
 DECLARE FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
 DECLARE FUNCTION ExecCmdHid% (ntoken%, stoken$(), hid%)
 DECLARE FUNCTION ExecCmdPid% (ntoken%, stoken$(), pid%)
-DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
+DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hid%, pid%, sid%, tid%, wid%)
 DECLARE FUNCTION ExecCmdSid% (ntoken%, stoken$(), sid%)
 DECLARE FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
 DECLARE FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
@@ -2466,33 +2466,33 @@ FUNCTION EvFind% (name$)
   EvFind% = ObFindString%(ObKind.Event, EvPropId.Name, name$)
 END FUNCTION
 
-SUB EvFire (eid%)
+SUB EvFire (evid%)
 
   DIM result%
   DIM tid%
  
   FOR tid% = 1 TO triggers
-    IF EvTestTrigger%(eid%, tid%) THEN
+    IF EvTestTrigger%(evid%, tid%) THEN
       result% = ExecResource(trigger(tid%).cmdrid)
     END IF
   NEXT
 
 END SUB
 
-FUNCTION EvGetValue% (eid%)
-  EvGetValue% = ObGet%(eid%, EvPropId.Value)
+FUNCTION EvGetValue% (evid%)
+  EvGetValue% = ObGet%(evid%, EvPropId.Value)
 END FUNCTION
 
 SUB EvIncrement (name$)
  
-  DIM eid%
-  LET eid% = EvFind%(name$)
+  DIM evid%
+  LET evid% = EvFind%(name$)
  
-  IF eid% > 0 THEN
+  IF evid% > 0 THEN
     DIM value%
-    LET value% = EvGetValue%(eid%) + 1
-    EvSetValue eid%, value%
-    EvFire eid%
+    LET value% = EvGetValue%(evid%) + 1
+    EvSetValue evid%, value%
+    EvFire evid%
   END IF
 
 END SUB
@@ -2508,20 +2508,20 @@ FUNCTION EvParseOperator% (opname$)
 
 END FUNCTION
 
-SUB EvSetName (eid%, name$)
-  ObSetString eid%, EvPropId.Name, name$
+SUB EvSetName (evid%, name$)
+  ObSetString evid%, EvPropId.Name, name$
 END SUB
 
-SUB EvSetValue (eid%, value%)
-  ObSet eid%, EvPropId.Value, value%
+SUB EvSetValue (evid%, value%)
+  ObSet evid%, EvPropId.Value, value%
 END SUB
 
-FUNCTION EvTestTrigger% (eid%, tid%)
+FUNCTION EvTestTrigger% (evid%, tid%)
 
-  AssertIsPositive eid%, "EvTestTrigger", "eid"
-  AssertIsPositive eid%, "EvTestTrigger", "tid"
+  AssertIsPositive evid%, "EvTestTrigger%", "evid%"
+  AssertIsPositive tid%, "EvTestTrigger%", "tid%"
 
-  IF trigger(tid%).eid <> eid% THEN
+  IF trigger(tid%).evid <> evid% THEN
    
     EvTestTrigger% = False
 
@@ -2529,7 +2529,7 @@ FUNCTION EvTestTrigger% (eid%, tid%)
 
     SELECT CASE trigger(tid%).operator
       CASE OpEquals
-        EvTestTrigger% = trigger(tid%).operand = EvGetValue%(eid%)
+        EvTestTrigger% = trigger(tid%).operand = EvGetValue%(evid%)
       CASE ELSE
         EvTestTrigger% = False
     END SELECT
@@ -2540,7 +2540,7 @@ END FUNCTION
 
 FUNCTION ExecCmd% (text AS STRING)
 
-  SHARED eid%
+  SHARED evid%
   SHARED fid%
   SHARED hid%
   SHARED pid%
@@ -2564,8 +2564,8 @@ FUNCTION ExecCmd% (text AS STRING)
     result% = ExecCmdFid%(ntoken%, stoken$(), wid%, fid%)
   ELSEIF wid% > 0 THEN
     result% = ExecCmdWid%(ntoken%, stoken$(), wid%, fid%)
-  ELSEIF eid% > 0 THEN
-    result% = ExecCmdEid%(ntoken%, stoken$(), eid%)
+  ELSEIF evid% > 0 THEN
+    result% = ExecCmdEvid%(ntoken%, stoken$(), evid%)
   ELSEIF hid% > 0 THEN
     result% = ExecCmdHid%(ntoken%, stoken$(), hid%)
   ELSEIF pid% > 0 THEN
@@ -2575,7 +2575,7 @@ FUNCTION ExecCmd% (text AS STRING)
   ELSEIF tid% > 0 THEN
     result% = ExecCmdTid%(ntoken%, stoken$(), tid%)
   ELSE
-    result% = ExecCmdRoot%(ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
+    result% = ExecCmdRoot%(ntoken%, stoken$(), evid%, hid%, pid%, sid%, tid%, wid%)
   END IF
 
   Assert result% = CmdResult.OK, "ExecCmd", "Malformed: " + text
@@ -2584,25 +2584,25 @@ FUNCTION ExecCmd% (text AS STRING)
 
 END FUNCTION
 
-FUNCTION ExecCmdEid% (ntoken%, stoken$(), eid%)
+FUNCTION ExecCmdEvid% (ntoken%, stoken$(), evid%)
 
-  AssertIsPositive eid%, "ExecCmdEid", "eid"
+  AssertIsPositive evid%, "ExecCmdEvid%", "evid%"
 
-  ExecCmdEid% = CmdResult.OK
+  ExecCmdEvid% = CmdResult.OK
 
   SELECT CASE stoken$(0)
    
     CASE "endevent"
-      eid% = 0
+      evid% = 0
 
     CASE "name"
-      EvSetName eid%, stoken$(1)
+      EvSetName evid%, stoken$(1)
 
     CASE "value"
-      EvSetValue eid%, VAL(stoken$(1))
+      EvSetValue evid%, VAL(stoken$(1))
 
     CASE ELSE
-      ExecCmdEid% = CmdResult.Malformed
+      ExecCmdEvid% = CmdResult.Malformed
 
   END SELECT
 
@@ -2744,14 +2744,14 @@ FUNCTION ExecCmdPid% (ntoken%, stoken$(), pid%)
   
 END FUNCTION
 
-FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
+FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hid%, pid%, sid%, tid%, wid%)
 
-  AssertIsZero eid%, "ExecCmdRoot", "eid"
-  AssertIsZero hid%, "ExecCmdRoot", "hid"
-  AssertIsZero pid%, "ExecCmdRoot", "pid"
-  AssertIsZero sid%, "ExecCmdRoot", "sid"
-  AssertIsZero tid%, "ExecCmdRoot", "tid"
-  AssertIsZero wid%, "ExecCmdRoot", "wid"
+  AssertIsZero evid%, "ExecCmdRoot%", "evid%"
+  AssertIsZero hid%, "ExecCmdRoot%", "hid%"
+  AssertIsZero pid%, "ExecCmdRoot%", "pid%"
+  AssertIsZero sid%, "ExecCmdRoot%", "sid%"
+  AssertIsZero tid%, "ExecCmdRoot%", "tid%"
+  AssertIsZero wid%, "ExecCmdRoot%", "wid%"
 
   ExecCmdRoot% = CmdResult.OK
 
@@ -2773,7 +2773,7 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), eid%, hid%, pid%, sid%, tid%, wid%)
       END
 
     CASE "event"
-      eid% = EvCreate%
+      evid% = EvCreate%
 
     CASE "habitat"
       hid% = HbCreate%
@@ -2919,7 +2919,7 @@ FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
       tid% = 0
 
     CASE "when"
-      trigger(tid%).eid = EvFind%(stoken$(1))
+      trigger(tid%).evid = EvFind%(stoken$(1))
       trigger(tid%).operator = EvParseOperator%(stoken$(2))
       trigger(tid%).operand = VAL(stoken$(3))
 
