@@ -130,6 +130,7 @@ DECLARE SUB CtSetStyle (ctid%, stid%)
 DECLARE SUB CtSetText (ctid%, value$)
 DECLARE SUB CtSetValue (ctid%, value$)
 DECLARE FUNCTION CtCreateChild% (wnid%, kind%)
+DECLARE FUNCTION CtGet% (ctid%, ctix%)
 DECLARE FUNCTION CtGetChildList% (ctid%)
 DECLARE FUNCTION CtGetCmdRsid% (ctid%)
 DECLARE FUNCTION CtGetKind% (ctid%)
@@ -142,8 +143,6 @@ DECLARE FUNCTION CtGetPopup% (ctid%)
 DECLARE FUNCTION CtGetScreenX% (ctid%)
 DECLARE FUNCTION CtGetScreenY% (ctid%)
 DECLARE FUNCTION CtGetSelected% (ctid%)
-DECLARE FUNCTION CtGetSizeX% (ctid%)
-DECLARE FUNCTION CtGetSizeY% (ctid%)
 DECLARE FUNCTION CtGetStyle% (ctid%)
 DECLARE FUNCTION CtGetText$ (ctid%)
 DECLARE FUNCTION CtGetValue$ (ctid%)
@@ -1398,13 +1397,13 @@ SUB CtDrawBox0 (ctid%)
   LET stid% = CtGetStyle(ctid%)
   DrawColor StGetTextColor(stid%)
  
-  FOR row = 1 TO CtGetSizeY%(ctid%)
+  FOR row = 1 TO CtGet%(ctid%, CtIndex.SizeY)
    
     sx = CtGetScreenX%(ctid%)
     sy = CtGetScreenY%(ctid%) + row - 1
 
     LOCATE sy, sx
-    PRINT STRING$(CtGetSizeX%(ctid%), " ");
+    PRINT STRING$(CtGet%(ctid%, CtIndex.SizeX), " ");
  
   NEXT
 
@@ -1431,11 +1430,11 @@ SUB CtDrawBox1 (ctid%)
   '
   ' Calculate screen coordinates
   '
-  sizeX = CtGetSizeX%(ctid%)
+  sizeX = CtGet%(ctid%, CtIndex.SizeX)
   sx1 = CtGetScreenX%(ctid%)
   sy1 = CtGetScreenY%(ctid%)
   sx2 = sx1 + sizeX - 1
-  sy2 = sy1 + CtGetSizeY%(ctid%) - 1
+  sy2 = sy1 + CtGet%(ctid%, CtIndex.SizeY) - 1
 
   DIM stid%
   LET stid% = CtGetStyle(ctid%)
@@ -1477,8 +1476,8 @@ SUB CtDrawBox2 (ctid%)
   DIM sizeX AS INTEGER
   DIM sizeY AS INTEGER
 
-  sizeX = CtGetSizeX%(ctid%)
-  sizeY = CtGetSizeY%(ctid%)
+  sizeX = CtGet%(ctid%, CtIndex.SizeX)
+  sizeY = CtGet%(ctid%, CtIndex.SizeY)
  
   '
   ' Calculate screen coordinates
@@ -1587,11 +1586,11 @@ SUB CtDrawNebula (ctid%)
   DIM x     AS INTEGER
   DIM y     AS INTEGER
 
-  sizeX = CtGetSizeX%(ctid%)
+  sizeX = CtGet%(ctid%, CtIndex.SizeX)
 
   COLOR 7, 0
 
-  FOR y = 1 TO CtGetSizeY%(ctid%)
+  FOR y = 1 TO CtGet%(ctid%, CtIndex.SizeY)
  
     x = INT(RND * sizeX) + 1
     p = 1
@@ -1684,8 +1683,8 @@ SUB CtDrawSeparator (ctid%)
   DIM stid%
   LET stid% = CtGetStyle(ctid%)
  
-  sizeX = CtGetSizeX%(ctid%)
-  sizeY = CtGetSizeY%(ctid%)
+  sizeX = CtGet%(ctid%, CtIndex.SizeX)
+  sizeY = CtGet%(ctid%, CtIndex.SizeY)
   sx = CtGetScreenX%(ctid%)
   sy = CtGetScreenY%(ctid%)
 
@@ -1793,7 +1792,7 @@ SUB CtDrawText (wnid%, fid%)
   ' Print text clipped to size
   '
   text = CtGetText(fidctid%)
-  size = CtGetSizeX%(fidctid%)
+  size = CtGet%(fidctid%, CtIndex.SizeX)
   IF size < 1 THEN
     PRINT text;
   ELSE
@@ -1804,6 +1803,11 @@ SUB CtDrawText (wnid%, fid%)
   END IF
 
 END SUB
+
+FUNCTION CtGet% (ctid%, ctix%)
+  AssertExpected ObKind.Control, gobj(ctid%, ObIndex.Kind).value, "CtGet%", "ObKind"
+  CtGet% = ObGet%(ctid%, ctix%)
+END FUNCTION
 
 FUNCTION CtGetChildList% (ctid%)
   CtGetChildList% = ObGet%(ctid%, CtIndex.ChildList)
@@ -1869,14 +1873,6 @@ END FUNCTION
 
 FUNCTION CtGetSelected% (ctid%)
   CtGetSelected% = ObGet%(ctid%, CtIndex.Selected)
-END FUNCTION
-
-FUNCTION CtGetSizeX% (ctid%)
-  CtGetSizeX% = ObGet%(ctid%, CtIndex.SizeX)
-END FUNCTION
-
-FUNCTION CtGetSizeY% (ctid%)
-  CtGetSizeY% = ObGet%(ctid%, CtIndex.SizeY)
 END FUNCTION
 
 FUNCTION CtGetStyle% (ctid%)
@@ -1974,7 +1970,7 @@ SUB CtKeyInteger (ctid%, keypress$)
 
     CASE "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
 
-      IF LEN(buf$) < CtGetSizeX%(ctid%) THEN
+      IF LEN(buf$) < CtGet%(ctid%, CtIndex.SizeX) THEN
         buf$ = buf$ + keypress$
       END IF
 
