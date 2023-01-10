@@ -187,7 +187,7 @@ DECLARE FUNCTION EvTestTrigger% (evid%, tid%)
 ' Execution/commands
 '
 DECLARE SUB ExecFile (filename AS STRING)
-DECLARE FUNCTION ExecCmd% (text AS STRING)
+DECLARE FUNCTION ExecCmd% (cmd$)
 DECLARE FUNCTION ExecCmdEvid% (ntoken%, stoken$(), evid%)
 DECLARE FUNCTION ExecCmdFid% (ntoken%, stoken$(), wnid%, fid%)
 DECLARE FUNCTION ExecCmdHbid% (ntoken%, stoken$(), hbid%)
@@ -331,8 +331,8 @@ DECLARE FUNCTION WinMapKey% (wnid%, pressed$)
 '
 ' World
 '
-DECLARE SUB WorldAddBanded (hbid AS INTEGER, count AS INTEGER)
-DECLARE SUB WorldAddCluster (hbid AS INTEGER, size AS INTEGER)
+DECLARE SUB WorldAddBanded (hbid%, count%)
+DECLARE SUB WorldAddCluster (hbid%, size%)
 DECLARE SUB WorldAddRandom (hbid%, count%)
 DECLARE SUB WorldHarvest (aid%)
 DECLARE SUB WorldRemove (aid%)
@@ -2552,7 +2552,7 @@ FUNCTION EvTestTrigger% (evid%, tid%)
 
 END FUNCTION
 
-FUNCTION ExecCmd% (text AS STRING)
+FUNCTION ExecCmd% (cmd$)
 
   SHARED evid%
   SHARED fid%
@@ -2566,7 +2566,7 @@ FUNCTION ExecCmd% (text AS STRING)
   DIM ntoken%
   DIM stoken$(0 TO 5)
 
-  ntoken% = Split(text, stoken$())
+  ntoken% = Split(cmd$, stoken$())
   IF ntoken% = 0 THEN
     ExecCmd% = CmdResult.OK
     EXIT FUNCTION
@@ -2592,7 +2592,7 @@ FUNCTION ExecCmd% (text AS STRING)
     result% = ExecCmdRoot%(ntoken%, stoken$(), evid%, hbid%, pid%, stid%, tid%, wnid%)
   END IF
 
-  Assert result% = CmdResult.OK, "ExecCmd", "Malformed: " + text
+  Assert result% = CmdResult.OK, "ExecCmd", "Malformed: " + cmd$
 
   ExecCmd% = result%
 
@@ -4578,30 +4578,30 @@ FUNCTION WorldAdd% (hbid%, cx%, cy%)
 
 END FUNCTION
 
-SUB WorldAddBanded (hbid AS INTEGER, count AS INTEGER)
+SUB WorldAddBanded (hbid%, count%)
 
-  DIM aid   AS INTEGER
-  DIM outcx AS INTEGER
-  DIM outcy AS INTEGER
-  DIM n     AS INTEGER
+  DIM aid%
+  DIM outcx%
+  DIM outcy%
 
-  FOR n = 1 TO count
-    AtlasNextBanded outcx, outcy
-    aid = WorldAdd%(hbid, outcx, outcy)
+  DIM n%
+  FOR n% = 1 TO count%
+    AtlasNextBanded outcx%, outcy%
+    aid% = WorldAdd%(hbid%, outcx%, outcy%)
   NEXT
 
 END SUB
 
-SUB WorldAddCluster (hbid AS INTEGER, count AS INTEGER)
+SUB WorldAddCluster (hbid%, count%)
 
-  DIM aid   AS INTEGER
-  DIM outcx AS INTEGER
-  DIM outcy AS INTEGER
-  DIM n     AS INTEGER
+  DIM aid%
+  DIM outcx%
+  DIM outcy%
+  DIM n%
  
-  FOR n = 1 TO count
-    AtlasNextClustered outcx, outcy
-    aid = WorldAdd%(hbid, outcx, outcy)
+  FOR n% = 1 TO count%
+    AtlasNextClustered outcx%, outcy%
+    aid% = WorldAdd%(hbid%, outcx%, outcy%)
   NEXT
   
 END SUB
