@@ -2881,7 +2881,7 @@ END FUNCTION
 
 FUNCTION ExecCmdStid% (ntoken%, stoken$(), stid%)
 
-  AssertIsPositive stid%, "ExecCmdStid", "stid%"
+  AssertIsPositive stid%, "ExecCmdStid%", "stid%"
 
   ExecuteCommandStid% = CmdResult.OK
 
@@ -2938,8 +2938,8 @@ END FUNCTION
 
 FUNCTION ExecCmdWnid% (ntoken%, stoken$(), wnid%, fid%)
 
-  AssertIsPositive wnid%, "ExecCmdWnid", "wnid"
-  AssertIsZero fid%, "ExecCmdWnid", "fid"
+  AssertIsPositive wnid%, "ExecCmdWnid%", "wnid%"
+  AssertIsZero fid%, "ExecCmdWnid%", "fid%"
 
   DIM wnidctid%
   LET wnidctid% = gwin(wnid%, 0)
@@ -3041,7 +3041,7 @@ END SUB
 
 FUNCTION ExecResource% (rsid%)
 
-  AssertIsPositive rsid%, "ExecResource", "rsid%"
+  AssertIsPositive rsid%, "ExecResource%", "rsid%"
 
   DIM cmd$
   LET cmd$ = RsGet$(rsid%)
@@ -3057,7 +3057,6 @@ SUB GameMoveOffset (offsetX%, offsetY%)
   DIM aid     AS INTEGER
   DIM cx      AS INTEGER
   DIM cy      AS INTEGER
-  DIM hbid    AS INTEGER
   DIM idx     AS INTEGER
   DIM wresult AS WnResultType
 
@@ -3093,7 +3092,8 @@ SUB GameMoveOffset (offsetX%, offsetY%)
     EvIncrement "AtlasMoves"
   ELSE
 
-    hbid = area(aid).hbid
+    DIM hbid%
+    LET hbid% = area(aid).hbid
       
     '
     ' Run the window name handling this habitat
@@ -3110,7 +3110,7 @@ SUB GameMoveOffset (offsetX%, offsetY%)
       '
       DIM hbidwnidctid%
       LET hbidwnidctid% = gwin(hbidwnid%, 0)
-      CtSetParam hbidwnidctid%, hbid
+      CtSetParam hbidwnidctid%, hbid%
      
       WnRun hbidwnid%, wresult
      
@@ -3121,7 +3121,7 @@ SUB GameMoveOffset (offsetX%, offsetY%)
         DIM cmd$: cmd$ = RsGet$(wresult.cmdrsid)
         DIM pdx%: pdx% = INSTR(cmd$, "{param.name}")
         IF pdx% > 0 THEN
-          MID$(cmd$, pdx%) = STR$(hbid)
+          MID$(cmd$, pdx%) = STR$(hbid%) '** numeric habitat strings FYI
         END IF
         cresult = ExecCmd(cmd$)
       END IF
