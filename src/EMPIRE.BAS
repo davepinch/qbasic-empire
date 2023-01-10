@@ -246,8 +246,7 @@ DECLARE SUB ObSetString (obid%, obix%, value$)
 DECLARE SUB PrSetLabel (prid%, label$)
 DECLARE SUB PrSetName (prid%, name$)
 DECLARE FUNCTION PrCreate% ()
-DECLARE FUNCTION PrGetLabel$ (prid%)
-DECLARE FUNCTION PrGetName$ (prid%)
+DECLARE FUNCTION PrGet% (prid%, prix%)
 DECLARE FUNCTION PrRandomly% ()
 
 '
@@ -2176,10 +2175,10 @@ END SUB
 SUB DgPrint (prid%, text$)
 
   DIM name$
-  LET name$ = PrGetName$(prid%)
+  LET name$ = RsGet$(PrGet%(prid%, PrIndex.Name))
  
   DIM label$
-  LET label$ = PrGetLabel$(prid%)
+  LET label$ = RsGet$(PrGet%(prid%, PrIndex.Label))
   IF label$ = "" THEN
     label$ = "@X1F " + name$ + " @X07"
   END IF
@@ -3411,12 +3410,9 @@ FUNCTION PrCreate%
   PrCreate% = ObCreate%(ObKind.Person)
 END FUNCTION
 
-FUNCTION PrGetLabel$ (prid%)
-  PrGetLabel$ = ObGetString$(prid%, PrIndex.Label)
-END FUNCTION
-
-FUNCTION PrGetName$ (prid%)
-  PrGetName$ = ObGetString$(prid%, PrIndex.Name)
+FUNCTION PrGet% (prid%, prix%)
+  AssertExpected ObKind.Person, gobj(prid%, ObIndex.Kind).value, "PrGet%", "ObKind"
+  PrGet% = ObGet%(prid%, prix%)
 END FUNCTION
 
 FUNCTION PrRandomly%
