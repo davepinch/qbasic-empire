@@ -427,8 +427,8 @@ CONST CtIndex.Style = 15
 '
 ' Event properties
 '
-CONST EvPropId.Name = 1
-CONST EvPropId.Value = 2
+CONST EvIndex.Name = 1
+CONST EvIndex.Value = 2
 
 '
 ' Habitat properties
@@ -2477,7 +2477,7 @@ FUNCTION EvCreate%
 END FUNCTION
 
 FUNCTION EvFind% (name$)
-  EvFind% = ObFindString%(ObKind.Event, EvPropId.Name, name$)
+  EvFind% = ObFindString%(ObKind.Event, EvIndex.Name, name$)
 END FUNCTION
 
 SUB EvFire (evid%)
@@ -2494,7 +2494,7 @@ SUB EvFire (evid%)
 END SUB
 
 FUNCTION EvGetValue% (evid%)
-  EvGetValue% = ObGet%(evid%, EvPropId.Value)
+  EvGetValue% = ObGet%(evid%, EvIndex.Value)
 END FUNCTION
 
 SUB EvIncrement (name$)
@@ -2523,11 +2523,11 @@ FUNCTION EvParseOperator% (opname$)
 END FUNCTION
 
 SUB EvSetName (evid%, name$)
-  ObSetString evid%, EvPropId.Name, name$
+  ObSetString evid%, EvIndex.Name, name$
 END SUB
 
 SUB EvSetValue (evid%, value%)
-  ObSet evid%, EvPropId.Value, value%
+  ObSet evid%, EvIndex.Value, value%
 END SUB
 
 FUNCTION EvTestTrigger% (evid%, tid%)
@@ -3939,7 +3939,7 @@ END FUNCTION
 
 SUB WnClose (wnid%)
 
-  AssertIsPositive wnid%, "WnClose%", "wnid%"
+  AssertIsPositive wnid%, "WnClose", "wnid%"
 
   IF winstacked = 0 THEN
   
@@ -4179,7 +4179,7 @@ END SUB
 
 SUB WnRun (wnid%, result AS WnResultType)
 
-  AssertIsPositive wnid%, "WnRun%", "wnid%"
+  AssertIsPositive wnid%, "WnRun", "wnid%"
 
   DIM wnidctid%
   LET wnidctid% = gwin(wnid%, 0)
@@ -4622,7 +4622,7 @@ END SUB
 
 SUB WorldHarvest (aid%)
 
-  AssertIsPositive aid%, "WorldHarvest", "aid"
+  AssertIsPositive aid%, "WorldHarvest", "aid%"
 
   DIM energy%
   LET energy% = area(aid%).energy
@@ -4681,7 +4681,7 @@ END FUNCTION
 
 SUB WorldRemove (aid%)
 
-  AssertIsPositive aid%, "WorldRemove", "aid"
+  AssertIsPositive aid%, "WorldRemove", "aid%"
 
   IF area(aid%).allocated THEN
     area(aid%).allocated = False
