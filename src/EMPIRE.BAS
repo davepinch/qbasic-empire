@@ -260,7 +260,6 @@ DECLARE FUNCTION StGetSelectedColor% (stid%)
 DECLARE FUNCTION StGetTextColor% (stid%)
 DECLARE SUB StSet (stid%, stix%, value%)
 DECLARE SUB StSetName (stid%, name$)
-DECLARE SUB StSetTextColor (stid%, textcolor%)
 
 '
 ' Terminal API
@@ -2806,7 +2805,7 @@ FUNCTION ExecCmdStid% (ntoken%, stoken$(), stid%)
       StSet stid%, StIndex.SelectedColor, VAL(stoken$(1))
 
     CASE "textcolor"
-      StSetTextColor stid%, VAL(stoken$(1))
+      StSet stid%, StIndex.TextColor, VAL(stoken$(1))
 
     CASE ELSE
       ExecuteCommandStid% = CmdResult.Malformed
@@ -3638,10 +3637,6 @@ END SUB
 
 SUB StSetName (stid%, name$)
   ObSetString stid%, StIndex.Name, name$
-END SUB
-
-SUB StSetTextColor (stid%, textcolor%)
-  ObSet stid%, StIndex.TextColor, textcolor%
 END SUB
 
 SUB TrBegin
