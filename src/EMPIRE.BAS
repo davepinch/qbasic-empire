@@ -124,7 +124,6 @@ DECLARE FUNCTION CtCreateChild% (wnid%, kind%)
 DECLARE FUNCTION CtGet% (ctid%, ctix%)
 DECLARE FUNCTION CtGetChildList% (ctid%)
 DECLARE FUNCTION CtGetCmdRsid% (ctid%)
-DECLARE FUNCTION CtGetKind% (ctid%)
 DECLARE FUNCTION CtGetName$ (ctid%)
 DECLARE FUNCTION CtGetOffsetX% (ctid%)
 DECLARE FUNCTION CtGetOffsetY% (ctid%)
@@ -1322,7 +1321,7 @@ SUB CtDraw (wnid%, fid%)
   DIM ctid%
   LET ctid% = gwin(wnid%, fid%)
 
-  SELECT CASE CtGetKind%(ctid%)
+  SELECT CASE CtGet%(ctid%, CtIndex.Kind)
     '
     ' Check the most common kinds first
     '
@@ -1804,10 +1803,6 @@ FUNCTION CtGetCmdRsid% (ctid%)
   CtGetCmdRsid% = ObGet%(ctid%, CtIndex.Command)
 END FUNCTION
 
-FUNCTION CtGetKind% (ctid%)
-  CtGetKind% = ObGet%(ctid%, CtIndex.Kind)
-END FUNCTION
-
 FUNCTION CtGetName$ (ctid%)
   CtGetName$ = ObGetString$(ctid%, CtIndex.Name)
 END FUNCTION
@@ -1899,7 +1894,7 @@ SUB CtKey (ctid%, keypress$)
   ' Sends a keystroke to a field
   '
  
-  SELECT CASE CtGetKind%(ctid%)
+  SELECT CASE CtGet%(ctid%, CtIndex.Kind)
   
     CASE CtKind.Boolean
       CtKeyBoolean ctid%, keypress$
@@ -1983,7 +1978,7 @@ FUNCTION CtSelectable% (ctid%)
  
   ELSE
 
-    SELECT CASE CtGetKind%(ctid%)
+    SELECT CASE CtGet%(ctid%, CtIndex.Kind)
       CASE CtKind.Button
         CtSelectable% = True
 
@@ -2578,7 +2573,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wnid%, fid%)
 
   DIM endtag AS STRING
   DIM kind%
-  LET kind% = CtGetKind(ctid%)
+  LET kind% = CtGet%(ctid%, CtIndex.Kind)
 
   SELECT CASE kind%
     CASE CtKind.Button
@@ -4457,7 +4452,7 @@ SUB WnRun (wnid%, result AS WnResultType)
       DIM selectedCtid%
       LET selectedCtid% = gwin(wnid%, CtGetSelected(wnidctid%))
 
-      IF CtGetKind%(selectedCtid%) <> CtKind.Popup THEN
+      IF CtGet%(selectedCtid%, CtIndex.Kind) <> CtKind.Popup THEN
        
         EXIT DO
 
