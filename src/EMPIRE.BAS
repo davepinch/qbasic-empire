@@ -99,6 +99,7 @@ DECLARE FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS I
 '
 ' Control API
 '
+DECLARE FUNCTION CtCreate% (kind%)
 DECLARE SUB CtDraw (wnid%, fid%)
 DECLARE SUB CtDrawBox (ctid%)
 DECLARE SUB CtDrawBox0 (ctid%)
@@ -1282,6 +1283,19 @@ SUB AtlasSetStatusEx (text$, attr%)
   AtlasDrawEnd
 
 END SUB
+
+FUNCTION CtCreate% (kind%)
+  '
+  ' Creates an empty control
+  '
+  DIM ctid%
+  LET ctid% = ObCreate%(ObKind.Control)
+  AssertIsPositive ctid%, "CtCreate%", "ctid%"
+
+  CtSetKind ctid%, kind%
+  CtCreate% = ctid%
+
+END FUNCTION
 
 FUNCTION CtCreateChild% (wnid%, kind%)
 
