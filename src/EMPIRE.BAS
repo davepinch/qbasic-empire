@@ -385,10 +385,10 @@ CONST CmdResult.Malformed = 1
 ' Control kinds
 '
 CONST CtKind.None = 0
-CONST CtKind.Window = 1
-CONST CtKind.Boolean = 2
-CONST CtKind.Box = 3
-CONST CtKind.Button = 4
+CONST CtKind.Boolean = 1
+CONST CtKind.Box = 2
+CONST CtKind.Button = 3
+CONST CtKind.Container = 4
 CONST CtKind.File = 5
 CONST CtKind.Integer = 6
 CONST CtKind.Label = 7
@@ -4003,7 +4003,7 @@ FUNCTION WnCreate%
   DIM ctid%
   LET ctid% = ObCreate%(ObKind.Control) 'Window)
  
-  CtSetKind ctid%, CtKind.Window
+  CtSetKind ctid%, CtKind.Container
   CtSetChildList ctid%, wincount
 
   '
