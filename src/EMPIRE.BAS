@@ -113,7 +113,6 @@ DECLARE SUB CtKey (ctid%, keypress$)
 DECLARE SUB CtKeyBoolean (ctid%, keypress$)
 DECLARE SUB CtKeyInteger (ctid%, keypress$)
 DECLARE SUB CtSet (ctid%, ctix%, value%)
-DECLARE SUB CtSetCmdStr (ctid%, cmd$)
 DECLARE SUB CtSetName (ctid%, value$)
 DECLARE SUB CtSetParam (ctid%, value%)
 DECLARE SUB CtSetText (ctid%, value$)
@@ -1983,19 +1982,6 @@ SUB CtSet (ctid%, ctix%, value%)
   ObSet ctid%, ctix%, value%
 END SUB
 
-SUB CtSetCmdStr (ctid%, cmd$)
-
-  DIM rsid%
-  LET rsid% = CtGet%(ctid%, CtIndex.Command)
-
-  '
-  ' rsid% is an output parameter
-  '
-  RsSet rsid%, cmd$
-  CtSet ctid%, CtIndex.Command, rsid%
-
-END SUB
-
 SUB CtSetName (ctid%, value$)
   ObSetString ctid%, CtIndex.Name, value$
 END SUB
@@ -2575,7 +2561,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wnid%, fid%)
       fid% = 0
 
     CASE "command"
-      CtSetCmdStr ctid%, stoken$(1)
+      CtSet ctid%, CtIndex.Command, RsCreate%(stoken$(1))
 
     CASE "offsetx"
       CtSet ctid%, CtIndex.OffsetX, VAL(stoken$(1))
