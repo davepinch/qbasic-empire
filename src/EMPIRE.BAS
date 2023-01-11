@@ -117,7 +117,6 @@ DECLARE SUB CtSetCmdRsid (ctid%, cmdrsid%)
 DECLARE SUB CtSetCmdStr (ctid%, cmd$)
 DECLARE SUB CtSetName (ctid%, value$)
 DECLARE SUB CtSetParam (ctid%, value%)
-DECLARE SUB CtSetParent (ctid%, parentctid%)
 DECLARE SUB CtSetPopup (ctid%, popupctid%)
 DECLARE SUB CtSetPopupName (ctid%, wname$)
 DECLARE SUB CtSetSelected (ctid%, value%)
@@ -1314,7 +1313,7 @@ FUNCTION CtCreateChild% (wnid%, kind%)
   '
   ' Set the parent to the window control
   '
-  CtSetParent ctid%, gwin(wnid%, 0)
+  CtSet ctid%, CtIndex.Parent, gwin(wnid%, 0)
   CtSet ctid%, CtIndex.Kind, kind%
   CtCreateChild% = fid%
 
@@ -2037,10 +2036,6 @@ END SUB
 
 SUB CtSetParam (ctid%, value%)
   ObSet ctid%, CtIndex.Param, value%
-END SUB
-
-SUB CtSetParent (ctid%, parentctid%)
-  ObSet ctid%, CtIndex.Parent, parentctid%
 END SUB
 
 SUB CtSetPopup (ctid%, popupctid%)
