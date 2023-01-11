@@ -258,7 +258,7 @@ DECLARE FUNCTION StGetBorderType% (stid%)
 DECLARE FUNCTION StGetName$ (stid%)
 DECLARE FUNCTION StGetSelectedColor% (stid%)
 DECLARE FUNCTION StGetTextColor% (stid%)
-DECLARE SUB StSetBorderColor (stid%, bordercolor%)
+DECLARE SUB StSet (stid%, stix%, value%)
 DECLARE SUB StSetBorderType (stid%, bordertype%)
 DECLARE SUB StSetName (stid%, name$)
 DECLARE SUB StSetSelectedColor (stid%, selectedcolor%)
@@ -2793,7 +2793,7 @@ FUNCTION ExecCmdStid% (ntoken%, stoken$(), stid%)
   SELECT CASE stoken$(0)
    
     CASE "bordercolor"
-      StSetBorderColor stid%, VAL(stoken$(1))
+      StSet stid%, StIndex.BorderColor, VAL(stoken$(1))
 
     CASE "bordertype"
       StSetBorderType stid%, VAL(stoken$(1))
@@ -3633,8 +3633,9 @@ FUNCTION StGetTextColor% (stid%)
   StGetTextColor% = ObGet%(stid%, StIndex.TextColor)
 END FUNCTION
 
-SUB StSetBorderColor (stid%, bordercolor%)
-  ObSet stid%, StIndex.BorderColor, bordercolor%
+SUB StSet (stid%, stix%, value%)
+  AssertExpected ObKind.Style, gobj(stid%, ObIndex.Kind).value, "StSet", "ObKind"
+  ObSet stid%, stix%, value%
 END SUB
 
 SUB StSetBorderType (stid%, bordertype%)
