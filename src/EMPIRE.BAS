@@ -317,6 +317,7 @@ DECLARE FUNCTION WnAddButton% (wnid%, offsetX%, offsetY%, sizeX%, text$, value$)
 DECLARE FUNCTION WnCreate% ()
 DECLARE FUNCTION WnFindStid% (stylename$)
 DECLARE FUNCTION WnFindWnid% (wname$)
+DECLARE FUNCTION WnGet% (wnid%, wnix%)
 DECLARE FUNCTION WnMapKey% (wnid%, pressed$)
 
 '
@@ -4004,6 +4005,11 @@ FUNCTION WnFindWnid% (wname$)
 
   WnFindWnid% = 0
 
+END FUNCTION
+
+FUNCTION WnGet% (wnid%, wnix%)
+  AssertExpected ObKind.Window, gobj(wnid%, ObIndex.Kind).value, "WnGet%", "ObKind"
+  WnGet% = ObGet%(wnid%, wnix%)
 END FUNCTION
 
 FUNCTION WnMapKey% (wnid%, pressed$)
