@@ -116,7 +116,6 @@ DECLARE SUB CtSet (ctid%, ctix%, value%)
 DECLARE SUB CtSetCmdStr (ctid%, cmd$)
 DECLARE SUB CtSetName (ctid%, value$)
 DECLARE SUB CtSetParam (ctid%, value%)
-DECLARE SUB CtSetSelected (ctid%, value%)
 DECLARE SUB CtSetText (ctid%, value$)
 DECLARE SUB CtSetValue (ctid%, value$)
 DECLARE FUNCTION CtCreateChild% (wnid%, kind%)
@@ -2003,10 +2002,6 @@ END SUB
 
 SUB CtSetParam (ctid%, value%)
   ObSet ctid%, CtIndex.Param, value%
-END SUB
-
-SUB CtSetSelected (ctid%, value%)
-  ObSet ctid%, CtIndex.Selected, value%
 END SUB
 
 SUB CtSetText (ctid%, value$)
@@ -4019,7 +4014,7 @@ SUB WnFocusOn (wnid%, fid%)
     EXIT SUB
   END IF
 
-  CtSetSelected wnidctid%, fid%
+  CtSet wnidctid%, CtIndex.Selected, fid%
 
   IF old% > 0 THEN
     WnRefreshField wnid%, old%
