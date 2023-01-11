@@ -122,7 +122,6 @@ DECLARE SUB CtSetText (ctid%, value$)
 DECLARE SUB CtSetValue (ctid%, value$)
 DECLARE FUNCTION CtCreateChild% (wnid%, kind%)
 DECLARE FUNCTION CtGet% (ctid%, ctix%)
-DECLARE FUNCTION CtGetCmdRsid% (ctid%)
 DECLARE FUNCTION CtGetName$ (ctid%)
 DECLARE FUNCTION CtGetOffsetX% (ctid%)
 DECLARE FUNCTION CtGetOffsetY% (ctid%)
@@ -1794,10 +1793,6 @@ FUNCTION CtGet% (ctid%, ctix%)
   CtGet% = ObGet%(ctid%, ctix%)
 END FUNCTION
 
-FUNCTION CtGetCmdRsid% (ctid%)
-  CtGetCmdRsid% = ObGet%(ctid%, CtIndex.Command)
-END FUNCTION
-
 FUNCTION CtGetName$ (ctid%)
   CtGetName$ = ObGetString$(ctid%, CtIndex.Name)
 END FUNCTION
@@ -2007,7 +2002,7 @@ END SUB
 SUB CtSetCmdStr (ctid%, cmd$)
 
   DIM rsid%
-  LET rsid% = CtGetCmdRsid%(ctid%)
+  LET rsid% = CtGet%(ctid%, CtIndex.Command)
 
   '
   ' rsid% is an output parameter
@@ -4281,7 +4276,7 @@ FUNCTION WnMapKey% (wnid%, pressed$)
   IF selected > 0 THEN
     selectedCtid = gwin(wnid%, selected)
     popupctid = CtGetPopup%(selectedCtid)
-    cmdrsid = CtGetCmdRsid%(selectedCtid)
+    cmdrsid = CtGet%(selectedCtid, CtIndex.Command)
   END IF
 
   SELECT CASE pressed$
@@ -4516,7 +4511,7 @@ SUB WnRun (wnid%, result AS WnResultType)
         result.action = WnAction.Execute
         result.canceled = False
         result.selected = CtGetSelected(wnidctid%)
-        result.cmdrsid = CtGetCmdRsid%(gwin(wnid%, result.selected))
+        result.cmdrsid = CtGet%(gwin(wnid%, result.selected), CtIndex.Command)
         WnClose wnid%
         EXIT SUB
 
