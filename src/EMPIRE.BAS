@@ -307,15 +307,15 @@ DECLARE FUNCTION VideoGetVisual% ()
 '
 DECLARE SUB WnClose (wnid%)
 DECLARE SUB WnDraw (wnid%)
+DECLARE SUB WnFocusOn (wnid%, fid%)
+DECLARE SUB WnFocusOnFirst (wnid%)
+DECLARE SUB WnFocusOnLast (wnid%)
+DECLARE SUB WnFocusOnNext (wnid%)
+DECLARE SUB WnFocusOnPrevious (wnid%)
 DECLARE SUB WnRefreshField (wnid%, fid%)
 DECLARE SUB WnRender (wnid%)
 DECLARE SUB WnRun (wnid%, result AS WnResultType)
 DECLARE SUB WnRunName (idname$)
-DECLARE SUB WnSelect (wnid%, fid%)
-DECLARE SUB WnSelectFirst (wnid%)
-DECLARE SUB WnSelectLast (wnid%)
-DECLARE SUB WnSelectNext (wnid%)
-DECLARE SUB WnSelectPrevious (wnid%)
 DECLARE FUNCTION WnAddButton% (wnid%, offsetX%, offsetY%, sizeX%, text$, value$)
 DECLARE FUNCTION WnCreate% ()
 DECLARE FUNCTION WnFindStid% (stylename$)
@@ -4048,6 +4048,238 @@ FUNCTION WnFindWnid% (wname$)
 
 END FUNCTION
 
+SUB WnFocusOn (wnid%, fid%)
+  '
+  ' Sets focus to a field
+  '
+
+  AssertIsPositive wnid%, "WnFocusOn", "wnid%"
+  Assert fid% >= 0, "WnFocusOn", "fid cannot be negative"
+
+  DIM fidctid%
+  LET fidctid% = gwin(wnid%, fid%)
+
+  DIM wnidctid%
+  LET wnidctid% = gwin(wnid%, 0)
+
+  DIM old%
+  LET old% = CtGetSelected(wnidctid%)
+
+  IF old% = fid% THEN
+    '
+    ' Same field
+    '
+    EXIT SUB
+  END IF
+
+  CtSetSelected wnidctid%, fid%
+
+  IF old% > 0 THEN
+    WnRefreshField wnid%, old%
+  END IF
+
+  IF fid% > 0 THEN
+    WnRefreshField wnid%, fid%
+  END IF
+
+END SUB
+
+SUB WnFocusOnFirst (wnid%)
+  '
+  ' Selects the first selectable field
+  '
+
+  AssertIsPositive wnid%, "WnFocusOnFirst", "wnid%"
+
+  IF win(wnid%).fields = 0 THEN
+    '
+    ' This window has no fields
+    '
+    WnFocusOn wnid%, 0
+
+  ELSE
+ 
+    DIM fid%
+    FOR fid% = 1 TO win(wnid%).fields
+     
+      DIM ctid%
+      LET ctid% = gwin(wnid%, fid%)
+
+      IF CtSelectable%(ctid%) THEN
+        WnFocusOn wnid%, fid%
+        EXIT SUB
+      END IF
+    NEXT
+
+    '
+    ' None of the fields were selectable
+    '
+    WnFocusOn wnid%, 0
+
+  END IF
+
+END SUB
+
+SUB WnFocusOnLast (wnid%)
+  '
+  ' Selects the last selectable field
+  '
+
+  AssertIsPositive wnid%, "WnFocusOnLast", "wnid%"
+
+  IF win(wnid%).fields = 0 THEN
+    '
+    ' This window has no fields
+    '
+    WnFocusOn wnid%, 0
+
+  ELSE
+
+    DIM fid%
+    FOR fid% = win(wnid%).fields TO 1 STEP -1
+     
+      DIM ctid%
+      LET ctid% = gwin(wnid%, fid%)
+
+      IF CtSelectable%(ctid%) THEN
+        WnFocusOn wnid%, fid%
+        EXIT SUB
+      END IF
+    NEXT
+
+    '
+    ' None of the fields were selectable
+    '
+    WnFocusOn wnid%, 0
+
+  END IF
+
+END SUB
+
+SUB WnFocusOnNext (wnid%)
+  '
+  ' Selects the next selectable field
+  '
+
+  AssertIsPositive wnid%, "WnFocusOnNext", "wnid%"
+
+  DIM wnidctid%
+  LET wnidctid% = gwin(wnid%, 0)
+
+  DIM fid%
+  DIM firstFid%
+
+  IF win(wnid%).fields = 0 THEN
+   
+    fid% = 0
+ 
+  ELSE
+
+    '
+    ' Get the starting field
+    '
+    LET firstFid% = CtGetSelected(wnidctid%)
+    IF firstFid% = 0 THEN
+      firstFid% = 1
+    END IF
+
+    LET fid% = firstFid%
+
+    DO
+    
+      '
+      ' Move to the next field
+      '
+      fid% = fid% + 1
+      IF fid% > win(wnid%).fields THEN
+        fid% = 1
+      END IF
+
+      DIM fidctid%
+      LET fidctid% = gwin(wnid%, fid%)
+
+      IF CtSelectable%(fidctid%) THEN
+        EXIT DO
+      END IF
+
+      IF fid% = firstFid% THEN
+        '
+        ' We found ourself, but we are not selectable
+        '
+        fid% = 0
+        EXIT DO
+      END IF
+
+    LOOP
+
+  END IF
+
+  WnFocusOn wnid%, fid%
+
+END SUB
+
+SUB WnFocusOnPrevious (wnid%)
+  '
+  ' Selects the field before the current one (looping around)
+  '
+
+  AssertIsPositive wnid%, "WnFocusOnPrevious", "wnid%"
+
+  DIM wnidctid%
+  LET wnidctid% = gwin(wnid%, 0)
+
+  DIM fid%
+  DIM startingFid%
+
+  IF win(wnid%).fields = 0 THEN
+   
+    fid% = 0
+
+  ELSE
+
+    '
+    ' Get the starting field
+    '
+    LET startingFid% = CtGetSelected(wnidctid%)
+    IF startingFid% = 0 THEN
+      startingFid% = 1
+    END IF
+
+    LET fid% = startingFid%
+
+    '
+    ' Loop through each field and find the next selectable one
+    '
+    DO
+   
+      fid% = fid% - 1
+      IF fid% = 0 THEN
+        fid% = win(wnid%).fields
+      END IF
+
+      DIM fidctid%
+      LET fidctid% = gwin(wnid%, fid%)
+
+      IF CtSelectable%(fidctid%) THEN
+        EXIT DO
+      END IF
+
+      IF fid% = startingFid% THEN
+        '
+        ' We looped back to ourself, but we are not selectable.
+        '
+        fid% = 0
+        EXIT DO
+      END IF
+
+    LOOP
+
+  END IF
+
+  WnFocusOn wnid%, fid%
+
+END SUB
+
 FUNCTION WnGet% (wnid%, wnix%)
   AssertExpected ObKind.Window, gobj(wnid%, ObIndex.Kind).value, "WnGet%", "ObKind"
   WnGet% = ObGet%(wnid%, wnix%)
@@ -4208,7 +4440,7 @@ SUB WnRender (wnid%)
   ' Set focus to a field
   '
   IF CtGetSelected(wnidctid%) = 0 THEN
-    WnSelectFirst wnid%
+    WnFocusOnFirst wnid%
   END IF
 
   '
@@ -4278,10 +4510,10 @@ SUB WnRun (wnid%, result AS WnResultType)
             EXIT SUB
          
           CASE WnAction.ExitLeft
-            WnSelectPrevious wnid%
+            WnFocusOnPrevious wnid%
          
           CASE WnAction.ExitRight
-            WnSelectNext wnid%
+            WnFocusOnNext wnid%
          
           CASE ELSE
             EXIT DO
@@ -4340,16 +4572,16 @@ SUB WnRun (wnid%, result AS WnResultType)
         nopopups = False
 
       CASE WnAction.SelectFirst
-        WnSelectFirst wnid%
+        WnFocusOnFirst wnid%
 
       CASE WnAction.SelectLast
-        WnSelectLast wnid%
+        WnFocusOnLast wnid%
 
       CASE WnAction.SelectNext
-        WnSelectNext wnid%
+        WnFocusOnNext wnid%
 
       CASE WnAction.SelectPrevious
-        WnSelectPrevious wnid%
+        WnFocusOnPrevious wnid%
 
       CASE ELSE
         CtKey gwin(wnid%, CtGetSelected(wnidctid%)), pressed
@@ -4370,238 +4602,6 @@ SUB WnRunName (name$)
   Assert wnid% <> 0, "WnRunName", "wnid cannot be 0"
 
   WnRun wnid%, result
-
-END SUB
-
-SUB WnSelect (wnid%, fid%)
-  '
-  ' Sets focus to a field
-  '
-
-  AssertIsPositive wnid%, "WnSelect", "wnid%"
-  Assert fid% >= 0, "WnSelect", "fid cannot be negative"
-
-  DIM fidctid%
-  LET fidctid% = gwin(wnid%, fid%)
-
-  DIM wnidctid%
-  LET wnidctid% = gwin(wnid%, 0)
-
-  DIM old%
-  LET old% = CtGetSelected(wnidctid%)
-
-  IF old% = fid% THEN
-    '
-    ' Same field
-    '
-    EXIT SUB
-  END IF
-
-  CtSetSelected wnidctid%, fid%
-
-  IF old% > 0 THEN
-    WnRefreshField wnid%, old%
-  END IF
-
-  IF fid% > 0 THEN
-    WnRefreshField wnid%, fid%
-  END IF
-
-END SUB
-
-SUB WnSelectFirst (wnid%)
-  '
-  ' Selects the first selectable field
-  '
-
-  AssertIsPositive wnid%, "WnSelectFirst", "wnid%"
-
-  IF win(wnid%).fields = 0 THEN
-    '
-    ' This window has no fields
-    '
-    WnSelect wnid%, 0
-
-  ELSE
- 
-    DIM fid%
-    FOR fid% = 1 TO win(wnid%).fields
-     
-      DIM ctid%
-      LET ctid% = gwin(wnid%, fid%)
-
-      IF CtSelectable%(ctid%) THEN
-        WnSelect wnid%, fid%
-        EXIT SUB
-      END IF
-    NEXT
-
-    '
-    ' None of the fields were selectable
-    '
-    WnSelect wnid%, 0
-
-  END IF
-
-END SUB
-
-SUB WnSelectLast (wnid%)
-  '
-  ' Selects the last selectable field
-  '
-
-  AssertIsPositive wnid%, "WnSelectLast", "wnid%"
-
-  IF win(wnid%).fields = 0 THEN
-    '
-    ' This window has no fields
-    '
-    WnSelect wnid%, 0
-
-  ELSE
-
-    DIM fid%
-    FOR fid% = win(wnid%).fields TO 1 STEP -1
-     
-      DIM ctid%
-      LET ctid% = gwin(wnid%, fid%)
-
-      IF CtSelectable%(ctid%) THEN
-        WnSelect wnid%, fid%
-        EXIT SUB
-      END IF
-    NEXT
-
-    '
-    ' None of the fields were selectable
-    '
-    WnSelect wnid%, 0
-
-  END IF
-
-END SUB
-
-SUB WnSelectNext (wnid%)
-  '
-  ' Selects the next selectable field
-  '
-
-  AssertIsPositive wnid%, "WnSelectNext", "wnid%"
-
-  DIM wnidctid%
-  LET wnidctid% = gwin(wnid%, 0)
-
-  DIM fid%
-  DIM firstFid%
-
-  IF win(wnid%).fields = 0 THEN
-   
-    fid% = 0
- 
-  ELSE
-
-    '
-    ' Get the starting field
-    '
-    LET firstFid% = CtGetSelected(wnidctid%)
-    IF firstFid% = 0 THEN
-      firstFid% = 1
-    END IF
-
-    LET fid% = firstFid%
-
-    DO
-    
-      '
-      ' Move to the next field
-      '
-      fid% = fid% + 1
-      IF fid% > win(wnid%).fields THEN
-        fid% = 1
-      END IF
-
-      DIM fidctid%
-      LET fidctid% = gwin(wnid%, fid%)
-
-      IF CtSelectable%(fidctid%) THEN
-        EXIT DO
-      END IF
-
-      IF fid% = firstFid% THEN
-        '
-        ' We found ourself, but we are not selectable
-        '
-        fid% = 0
-        EXIT DO
-      END IF
-
-    LOOP
-
-  END IF
-
-  WnSelect wnid%, fid%
-
-END SUB
-
-SUB WnSelectPrevious (wnid%)
-  '
-  ' Selects the field before the current one (looping around)
-  '
-
-  AssertIsPositive wnid%, "WnSelectPrevious", "wnid%"
-
-  DIM wnidctid%
-  LET wnidctid% = gwin(wnid%, 0)
-
-  DIM fid%
-  DIM startingFid%
-
-  IF win(wnid%).fields = 0 THEN
-   
-    fid% = 0
-
-  ELSE
-
-    '
-    ' Get the starting field
-    '
-    LET startingFid% = CtGetSelected(wnidctid%)
-    IF startingFid% = 0 THEN
-      startingFid% = 1
-    END IF
-
-    LET fid% = startingFid%
-
-    '
-    ' Loop through each field and find the next selectable one
-    '
-    DO
-   
-      fid% = fid% - 1
-      IF fid% = 0 THEN
-        fid% = win(wnid%).fields
-      END IF
-
-      DIM fidctid%
-      LET fidctid% = gwin(wnid%, fid%)
-
-      IF CtSelectable%(fidctid%) THEN
-        EXIT DO
-      END IF
-
-      IF fid% = startingFid% THEN
-        '
-        ' We looped back to ourself, but we are not selectable.
-        '
-        fid% = 0
-        EXIT DO
-      END IF
-
-    LOOP
-
-  END IF
-
-  WnSelect wnid%, fid%
 
 END SUB
 
