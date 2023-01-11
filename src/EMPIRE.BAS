@@ -221,7 +221,7 @@ DECLARE FUNCTION LsAdd% (lsid%, value%)
 DECLARE FUNCTION LsCapacity% ()
 DECLARE FUNCTION LsCreate% ()
 DECLARE FUNCTION LsCount% (lsid%)
-DECLARE FUNCTION LsItem% (lsid%, n%)
+DECLARE FUNCTION LsGet% (lsid%, n%)
 
 '
 ' Nebula
@@ -3207,12 +3207,12 @@ FUNCTION LsCreate%
   LsCreate% = ObCreate%(ObKind.List)
 END FUNCTION
 
-FUNCTION LsItem% (lsid%, n%)
+FUNCTION LsGet% (lsid%, n%)
   '
   ' Gets the specified 1-based list item
   '
-  AssertIsPositive lsid%, "LsItem%", "lsid%"
-  AssertIsPositive lsid%, "LsItem%", "n%"
+  AssertIsPositive lsid%, "LsGet%", "lsid%"
+  AssertIsPositive lsid%, "LsGet%", "n%"
 
   '
   ' Convert the 1-based position to a property index
@@ -3220,7 +3220,7 @@ FUNCTION LsItem% (lsid%, n%)
   DIM lsix%
   LET lsix% = n% + LsIndex.First - 1
  
-  LsItem% = ObGet%(lsid%, lsix%)
+  LsGet% = ObGet%(lsid%, lsix%)
 
 END FUNCTION
 
