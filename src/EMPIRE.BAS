@@ -121,7 +121,6 @@ DECLARE SUB CtSetParent (ctid%, parentctid%)
 DECLARE SUB CtSetPopup (ctid%, popupctid%)
 DECLARE SUB CtSetPopupName (ctid%, wname$)
 DECLARE SUB CtSetSelected (ctid%, value%)
-DECLARE SUB CtSetStyle (ctid%, stid%)
 DECLARE SUB CtSetText (ctid%, value$)
 DECLARE SUB CtSetValue (ctid%, value$)
 DECLARE FUNCTION CtCreateChild% (wnid%, kind%)
@@ -2056,10 +2055,6 @@ SUB CtSetSelected (ctid%, value%)
   ObSet ctid%, CtIndex.Selected, value%
 END SUB
 
-SUB CtSetStyle (ctid%, stid%)
-  ObSet ctid%, CtIndex.Style, stid%
-END SUB
-
 SUB CtSetText (ctid%, value$)
   ObSetString ctid%, CtIndex.Text, value$
 END SUB
@@ -2649,7 +2644,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wnid%, fid%)
       CtSet ctid%, CtIndex.SizeY, VAL(stoken$(1))
 
     CASE "style"
-      CtSetStyle ctid%, WnFindStid%(stoken$(1))
+      CtSet ctid%, CtIndex.Style, WnFindStid%(stoken$(1))
 
     CASE "text"
       IF LCASE$(stoken$(1)) = "bind" THEN
@@ -2987,7 +2982,7 @@ FUNCTION ExecCmdWnid% (ntoken%, stoken$(), wnid%, fid%)
       CtSet wnidctid%, CtIndex.OffsetY, VAL(stoken$(1)) - 1
 
     CASE "style"
-      CtSetStyle wnidctid%, WnFindStid%(stoken$(1))
+      CtSet wnidctid%, CtIndex.Style, WnFindStid%(stoken$(1))
 
     CASE ELSE
       result = CmdResult.Malformed
