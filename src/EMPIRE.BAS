@@ -115,7 +115,6 @@ DECLARE SUB CtKeyInteger (ctid%, keypress$)
 DECLARE SUB CtSet (ctid%, ctix%, value%)
 DECLARE SUB CtSetCmdRsid (ctid%, cmdrsid%)
 DECLARE SUB CtSetCmdStr (ctid%, cmd$)
-DECLARE SUB CtSetKind (ctid%, kind%)
 DECLARE SUB CtSetName (ctid%, value$)
 DECLARE SUB CtSetOffsetX (ctid%, offsetX%)
 DECLARE SUB CtSetOffsetY (ctid%, offsetY%)
@@ -1294,7 +1293,7 @@ FUNCTION CtCreate% (kind%)
   LET ctid% = ObCreate%(ObKind.Control)
   AssertIsPositive ctid%, "CtCreate%", "ctid%"
 
-  CtSetKind ctid%, kind%
+  CtSet ctid%, CtIndex.Kind, kind%
   CtCreate% = ctid%
 
 END FUNCTION
@@ -1321,7 +1320,7 @@ FUNCTION CtCreateChild% (wnid%, kind%)
   ' Set the parent to the window control
   '
   CtSetParent ctid%, gwin(wnid%, 0)
-  CtSetKind ctid%, kind%
+  CtSet ctid%, CtIndex.Kind, kind%
   CtCreateChild% = fid%
 
 END FUNCTION
@@ -2035,10 +2034,6 @@ SUB CtSetCmdStr (ctid%, cmd$)
 
   CtSetCmdRsid ctid%, rsid%
 
-END SUB
-
-SUB CtSetKind (ctid%, kind%)
-  ObSet ctid%, CtIndex.Kind, kind%
 END SUB
 
 SUB CtSetName (ctid%, value$)
