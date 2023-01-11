@@ -99,7 +99,6 @@ DECLARE FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS I
 '
 ' Control API
 '
-DECLARE SUB CtBind (ctid%, pid%, expr$)
 DECLARE SUB CtDraw (wnid%, fid%)
 DECLARE SUB CtDrawBox (ctid%)
 DECLARE SUB CtDrawBox0 (ctid%)
@@ -238,6 +237,7 @@ DECLARE FUNCTION ObFindString% (kind%, obix%, value$)
 DECLARE FUNCTION ObGet% (obid%, obix%)
 DECLARE FUNCTION ObGetKind% (obid%)
 DECLARE FUNCTION ObGetString$ (obid%, obix%)
+DECLARE SUB ObBind (obid%, obix%, expr$)
 DECLARE SUB ObSet (obid%, obix%, value%)
 DECLARE SUB ObSetString (obid%, obix%, value$)
 
@@ -372,10 +372,6 @@ CONST AtlasStyle.GridSizeY = 11
 CONST True = -1
 CONST False = NOT True
 
-CONST BindingTarget.None = 0
-CONST BindingTarget.Selected = 1
-CONST BindingTarget.Param = 2
-
 '
 ' Command Results
 '
@@ -436,6 +432,13 @@ CONST HbIndex.Window = 5
 '
 CONST LsIndex.Count = 1
 CONST LsIndex.First = 2
+
+'
+' Object bindings
+'
+CONST ObBinding.None = 0
+CONST ObBinding.Focused = 1
+CONST ObBinding.Param = 2
 
 '
 ' Object kinds
@@ -1277,36 +1280,6 @@ SUB AtlasSetStatusEx (text$, attr%)
 
 END SUB
 
-SUB CtBind (ctid%, pid%, expr$)
-  '
-  ' Binds a property index to a value such as a window parameter
-  '
-  DIM index%
-  LET index% = INSTR(expr$, ".")
-
-  IF index% > 1 THEN
-  
-    SELECT CASE LCASE$(LEFT$(expr$, index%))
-
-      CASE "param."
-        gobj(ctid%, pid%).flags = BindingTarget.Param
-
-      CASE "sel."
-        gobj(ctid%, pid%).flags = BindingTarget.Selected
-
-    END SELECT
-
-    RsSet gobj(ctid%, pid%).value, MID$(expr$, index% + 1)
-
-  ELSE
-
-    gobj(ctid%, pid%).flags = BindingTarget.None
-    RsSet gobj(ctid%, pid%).value, text$
-
-  END IF
-  
-END SUB
-
 FUNCTION CtCreateChild% (wnid%, kind%)
 
   Assert wnid% > 0, "CtCreateChild%", "wnid cannot be 0"
@@ -1985,7 +1958,7 @@ SUB CtKeyInteger (ctid%, keypress$)
 END SUB
 
 FUNCTION CtRedirected% (ctid%, pid%)
-  CtRedirected% = gobj(ctid%, pid%).flags = BindingTarget.Selected
+  CtRedirected% = gobj(ctid%, pid%).flags = ObBinding.Focused
 END FUNCTION
 
 FUNCTION CtSelectable% (ctid%)
@@ -2684,14 +2657,14 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wnid%, fid%)
 
     CASE "text"
       IF LCASE$(stoken$(1)) = "bind" THEN
-        CtBind ctid%, CtIndex.Text, stoken$(2)
+        ObBind ctid%, CtIndex.Text, stoken$(2)
       ELSE
         CtSetText ctid%, stoken$(1)
       END IF
 
     CASE "value"
       IF LCASE$(stoken$(1)) = "bind" THEN
-        CtBind ctid%, CtIndex.Value, stoken$(2)
+        ObBind ctid%, CtIndex.Value, stoken$(2)
       ELSE
         CtSetValue ctid%, stoken$(1)
       END IF
@@ -3311,6 +3284,41 @@ FUNCTION NebulaLabelRsid% (energy AS INTEGER)
 
 END FUNCTION
 
+SUB ObBind (obid%, obix%, expr$)
+  '
+  ' Binds a property to an expression in the form of ALIAS.PROPERTY,
+  ' where ALIAS refers to a control and PROPERTY specifies
+  ' a property of that control.
+  '
+  AssertIsPositive obid%, "ObBind", "obid%"
+  AssertIsPositive obix%, "ObBind", "obix%"
+
+  DIM period%
+  LET period% = INSTR(expr$, ".")
+
+  IF period% > 1 THEN
+ 
+    SELECT CASE LCASE$(LEFT$(expr$, period%))
+
+      CASE "param."
+        gobj(obid%, obix%).flags = ObBinding.Param
+
+      CASE "focused.", "sel."
+        gobj(obid%, obix%).flags = ObBinding.Focused
+
+    END SELECT
+
+    RsSet gobj(obid%, obix%).value, MID$(expr$, period% + 1)
+
+  ELSE
+
+    gobj(obid%, obix%).flags = ObBinding.None
+    RsSet gobj(obid%, obix%).value, text$
+
+  END IF
+ 
+END SUB
+
 FUNCTION ObCreate% (kind%)
  
   Assert gobids <= UBOUND(gobj, 1), "ObCreate%", "Out of object space"
@@ -3378,7 +3386,7 @@ FUNCTION ObGet% (obid%, obix%)
 
   SELECT CASE flags%
  
-    CASE BindingTarget.Param
+    CASE ObBinding.Param
       '
       ' Bound to the parent window parameter
       '
@@ -3393,7 +3401,7 @@ FUNCTION ObGet% (obid%, obix%)
         END SELECT
       END IF
 
-    CASE BindingTarget.Selected
+    CASE ObBinding.Focused
       '
       ' Bound to selected control of parent window parameter
       '
