@@ -163,9 +163,9 @@ DECLARE FUNCTION DgGarble$ (text$, percent!)
 '
 DECLARE SUB DrawBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
 DECLARE SUB DrawColor (attr%)
-DECLARE SUB DrawFile (filename AS STRING)
-DECLARE SUB DrawFileAt (filename AS STRING, offsetX AS INTEGER, offsetY AS INTEGER)
-DECLARE SUB DrawText (text AS STRING)
+DECLARE SUB DrawFile (filename$)
+DECLARE SUB DrawFileAt (filename$, sx%, sy%)
+DECLARE SUB DrawText (text$)
 DECLARE FUNCTION DrawLength% (text$)
 
 '
@@ -2277,58 +2277,59 @@ SUB DrawColor (attr%)
   COLOR (attr% AND &HF) + (attr% AND &H80) / 8, (attr% AND &H70) / 16
 END SUB
 
-SUB DrawFile (filename AS STRING)
+SUB DrawFile (filename$)
   '
   ' Draws a PCB file containing embedded color codes
   '
 
-  DIM handle AS INTEGER
-  DIM text AS STRING
+  DIM text$
+  DIM handle%
+ 
+  handle% = FREEFILE
+  OPEN filename$ FOR INPUT ACCESS READ AS #handle%
 
-  handle = FREEFILE
-  OPEN filename FOR INPUT ACCESS READ AS #handle
-
-  DO WHILE NOT EOF(handle)
-    LINE INPUT #handle, text
-    DrawText text + CHR$(ASCII.Return)
+  DO WHILE NOT EOF(handle%)
+    LINE INPUT #handle%, text$
+    DrawText text$ + CHR$(ASCII.Return)
   LOOP
 
-  CLOSE #handle
+  CLOSE #handle%
 
 END SUB
 
-SUB DrawFileAt (filename AS STRING, sx AS INTEGER, sy AS INTEGER)
-
+SUB DrawFileAt (filename$, sx%, sy%)
   '
   ' Draws a PCB file containing embedded color codes
   '
 
-  DIM lines AS INTEGER
-  DIM text AS STRING
+  DIM handle%
+  DIM lines%
+  DIM text$
 
-  OPEN filename FOR INPUT ACCESS READ AS #1
+  handle% = FREEFILE
+  OPEN filename$ FOR INPUT ACCESS READ AS #handle%
 
-  DO WHILE NOT EOF(1)
+  DO WHILE NOT EOF(handle%)
    
     '
     ' Read the next line from the file
     '
-    LINE INPUT #1, text
+    LINE INPUT #handle%, text$
 
     '
     ' Position the cursor
     '
-    LOCATE sy + lines, sx
-    lines = lines + 1
+    LOCATE sy% + lines%, sx%
+    lines% = lines% + 1
 
     '
     ' Draw the text while expanding color codes
     '
-    DrawText text
+    DrawText text$
  
   LOOP
 
-  CLOSE #1
+  CLOSE #handle%
 
 END SUB
 
@@ -2374,7 +2375,7 @@ FUNCTION DrawLength% (text$)
 
 END FUNCTION
 
-SUB DrawText (text AS STRING)
+SUB DrawText (text$)
 
   ' A PCBoard color code has the following format:
   '
@@ -2400,34 +2401,34 @@ SUB DrawText (text AS STRING)
     '
     ' Get the index of the next code
     '
-    nextAt = INSTR(startAt, text, "@X")
+    nextAt = INSTR(startAt, text$, "@X")
 
     IF nextAt = 0 THEN
       '
       ' No further codes found; print remaining characters
       '
-      IF startAt <= LEN(text) THEN
-        PRINT RIGHT$(text, LEN(text) - startAt + 1);
+      IF startAt <= LEN(text$) THEN
+        PRINT RIGHT$(text$, LEN(text$) - startAt + 1);
       END IF
       EXIT DO
 
-    'ELSEIF nextAt > LEN(text) - 3 THEN
+    'ELSEIF nextAt > LEN(text$) - 3 THEN
     '  '
     '  ' Code found, but not enough space for 4 characters
     '  '
-    '  PRINT RIGHT$(text, LEN(text) - startAt + 1);
+    '  PRINT RIGHT$(text, LEN(text$) - startAt + 1);
     '  EXIT DO
 
     ELSE
       '
       ' Code found; print characters up to the color code.
       '
-      PRINT MID$(text, startAt, nextAt - startAt);
+      PRINT MID$(text$, startAt, nextAt - startAt);
 
       '
       ' Read the color values
       '
-      DrawColor VAL("&H" + MID$(text, nextAt + 2, 2))
+      DrawColor VAL("&H" + MID$(text$, nextAt + 2, 2))
 
       '
       ' Continue with the next character after the code
