@@ -113,7 +113,6 @@ DECLARE SUB CtKey (ctid%, keypress$)
 DECLARE SUB CtKeyBoolean (ctid%, keypress$)
 DECLARE SUB CtKeyInteger (ctid%, keypress$)
 DECLARE SUB CtSet (ctid%, ctix%, value%)
-DECLARE SUB CtSetCmdRsid (ctid%, cmdrsid%)
 DECLARE SUB CtSetCmdStr (ctid%, cmd$)
 DECLARE SUB CtSetName (ctid%, value$)
 DECLARE SUB CtSetParam (ctid%, value%)
@@ -1985,10 +1984,6 @@ SUB CtSet (ctid%, ctix%, value%)
   ObSet ctid%, ctix%, value%
 END SUB
 
-SUB CtSetCmdRsid (ctid%, cmdrsid%)
-  ObSet ctid%, CtIndex.Command, cmdrsid%
-END SUB
-
 SUB CtSetCmdStr (ctid%, cmd$)
 
   DIM rsid%
@@ -1998,8 +1993,7 @@ SUB CtSetCmdStr (ctid%, cmd$)
   ' rsid% is an output parameter
   '
   RsSet rsid%, cmd$
-
-  CtSetCmdRsid ctid%, rsid%
+  CtSet ctid%, CtIndex.Command, rsid%
 
 END SUB
 
@@ -3902,7 +3896,7 @@ FUNCTION WnAddButton% (wnid%, offsetX%, offsetY%, sizeX%, text$, value$)
   DIM ctid%
   LET ctid% = gwin(wnid%, fid%)
 
-  CtSetCmdRsid ctid%, 0
+  CtSet ctid%, CtIndex.Command, 0
   CtSet ctid%, CtIndex.OffsetX, offsetX%
   CtSet ctid%, CtIndex.OffsetY, offsetY%
   CtSet ctid%, CtIndex.Popup, 0
