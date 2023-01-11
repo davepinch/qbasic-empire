@@ -117,8 +117,6 @@ DECLARE SUB CtSetCmdRsid (ctid%, cmdrsid%)
 DECLARE SUB CtSetCmdStr (ctid%, cmd$)
 DECLARE SUB CtSetName (ctid%, value$)
 DECLARE SUB CtSetParam (ctid%, value%)
-DECLARE SUB CtSetPopup (ctid%, popupctid%)
-DECLARE SUB CtSetPopupName (ctid%, wname$)
 DECLARE SUB CtSetSelected (ctid%, value%)
 DECLARE SUB CtSetText (ctid%, value$)
 DECLARE SUB CtSetValue (ctid%, value$)
@@ -2038,14 +2036,6 @@ SUB CtSetParam (ctid%, value%)
   ObSet ctid%, CtIndex.Param, value%
 END SUB
 
-SUB CtSetPopup (ctid%, popupctid%)
-  ObSet ctid%, CtIndex.Popup, popupctid%
-END SUB
-
-SUB CtSetPopupName (ctid%, wname$)
-  CtSetPopup ctid%, WnFindWnid%(wname$)
-END SUB
-
 SUB CtSetSelected (ctid%, value%)
   ObSet ctid%, CtIndex.Selected, value%
 END SUB
@@ -2620,9 +2610,6 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wnid%, fid%)
     CASE endtag
       fid% = 0
 
-    CASE "child"
-      CtSetPopupName ctid%, stoken$(1)
-
     CASE "command"
       CtSetCmdStr ctid%, stoken$(1)
 
@@ -2632,6 +2619,9 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wnid%, fid%)
     CASE "offsety"
       CtSet ctid%, CtIndex.OffsetY, VAL(stoken$(1))
 
+    CASE "popup", "child"
+      CtSet ctid%, CtIndex.Popup, WnFindWnid%(stoken$(1))
+   
     CASE "sizex"
       CtSet ctid%, CtIndex.SizeX, VAL(stoken$(1))
       
@@ -3940,7 +3930,7 @@ FUNCTION WnAddButton% (wnid%, offsetX%, offsetY%, sizeX%, text$, value$)
   CtSetCmdRsid ctid%, 0
   CtSet ctid%, CtIndex.OffsetX, offsetX%
   CtSet ctid%, CtIndex.OffsetY, offsetY%
-  CtSetPopup ctid%, 0
+  CtSet ctid%, CtIndex.Popup, 0
   CtSet ctid%, CtIndex.SizeX, sizeX%
   CtSet ctid%, CtIndex.SizeY, 1
   CtSetText ctid%, text$
