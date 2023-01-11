@@ -415,6 +415,7 @@ CONST CtIndex.Selected = 12
 CONST CtIndex.SizeX = 13
 CONST CtIndex.SizeY = 14
 CONST CtIndex.Style = 15
+CONST CtIndex.Window = 16
 
 '
 ' Event properties
@@ -533,7 +534,7 @@ DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS IN
 '
 ' Globals
 '
-DIM SHARED gobj(1 TO 200, 0 TO 15) AS PropType
+DIM SHARED gobj(1 TO 200, 0 TO 16) AS PropType
 DIM SHARED gwin(1 TO 20, 0 TO 13)  AS INTEGER
 DIM SHARED gobids                  AS INTEGER
 
