@@ -126,7 +126,6 @@ DECLARE FUNCTION CtGetName$ (ctid%)
 DECLARE FUNCTION CtGetOffsetX% (ctid%)
 DECLARE FUNCTION CtGetOffsetY% (ctid%)
 DECLARE FUNCTION CtGetParam% (ctid%)
-DECLARE FUNCTION CtGetParent% (ctid%)
 DECLARE FUNCTION CtGetPopup% (ctid%)
 DECLARE FUNCTION CtGetScreenX% (ctid%)
 DECLARE FUNCTION CtGetScreenY% (ctid%)
@@ -1809,10 +1808,6 @@ FUNCTION CtGetParam% (ctid%)
   CtGetParam = ObGet%(ctid%, CtIndex.Param)
 END FUNCTION
 
-FUNCTION CtGetParent% (ctid%)
-  CtGetParent% = ObGet%(ctid%, CtIndex.Parent)
-END FUNCTION
-
 FUNCTION CtGetPopup% (ctid%)
   CtGetPopup% = ObGet%(ctid%, CtIndex.Popup)
 END FUNCTION
@@ -1820,7 +1815,7 @@ END FUNCTION
 FUNCTION CtGetScreenX% (ctid%)
 
   DIM parentctid%
-  LET parentctid% = CtGetParent%(ctid%)
+  LET parentctid% = CtGet%(ctid%, CtIndex.Parent)
 
   IF parentctid% = 0 THEN
     CtGetScreenX% = CtGetOffsetX%(ctid%) + 1
@@ -1833,7 +1828,7 @@ END FUNCTION
 FUNCTION CtGetScreenY% (ctid%)
 
   DIM parentctid%
-  LET parentctid% = CtGetParent%(ctid%)
+  LET parentctid% = CtGet%(ctid%, CtIndex.Parent)
 
   IF parentctid% = 0 THEN
     CtGetScreenY% = CtGetOffsetY%(ctid%) + 1
@@ -1859,7 +1854,7 @@ FUNCTION CtGetStyle% (ctid%)
     ' Inherit from the parent control
     '
     DIM parentctid%
-    LET parentctid% = CtGetParent(ctid%)
+    LET parentctid% = CtGet%(ctid%, CtIndex.Parent)
 
     IF parentctid% > 0 THEN
       stid% = CtGetStyle%(parentctid%)
@@ -3391,7 +3386,7 @@ END FUNCTION
 FUNCTION ObResolveFocused% (obid%, value%)
 
   DIM parentctid%
-  LET parentctid% = CtGetParent%(obid%)
+  LET parentctid% = CtGet%(obid%, CtIndex.Parent)
   AssertIsPositive parentctid%, "ObResolveFocused%", "parentCtid%"
 
   DIM wnid%
@@ -3410,7 +3405,7 @@ END FUNCTION
 FUNCTION ObResolveParam% (obid%, value%)
 
   DIM parentctid%
-  LET parentctid% = CtGetParent%(obid%)
+  LET parentctid% = CtGet%(obid%, CtIndex.Parent)
   AssertIsPositive parentctid%, "ObResolveParam%", "parentCtid%"
 
   DIM hbid%
