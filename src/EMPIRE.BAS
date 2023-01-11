@@ -112,6 +112,7 @@ DECLARE SUB CtDrawText (wnid%, fid%)
 DECLARE SUB CtKey (ctid%, keypress$)
 DECLARE SUB CtKeyBoolean (ctid%, keypress$)
 DECLARE SUB CtKeyInteger (ctid%, keypress$)
+DECLARE SUB CtSet (ctid%, ctix%, value%)
 DECLARE SUB CtSetChildList (ctid%, listctid%)
 DECLARE SUB CtSetCmdRsid (ctid%, cmdrsid%)
 DECLARE SUB CtSetCmdStr (ctid%, cmd$)
@@ -2013,6 +2014,11 @@ FUNCTION CtSelectable% (ctid%)
   END IF
 
 END FUNCTION
+
+SUB CtSet (ctid%, ctix%, value%)
+  AssertExpected ObKind.Control, gobj(ctid%, ObIndex.Kind).value, "CtSet", "ObKind"
+  ObSet ctid%, ctix%, value%
+END SUB
 
 SUB CtSetChildList (ctid%, listctid%)
   ObSet ctid%, CtIndex.ChildList, listctid%
@@ -4014,13 +4020,19 @@ FUNCTION WnCreate%
   wincount = wincount + 1
  
   '
-  ' Create a control to represent the window
+  ' Create the root window object
+  '
+  DIM wnid%
+  LET wnid% = ObCreate%(ObKind.Window)
+
+  '
+  ' Create a container to hold controls
   '
   DIM ctid%
-  LET ctid% = ObCreate%(ObKind.Control) 'Window)
+  LET ctid% = CtCreate(CtKind.Container)
  
-  CtSetKind ctid%, CtKind.Container
-  CtSetChildList ctid%, wincount
+  CtSet ctid%, CtIndex.Window, wnid%
+  CtSet ctid%, CtIndex.ChildList, wincount
 
   '
   ' Track the control as field #0
