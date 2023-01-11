@@ -127,7 +127,6 @@ DECLARE FUNCTION CtGetScreenX% (ctid%)
 DECLARE FUNCTION CtGetScreenY% (ctid%)
 DECLARE FUNCTION CtGetSelected% (ctid%)
 DECLARE FUNCTION CtGetStyle% (ctid%)
-DECLARE FUNCTION CtGetText$ (ctid%)
 DECLARE FUNCTION CtGetValue$ (ctid%)
 DECLARE FUNCTION CtRedirected% (ctid%, pid%)
 DECLARE FUNCTION CtSelectable% (ctid%)
@@ -1770,7 +1769,7 @@ SUB CtDrawText (wnid%, fid%)
   '
   ' Print text clipped to size
   '
-  text = CtGetText(fidctid%)
+  text = RsGet$(CtGet%(fidctid%, CtIndex.Text))
   size = CtGet%(fidctid%, CtIndex.SizeX)
   IF size < 1 THEN
     PRINT text;
@@ -1858,10 +1857,6 @@ FUNCTION CtGetStyle% (ctid%)
   
 END FUNCTION
 
-FUNCTION CtGetText$ (ctid%)
-  CtGetText$ = ObGetString$(ctid%, CtIndex.Text)
-END FUNCTION
-
 FUNCTION CtGetValue$ (ctid%)
   CtGetValue$ = ObGetString$(ctid%, CtIndex.Value)
 END FUNCTION
@@ -1889,7 +1884,7 @@ SUB CtKeyBoolean (ctid%, keypress$)
   '
  
   DIM text AS STRING
-  LET text = CtGetText$(ctid%)
+  LET text = RsGet$(CtGet%(ctid%, CtIndex.Text))
 
   SELECT CASE keypress$
 
@@ -1917,7 +1912,7 @@ SUB CtKeyInteger (ctid%, keypress$)
   '
 
   DIM buf$
-  LET buf$ = CtGetText$(ctid%)
+  LET buf$ = RsGet$(CtGet%(ctid%, CtIndex.Text))
 
   SELECT CASE keypress$
    
