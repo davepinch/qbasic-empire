@@ -115,7 +115,6 @@ DECLARE SUB CtKeyInteger (ctid%, keypress$)
 DECLARE SUB CtSet (ctid%, ctix%, value%)
 DECLARE SUB CtSetName (ctid%, value$)
 DECLARE SUB CtSetParam (ctid%, value%)
-DECLARE SUB CtSetText (ctid%, value$)
 DECLARE SUB CtSetValue (ctid%, value$)
 DECLARE FUNCTION CtCreateChild% (wnid%, kind%)
 DECLARE FUNCTION CtGet% (ctid%, ctix%)
@@ -1883,26 +1882,36 @@ SUB CtKeyBoolean (ctid%, keypress$)
   ' Sends a keystroke to a boolean field.
   '
  
-  DIM text AS STRING
-  LET text = RsGet$(CtGet%(ctid%, CtIndex.Text))
+  STATIC rsid.y%
+  STATIC rsid.n%
+  IF rsid.y% = 0 THEN rsid.y% = RsCreate%("Yes")
+  IF rsid.n% = 0 THEN rsid.n% = RsCreate%("No")
+  AssertIsPositive rsid.y%, "CtKeyBoolean", "rsid.y%"
+  AssertIsPositive rsid.n%, "CtKeyBoolean", "rsid.n%"
+
+  DIM boolean%
+  LET boolean% = CtGet%(ctid%, CtIndex.Value)
+  Assert boolean% = True OR boolean% = False, "CtKeyBoolean", "boolean%"
 
   SELECT CASE keypress$
 
     CASE " "
-      SELECT CASE text
-        CASE "No"
-          CtSetText ctid%, "Yes"
-        CASE "Yes"
-          CtSetText ctid%, "No"
-      END SELECT
+      boolean% = NOT boolean%
 
     CASE "n", "N"
-      CtSetText ctid%, "No"
+      boolean% = False
 
     CASE "y", "Y"
-      CtSetText ctid%, "Yes"
+      boolean% = True
 
   END SELECT
+
+  CtSet ctid%, CtIndex.Value, boolean%
+  IF boolean% THEN
+    CtSet ctid%, CtIndex.Text, rsid.y%
+  ELSE
+    CtSet ctid%, CtIndex.Text, rsid.n%
+  END IF
 
 END SUB
 
@@ -1930,7 +1939,7 @@ SUB CtKeyInteger (ctid%, keypress$)
 
   END SELECT
 
-  CtSetText ctid%, buf$
+  ObSetString ctid%, CtIndex.Text, buf$
 
 END SUB
 
@@ -1983,10 +1992,6 @@ END SUB
 
 SUB CtSetParam (ctid%, value%)
   ObSet ctid%, CtIndex.Param, value%
-END SUB
-
-SUB CtSetText (ctid%, value$)
-  ObSetString ctid%, CtIndex.Text, value$
 END SUB
 
 SUB CtSetValue (ctid%, value$)
@@ -2580,7 +2585,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wnid%, fid%)
       IF LCASE$(stoken$(1)) = "bind" THEN
         ObBind ctid%, CtIndex.Text, stoken$(2)
       ELSE
-        CtSetText ctid%, stoken$(1)
+        CtSet ctid%, CtIndex.Text, RsCreate%(stoken$(1))
       END IF
 
     CASE "value"
@@ -3878,7 +3883,7 @@ FUNCTION WnAddButton% (wnid%, offsetX%, offsetY%, sizeX%, text$, value$)
   CtSet ctid%, CtIndex.Popup, 0
   CtSet ctid%, CtIndex.SizeX, sizeX%
   CtSet ctid%, CtIndex.SizeY, 1
-  CtSetText ctid%, text$
+  CtSet ctid%, CtIndex.Text, RsCreate%(text$)
   CtSetValue ctid%, value$
 
   WnAddButton% = fid%
