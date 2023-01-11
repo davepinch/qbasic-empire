@@ -113,7 +113,6 @@ DECLARE SUB CtKey (ctid%, keypress$)
 DECLARE SUB CtKeyBoolean (ctid%, keypress$)
 DECLARE SUB CtKeyInteger (ctid%, keypress$)
 DECLARE SUB CtSet (ctid%, ctix%, value%)
-DECLARE SUB CtSetChildList (ctid%, listctid%)
 DECLARE SUB CtSetCmdRsid (ctid%, cmdrsid%)
 DECLARE SUB CtSetCmdStr (ctid%, cmd$)
 DECLARE SUB CtSetKind (ctid%, kind%)
@@ -2018,10 +2017,6 @@ END FUNCTION
 SUB CtSet (ctid%, ctix%, value%)
   AssertExpected ObKind.Control, gobj(ctid%, ObIndex.Kind).value, "CtSet", "ObKind"
   ObSet ctid%, ctix%, value%
-END SUB
-
-SUB CtSetChildList (ctid%, listctid%)
-  ObSet ctid%, CtIndex.ChildList, listctid%
 END SUB
 
 SUB CtSetCmdRsid (ctid%, cmdrsid%)
