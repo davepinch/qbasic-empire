@@ -122,7 +122,6 @@ DECLARE SUB CtSetText (ctid%, value$)
 DECLARE SUB CtSetValue (ctid%, value$)
 DECLARE FUNCTION CtCreateChild% (wnid%, kind%)
 DECLARE FUNCTION CtGet% (ctid%, ctix%)
-DECLARE FUNCTION CtGetChildList% (ctid%)
 DECLARE FUNCTION CtGetCmdRsid% (ctid%)
 DECLARE FUNCTION CtGetName$ (ctid%)
 DECLARE FUNCTION CtGetOffsetX% (ctid%)
@@ -1795,10 +1794,6 @@ FUNCTION CtGet% (ctid%, ctix%)
   CtGet% = ObGet%(ctid%, ctix%)
 END FUNCTION
 
-FUNCTION CtGetChildList% (ctid%)
-  CtGetChildList% = ObGet%(ctid%, CtIndex.ChildList)
-END FUNCTION
-
 FUNCTION CtGetCmdRsid% (ctid%)
   CtGetCmdRsid% = ObGet%(ctid%, CtIndex.Command)
 END FUNCTION
@@ -3405,7 +3400,7 @@ FUNCTION ObResolveFocused% (obid%, value%)
   AssertIsPositive parentctid%, "ObResolveFocused%", "parentCtid%"
 
   DIM wnid%
-  LET wnid% = CtGetChildList%(parentctid%)
+  LET wnid% = CtGet%(parentctid%, CtIndex.ChildList)
 
   DIM sel%
   LET sel% = CtGetSelected%(parentctid%)
