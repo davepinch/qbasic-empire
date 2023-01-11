@@ -259,7 +259,6 @@ DECLARE FUNCTION StGetName$ (stid%)
 DECLARE FUNCTION StGetSelectedColor% (stid%)
 DECLARE FUNCTION StGetTextColor% (stid%)
 DECLARE SUB StSet (stid%, stix%, value%)
-DECLARE SUB StSetName (stid%, name$)
 
 '
 ' Terminal API
@@ -2799,7 +2798,7 @@ FUNCTION ExecCmdStid% (ntoken%, stoken$(), stid%)
       stid% = 0
 
     CASE "name"
-      StSetName stid%, stoken$(1)
+      StSet stid%, StIndex.Name, RsCreate%(stoken$(1))
   
     CASE "selectedcolor"
       StSet stid%, StIndex.SelectedColor, VAL(stoken$(1))
@@ -3633,10 +3632,6 @@ END FUNCTION
 SUB StSet (stid%, stix%, value%)
   AssertExpected ObKind.Style, gobj(stid%, ObIndex.Kind).value, "StSet", "ObKind"
   ObSet stid%, stix%, value%
-END SUB
-
-SUB StSetName (stid%, name$)
-  ObSetString stid%, StIndex.Name, name$
 END SUB
 
 SUB TrBegin
