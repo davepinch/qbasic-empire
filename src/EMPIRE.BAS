@@ -123,8 +123,6 @@ DECLARE SUB CtSetParent (ctid%, parentctid%)
 DECLARE SUB CtSetPopup (ctid%, popupctid%)
 DECLARE SUB CtSetPopupName (ctid%, wname$)
 DECLARE SUB CtSetSelected (ctid%, value%)
-DECLARE SUB CtSetSizeX (ctid%, sizeX%)
-DECLARE SUB CtSetSizeY (ctid%, sizeY%)
 DECLARE SUB CtSetStyle (ctid%, stid%)
 DECLARE SUB CtSetText (ctid%, value$)
 DECLARE SUB CtSetValue (ctid%, value$)
@@ -1469,10 +1467,10 @@ SUB CtDrawBox2 (ctid%)
   DIM row   AS INTEGER
  
   DIM sizeX AS INTEGER
-  DIM sizeY AS INTEGER
+  DIM SizeY AS INTEGER
 
   sizeX = CtGet%(ctid%, CtIndex.SizeX)
-  sizeY = CtGet%(ctid%, CtIndex.SizeY)
+  SizeY = CtGet%(ctid%, CtIndex.SizeY)
  
   '
   ' Calculate screen coordinates
@@ -1506,7 +1504,7 @@ SUB CtDrawBox2 (ctid%)
   PRINT STRING$(sizeX - 2, 196);
   PRINT CHR$(191);
 
-  FOR row = 1 TO sizeY - 2
+  FOR row = 1 TO SizeY - 2
 
     '
     ' Get the index of the left border character
@@ -1532,7 +1530,7 @@ SUB CtDrawBox2 (ctid%)
     '
     ' Get the index of the right border char
     '
-    idx = sizeY - row - 1
+    idx = SizeY - row - 1
     IF idx > UBOUND(ch) THEN idx = 0
 
     '
@@ -1546,7 +1544,7 @@ SUB CtDrawBox2 (ctid%)
   '
   ' Bottom border
   '
-  LOCATE sy% + sizeY% - 1, sx%
+  LOCATE sy% + SizeY% - 1, sx%
   COLOR fc(0), bc(0)
   PRINT CHR$(192);
   PRINT STRING$(sizeX - 2, 196);
@@ -1671,7 +1669,7 @@ SUB CtDrawSeparator (ctid%)
 
   DIM row   AS INTEGER
   DIM sizeX AS INTEGER
-  DIM sizeY AS INTEGER
+  DIM SizeY AS INTEGER
   DIM sx    AS INTEGER
   DIM sy    AS INTEGER
 
@@ -1679,7 +1677,7 @@ SUB CtDrawSeparator (ctid%)
   LET stid% = CtGetStyle(ctid%)
  
   sizeX = CtGet%(ctid%, CtIndex.SizeX)
-  sizeY = CtGet%(ctid%, CtIndex.SizeY)
+  SizeY = CtGet%(ctid%, CtIndex.SizeY)
   sx = CtGetScreenX%(ctid%)
   sy = CtGetScreenY%(ctid%)
 
@@ -1716,7 +1714,7 @@ SUB CtDrawSeparator (ctid%)
         PRINT CHR$(196);  ' Ä
     END SELECT
 
-  ELSEIF sizeY > 0 THEN
+  ELSEIF SizeY > 0 THEN
    
     '
     ' Top edge
@@ -1730,7 +1728,7 @@ SUB CtDrawSeparator (ctid%)
         PRINT CHR$(179);  ' ³
     END SELECT
 
-    FOR row = sy + 1 TO sy + sizeY - 2
+    FOR row = sy + 1 TO sy + SizeY - 2
       LOCATE row, sx
       PRINT CHR$(179);
     NEXT
@@ -1738,8 +1736,8 @@ SUB CtDrawSeparator (ctid%)
     '
     ' Bottom edge
     '
-    LOCATE sy + sizeY - 1, sx
-    SELECT CASE SCREEN(sy + sizeY - 1, sx)
+    LOCATE sy + SizeY - 1, sx
+    SELECT CASE SCREEN(sy + SizeY - 1, sx)
       CASE 196            ' Ä
         PRINT CHR$(193);  ' Á
       CASE 205            ' Í
@@ -2066,14 +2064,6 @@ END SUB
 
 SUB CtSetSelected (ctid%, value%)
   ObSet ctid%, CtIndex.Selected, value%
-END SUB
-
-SUB CtSetSizeX (ctid%, sizeX%)
-  ObSet ctid%, CtIndex.SizeX, sizeX%
-END SUB
-
-SUB CtSetSizeY (ctid%, sizeY%)
-  ObSet ctid%, CtIndex.SizeY, sizeY%
 END SUB
 
 SUB CtSetStyle (ctid%, stid%)
@@ -2663,10 +2653,10 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wnid%, fid%)
       CtSetOffsetY ctid%, VAL(stoken$(1))
 
     CASE "sizex"
-      CtSetSizeX ctid%, VAL(stoken$(1))
-
+      CtSet ctid%, CtIndex.SizeX, VAL(stoken$(1))
+      
     CASE "sizey"
-      CtSetSizeY ctid%, VAL(stoken$(1))
+      CtSet ctid%, CtIndex.SizeY, VAL(stoken$(1))
 
     CASE "style"
       CtSetStyle ctid%, WnFindStid%(stoken$(1))
@@ -3971,8 +3961,8 @@ FUNCTION WnAddButton% (wnid%, offsetX%, offsetY%, sizeX%, text$, value$)
   CtSetOffsetX ctid%, offsetX%
   CtSetOffsetY ctid%, offsetY%
   CtSetPopup ctid%, 0
-  CtSetSizeX ctid%, sizeX%
-  CtSetSizeY ctid%, 1
+  CtSet ctid%, CtIndex.SizeX, sizeX%
+  CtSet ctid%, CtIndex.SizeY, 1
   CtSetText ctid%, text$
   CtSetValue ctid%, value$
 
