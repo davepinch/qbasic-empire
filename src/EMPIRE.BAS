@@ -1383,6 +1383,9 @@ SUB CtDrawBox (ctid%)
     CASE 2:
       CtDrawBox2 ctid%
 
+    CASE ELSE
+      AssertFail "CtDrawBox", "Unsupported border type"
+
   END SELECT
 
 END SUB
@@ -2220,13 +2223,12 @@ END SUB
 
 SUB DgStart (hbid%)
  
-  DIM startfile$
-
   IF hbid% <> listening THEN
    
     listening = 0
 
-    startfile$ = RsGet$(HbGet%(hbid%, HbIndex.StartFile))
+    DIM startfile$
+    LET startfile$ = RsGet$(HbGet%(hbid%, HbIndex.StartFile))
     IF LEN(startfile$) > 0 THEN
       TrFile startfile$
     END IF
@@ -2551,14 +2553,20 @@ FUNCTION ExecCmd% (cmd$)
   SHARED wnid%
 
   DIM result%
-  DIM ntoken%
+ 
+  '
+  ' Parse the command into tokens
+  '
   DIM stoken$(0 TO 5)
-
-  ntoken% = Split(cmd$, stoken$())
+  DIM ntoken%
+  LET ntoken% = Split(cmd$, stoken$())
   IF ntoken% = 0 THEN
     ExecCmd% = CmdResult.OK
     EXIT FUNCTION
   ELSE
+    '
+    ' Token #0 is the command name
+    '
     stoken$(0) = LCASE$(stoken$(0))
   END IF
 
@@ -2781,7 +2789,8 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wni
       hbid% = HbCreate%
 
     CASE "listen"
-      DIM listenhbid%: listenhbid% = VAL(stoken$(1))
+      DIM listenhbid%
+      LET listenhbid% = VAL(stoken$(1))
       IF listenhbid% = 0 THEN
         DgStop
       ELSE
@@ -3317,6 +3326,7 @@ FUNCTION ObFindString% (kind%, obix%, value$)
   '
   ' Finds the first object where a property has the specified string
   '
+  DIM obid%
   FOR obid% = 1 TO UBOUND(gobj, 1)
      
     IF gobj(obid%, ObIndex.Kind).value = kind% THEN
@@ -3721,8 +3731,8 @@ END SUB
 SUB UI.Run
  
   DIM menuwnid AS INTEGER
-  DIM cresult AS INTEGER
-  DIM wresult AS WnResultType
+  DIM cresult  AS INTEGER
+  DIM wresult  AS WnResultType
 
   UI.SetPage UIPage.Atlas
 
@@ -4003,8 +4013,6 @@ FUNCTION WnMapKey% (wnid%, pressed$)
 
   DIM popupctid    AS INTEGER
   DIM cmdrsid      AS INTEGER
-  DIM exitLeft     AS INTEGER
-  DIM exitRight    AS INTEGER
   DIM selected     AS INTEGER
   DIM selectedCtid AS INTEGER
 
@@ -4013,8 +4021,15 @@ FUNCTION WnMapKey% (wnid%, pressed$)
   ' ArrowExit bit 0 means to exit when navigating left
   ' ArrowExit bit 1 means to exit when nagivating right
   '
-  exitLeft = win(wnid%).arrowexit AND &H1
-  exitRight = win(wnid%).arrowexit AND &H2
+  DIM exitLeft%
+  LET exitLeft% = win(wnid%).arrowexit AND &H1
+ 
+  DIM exitRight%
+  LET exitRight% = win(wnid%).arrowexit AND &H2
+ 
+  '
+  ' Get the index of the control with focus
+  '
   selected = CtGetSelected(wnidctid%)
   IF selected > 0 THEN
     selectedCtid = gwin(wnid%, selected)
@@ -4053,7 +4068,7 @@ FUNCTION WnMapKey% (wnid%, pressed$)
       WnMapKey% = WnAction.SelectFirst
 
     CASE CHR$(0) + CHR$(ScanCode.Left)
-      IF exitLeft THEN
+      IF exitLeft% THEN
         WnMapKey% = WnAction.ExitLeft
       ELSE
         WnMapKey% = WnAction.SelectPrevious
@@ -4066,7 +4081,7 @@ FUNCTION WnMapKey% (wnid%, pressed$)
       WnMapKey% = WnAction.SelectFirst
 
     CASE CHR$(0) + CHR$(ScanCode.Right)
-      IF exitRight THEN
+      IF exitRight% THEN
         WnMapKey% = WnAction.ExitRight
       ELSE
         WnMapKey% = WnAction.SelectNext
@@ -4076,7 +4091,7 @@ FUNCTION WnMapKey% (wnid%, pressed$)
       WnMapKey% = WnAction.SelectPrevious
 
     CASE ELSE
-      WnMapKey = WnAction.None
+      WnMapKey% = WnAction.None
 
   END SELECT
 
