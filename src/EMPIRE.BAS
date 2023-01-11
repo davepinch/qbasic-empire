@@ -260,7 +260,6 @@ DECLARE FUNCTION StGetSelectedColor% (stid%)
 DECLARE FUNCTION StGetTextColor% (stid%)
 DECLARE SUB StSet (stid%, stix%, value%)
 DECLARE SUB StSetName (stid%, name$)
-DECLARE SUB StSetSelectedColor (stid%, selectedcolor%)
 DECLARE SUB StSetTextColor (stid%, textcolor%)
 
 '
@@ -2804,7 +2803,7 @@ FUNCTION ExecCmdStid% (ntoken%, stoken$(), stid%)
       StSetName stid%, stoken$(1)
   
     CASE "selectedcolor"
-      StSetSelectedColor stid%, VAL(stoken$(1))
+      StSet stid%, StIndex.SelectedColor, VAL(stoken$(1))
 
     CASE "textcolor"
       StSetTextColor stid%, VAL(stoken$(1))
@@ -3639,10 +3638,6 @@ END SUB
 
 SUB StSetName (stid%, name$)
   ObSetString stid%, StIndex.Name, name$
-END SUB
-
-SUB StSetSelectedColor (stid%, selectedcolor%)
-  ObSet stid%, StIndex.SelectedColor, selectedcolor%
 END SUB
 
 SUB StSetTextColor (stid%, textcolor%)
