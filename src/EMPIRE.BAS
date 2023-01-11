@@ -401,20 +401,20 @@ CONST CtKind.Nebula = 100
 ' Control properties
 '
 CONST CtIndex.Value = 1
-CONST CtIndex.Parent = 2
-CONST CtIndex.Kind = 3
-CONST CtIndex.Name = 4
-CONST CtIndex.Text = 5
-CONST CtIndex.ChildList = 6
-CONST CtIndex.Command = 7
-CONST CtIndex.OffsetX = 8
-CONST CtIndex.OffsetY = 9
-CONST CtIndex.Param = 10
-CONST CtIndex.Popup = 11
-CONST CtIndex.Selected = 12
-CONST CtIndex.SizeX = 13
-CONST CtIndex.SizeY = 14
-CONST CtIndex.Style = 15
+CONST CtIndex.ChildList = 2
+CONST CtIndex.Command = 3
+CONST CtIndex.Kind = 4
+CONST CtIndex.Name = 5
+CONST CtIndex.OffsetX = 6
+CONST CtIndex.OffsetY = 7
+CONST CtIndex.Param = 8
+CONST CtIndex.Parent = 9
+CONST CtIndex.Popup = 10
+CONST CtIndex.Selected = 11
+CONST CtIndex.SizeX = 12
+CONST CtIndex.SizeY = 13
+CONST CtIndex.Style = 14
+CONST CtIndex.Text = 15
 CONST CtIndex.Window = 16
 
 '
