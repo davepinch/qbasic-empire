@@ -304,14 +304,14 @@ DECLARE FUNCTION VideoGetVisual% ()
 '
 DECLARE SUB WnClose (wnid%)
 DECLARE SUB WnDraw (wnid%)
-DECLARE SUB WnOpen (wnid%)
 DECLARE SUB WnRefreshField (wnid%, fid%)
+DECLARE SUB WnRender (wnid%)
 DECLARE SUB WnRun (wnid%, result AS WnResultType)
 DECLARE SUB WnRunName (idname$)
 DECLARE SUB WnSelect (wnid%, fid%)
-DECLARE SUB WnSelectNext (wnid%)
 DECLARE SUB WnSelectFirst (wnid%)
 DECLARE SUB WnSelectLast (wnid%)
+DECLARE SUB WnSelectNext (wnid%)
 DECLARE SUB WnSelectPrevious (wnid%)
 DECLARE FUNCTION WnAddButton% (wnid%, offsetX%, offsetY%, sizeX%, text$, value$)
 DECLARE FUNCTION WnCreate% ()
@@ -4097,7 +4097,33 @@ FUNCTION WnMapKey% (wnid%, pressed$)
 
 END FUNCTION
 
-SUB WnOpen (wnid%)
+SUB WnRefreshField (wnid%, fid%)
+
+  DIM ctid%
+  DIM n AS INTEGER
+
+  IF winstacked > 0 THEN
+    IF winstack(winstacked).wnid = wnid% THEN
+     
+      FOR n = 1 TO win(wnid%).fields
+       
+        ctid% = gwin(wnid%, n)
+
+        IF n = fid% THEN
+          CtDraw wnid%, n
+        ELSEIF CtRedirected%(ctid%, CtIndex.Text) THEN
+          CtDraw wnid%, n
+        ELSEIF CtRedirected%(ctid%, CtIndex.Value) THEN
+          CtDraw wnid%, n
+        END IF
+      NEXT
+
+    END IF
+  END IF
+
+END SUB
+
+SUB WnRender (wnid%)
   '
   ' Displays the window and gives it focus
   '
@@ -4145,32 +4171,6 @@ SUB WnOpen (wnid%)
 
 END SUB
 
-SUB WnRefreshField (wnid%, fid%)
-
-  DIM ctid%
-  DIM n AS INTEGER
-
-  IF winstacked > 0 THEN
-    IF winstack(winstacked).wnid = wnid% THEN
-     
-      FOR n = 1 TO win(wnid%).fields
-       
-        ctid% = gwin(wnid%, n)
-
-        IF n = fid% THEN
-          CtDraw wnid%, n
-        ELSEIF CtRedirected%(ctid%, CtIndex.Text) THEN
-          CtDraw wnid%, n
-        ELSEIF CtRedirected%(ctid%, CtIndex.Value) THEN
-          CtDraw wnid%, n
-        END IF
-      NEXT
-
-    END IF
-  END IF
-
-END SUB
-
 SUB WnRun (wnid%, result AS WnResultType)
 
   AssertIsPositive wnid%, "WnRun", "wnid%"
@@ -4181,7 +4181,7 @@ SUB WnRun (wnid%, result AS WnResultType)
   DIM nopopups AS INTEGER
   DIM pressed  AS STRING
 
-  WnOpen wnid%
+  WnRender wnid%
 
   DO
 
