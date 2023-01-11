@@ -126,7 +126,6 @@ DECLARE FUNCTION CtGetName$ (ctid%)
 DECLARE FUNCTION CtGetOffsetX% (ctid%)
 DECLARE FUNCTION CtGetOffsetY% (ctid%)
 DECLARE FUNCTION CtGetParam% (ctid%)
-DECLARE FUNCTION CtGetPopup% (ctid%)
 DECLARE FUNCTION CtGetScreenX% (ctid%)
 DECLARE FUNCTION CtGetScreenY% (ctid%)
 DECLARE FUNCTION CtGetSelected% (ctid%)
@@ -1806,10 +1805,6 @@ END FUNCTION
 
 FUNCTION CtGetParam% (ctid%)
   CtGetParam = ObGet%(ctid%, CtIndex.Param)
-END FUNCTION
-
-FUNCTION CtGetPopup% (ctid%)
-  CtGetPopup% = ObGet%(ctid%, CtIndex.Popup)
 END FUNCTION
 
 FUNCTION CtGetScreenX% (ctid%)
@@ -4270,7 +4265,7 @@ FUNCTION WnMapKey% (wnid%, pressed$)
   selected = CtGetSelected(wnidctid%)
   IF selected > 0 THEN
     selectedCtid = gwin(wnid%, selected)
-    popupctid = CtGetPopup%(selectedCtid)
+    popupctid = CtGet%(selectedCtid, CtIndex.Popup)
     cmdrsid = CtGet%(selectedCtid, CtIndex.Command)
   END IF
 
@@ -4441,13 +4436,13 @@ SUB WnRun (wnid%, result AS WnResultType)
        
         EXIT DO
 
-      ELSEIF CtGetPopup%(selectedCtid%) = 0 THEN
+      ELSEIF CtGet%(selectedCtid%, CtIndex.Popup) = 0 THEN
        
         EXIT DO
 
       ELSE
      
-        WnRun CtGetPopup%(selectedCtid%), result
+        WnRun CtGet%(selectedCtid%, CtIndex.Popup), result
        
         SELECT CASE result.action
          
