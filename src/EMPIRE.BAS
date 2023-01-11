@@ -238,6 +238,8 @@ DECLARE FUNCTION ObFindString% (kind%, obix%, value$)
 DECLARE FUNCTION ObGet% (obid%, obix%)
 DECLARE FUNCTION ObGetKind% (obid%)
 DECLARE FUNCTION ObGetString$ (obid%, obix%)
+DECLARE FUNCTION ObResolveParam% (obid%, value%)
+DECLARE FUNCTION ObResolveFocused% (obid%, value%)
 DECLARE SUB ObBind (obid%, obix%, expr$)
 DECLARE SUB ObSet (obid%, obix%, value%)
 DECLARE SUB ObSetString (obid%, obix%, value$)
@@ -3397,50 +3399,19 @@ FUNCTION ObGet% (obid%, obix%)
   DIM value%
   LET value% = gobj(obid%, obix%).value
 
-  IF flags% = 0 THEN
-    ObGet% = value%
-    EXIT FUNCTION
-  END IF
-
-  DIM parentctid%
-  LET parentctid% = CtGetParent%(obid%)
-
   SELECT CASE flags%
- 
-    CASE ObBinding.Param
-      '
-      ' Bound to the parent window parameter
-      '
-      DIM hbid%
-      LET hbid% = CtGetParam%(parentctid%)
-      IF hbid% > 0 THEN
-        SELECT CASE RsGet$(value%)
-          CASE "backdrop"
-            ObGet% = HbGet%(hbid%, HbIndex.Backdrop)
-          CASE "title"
-            ObGet% = HbGet%(hbid%, HbIndex.Name)
-        END SELECT
-      END IF
+
+    CASE 0:
+      ObGet% = value%
 
     CASE ObBinding.Focused
-      '
-      ' Bound to selected control of parent window parameter
-      '
-      DIM sel%
-      LET sel% = CtGetSelected%(parentctid%)
-      
-      DIM wnid%
-      LET wnid% = CtGetChildList%(parentctid%)
+      ObGet% = ObResolveFocused%(obid%, value%)
 
-      DIM selctid%
-      LET selctid% = gwin(wnid%, sel%)
-
-      ObGet% = ObGet%(selctid%, CtIndex.Value)
+    CASE ObBinding.Param
+      ObGet% = ObResolveParam%(obid%, value%)
 
     CASE ELSE
-   
-      AssertFail "ObGet%", "Not implemented"
-      ObGet% = value%
+      AssertFail "ObGet%", "Unsupported binding"
 
   END SELECT
 
@@ -3456,6 +3427,46 @@ FUNCTION ObGetString$ (obid%, obix%)
   LET rsid% = ObGet%(obid%, obix%)
 
   ObGetString$ = RsGet$(rsid%)
+
+END FUNCTION
+
+FUNCTION ObResolveFocused% (obid%, value%)
+
+  DIM parentctid%
+  LET parentctid% = CtGetParent%(obid%)
+  AssertIsPositive parentctid%, "ObResolveFocused%", "parentCtid%"
+
+  DIM wnid%
+  LET wnid% = CtGetChildList%(parentctid%)
+
+  DIM sel%
+  LET sel% = CtGetSelected%(parentctid%)
+     
+  DIM selctid%
+  LET selctid% = gwin(wnid%, sel%)
+
+  ObResolveFocused% = CtGet%(selctid%, CtIndex.Value)
+
+END FUNCTION
+
+FUNCTION ObResolveParam% (obid%, value%)
+
+  DIM parentctid%
+  LET parentctid% = CtGetParent%(obid%)
+  AssertIsPositive parentctid%, "ObResolveParam%", "parentCtid%"
+
+  DIM hbid%
+  LET hbid% = CtGetParam%(parentctid%)
+  AssertIsPositive hbid%, "ObResolveParam", "hbid%"
+
+  IF hbid% > 0 THEN
+    SELECT CASE RsGet$(value%)
+      CASE "backdrop"
+        ObResolveParam% = HbGet%(hbid%, HbIndex.Backdrop)
+      CASE "title"
+        ObResolveParam% = HbGet%(hbid%, HbIndex.Name)
+    END SELECT
+  END IF
 
 END FUNCTION
 
@@ -3989,7 +4000,7 @@ FUNCTION WnCreate%
   ' Create a control to represent the window
   '
   DIM ctid%
-  LET ctid% = ObCreate%(ObKind.Window)
+  LET ctid% = ObCreate%(ObKind.Control) 'Window)
  
   CtSetKind ctid%, CtKind.Window
   CtSetChildList ctid%, wincount
