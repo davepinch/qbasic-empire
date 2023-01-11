@@ -222,6 +222,7 @@ DECLARE FUNCTION LsCapacity% ()
 DECLARE FUNCTION LsCreate% ()
 DECLARE FUNCTION LsCount% (lsid%)
 DECLARE FUNCTION LsGet% (lsid%, n%)
+DECLARE SUB LsSet (lsid%, n%, value%)
 
 '
 ' Nebula
@@ -3223,6 +3224,26 @@ FUNCTION LsGet% (lsid%, n%)
   LsGet% = ObGet%(lsid%, lsix%)
 
 END FUNCTION
+
+SUB LsSet (lsid%, n%, value%)
+  '
+  ' Sets the value at the 1-based position of the list.
+  '
+  AssertIsPositive lsid%, "LsSet", "lsid%"
+  AssertIsPositive fid%, "LsSet", "n%"
+
+  '
+  ' Convert the 1-based position to a property index
+  '
+  DIM lsix%
+  LET lsix% = n% + LsIndex.First - 1
+
+  '
+  ' Save the value
+  '
+  ObSet lsid%, lsix%, value%
+
+END SUB
 
 FUNCTION NebulaLabel$ (energy AS INTEGER)
 
