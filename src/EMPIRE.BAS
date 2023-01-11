@@ -502,15 +502,7 @@ CONST UIPage.Atlas = 1
 CONST UIPage.Terminal = 2
 
 '
-' Window properties
-'
-CONST WnIndex.ArrowExit = 1
-CONST WnIndex.Children = 2
-CONST WnIndex.Name = 3
-CONST WnIndex.Selected = 4
-
-'
-' WnAction* constants
+' Window actions
 '
 CONST WnAction.None = 0
 CONST WnAction.Cancel = 1
@@ -523,6 +515,15 @@ CONST WnAction.SelectFirst = 12
 CONST WnAction.SelectLast = 13
 CONST WnAction.SelectNext = 14
 CONST WnAction.SelectPrevious = 15
+
+'
+' Window properties
+'
+CONST WnIndex.ArrowExit = 1
+CONST WnIndex.Container = 2
+CONST WnIndex.Name = 3
+CONST WnIndex.Focused = 4
+CONST WnIndex.Param = 5
 
 '
 ' Global atlas variables
