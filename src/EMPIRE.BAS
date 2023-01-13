@@ -237,9 +237,9 @@ DECLARE SUB PrSet (prid%, prix%, value%)
 '
 ' Resource API
 '
-DECLARE SUB RsSet (outrsid%, value$)
 DECLARE FUNCTION RsCreate% (value$)
 DECLARE FUNCTION RsGet$ (rsid%)
+DECLARE SUB RsSet (outrsid%, value$)
 
 '
 ' UI
@@ -1267,8 +1267,7 @@ FUNCTION CtCreate% (kind%)
   '
   ' Creates an empty control
   '
-  DIM ctid%
-  LET ctid% = ObCreate%(ObKind.Control)
+  DIM ctid%: ctid% = ObCreate%(ObKind.Control)
   AssertIsPositive ctid%, "CtCreate%", "ctid%"
 
   CtSet ctid%, CtIndex.Kind, kind%
@@ -1283,15 +1282,13 @@ FUNCTION CtCreateChild% (wnid%, kind%)
   '
   ' Get a new field index
   '
-  DIM fid%
-  LET fid% = win(wnid%).fields + 1
+  DIM fid%: fid% = win(wnid%).fields + 1
   win(wnid%).fields = fid%
 
   '
   ' Allocate a control
   '
-  DIM ctid%
-  LET ctid% = ObCreate%(ObKind.Control)
+  DIM ctid%: ctid% = ObCreate%(ObKind.Control)
   gwin(wnid%, fid%) = ctid%
 
   '
@@ -2944,8 +2941,7 @@ FUNCTION ExecResource% (rsid%)
 
   AssertIsPositive rsid%, "ExecResource%", "rsid%"
 
-  DIM cmd$
-  LET cmd$ = RsGet$(rsid%)
+  DIM cmd$: cmd$ = RsGet$(rsid%)
 
   IF LEN(cmd$) > 0 THEN
     ExecResource% = ExecCmd%(cmd$)
@@ -2997,7 +2993,7 @@ SUB GameMoveOffset (offsetX%, offsetY%)
     LET hbid% = area(aid).hbid
       
     '
-    ' Run the window name handling this habitat
+    ' Run the window handling this habitat
     '
     DIM hbidwnid%
     LET hbidwnid% = HbGet%(hbid%, HbIndex.Window)
@@ -3903,15 +3899,15 @@ FUNCTION WnCreate%
   '
   ' Create the root window object
   '
-  DIM wnid%
-  LET wnid% = ObCreate%(ObKind.Window)
+  DIM wnid%: wnid% = ObCreate%(ObKind.Window)
+  AssertIsPositive wnid%, "WnCreate%", "wnid%"
 
   '
   ' Create a container to hold controls
   '
-  DIM ctid%
-  LET ctid% = CtCreate(CtKind.Container)
- 
+  DIM ctid%: ctid% = CtCreate(CtKind.Container)
+  AssertIsPositive ctid%, "WnCreate%", "ctid%"
+
   CtSet ctid%, CtIndex.Window, wnid%
   CtSet ctid%, CtIndex.ChildList, wincount
 
