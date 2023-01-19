@@ -161,6 +161,7 @@ DECLARE SUB EvSetValue (evid%, value%)
 DECLARE FUNCTION EvCreate% ()
 DECLARE FUNCTION EvFind% (name$)
 DECLARE FUNCTION EvGetValue% (evid%)
+DECLARE FUNCTION EvMap% (name$)
 DECLARE FUNCTION EvParseOperator% (opname$)
 DECLARE FUNCTION EvTestTrigger% (evid%, tid%)
 
@@ -1979,6 +1980,9 @@ FUNCTION CtMap% (name$)
     CASE "Popup"
       CtMap% = CtIndex.Popup
 
+    CASE "Schema"
+      CtMap% = CtIndex.Schema
+
     CASE "Selected"
       CtMap% = CtIndex.Selected
 
@@ -2464,6 +2468,26 @@ SUB EvIncrement (name$)
   END IF
 
 END SUB
+
+FUNCTION EvMap% (name$)
+
+  SELECT CASE name$
+
+    CASE "Name"
+      EvMap% = EvIndex.Name
+
+    CASE "Schema"
+      EvMap% = EvIndex.Schema
+
+    CASE "Value"
+      EvMap% = EvIndex.Value
+
+    CASE ELSE
+      EvMap% = ObIndexInvalid
+
+  END SELECT
+
+END FUNCTION
 
 FUNCTION EvParseOperator% (opname$)
 
@@ -3147,6 +3171,9 @@ FUNCTION HbMap% (name$)
     CASE "Name"
       HbMap% = HbIndex.Name
 
+    CASE "Schema"
+      HbMap% = HbIndex.Schema
+
     CASE "StartFile"
       HbMap% = HbIndex.StartFile
 
@@ -3508,6 +3535,9 @@ FUNCTION PrMap% (name$)
     CASE "Label"
       PrMap% = PrIndex.Label
 
+    CASE "Schema"
+      PrMap% = PrIndex.Schema
+
     CASE ELSE
       PrMap% = ObIndexInvalid
 
@@ -3786,6 +3816,9 @@ FUNCTION StMap% (name$)
 
     CASE "Name"
       StMap% = StIndex.Name
+
+    CASE "Schema"
+      StMap% = StIndex.Schema
 
     CASE "SelectedColor"
       StMap% = StIndex.SelectedColor
@@ -4340,6 +4373,9 @@ FUNCTION WnMap% (name$)
 
     CASE "Param"
       WnMap% = WnIndex.Param
+
+    CASE "Schema"
+      WnMap% = WnIndex.Schema
 
     CASE ELSE
       WnMap% = ObIndexInvalid
