@@ -113,7 +113,6 @@ DECLARE SUB CtKey (ctid%, keypress$)
 DECLARE SUB CtKeyBoolean (ctid%, keypress$)
 DECLARE SUB CtKeyInteger (ctid%, keypress$)
 DECLARE SUB CtSet (ctid%, ctix%, value%)
-DECLARE SUB CtSetName (ctid%, value$)
 DECLARE SUB CtSetParam (ctid%, value%)
 DECLARE SUB CtSetValue (ctid%, value$)
 DECLARE FUNCTION CtCreateChild% (wnid%, kind%)
@@ -2058,10 +2057,6 @@ SUB CtSet (ctid%, ctix%, value%)
   ObSet ctid%, ctix%, value%
 END SUB
 
-SUB CtSetName (ctid%, value$)
-  ObSetString ctid%, CtIndex.Name, value$
-END SUB
-
 SUB CtSetParam (ctid%, value%)
   ObSet ctid%, CtIndex.Param, value%
 END SUB
@@ -2998,7 +2993,7 @@ FUNCTION ExecCmdWnid% (ntoken%, stoken$(), wnid%, fid%)
       win(wnid%).arrowexit = VAL(stoken$(1))
 
     CASE ".name"
-      CtSetName wnidctid%, stoken$(1)
+      CtSet wnidctid%, CtIndex.Name, RsCreate%(stoken$(1))
  
     CASE ".param"
       CtSetParam wnidctid%, VAL(stoken$(2))
