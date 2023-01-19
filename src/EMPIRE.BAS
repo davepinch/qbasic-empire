@@ -258,7 +258,6 @@ DECLARE SUB ShPrint (text$)
 DECLARE FUNCTION StCreate% ()
 DECLARE FUNCTION StFind% (name$)
 DECLARE FUNCTION StGet% (stid%, stid%)
-DECLARE FUNCTION StGetBorderType% (stid%)
 DECLARE FUNCTION StGetName$ (stid%)
 DECLARE FUNCTION StGetSelectedColor% (stid%)
 DECLARE FUNCTION StMap% (name$)
@@ -1355,7 +1354,7 @@ SUB CtDrawBox (ctid%)
   DIM stid%
   LET stid% = CtGetStyle(ctid%)
 
-  SELECT CASE StGetBorderType%(stid%)
+  SELECT CASE StGet%(stid%, StIndex.BorderType)
  
     CASE 0:
       CtDrawBox0 ctid%
@@ -3799,10 +3798,6 @@ END FUNCTION
 FUNCTION StGet% (stid%, stix%)
   AssertExpected ObSchema.Style, gobj(stid%, ObIndex.Schema).value, "StGet%", "ObSchema"
   StGet% = ObGet%(stid%, stix%)
-END FUNCTION
-
-FUNCTION StGetBorderType% (stid%)
-  StGetBorderType% = ObGet%(stid%, StIndex.BorderType)
 END FUNCTION
 
 FUNCTION StGetName$ (stid%)
