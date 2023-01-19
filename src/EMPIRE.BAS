@@ -427,22 +427,22 @@ CONST ObBinding.Focused = 1
 CONST ObBinding.Param = 2
 
 '
-' Object kinds
-'
-CONST ObKind.None = 0
-CONST ObKind.Control = 1
-CONST ObKind.Event = 2
-CONST ObKind.Habitat = 3
-CONST ObKind.List = 4
-CONST ObKind.Person = 5
-CONST ObKind.Style = 6
-CONST ObKind.Window = 7
-
-'
 ' Object properties
 '
 CONST ObIndex.Schema = 0
 CONST ObIndexInvalid = -1
+
+'
+' Object schemas
+'
+CONST ObSchema.None = 0
+CONST ObSchema.Control = 1
+CONST ObSchema.Event = 2
+CONST ObSchema.Habitat = 3
+CONST ObSchema.List = 4
+CONST ObSchema.Person = 5
+CONST ObSchema.Style = 6
+CONST ObSchema.Window = 7
 
 '
 ' Operators
@@ -1272,7 +1272,7 @@ FUNCTION CtCreate% (kind%)
   '
   ' Creates an empty control
   '
-  DIM ctid%: ctid% = ObCreate%(ObKind.Control)
+  DIM ctid%: ctid% = ObCreate%(ObSchema.Control)
   AssertIsPositive ctid%, "CtCreate%", "ctid%"
 
   CtSet ctid%, CtIndex.Kind, kind%
@@ -1293,7 +1293,7 @@ FUNCTION CtCreateChild% (wnid%, kind%)
   '
   ' Allocate a control
   '
-  DIM ctid%: ctid% = ObCreate%(ObKind.Control)
+  DIM ctid%: ctid% = ObCreate%(ObSchema.Control)
   gwin(wnid%, fid%) = ctid%
 
   '
@@ -1780,7 +1780,7 @@ SUB CtDrawText (wnid%, fid%)
 END SUB
 
 FUNCTION CtGet% (ctid%, ctix%)
-  AssertExpected ObKind.Control, gobj(ctid%, ObIndex.Schema).value, "CtGet%", "ObKind"
+  AssertExpected ObSchema.Control, gobj(ctid%, ObIndex.Schema).value, "CtGet%", "ObSchema"
   CtGet% = ObGet%(ctid%, ctix%)
 END FUNCTION
 
@@ -2039,7 +2039,7 @@ FUNCTION CtSelectable% (ctid%)
 END FUNCTION
 
 SUB CtSet (ctid%, ctix%, value%)
-  AssertExpected ObKind.Control, gobj(ctid%, ObIndex.Schema).value, "CtSet", "ObKind"
+  AssertExpected ObSchema.Control, gobj(ctid%, ObIndex.Schema).value, "CtSet", "ObSchema"
   ObSet ctid%, ctix%, value%
 END SUB
 
@@ -2420,11 +2420,11 @@ SUB DrawText (text$)
 END SUB
 
 FUNCTION EvCreate%
-  EvCreate% = ObCreate%(ObKind.Event)
+  EvCreate% = ObCreate%(ObSchema.Event)
 END FUNCTION
 
 FUNCTION EvFind% (name$)
-  EvFind% = ObFindString%(ObKind.Event, EvIndex.Name, name$)
+  EvFind% = ObFindString%(ObSchema.Event, EvIndex.Name, name$)
 END FUNCTION
 
 SUB EvFire (evid%)
@@ -3115,15 +3115,15 @@ FUNCTION GetKey$
 END FUNCTION
 
 FUNCTION HbCreate%
-  HbCreate% = ObCreate%(ObKind.Habitat)
+  HbCreate% = ObCreate%(ObSchema.Habitat)
 END FUNCTION
 
 FUNCTION HbFind% (name$)
-  HbFind% = ObFindString%(ObKind.Habitat, HbIndex.Name, name$)
+  HbFind% = ObFindString%(ObSchema.Habitat, HbIndex.Name, name$)
 END FUNCTION
 
 FUNCTION HbGet% (hbid%, hbix%)
-  AssertExpected ObKind.Habitat, gobj(hbid%, ObIndex.Schema).value, "HbGet%", "ObKind"
+  AssertExpected ObSchema.Habitat, gobj(hbid%, ObIndex.Schema).value, "HbGet%", "ObSchema"
   HbGet% = ObGet%(hbid%, hbix%)
 END FUNCTION
 
@@ -3154,7 +3154,7 @@ FUNCTION HbMap% (name$)
 END FUNCTION
 
 SUB HbSet (hbid%, hbix%, value%)
-  AssertExpected ObKind.Habitat, gobj(hbid%, ObIndex.Schema).value, "HbSet", "ObKind"
+  AssertExpected ObSchema.Habitat, gobj(hbid%, ObIndex.Schema).value, "HbSet", "ObSchema"
   ObSet hbid%, hbix%, value%
 END SUB
 
@@ -3213,7 +3213,7 @@ FUNCTION LsCount% (lsid%)
 END FUNCTION
 
 FUNCTION LsCreate%
-  LsCreate% = ObCreate%(ObKind.List)
+  LsCreate% = ObCreate%(ObSchema.List)
 END FUNCTION
 
 FUNCTION LsGet% (lsid%, n%)
@@ -3483,11 +3483,11 @@ SUB ObSetString (obid%, obix%, value$)
 END SUB
 
 FUNCTION PrCreate%
-  PrCreate% = ObCreate%(ObKind.Person)
+  PrCreate% = ObCreate%(ObSchema.Person)
 END FUNCTION
 
 FUNCTION PrGet% (prid%, prix%)
-  AssertExpected ObKind.Person, gobj(prid%, ObIndex.Schema).value, "PrGet%", "ObKind"
+  AssertExpected ObSchema.Person, gobj(prid%, ObIndex.Schema).value, "PrGet%", "ObSchema"
   PrGet% = ObGet%(prid%, prix%)
 END FUNCTION
 
@@ -3517,7 +3517,7 @@ FUNCTION PrRandomly%
   DIM items%(1 TO 100)
 
   FOR index% = LBOUND(gobj, 1) TO UBOUND(gobj, 1)
-    IF ObGet%(index%, ObIndex.Schema) = ObKind.Person THEN
+    IF ObGet%(index%, ObIndex.Schema) = ObSchema.Person THEN
       count% = count% + 1
       items%(count%) = index%
     END IF
@@ -3531,7 +3531,7 @@ FUNCTION PrRandomly%
 END FUNCTION
 
 SUB PrSet (prid%, prix%, value%)
-  AssertExpected ObKind.Person, gobj(prid%, ObIndex.Schema).value, "PrSet%", "ObKind"
+  AssertExpected ObSchema.Person, gobj(prid%, ObIndex.Schema).value, "PrSet%", "ObSchema"
   ObSet prid%, prix%, value%
 END SUB
 
@@ -3740,11 +3740,11 @@ FUNCTION Split% (text AS STRING, tokens() AS STRING)
 END FUNCTION
 
 FUNCTION StCreate%
-  StCreate% = ObCreate%(ObKind.Style)
+  StCreate% = ObCreate%(ObSchema.Style)
 END FUNCTION
 
 FUNCTION StFind% (name$)
-  StFind% = ObFindString%(ObKind.Style, StIndex.Name, name$)
+  StFind% = ObFindString%(ObSchema.Style, StIndex.Name, name$)
 END FUNCTION
 
 FUNCTION StGetBorderColor% (stid%)
@@ -3794,7 +3794,7 @@ FUNCTION StMap% (name$)
 END FUNCTION
 
 SUB StSet (stid%, stix%, value%)
-  AssertExpected ObKind.Style, gobj(stid%, ObIndex.Schema).value, "StSet", "ObKind"
+  AssertExpected ObSchema.Style, gobj(stid%, ObIndex.Schema).value, "StSet", "ObSchema"
   ObSet stid%, stix%, value%
 END SUB
 
@@ -4028,7 +4028,7 @@ FUNCTION WnCreate%
   '
   ' Create the root window object
   '
-  DIM wnid%: wnid% = ObCreate%(ObKind.Window)
+  DIM wnid%: wnid% = ObCreate%(ObSchema.Window)
   AssertIsPositive wnid%, "WnCreate%", "wnid%"
 
   '
@@ -4311,7 +4311,7 @@ SUB WnFocusOnPrevious (wnid%)
 END SUB
 
 FUNCTION WnGet% (wnid%, wnix%)
-  AssertExpected ObKind.Window, gobj(wnid%, ObIndex.Schema).value, "WnGet%", "ObKind"
+  AssertExpected ObSchema.Window, gobj(wnid%, ObIndex.Schema).value, "WnGet%", "ObSchema"
   WnGet% = ObGet%(wnid%, wnix%)
 END FUNCTION
 
@@ -4662,7 +4662,7 @@ SUB WnRunName (name$)
 END SUB
 
 SUB WnSet (wnid%, wnix%, value%)
-  AssertExpected ObKind.Window, gobj(wnid%, ObKind.Window).value, "WnSet", "ObKind"
+  AssertExpected ObSchema.Window, gobj(wnid%, ObSchema.Window).value, "WnSet", "ObSchema"
   ObSet wnid%, wnix%, value%
 END SUB
 
