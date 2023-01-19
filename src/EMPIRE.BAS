@@ -434,8 +434,8 @@ CONST ObBinding.Param = 2
 '
 ' Object properties
 '
+CONST ObIndex.Invalid = -1
 CONST ObIndex.Schema = 0
-CONST ObIndexInvalid = -1
 
 '
 ' Object schemas
@@ -2005,7 +2005,7 @@ FUNCTION CtMap% (name$)
       CtMap% = CtIndex.Window
 
     CASE ELSE
-      CtMap% = ObIndexInvalid
+      CtMap% = ObIndex.Invalid
 
   END SELECT
 
@@ -2483,7 +2483,7 @@ FUNCTION EvMap% (name$)
       EvMap% = EvIndex.Value
 
     CASE ELSE
-      EvMap% = ObIndexInvalid
+      EvMap% = ObIndex.Invalid
 
   END SELECT
 
@@ -3181,7 +3181,7 @@ FUNCTION HbMap% (name$)
       HbMap% = HbIndex.Window
 
     CASE ELSE
-      HbMap% = ObIndexInvalid
+      HbMap% = ObIndex.Invalid
 
   END SELECT
 
@@ -3539,7 +3539,7 @@ FUNCTION PrMap% (name$)
       PrMap% = PrIndex.Schema
 
     CASE ELSE
-      PrMap% = ObIndexInvalid
+      PrMap% = ObIndex.Invalid
 
   END SELECT
 
@@ -3827,7 +3827,7 @@ FUNCTION StMap% (name$)
       StMap% = StIndex.TextColor
 
     CASE ELSE
-      StMap% = ObIndexInvalid
+      StMap% = ObIndex.Invalid
 
   END SELECT
 
@@ -4378,7 +4378,7 @@ FUNCTION WnMap% (name$)
       WnMap% = WnIndex.Schema
 
     CASE ELSE
-      WnMap% = ObIndexInvalid
+      WnMap% = ObIndex.Invalid
 
   END SELECT
 
