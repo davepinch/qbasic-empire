@@ -232,6 +232,7 @@ DECLARE SUB ObSetString (obid%, obix%, value$)
 '
 DECLARE FUNCTION PrCreate% ()
 DECLARE FUNCTION PrGet% (prid%, prix%)
+DECLARE FUNCTION PrMap% (name$)
 DECLARE FUNCTION PrRandomly% ()
 DECLARE SUB PrSet (prid%, prix%, value%)
 
@@ -3469,6 +3470,23 @@ END FUNCTION
 FUNCTION PrGet% (prid%, prix%)
   AssertExpected ObKind.Person, gobj(prid%, ObIndex.Kind).value, "PrGet%", "ObKind"
   PrGet% = ObGet%(prid%, prix%)
+END FUNCTION
+
+FUNCTION PrMap% (name$)
+ 
+  SELECT CASE name$
+  
+    CASE "Name"
+      PrMap% = PrIndex.Name
+
+    CASE "Label"
+      PrMap% = PrIndex.Label
+
+    CASE ELSE
+      PrMap% = ObIndexInvalid
+
+  END SELECT
+
 END FUNCTION
 
 FUNCTION PrRandomly%
