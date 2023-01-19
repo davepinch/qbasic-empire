@@ -127,6 +127,7 @@ DECLARE FUNCTION CtGetScreenY% (ctid%)
 DECLARE FUNCTION CtGetSelected% (ctid%)
 DECLARE FUNCTION CtGetStyle% (ctid%)
 DECLARE FUNCTION CtGetValue$ (ctid%)
+DECLARE FUNCTION CtMap% (name$)
 DECLARE FUNCTION CtRedirected% (ctid%, pid%)
 DECLARE FUNCTION CtSelectable% (ctid%)
 
@@ -1935,6 +1936,65 @@ SUB CtKeyInteger (ctid%, keypress$)
   ObSetString ctid%, CtIndex.Text, buf$
 
 END SUB
+
+FUNCTION CtMap% (name$)
+
+  SELECT CASE name$
+ 
+    CASE "ChildList"
+      CtMap% = CtIndex.ChildList
+
+    CASE "Command"
+      CtMap% = CtIndex.Command
+
+    CASE "Kind"
+      CtMap% = CtIndex.Kind
+
+    CASE "Name"
+      CtMap% = CtIndex.Name
+
+    CASE "OffsetX"
+      CtMap% = CtIndex.OffsetX
+
+    CASE "OffsetY"
+      CtMap% = CtIndex.OffsetY
+
+    CASE "Param"
+      CtMap% = CtIndex.Param
+
+    CASE "Parent"
+      CtMap% = CtIndex.Parent
+
+    CASE "Popup"
+      CtMap% = CtIndex.Popup
+
+    CASE "Selected"
+      CtMap% = CtIndex.Selected
+
+    CASE "SizeX"
+      CtMap% = CtIndex.SizeX
+
+    CASE "SizeY"
+      CtMap% = CtIndex.SizeY
+
+    CASE "Style"
+      CtMap% = CtIndex.Style
+
+    CASE "Text"
+      CtMap% = CtIndex.Text
+
+    CASE "Value"
+      CtMap% = CtIndex.Value
+
+    CASE "Window"
+      CtMap% = CtIndex.Window
+
+    CASE ELSE
+      CtMap% = ObIndexInvalid
+
+  END SELECT
+
+END FUNCTION
 
 FUNCTION CtRedirected% (ctid%, pid%)
   CtRedirected% = gobj(ctid%, pid%).flags = ObBinding.Focused
