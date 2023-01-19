@@ -258,7 +258,6 @@ DECLARE SUB ShPrint (text$)
 DECLARE FUNCTION StCreate% ()
 DECLARE FUNCTION StFind% (name$)
 DECLARE FUNCTION StGet% (stid%, stid%)
-DECLARE FUNCTION StGetName$ (stid%)
 DECLARE FUNCTION StMap% (name$)
 DECLARE SUB StSet (stid%, stix%, value%)
 
@@ -3797,10 +3796,6 @@ END FUNCTION
 FUNCTION StGet% (stid%, stix%)
   AssertExpected ObSchema.Style, gobj(stid%, ObIndex.Schema).value, "StGet%", "ObSchema"
   StGet% = ObGet%(stid%, stix%)
-END FUNCTION
-
-FUNCTION StGetName$ (stid%)
-  StGetName$ = ObGetString$(stid%, StIndex.Name)
 END FUNCTION
 
 FUNCTION StMap% (name$)
