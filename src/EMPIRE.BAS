@@ -190,6 +190,7 @@ DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
 DECLARE FUNCTION HbCreate% ()
 DECLARE FUNCTION HbFind% (name$)
 DECLARE FUNCTION HbGet% (hbid%, hbix%)
+DECLARE FUNCTION HbMap% (name$)
 DECLARE SUB HbSet (hbid%, hbix%, value%)
 
 '
@@ -3124,6 +3125,32 @@ END FUNCTION
 FUNCTION HbGet% (hbid%, hbix%)
   AssertExpected ObKind.Habitat, gobj(hbid%, ObIndex.Kind).value, "HbGet%", "ObKind"
   HbGet% = ObGet%(hbid%, hbix%)
+END FUNCTION
+
+FUNCTION HbMap% (name$)
+
+  SELECT CASE name$
+   
+    CASE "Backdrop"
+      HbMap% = HbIndex.Backdrop
+
+    CASE "Label"
+      HbMap% = HbIndex.Label
+
+    CASE "Name"
+      HbMap% = HbIndex.Name
+
+    CASE "StartFile"
+      HbMap% = HbIndex.StartFile
+
+    CASE "Window"
+      HbMap% = HbIndex.Window
+
+    CASE ELSE
+      HbMap% = ObIndexInvalid
+
+  END SELECT
+
 END FUNCTION
 
 SUB HbSet (hbid%, hbix%, value%)
