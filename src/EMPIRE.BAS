@@ -219,6 +219,7 @@ DECLARE FUNCTION NebulaLabelRsid% (energy AS INTEGER)
 ' Object API
 '
 DECLARE FUNCTION ObCreate% (schema%)
+DECLARE FUNCTION ObCreateChild% (schema%, parent%)
 DECLARE FUNCTION ObFindString% (schema%, obix%, value$)
 DECLARE FUNCTION ObGet% (obid%, obix%)
 DECLARE FUNCTION ObGetString$ (obid%, obix%)
@@ -1306,15 +1307,11 @@ FUNCTION CtCreateChild% (wnid%, kind%)
   win(wnid%).fields = fid%
 
   '
-  ' Allocate a control
+  ' Create a child control
   '
-  DIM ctid%: ctid% = ObCreate%(ObSchema.Control)
+  DIM ctid%: ctid% = ObCreateChild%(ObSchema.Control, gwin(wnid%, 0))
+ 
   gwin(wnid%, fid%) = ctid%
-
-  '
-  ' Set the parent to the window control
-  '
-  CtSet ctid%, CtIndex.Parent, gwin(wnid%, 0)
   CtSet ctid%, CtIndex.Kind, kind%
   CtCreateChild% = fid%
 
@@ -3401,6 +3398,12 @@ FUNCTION ObCreate% (schema%)
 
 END FUNCTION
 
+FUNCTION ObCreateChild% (schema%, parent%)
+  DIM obid%: obid% = ObCreate%(schema%)
+  ObSet obid%, ObIndex.Parent, parent%
+  ObCreateChild% = obid%
+END FUNCTION
+
 FUNCTION ObFindString% (schema%, obix%, value$)
   '
   ' Finds the first object where a property has the specified string
@@ -3470,15 +3473,15 @@ END FUNCTION
 
 FUNCTION ObResolveFocused% (obid%, value%)
 
-  DIM parentctid%
-  LET parentctid% = CtGet%(obid%, CtIndex.Parent)
-  AssertIsPositive parentctid%, "ObResolveFocused%", "parentCtid%"
+  DIM parent%
+  LET parent% = ObGet%(obid%, ObIndex.Parent)
+  AssertIsPositive parent%, "ObResolveFocused%", "parent%"
 
   DIM wnid%
-  LET wnid% = CtGet%(parentctid%, CtIndex.ChildList)
+  LET wnid% = CtGet%(parent%, CtIndex.ChildList)
 
   DIM sel%
-  LET sel% = CtGetSelected%(parentctid%)
+  LET sel% = CtGetSelected%(parent%)
      
   DIM selctid%
   LET selctid% = gwin(wnid%, sel%)
@@ -3489,12 +3492,12 @@ END FUNCTION
 
 FUNCTION ObResolveParam% (obid%, value%)
 
-  DIM parentctid%
-  LET parentctid% = CtGet%(obid%, CtIndex.Parent)
-  AssertIsPositive parentctid%, "ObResolveParam%", "parentCtid%"
+  DIM parent%
+  LET parent% = ObGet%(obid%, ObIndex.Parent)
+  AssertIsPositive parent%, "ObResolveParam%", "parent%"
 
   DIM hbid%
-  LET hbid% = CtGetParam%(parentctid%)
+  LET hbid% = CtGetParam%(parent%)
   AssertIsPositive hbid%, "ObResolveParam", "hbid%"
 
   IF hbid% > 0 THEN
