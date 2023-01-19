@@ -383,12 +383,12 @@ CONST CtKind.Nebula = 100
 ' Control properties
 '
 CONST CtIndex.Schema = 0
-CONST CtIndex.Parent = 1
-CONST CtIndex.Value = 2
-CONST CtIndex.ChildList = 3
-CONST CtIndex.Command = 4
-CONST CtIndex.Kind = 5
-CONST CtIndex.Name = 6
+CONST CtIndex.Name = 1
+CONST CtIndex.Parent = 2
+CONST CtIndex.Value = 3
+CONST CtIndex.ChildList = 4
+CONST CtIndex.Command = 5
+CONST CtIndex.Kind = 6
 CONST CtIndex.OffsetX = 7
 CONST CtIndex.OffsetY = 8
 CONST CtIndex.Param = 9
@@ -404,18 +404,18 @@ CONST CtIndex.Window = 16
 ' Event properties
 '
 CONST EvIndex.Schema = 0
-CONST EvIndex.Parent = 1
-CONST EvIndex.Name = 2
+CONST EvIndex.Name = 1
+CONST EvIndex.Parent = 2
 CONST EvIndex.Value = 3
 
 '
 ' Habitat properties
 '
 CONST HbIndex.Schema = 0
-CONST HbIndex.Parent = 1
-CONST HbIndex.Backdrop = 2
-CONST HbIndex.Label = 3
-CONST HbIndex.Name = 4
+CONST HbIndex.Name = 1
+CONST HbIndex.Parent = 2
+CONST HbIndex.Backdrop = 3
+CONST HbIndex.Label = 4
 CONST HbIndex.StartFile = 5
 CONST HbIndex.Window = 6
 
@@ -423,9 +423,10 @@ CONST HbIndex.Window = 6
 ' List properties
 '
 CONST LsIndex.Schema = 0
-CONST LsIndex.Parent = 1
-CONST LsIndex.Count = 2
-CONST LsIndex.First = 3
+CONST LsIndex.Name = 1
+CONST LsIndex.Parent = 2
+CONST LsIndex.Count = 3
+CONST LsIndex.First = 4
 
 '
 ' Object bindings
@@ -439,7 +440,8 @@ CONST ObBinding.Param = 2
 '
 CONST ObIndex.Invalid = -1
 CONST ObIndex.Schema = 0
-CONST ObIndex.Parent = 1
+CONST ObIndex.Name = 1
+CONST ObIndex.Parent = 2
 
 '
 ' Object schemas
@@ -463,9 +465,9 @@ CONST OpEquals = 1
 ' Person properties
 '
 CONST PrIndex.Schema = 0
-CONST PrIndex.Parent = 1
-CONST PrIndex.Name = CtIndex.Name
-CONST PrIndex.Label = CtIndex.Text
+CONST PrIndex.Name = 1
+CONST PrIndex.Parent = 2
+CONST PrIndex.Label = 3
 
 '
 ' ScanCode constants
@@ -483,10 +485,10 @@ CONST ScanCode.PageDown = 81
 ' Style properties
 '
 CONST StIndex.Schema = 0
-CONST StIndex.Parent = 1
-CONST StIndex.BorderColor = 2
-CONST StIndex.BorderType = 3
-CONST StIndex.Name = 4
+CONST StIndex.Name = 1
+CONST StIndex.Parent = 2
+CONST StIndex.BorderColor = 3
+CONST StIndex.BorderType = 4
 CONST StIndex.SelectedColor = 5
 CONST StIndex.TextColor = 6
 
@@ -516,10 +518,10 @@ CONST WnAction.SelectPrevious = 15
 ' Window properties
 '
 CONST WnIndex.Schema = 0
-CONST WnIndex.Parent = 1
-CONST WnIndex.ArrowExit = 2
-CONST WnIndex.Container = 3
-CONST WnIndex.Name = 4
+CONST WnIndex.Name = 1
+CONST WnIndex.Parent = 2
+CONST WnIndex.ArrowExit = 3
+CONST WnIndex.Container = 4
 CONST WnIndex.Focused = 5
 CONST WnIndex.Param = 6
 
@@ -2475,6 +2477,9 @@ FUNCTION EvMap% (name$)
     CASE "Name"
       EvMap% = EvIndex.Name
 
+    CASE "Parent"
+      EvMap% = EvIndex.Parent
+
     CASE "Schema"
       EvMap% = EvIndex.Schema
 
@@ -3170,6 +3175,9 @@ FUNCTION HbMap% (name$)
     CASE "Name"
       HbMap% = HbIndex.Name
 
+    CASE "Parent"
+      HbMap% = HbIndex.Parent
+
     CASE "Schema"
       HbMap% = HbIndex.Schema
 
@@ -3540,6 +3548,12 @@ FUNCTION PrMap% (name$)
     CASE "Label"
       PrMap% = PrIndex.Label
 
+    CASE "Name"
+      PrMap% = PrIndex.Name
+
+    CASE "Parent"
+      PrMap% = PrIndex.Parent
+
     CASE "Schema"
       PrMap% = PrIndex.Schema
 
@@ -3821,6 +3835,9 @@ FUNCTION StMap% (name$)
 
     CASE "Name"
       StMap% = StIndex.Name
+
+    CASE "Parent"
+      StMap% = StIndex.Parent
 
     CASE "Schema"
       StMap% = StIndex.Schema
@@ -4378,6 +4395,9 @@ FUNCTION WnMap% (name$)
 
     CASE "Param"
       WnMap% = WnIndex.Param
+
+    CASE "Parent"
+      WnMap% = WnIndex.Parent
 
     CASE "Schema"
       WnMap% = WnIndex.Schema
