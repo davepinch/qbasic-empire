@@ -245,6 +245,15 @@ DECLARE FUNCTION RsGet$ (rsid%)
 DECLARE SUB RsSet (outrsid%, value$)
 
 '
+' Shell API
+'
+DECLARE SUB ShBeginDraw ()
+DECLARE SUB ShClear ()
+DECLARE SUB ShEndDraw ()
+DECLARE SUB ShFile (filename$)
+DECLARE SUB ShPrint (text$)
+
+'
 ' Style API
 '
 DECLARE FUNCTION StCreate% ()
@@ -255,15 +264,6 @@ DECLARE FUNCTION StGetSelectedColor% (stid%)
 DECLARE FUNCTION StGetTextColor% (stid%)
 DECLARE FUNCTION StMap% (name$)
 DECLARE SUB StSet (stid%, stix%, value%)
-
-'
-' Terminal API
-'
-DECLARE SUB TrBegin ()
-DECLARE SUB TrClear ()
-DECLARE SUB TrEnd ()
-DECLARE SUB TrFile (filename$)
-DECLARE SUB TrPrint (text$)
 
 '
 ' UI
@@ -562,7 +562,7 @@ SUB Assert (truth AS INTEGER, where AS STRING, what AS STRING)
     LET message = where + ": " + what
 
     AtlasSetStatusEx message, &H4F
-    TrPrint "@X4F" + message + "@X07"
+    ShPrint "@X4F" + message + "@X07"
 
     IF GetKey$ <> CHR$(ASCII.Escape) THEN
       END
@@ -2142,8 +2142,8 @@ SUB DgPrint (prid%, text$)
 
   IF LEFT$(text$, 1) = "(" THEN
 
-    TrPrint STRING$((80 - DrawLength(text$)) / 2, " ") + "@X04" + text$ + "@X07"
-    TrPrint ""
+    ShPrint STRING$((80 - DrawLength(text$)) / 2, " ") + "@X04" + text$ + "@X07"
+    ShPrint ""
 
   ELSE
 
@@ -2156,9 +2156,9 @@ SUB DgPrint (prid%, text$)
         '
         q$ = DgGarble(text$, .2)
 
-        TrPrint label$
-        TrPrint "@X07" + text$ + "@X07"
-        TrPrint ""
+        ShPrint label$
+        ShPrint "@X07" + text$ + "@X07"
+        ShPrint ""
 
       CASE 1:
         '
@@ -2166,9 +2166,9 @@ SUB DgPrint (prid%, text$)
         '
         q$ = DgGarble(text$, .7)
       
-        TrPrint STRING$(78 - DrawLength(label$), " ") + label$
-        TrPrint STRING$(78 - DrawLength(text$), " ") + "@X07" + q$ + "@X07"
-        TrPrint ""
+        ShPrint STRING$(78 - DrawLength(label$), " ") + label$
+        ShPrint STRING$(78 - DrawLength(text$), " ") + "@X07" + q$ + "@X07"
+        ShPrint ""
 
     END SELECT
 
@@ -2187,7 +2187,7 @@ SUB DgStart (hbid%)
     DIM startfile$
     LET startfile$ = RsGet$(HbGet%(hbid%, HbIndex.StartFile))
     IF LEN(startfile$) > 0 THEN
-      TrFile startfile$
+      ShFile startfile$
     END IF
 
     listening = hbid%
@@ -2732,7 +2732,7 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wni
       CHAIN stoken$(1)
 
     CASE "cls"
-      TrClear
+      ShClear
 
     CASE "terminal", "console"
       UI.SetPage UIPage.Terminal
@@ -2766,10 +2766,10 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wni
       prid% = PrCreate%
 
     CASE "print"
-      TrPrint stoken$(1)
+      ShPrint stoken$(1)
 
     CASE "printfile"
-      TrFile stoken$(1)
+      ShFile stoken$(1)
 
     CASE "replot"
       '
@@ -3171,7 +3171,7 @@ SUB InboxAdd (subject AS STRING, filename AS STRING)
   fid% = WnAddButton(wnid%, 1, count, 20, " " + subject, filename)
 
   AtlasSetStatus "Mail arrived"
-  TrFile "NEWMAIL.PCB"
+  ShFile "NEWMAIL.PCB"
 
 END SUB
 
@@ -3597,9 +3597,9 @@ SUB SetupGame
   '
   ExecFile "EMPIRE.CFG"
  
-  TrPrint "String Space:" + STR$(FRE(""))
-  TrPrint "Unused Stack Space:" + STR$(FRE(-2))
-  TrPrint "Array Space:" + STR$(FRE(-1))
+  ShPrint "String Space:" + STR$(FRE(""))
+  ShPrint "Unused Stack Space:" + STR$(FRE(-2))
+  ShPrint "Array Space:" + STR$(FRE(-1))
 
   '
   ' Setup atlas
@@ -3620,6 +3620,45 @@ SUB SetupGame
   END IF
 
   TIMER ON
+
+END SUB
+
+SUB ShBeginDraw
+  VideoPushActive 0
+END SUB
+
+SUB ShClear
+  ShBeginDraw
+  CLS
+  ShEndDraw
+END SUB
+
+SUB ShEndDraw
+  VideoPop
+END SUB
+
+SUB ShFile (filename$)
+  ShBeginDraw
+  LOCATE 24, 1
+  DrawFile filename$
+  PRINT
+  ShEndDraw
+END SUB
+
+SUB ShPrint (text$)
+
+  DIM x AS INTEGER
+  DIM y AS INTEGER
+
+  ShBeginDraw
+  x = POS(0)
+  y = CSRLIN
+ 
+  LOCATE 24, 1
+  DrawText text$
+  PRINT
+  LOCATE y, x
+  ShEndDraw
 
 END SUB
 
@@ -3762,45 +3801,6 @@ END FUNCTION
 SUB StSet (stid%, stix%, value%)
   AssertExpected ObKind.Style, gobj(stid%, ObIndex.Kind).value, "StSet", "ObKind"
   ObSet stid%, stix%, value%
-END SUB
-
-SUB TrBegin
-  VideoPushActive 0
-END SUB
-
-SUB TrClear
-  TrBegin
-  CLS
-  TrEnd
-END SUB
-
-SUB TrEnd
-  VideoPop
-END SUB
-
-SUB TrFile (filename$)
-  TrBegin
-  LOCATE 24, 1
-  DrawFile filename$
-  PRINT
-  TrEnd
-END SUB
-
-SUB TrPrint (text$)
-
-  DIM x AS INTEGER
-  DIM y AS INTEGER
-
-  TrBegin
-  x = POS(0)
-  y = CSRLIN
- 
-  LOCATE 24, 1
-  DrawText text$
-  PRINT
-  LOCATE y, x
-  TrEnd
-
 END SUB
 
 SUB UI.Run
