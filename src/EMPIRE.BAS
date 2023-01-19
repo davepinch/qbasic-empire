@@ -300,6 +300,7 @@ DECLARE FUNCTION WnCreate% ()
 DECLARE FUNCTION WnFindStid% (stylename$)
 DECLARE FUNCTION WnFindWnid% (wname$)
 DECLARE FUNCTION WnGet% (wnid%, wnix%)
+DECLARE FUNCTION WnMap% (name$)
 DECLARE FUNCTION WnMapKey% (wnid%, pressed$)
 
 '
@@ -439,6 +440,7 @@ CONST ObKind.Window = 7
 ' Object properties
 '
 CONST ObIndex.Kind = 0
+CONST ObIndexInvalid = -1
 
 '
 ' Operators
@@ -4248,6 +4250,32 @@ END SUB
 FUNCTION WnGet% (wnid%, wnix%)
   AssertExpected ObKind.Window, gobj(wnid%, ObIndex.Kind).value, "WnGet%", "ObKind"
   WnGet% = ObGet%(wnid%, wnix%)
+END FUNCTION
+
+FUNCTION WnMap% (name$)
+
+  SELECT CASE name$
+  
+    CASE "ArrowExit"
+      WnMap% = WnIndex.ArrowExit
+
+    CASE "Container"
+      WnMap% = WnIndex.Container
+
+    CASE "Focused"
+      WnMap% = WnIndex.Focused
+
+    CASE "Name"
+      WnMap% = WnIndex.Name
+
+    CASE "Param"
+      WnMap% = WnIndex.Param
+
+    CASE ELSE
+      WnMap% = ObIndexInvalid
+
+  END SELECT
+
 END FUNCTION
 
 FUNCTION WnMapKey% (wnid%, pressed$)
