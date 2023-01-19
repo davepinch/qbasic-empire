@@ -383,15 +383,15 @@ CONST CtKind.Nebula = 100
 ' Control properties
 '
 CONST CtIndex.Schema = 0
-CONST CtIndex.Value = 1
-CONST CtIndex.ChildList = 2
-CONST CtIndex.Command = 3
-CONST CtIndex.Kind = 4
-CONST CtIndex.Name = 5
-CONST CtIndex.OffsetX = 6
-CONST CtIndex.OffsetY = 7
-CONST CtIndex.Param = 8
-CONST CtIndex.Parent = 9
+CONST CtIndex.Parent = 1
+CONST CtIndex.Value = 2
+CONST CtIndex.ChildList = 3
+CONST CtIndex.Command = 4
+CONST CtIndex.Kind = 5
+CONST CtIndex.Name = 6
+CONST CtIndex.OffsetX = 7
+CONST CtIndex.OffsetY = 8
+CONST CtIndex.Param = 9
 CONST CtIndex.Popup = 10
 CONST CtIndex.Selected = 11
 CONST CtIndex.SizeX = 12
@@ -404,25 +404,28 @@ CONST CtIndex.Window = 16
 ' Event properties
 '
 CONST EvIndex.Schema = 0
-CONST EvIndex.Name = 1
-CONST EvIndex.Value = 2
+CONST EvIndex.Parent = 1
+CONST EvIndex.Name = 2
+CONST EvIndex.Value = 3
 
 '
 ' Habitat properties
 '
 CONST HbIndex.Schema = 0
-CONST HbIndex.Backdrop = 1
-CONST HbIndex.Label = 2
-CONST HbIndex.Name = 3
-CONST HbIndex.StartFile = 4
-CONST HbIndex.Window = 5
+CONST HbIndex.Parent = 1
+CONST HbIndex.Backdrop = 2
+CONST HbIndex.Label = 3
+CONST HbIndex.Name = 4
+CONST HbIndex.StartFile = 5
+CONST HbIndex.Window = 6
 
 '
 ' List properties
 '
 CONST LsIndex.Schema = 0
-CONST LsIndex.Count = 1
-CONST LsIndex.First = 2
+CONST LsIndex.Parent = 1
+CONST LsIndex.Count = 2
+CONST LsIndex.First = 3
 
 '
 ' Object bindings
@@ -436,6 +439,7 @@ CONST ObBinding.Param = 2
 '
 CONST ObIndex.Invalid = -1
 CONST ObIndex.Schema = 0
+CONST ObIndex.Parent = 1
 
 '
 ' Object schemas
@@ -459,6 +463,7 @@ CONST OpEquals = 1
 ' Person properties
 '
 CONST PrIndex.Schema = 0
+CONST PrIndex.Parent = 1
 CONST PrIndex.Name = CtIndex.Name
 CONST PrIndex.Label = CtIndex.Text
 
@@ -478,11 +483,12 @@ CONST ScanCode.PageDown = 81
 ' Style properties
 '
 CONST StIndex.Schema = 0
-CONST StIndex.BorderColor = 1
-CONST StIndex.BorderType = 2
-CONST StIndex.Name = 3
-CONST StIndex.SelectedColor = 4
-CONST StIndex.TextColor = 5
+CONST StIndex.Parent = 1
+CONST StIndex.BorderColor = 2
+CONST StIndex.BorderType = 3
+CONST StIndex.Name = 4
+CONST StIndex.SelectedColor = 5
+CONST StIndex.TextColor = 6
 
 '
 ' UIPage.* constants
@@ -510,11 +516,12 @@ CONST WnAction.SelectPrevious = 15
 ' Window properties
 '
 CONST WnIndex.Schema = 0
-CONST WnIndex.ArrowExit = 1
-CONST WnIndex.Container = 2
-CONST WnIndex.Name = 3
-CONST WnIndex.Focused = 4
-CONST WnIndex.Param = 5
+CONST WnIndex.Parent = 1
+CONST WnIndex.ArrowExit = 2
+CONST WnIndex.Container = 3
+CONST WnIndex.Name = 4
+CONST WnIndex.Focused = 5
+CONST WnIndex.Param = 6
 
 '
 ' Global atlas variables
