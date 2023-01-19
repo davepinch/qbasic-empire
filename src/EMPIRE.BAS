@@ -2563,10 +2563,10 @@ FUNCTION ExecCmdEvid% (ntoken%, stoken$(), evid%)
     CASE "endevent"
       evid% = 0
 
-    CASE "name"
+    CASE ".name"
       EvSetName evid%, stoken$(1)
 
-    CASE "value"
+    CASE ".value"
       EvSetValue evid%, VAL(stoken$(1))
 
     CASE ELSE
@@ -2618,35 +2618,35 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wnid%, fid%)
     CASE endtag
       fid% = 0
 
-    CASE "command"
+    CASE ".command"
       CtSet ctid%, CtIndex.Command, RsCreate%(stoken$(1))
 
-    CASE "offsetx"
+    CASE ".offsetx"
       CtSet ctid%, CtIndex.OffsetX, VAL(stoken$(1))
 
-    CASE "offsety"
+    CASE ".offsety"
       CtSet ctid%, CtIndex.OffsetY, VAL(stoken$(1))
 
-    CASE "popup", "child"
+    CASE ".popup", ".child" ' ***
       CtSet ctid%, CtIndex.Popup, WnFindWnid%(stoken$(1))
    
-    CASE "sizex"
+    CASE ".sizex"
       CtSet ctid%, CtIndex.SizeX, VAL(stoken$(1))
       
-    CASE "sizey"
+    CASE ".sizey"
       CtSet ctid%, CtIndex.SizeY, VAL(stoken$(1))
 
-    CASE "style"
+    CASE ".style"
       CtSet ctid%, CtIndex.Style, WnFindStid%(stoken$(1))
 
-    CASE "text"
+    CASE ".text"
       IF LCASE$(stoken$(1)) = "bind" THEN
         ObBind ctid%, CtIndex.Text, stoken$(2)
       ELSE
         CtSet ctid%, CtIndex.Text, RsCreate%(stoken$(1))
       END IF
 
-    CASE "value"
+    CASE ".value"
       IF LCASE$(stoken$(1)) = "bind" THEN
         ObBind ctid%, CtIndex.Value, stoken$(2)
       ELSE
@@ -2668,22 +2668,22 @@ FUNCTION ExecCmdHbid% (ntoken%, stoken$(), hbid%)
 
   SELECT CASE stoken$(0)
 
-    CASE "backdrop"
+    CASE ".backdrop"
       HbSet hbid%, HbIndex.Backdrop, RsCreate%(stoken$(1))
 
     CASE "endhabitat"
       hbid% = 0
 
-    CASE "label"
+    CASE ".label"
       HbSet hbid%, HbIndex.Label, RsCreate%(stoken$(1))
 
-    CASE "startfile"
+    CASE ".startfile"
       HbSet hbid%, HbIndex.StartFile, RsCreate%(stoken$(1))
 
-    CASE "name"
+    CASE ".name"
       HbSet hbid%, HbIndex.Name, RsCreate%(stoken$(1))
 
-    CASE "window"
+    CASE ".window"
       HbSet hbid%, HbIndex.Window, WnFindWnid%(stoken$(1))
 
     CASE ELSE
@@ -2699,13 +2699,13 @@ FUNCTION ExecCmdPrid% (ntoken%, stoken$(), prid%)
 
   SELECT CASE stoken$(0)
    
-    CASE "endperson", "endpersona"
+    CASE "endperson", "endpersona" ' ***
       prid% = 0
 
-    CASE "label"
+    CASE ".label"
       PrSet prid%, PrIndex.Label, RsCreate%(stoken$(1))
 
-    CASE "name"
+    CASE ".name"
       PrSet prid%, PrIndex.Name, RsCreate%(stoken$(1))
 
   END SELECT
@@ -2793,6 +2793,7 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wni
       ExecFile stoken$(1)
    
     CASE "spawn"
+      ' *** refactor out
       DIM aid%
       DIM shbid%
       shbid% = HbFind%(stoken$(1))
@@ -2825,7 +2826,7 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wni
     CASE "style"
       stid% = StCreate%
 
-    CASE "trigger"
+    CASE "trigger" ' ***
       triggers = triggers + 1
       tid% = triggers
 
@@ -2850,22 +2851,22 @@ FUNCTION ExecCmdStid% (ntoken%, stoken$(), stid%)
 
   SELECT CASE stoken$(0)
    
-    CASE "bordercolor"
+    CASE ".bordercolor"
       StSet stid%, StIndex.BorderColor, VAL(stoken$(1))
 
-    CASE "bordertype"
+    CASE ".bordertype"
       StSet stid%, StIndex.BorderType, VAL(stoken$(1))
 
     CASE "endstyle"
       stid% = 0
 
-    CASE "name"
+    CASE ".name"
       StSet stid%, StIndex.Name, RsCreate%(stoken$(1))
   
-    CASE "selectedcolor"
+    CASE ".selectedcolor"
       StSet stid%, StIndex.SelectedColor, VAL(stoken$(1))
 
-    CASE "textcolor"
+    CASE ".textcolor"
       StSet stid%, StIndex.TextColor, VAL(stoken$(1))
 
     CASE ELSE
@@ -2881,13 +2882,13 @@ FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
 
   SELECT CASE LCASE$(stoken$(0))
 
-    CASE "command"
+    CASE ".command"
       trigger(tid%).cmdrsid = RsCreate(stoken$(1))
 
     CASE "endtrigger"
       tid% = 0
 
-    CASE "when"
+    CASE ".when"
       trigger(tid%).evid = EvFind%(stoken$(1))
       trigger(tid%).operator = EvParseOperator%(stoken$(2))
       trigger(tid%).operand = VAL(stoken$(3))
@@ -2959,23 +2960,23 @@ FUNCTION ExecCmdWnid% (ntoken%, stoken$(), wnid%, fid%)
 
   SELECT CASE stoken$(0)
 
-    CASE "arrowexit"
+    CASE ".arrowexit" ' ***
       win(wnid%).arrowexit = VAL(stoken$(1))
 
-    CASE "name"
+    CASE ".name"
       CtSetName wnidctid%, stoken$(1)
  
-    CASE "param"
+    CASE ".param"
       CtSetParam wnidctid%, VAL(stoken$(2))
 
-    CASE "posx"
+    CASE ".posx" ' ***
       CtSet wnidctid%, CtIndex.OffsetX, VAL(stoken$(1)) - 1
 
-    CASE "posy"
+    CASE ".posy" ' ***
       CtSet wnidctid%, CtIndex.OffsetY, VAL(stoken$(1)) - 1
 
-    CASE "style"
-      CtSet wnidctid%, CtIndex.Style, WnFindStid%(stoken$(1))
+    CASE ".style"
+      CtSet wnidctid%, CtIndex.Style, WnFindStid%(stoken$(1)) ' ***
 
     CASE ELSE
       result = CmdResult.Malformed
