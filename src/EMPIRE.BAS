@@ -114,7 +114,6 @@ DECLARE SUB CtKeyBoolean (ctid%, keypress$)
 DECLARE SUB CtKeyInteger (ctid%, keypress$)
 DECLARE SUB CtSet (ctid%, ctix%, value%)
 DECLARE SUB CtSetParam (ctid%, value%)
-DECLARE SUB CtSetValue (ctid%, value$)
 DECLARE FUNCTION CtCreateChild% (wnid%, kind%)
 DECLARE FUNCTION CtGet% (ctid%, ctix%)
 DECLARE FUNCTION CtGetName$ (ctid%)
@@ -2063,10 +2062,6 @@ SUB CtSetParam (ctid%, value%)
   ObSet ctid%, CtIndex.Param, value%
 END SUB
 
-SUB CtSetValue (ctid%, value$)
-  ObSetString ctid%, CtIndex.Value, value$
-END SUB
-
 FUNCTION DgGarble$ (text$, percent!)
 
   CONST GarbleCode = 250
@@ -2684,7 +2679,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wnid%, fid%)
       IF LCASE$(stoken$(1)) = "bind" THEN
         ObBind ctid%, CtIndex.Value, stoken$(2)
       ELSE
-        CtSetValue ctid%, stoken$(1)
+        CtSet ctid%, CtIndex.Value, RsCreate%(stoken$(1))
       END IF
 
     CASE ELSE
@@ -4052,7 +4047,7 @@ FUNCTION WnAddButton% (wnid%, offsetX%, offsetY%, sizeX%, text$, value$)
   CtSet ctid%, CtIndex.SizeX, sizeX%
   CtSet ctid%, CtIndex.SizeY, 1
   CtSet ctid%, CtIndex.Text, RsCreate%(text$)
-  CtSetValue ctid%, value$
+  CtSet ctid%, CtIndex.Value, RsCreate%(value$)
 
   WnAddButton% = fid%
 
