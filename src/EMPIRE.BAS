@@ -244,14 +244,6 @@ DECLARE FUNCTION RsGet$ (rsid%)
 DECLARE SUB RsSet (outrsid%, value$)
 
 '
-' UI
-'
-DECLARE SUB UI.Run ()
-DECLARE SUB UI.RunAtlas ()
-DECLARE SUB UI.RunTerminal ()
-DECLARE SUB UI.SetPage (page AS INTEGER)
-
-'
 ' Style API
 '
 DECLARE FUNCTION StCreate% ()
@@ -260,6 +252,7 @@ DECLARE FUNCTION StGetBorderType% (stid%)
 DECLARE FUNCTION StGetName$ (stid%)
 DECLARE FUNCTION StGetSelectedColor% (stid%)
 DECLARE FUNCTION StGetTextColor% (stid%)
+DECLARE FUNCTION StMap% (name$)
 DECLARE SUB StSet (stid%, stix%, value%)
 
 '
@@ -270,6 +263,14 @@ DECLARE SUB TrClear ()
 DECLARE SUB TrEnd ()
 DECLARE SUB TrFile (filename$)
 DECLARE SUB TrPrint (text$)
+
+'
+' UI
+'
+DECLARE SUB UI.Run ()
+DECLARE SUB UI.RunAtlas ()
+DECLARE SUB UI.RunTerminal ()
+DECLARE SUB UI.SetPage (page AS INTEGER)
 
 '
 ' Video pages
@@ -3703,6 +3704,32 @@ END FUNCTION
 
 FUNCTION StGetTextColor% (stid%)
   StGetTextColor% = ObGet%(stid%, StIndex.TextColor)
+END FUNCTION
+
+FUNCTION StMap% (name$)
+
+  SELECT CASE name$
+   
+    CASE "BorderColor"
+      StMap% = StIndex.BorderColor
+
+    CASE "BorderType"
+      StMap% = StIndex.BorderType
+
+    CASE "Name"
+      StMap% = StIndex.Name
+
+    CASE "SelectedColor"
+      StMap% = StIndex.SelectedColor
+
+    CASE "TextColor"
+      StMap% = StIndex.TextColor
+
+    CASE ELSE
+      StMap% = ObIndexInvalid
+
+  END SELECT
+
 END FUNCTION
 
 SUB StSet (stid%, stix%, value%)
