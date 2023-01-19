@@ -381,6 +381,7 @@ CONST CtKind.Nebula = 100
 '
 ' Control properties
 '
+CONST CtIndex.Schema = 0
 CONST CtIndex.Value = 1
 CONST CtIndex.ChildList = 2
 CONST CtIndex.Command = 3
@@ -401,12 +402,14 @@ CONST CtIndex.Window = 16
 '
 ' Event properties
 '
+CONST EvIndex.Schema = 0
 CONST EvIndex.Name = 1
 CONST EvIndex.Value = 2
 
 '
 ' Habitat properties
 '
+CONST HbIndex.Schema = 0
 CONST HbIndex.Backdrop = 1
 CONST HbIndex.Label = 2
 CONST HbIndex.Name = 3
@@ -416,6 +419,7 @@ CONST HbIndex.Window = 5
 '
 ' List properties
 '
+CONST LsIndex.Schema = 0
 CONST LsIndex.Count = 1
 CONST LsIndex.First = 2
 
@@ -453,6 +457,7 @@ CONST OpEquals = 1
 '
 ' Person properties
 '
+CONST PrIndex.Schema = 0
 CONST PrIndex.Name = CtIndex.Name
 CONST PrIndex.Label = CtIndex.Text
 
@@ -471,6 +476,7 @@ CONST ScanCode.PageDown = 81
 '
 ' Style properties
 '
+CONST StIndex.Schema = 0
 CONST StIndex.BorderColor = 1
 CONST StIndex.BorderType = 2
 CONST StIndex.Name = 3
@@ -502,6 +508,7 @@ CONST WnAction.SelectPrevious = 15
 '
 ' Window properties
 '
+CONST WnIndex.Schema = 0
 CONST WnIndex.ArrowExit = 1
 CONST WnIndex.Container = 2
 CONST WnIndex.Name = 3
