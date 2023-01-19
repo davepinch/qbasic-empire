@@ -217,10 +217,9 @@ DECLARE FUNCTION NebulaLabelRsid% (energy AS INTEGER)
 '
 ' Object API
 '
-DECLARE FUNCTION ObCreate% (kind%)
-DECLARE FUNCTION ObFindString% (kind%, obix%, value$)
+DECLARE FUNCTION ObCreate% (schema%)
+DECLARE FUNCTION ObFindString% (schema%, obix%, value$)
 DECLARE FUNCTION ObGet% (obid%, obix%)
-DECLARE FUNCTION ObGetKind% (obid%)
 DECLARE FUNCTION ObGetString$ (obid%, obix%)
 DECLARE FUNCTION ObResolveParam% (obid%, value%)
 DECLARE FUNCTION ObResolveFocused% (obid%, value%)
@@ -442,7 +441,7 @@ CONST ObKind.Window = 7
 '
 ' Object properties
 '
-CONST ObIndex.Kind = 0
+CONST ObIndex.Schema = 0
 CONST ObIndexInvalid = -1
 
 '
@@ -1781,7 +1780,7 @@ SUB CtDrawText (wnid%, fid%)
 END SUB
 
 FUNCTION CtGet% (ctid%, ctix%)
-  AssertExpected ObKind.Control, gobj(ctid%, ObIndex.Kind).value, "CtGet%", "ObKind"
+  AssertExpected ObKind.Control, gobj(ctid%, ObIndex.Schema).value, "CtGet%", "ObKind"
   CtGet% = ObGet%(ctid%, ctix%)
 END FUNCTION
 
@@ -2040,7 +2039,7 @@ FUNCTION CtSelectable% (ctid%)
 END FUNCTION
 
 SUB CtSet (ctid%, ctix%, value%)
-  AssertExpected ObKind.Control, gobj(ctid%, ObIndex.Kind).value, "CtSet", "ObKind"
+  AssertExpected ObKind.Control, gobj(ctid%, ObIndex.Schema).value, "CtSet", "ObKind"
   ObSet ctid%, ctix%, value%
 END SUB
 
@@ -3124,7 +3123,7 @@ FUNCTION HbFind% (name$)
 END FUNCTION
 
 FUNCTION HbGet% (hbid%, hbix%)
-  AssertExpected ObKind.Habitat, gobj(hbid%, ObIndex.Kind).value, "HbGet%", "ObKind"
+  AssertExpected ObKind.Habitat, gobj(hbid%, ObIndex.Schema).value, "HbGet%", "ObKind"
   HbGet% = ObGet%(hbid%, hbix%)
 END FUNCTION
 
@@ -3155,7 +3154,7 @@ FUNCTION HbMap% (name$)
 END FUNCTION
 
 SUB HbSet (hbid%, hbix%, value%)
-  AssertExpected ObKind.Habitat, gobj(hbid%, ObIndex.Kind).value, "HbSet", "ObKind"
+  AssertExpected ObKind.Habitat, gobj(hbid%, ObIndex.Schema).value, "HbSet", "ObKind"
   ObSet hbid%, hbix%, value%
 END SUB
 
@@ -3349,29 +3348,28 @@ SUB ObBind (obid%, obix%, expr$)
  
 END SUB
 
-FUNCTION ObCreate% (kind%)
+FUNCTION ObCreate% (schema%)
  
   Assert gobids <= UBOUND(gobj, 1), "ObCreate%", "Out of object space"
 
   gobids = gobids + 1
  
-  ObSet gobids, ObIndex.Kind, kind%
+  ObSet gobids, ObIndex.Schema, schema%
 
   ObCreate% = gobids
 
 END FUNCTION
 
-FUNCTION ObFindString% (kind%, obix%, value$)
+FUNCTION ObFindString% (schema%, obix%, value$)
   '
   ' Finds the first object where a property has the specified string
   '
   DIM obid%
   FOR obid% = 1 TO UBOUND(gobj, 1)
      
-    IF gobj(obid%, ObIndex.Kind).value = kind% THEN
+    IF gobj(obid%, ObIndex.Schema).value = schema% THEN
       
-      DIM rsid%
-      LET rsid% = ObGet%(obid%, obix%)
+      DIM rsid%: rsid% = ObGet%(obid%, obix%)
       
       IF rsid% = 0 THEN
         '
@@ -3424,17 +3422,9 @@ FUNCTION ObGet% (obid%, obix%)
 
 END FUNCTION
 
-FUNCTION ObGetKind% (obid%)
-  ObGetKind% = ObGet%(obid%, ObIndex.Kind)
-END FUNCTION
-
 FUNCTION ObGetString$ (obid%, obix%)
-
-  DIM rsid%
-  LET rsid% = ObGet%(obid%, obix%)
-
+  DIM rsid%: rsid% = ObGet%(obid%, obix%)
   ObGetString$ = RsGet$(rsid%)
-
 END FUNCTION
 
 FUNCTION ObResolveFocused% (obid%, value%)
@@ -3497,7 +3487,7 @@ FUNCTION PrCreate%
 END FUNCTION
 
 FUNCTION PrGet% (prid%, prix%)
-  AssertExpected ObKind.Person, gobj(prid%, ObIndex.Kind).value, "PrGet%", "ObKind"
+  AssertExpected ObKind.Person, gobj(prid%, ObIndex.Schema).value, "PrGet%", "ObKind"
   PrGet% = ObGet%(prid%, prix%)
 END FUNCTION
 
@@ -3527,7 +3517,7 @@ FUNCTION PrRandomly%
   DIM items%(1 TO 100)
 
   FOR index% = LBOUND(gobj, 1) TO UBOUND(gobj, 1)
-    IF ObGetKind%(index%) = ObKind.Person THEN
+    IF ObGet%(index%, ObIndex.Schema) = ObKind.Person THEN
       count% = count% + 1
       items%(count%) = index%
     END IF
@@ -3541,7 +3531,7 @@ FUNCTION PrRandomly%
 END FUNCTION
 
 SUB PrSet (prid%, prix%, value%)
-  AssertExpected ObKind.Person, gobj(prid%, ObIndex.Kind).value, "PrSet%", "ObKind"
+  AssertExpected ObKind.Person, gobj(prid%, ObIndex.Schema).value, "PrSet%", "ObKind"
   ObSet prid%, prix%, value%
 END SUB
 
@@ -3804,7 +3794,7 @@ FUNCTION StMap% (name$)
 END FUNCTION
 
 SUB StSet (stid%, stix%, value%)
-  AssertExpected ObKind.Style, gobj(stid%, ObIndex.Kind).value, "StSet", "ObKind"
+  AssertExpected ObKind.Style, gobj(stid%, ObIndex.Schema).value, "StSet", "ObKind"
   ObSet stid%, stix%, value%
 END SUB
 
@@ -4321,7 +4311,7 @@ SUB WnFocusOnPrevious (wnid%)
 END SUB
 
 FUNCTION WnGet% (wnid%, wnix%)
-  AssertExpected ObKind.Window, gobj(wnid%, ObIndex.Kind).value, "WnGet%", "ObKind"
+  AssertExpected ObKind.Window, gobj(wnid%, ObIndex.Schema).value, "WnGet%", "ObKind"
   WnGet% = ObGet%(wnid%, wnix%)
 END FUNCTION
 
