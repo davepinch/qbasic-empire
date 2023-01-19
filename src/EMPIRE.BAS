@@ -261,7 +261,6 @@ DECLARE FUNCTION StGet% (stid%, stid%)
 DECLARE FUNCTION StGetBorderType% (stid%)
 DECLARE FUNCTION StGetName$ (stid%)
 DECLARE FUNCTION StGetSelectedColor% (stid%)
-DECLARE FUNCTION StGetTextColor% (stid%)
 DECLARE FUNCTION StMap% (name$)
 DECLARE SUB StSet (stid%, stix%, value%)
 
@@ -1380,9 +1379,8 @@ SUB CtDrawBox0 (ctid%)
   DIM sx  AS INTEGER
   DIM sy  AS INTEGER
 
-  DIM stid%
-  LET stid% = CtGetStyle(ctid%)
-  DrawColor StGetTextColor(stid%)
+  DIM stid%: stid% = CtGetStyle(ctid%)
+  DrawColor StGet%(stid%, StIndex.TextColor)
  
   FOR row = 1 TO CtGet%(ctid%, CtIndex.SizeY)
    
@@ -1440,7 +1438,7 @@ SUB CtDrawBox1 (ctid%)
     LOCATE r, sx1
     PRINT sideLeft;
   
-    DrawColor StGetTextColor%(stid%)
+    DrawColor StGet%(stid%, StIndex.TextColor)
     PRINT STRING$(sizeX - 2, " ");
   
     DrawColor StGet%(stid%, StIndex.BorderColor)
@@ -1772,7 +1770,7 @@ SUB CtDrawText (wnid%, fid%)
   IF CtGetSelected(wnidctid%) = fid% THEN
     DrawColor StGetSelectedColor%(stid%)
   ELSE
-    DrawColor StGetTextColor%(stid%)
+    DrawColor StGet%(stid%, StIndex.TextColor)
   END IF
 
   '
@@ -3813,10 +3811,6 @@ END FUNCTION
 
 FUNCTION StGetSelectedColor% (stid%)
   StGetSelectedColor% = ObGet%(stid%, StIndex.SelectedColor)
-END FUNCTION
-
-FUNCTION StGetTextColor% (stid%)
-  StGetTextColor% = ObGet%(stid%, StIndex.TextColor)
 END FUNCTION
 
 FUNCTION StMap% (name$)
