@@ -257,7 +257,7 @@ DECLARE SUB ShPrint (text$)
 '
 DECLARE FUNCTION StCreate% ()
 DECLARE FUNCTION StFind% (name$)
-DECLARE FUNCTION StGetBorderColor% (stid%)
+DECLARE FUNCTION StGet% (stid%, stid%)
 DECLARE FUNCTION StGetBorderType% (stid%)
 DECLARE FUNCTION StGetName$ (stid%)
 DECLARE FUNCTION StGetSelectedColor% (stid%)
@@ -1430,7 +1430,7 @@ SUB CtDrawBox1 (ctid%)
   ' Draw the top border
   '
   LOCATE sy1, sx1
-  DrawColor StGetBorderColor%(stid%)
+  DrawColor StGet%(stid%, StIndex.BorderColor)
   PRINT upperLeft; STRING$(sizeX - 2, upperFlat); upperRight;
 
   '
@@ -1443,7 +1443,7 @@ SUB CtDrawBox1 (ctid%)
     DrawColor StGetTextColor%(stid%)
     PRINT STRING$(sizeX - 2, " ");
   
-    DrawColor StGetBorderColor%(stid%)
+    DrawColor StGet%(stid%, StIndex.BorderColor)
     PRINT sideRight;
   NEXT
  
@@ -1676,7 +1676,7 @@ SUB CtDrawSeparator (ctid%)
   sy = CtGetScreenY%(ctid%)
 
   LOCATE sy, sx
-  DrawColor StGetBorderColor%(stid%)
+  DrawColor StGet%(stid%, StIndex.BorderColor)
 
   IF sizeX > 0 THEN
     '
@@ -3798,8 +3798,9 @@ FUNCTION StFind% (name$)
   StFind% = ObFindString%(ObSchema.Style, StIndex.Name, name$)
 END FUNCTION
 
-FUNCTION StGetBorderColor% (stid%)
-  StGetBorderColor% = ObGet%(stid%, StIndex.BorderColor)
+FUNCTION StGet% (stid%, stix%)
+  AssertExpected ObSchema.Style, gobj(stid%, ObIndex.Schema).value, "StGet%", "ObSchema"
+  StGet% = ObGet%(stid%, stix%)
 END FUNCTION
 
 FUNCTION StGetBorderType% (stid%)
