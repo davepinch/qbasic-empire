@@ -257,6 +257,7 @@ DECLARE SUB ShPrint (text$)
 ' Style API
 '
 DECLARE FUNCTION StCreate% ()
+DECLARE FUNCTION StFind% (name$)
 DECLARE FUNCTION StGetBorderColor% (stid%)
 DECLARE FUNCTION StGetBorderType% (stid%)
 DECLARE FUNCTION StGetName$ (stid%)
@@ -300,7 +301,6 @@ DECLARE SUB WnRun (wnid%, result AS WnResultType)
 DECLARE SUB WnRunName (idname$)
 DECLARE FUNCTION WnAddButton% (wnid%, offsetX%, offsetY%, sizeX%, text$, value$)
 DECLARE FUNCTION WnCreate% ()
-DECLARE FUNCTION WnFindStid% (stylename$)
 DECLARE FUNCTION WnFindWnid% (wname$)
 DECLARE FUNCTION WnGet% (wnid%, wnix%)
 DECLARE FUNCTION WnMap% (name$)
@@ -2637,7 +2637,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wnid%, fid%)
       CtSet ctid%, CtIndex.SizeY, VAL(stoken$(1))
 
     CASE ".style"
-      CtSet ctid%, CtIndex.Style, WnFindStid%(stoken$(1))
+      CtSet ctid%, CtIndex.Style, StFind%(stoken$(1))
 
     CASE ".text"
       IF LCASE$(stoken$(1)) = "bind" THEN
@@ -2976,7 +2976,7 @@ FUNCTION ExecCmdWnid% (ntoken%, stoken$(), wnid%, fid%)
       CtSet wnidctid%, CtIndex.OffsetY, VAL(stoken$(1)) - 1
 
     CASE ".style"
-      CtSet wnidctid%, CtIndex.Style, WnFindStid%(stoken$(1)) ' ***
+      CtSet wnidctid%, CtIndex.Style, StFind%(stoken$(1)) ' ***
 
     CASE ELSE
       result = CmdResult.Malformed
@@ -3753,6 +3753,10 @@ FUNCTION StCreate%
   StCreate% = ObCreate%(ObKind.Style)
 END FUNCTION
 
+FUNCTION StFind% (name$)
+  StFind% = ObFindString%(ObKind.Style, StIndex.Name, name$)
+END FUNCTION
+
 FUNCTION StGetBorderColor% (stid%)
   StGetBorderColor% = ObGet%(stid%, StIndex.BorderColor)
 END FUNCTION
@@ -4064,10 +4068,6 @@ SUB WnDraw (wnid%)
   NEXT
 
 END SUB
-
-FUNCTION WnFindStid% (stylename$)
-  WnFindStid% = ObFindString%(ObKind.Style, StIndex.Name, stylename$)
-END FUNCTION
 
 FUNCTION WnFindWnid% (wname$)
  
