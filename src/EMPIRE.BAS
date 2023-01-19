@@ -259,7 +259,6 @@ DECLARE FUNCTION StCreate% ()
 DECLARE FUNCTION StFind% (name$)
 DECLARE FUNCTION StGet% (stid%, stid%)
 DECLARE FUNCTION StGetName$ (stid%)
-DECLARE FUNCTION StGetSelectedColor% (stid%)
 DECLARE FUNCTION StMap% (name$)
 DECLARE SUB StSet (stid%, stix%, value%)
 
@@ -1767,7 +1766,7 @@ SUB CtDrawText (wnid%, fid%)
   DIM stid%
   LET stid% = CtGetStyle(fidctid%)
   IF CtGetSelected(wnidctid%) = fid% THEN
-    DrawColor StGetSelectedColor%(stid%)
+    DrawColor StGet%(stid%, StIndex.SelectedColor)
   ELSE
     DrawColor StGet%(stid%, StIndex.TextColor)
   END IF
@@ -3802,10 +3801,6 @@ END FUNCTION
 
 FUNCTION StGetName$ (stid%)
   StGetName$ = ObGetString$(stid%, StIndex.Name)
-END FUNCTION
-
-FUNCTION StGetSelectedColor% (stid%)
-  StGetSelectedColor% = ObGet%(stid%, StIndex.SelectedColor)
 END FUNCTION
 
 FUNCTION StMap% (name$)
