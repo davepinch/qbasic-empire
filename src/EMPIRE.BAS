@@ -112,12 +112,10 @@ DECLARE SUB CtKey (ctid%, keypress$)
 DECLARE SUB CtKeyBoolean (ctid%, keypress$)
 DECLARE SUB CtKeyInteger (ctid%, keypress$)
 DECLARE SUB CtSet (ctid%, ctix%, value%)
-DECLARE SUB CtSetParam (ctid%, value%)
 DECLARE FUNCTION CtCreateChild% (wid%, kind%)
 DECLARE FUNCTION CtGet% (ctid%, ctix%)
 DECLARE FUNCTION CtGetOffsetX% (ctid%)
 DECLARE FUNCTION CtGetOffsetY% (ctid%)
-DECLARE FUNCTION CtGetParam% (ctid%)
 DECLARE FUNCTION CtGetScreenX% (ctid%)
 DECLARE FUNCTION CtGetScreenY% (ctid%)
 DECLARE FUNCTION CtGetSelected% (ctid%)
@@ -291,7 +289,7 @@ DECLARE SUB WnFocusOnNext (wid%)
 DECLARE SUB WnFocusOnPrevious (wid%)
 DECLARE SUB WnRefreshField (wid%, fid%)
 DECLARE SUB WnRender (wid%)
-DECLARE SUB WnRun (wid%, result AS WnResultType)
+DECLARE SUB WnRun (wnid%, result AS WnResultType)
 DECLARE SUB WnRunName (idname$)
 DECLARE SUB WnSet (wnid%, wnix%, value%)
 DECLARE FUNCTION WnAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
@@ -387,14 +385,13 @@ CONST CtIndex.Command = 5
 CONST CtIndex.Kind = 6
 CONST CtIndex.OffsetX = 7
 CONST CtIndex.OffsetY = 8
-CONST CtIndex.Param = 9
-CONST CtIndex.Popup = 10
-CONST CtIndex.Selected = 11
-CONST CtIndex.SizeX = 12
-CONST CtIndex.SizeY = 13
-CONST CtIndex.Style = 14
-CONST CtIndex.Text = 15
-CONST CtIndex.Window = 16
+CONST CtIndex.Popup = 9
+CONST CtIndex.Selected = 10
+CONST CtIndex.SizeX = 11
+CONST CtIndex.SizeY = 12
+CONST CtIndex.Style = 13
+CONST CtIndex.Text = 14
+CONST CtIndex.Window = 15
 
 '
 ' Event properties
@@ -1299,6 +1296,12 @@ FUNCTION CtCreateChild% (wid%, kind%)
   Assert wid% > 0, "CtCreateChild%", "wid cannot be 0"
 
   '
+  ' Get the parent window
+  '
+  DIM cnid%: cnid% = gwin(wid%, 0)
+  DIM wnid%: wnid% = CtGet%(cnid%, CtIndex.Window)
+
+  '
   ' Get a new field index
   '
   DIM fid%: fid% = win(wid%).fields + 1
@@ -1307,10 +1310,11 @@ FUNCTION CtCreateChild% (wid%, kind%)
   '
   ' Create a child control
   '
-  DIM ctid%: ctid% = ObCreateChild%(ObSchema.Control, gwin(wid%, 0))
- 
+  DIM ctid%: ctid% = ObCreateChild%(ObSchema.Control, cnid%)
+  
   gwin(wid%, fid%) = ctid%
   CtSet ctid%, CtIndex.Kind, kind%
+  CtSet ctid%, CtIndex.Window, wnid%
   CtCreateChild% = fid%
 
 END FUNCTION
@@ -1801,10 +1805,6 @@ FUNCTION CtGetOffsetY% (ctid%)
   CtGetOffsetY% = ObGet%(ctid%, CtIndex.OffsetY)
 END FUNCTION
 
-FUNCTION CtGetParam% (ctid%)
-  CtGetParam = ObGet%(ctid%, CtIndex.Param)
-END FUNCTION
-
 FUNCTION CtGetScreenX% (ctid%)
 
   DIM parentctid%
@@ -1968,9 +1968,6 @@ FUNCTION CtMap% (name$)
     CASE "OffsetY"
       CtMap% = CtIndex.OffsetY
 
-    CASE "Param"
-      CtMap% = CtIndex.Param
-
     CASE "Parent"
       CtMap% = CtIndex.Parent
 
@@ -2049,10 +2046,6 @@ END FUNCTION
 SUB CtSet (ctid%, ctix%, value%)
   AssertExpected ObSchema.Control, gobj(ctid%, ObIndex.Schema).value, "CtSet", "ObSchema"
   ObSet ctid%, ctix%, value%
-END SUB
-
-SUB CtSetParam (ctid%, value%)
-  ObSet ctid%, CtIndex.Param, value%
 END SUB
 
 FUNCTION DgGarble$ (text$, percent!)
@@ -2649,8 +2642,8 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
     CASE ".offsety"
       CtSet ctid%, CtIndex.OffsetY, VAL(stoken$(1))
 
-    CASE ".popup", ".child" ' ***
-      CtSet ctid%, CtIndex.Popup, WnFindWid%(stoken$(1))
+    CASE ".popup", ".child"
+      CtSet ctid%, CtIndex.Popup, WnFind%(stoken$(1))
    
     CASE ".sizex"
       CtSet ctid%, CtIndex.SizeX, VAL(stoken$(1))
@@ -2706,7 +2699,7 @@ FUNCTION ExecCmdHbid% (ntoken%, stoken$(), hbid%)
       HbSet hbid%, HbIndex.Name, RsCreate%(stoken$(1))
 
     CASE ".window"
-      HbSet hbid%, HbIndex.Window, WnFindWid%(stoken$(1))
+      HbSet hbid%, HbIndex.Window, WnFind%(stoken$(1))
 
     CASE ELSE
       ExecCmdHbid = CmdResult.Malformed
@@ -2992,8 +2985,8 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
     CASE ".name"
       WnSet wnid%, WnIndex.Name, RsCreate%(stoken$(1))
  
-    CASE ".param" ' '***
-      CtSetParam cnid%, VAL(stoken$(2))
+    CASE ".param"
+      WnSet wnid%, WnIndex.Param, VAL(stoken$(2))
 
     CASE ".posx" ' '***
       CtSet cnid%, CtIndex.OffsetX, VAL(stoken$(1)) - 1
@@ -3087,21 +3080,14 @@ SUB GameMoveOffset (offsetX%, offsetY%)
     '
     ' Run the window handling this habitat
     '
-    DIM hbidwid%
-    LET hbidwid% = HbGet%(hbid%, HbIndex.Window)
+    DIM wnid%
+    LET wnid% = HbGet%(hbid%, HbIndex.Window)
 
-    IF hbidwid% > 0 THEN
+    IF wnid% > 0 THEN
      
       AtlasDrawSelect cx, cy, 1
-
-      '
-      ' HACK: set window parameter value
-      '
-      DIM hbidwidctid%
-      LET hbidwidctid% = gwin(hbidwid%, 0)
-      CtSetParam hbidwidctid%, hbid%
-     
-      WnRun hbidwid%, wresult
+      WnSet wnid%, WnIndex.Param, hbid%
+      WnRun wnid%, wresult
      
       IF wresult.action = WnAction.Execute THEN
         '
@@ -3500,12 +3486,10 @@ END FUNCTION
 
 FUNCTION ObResolveParam% (obid%, value%)
 
-  DIM parent%
-  LET parent% = ObGet%(obid%, ObIndex.Parent)
-  AssertIsPositive parent%, "ObResolveParam%", "parent%"
+  DIM wnid%: wnid% = CtGet%(obid%, CtIndex.Window)
+  AssertIsPositive wnid%, "ObResolveParam%", "wnid%"
 
-  DIM hbid%
-  LET hbid% = CtGetParam%(parent%)
+  DIM hbid%: hbid% = WnGet%(wnid%, WnIndex.Param)
   AssertIsPositive hbid%, "ObResolveParam", "hbid%"
 
   IF hbid% > 0 THEN
@@ -3665,7 +3649,7 @@ SUB SetupGame
   DIM cresult AS INTEGER
   DIM wresult AS WnResultType
  
-  WnRun WnFindWid("Start"), wresult
+  WnRun WnFind%("Start"), wresult
  
   IF wresult.action = WnAction.Execute THEN
     cresult = ExecResource%(wresult.cmdrsid)
@@ -3852,13 +3836,13 @@ END SUB
 
 SUB UI.Run
  
-  DIM menuwid AS INTEGER
+  DIM menuwnid AS INTEGER
   DIM cresult AS INTEGER
   DIM wresult AS WnResultType
 
   UI.SetPage UIPage.Atlas
 
-  menuwid = WnFindWid%("Menu")
+  menuwnid = WnFind%("Menu")
 
   DO
     
@@ -3874,7 +3858,7 @@ SUB UI.Run
 
     END SELECT
 
-    WnRun menuwid, wresult
+    WnRun menuwnid, wresult
     IF wresult.action = WnAction.Execute THEN
       cresult = ExecResource%(wresult.cmdrsid)
     END IF
@@ -4574,9 +4558,12 @@ SUB WnRender (wid%)
 
 END SUB
 
-SUB WnRun (wid%, result AS WnResultType)
+SUB WnRun (wnid%, result AS WnResultType)
 
-  AssertIsPositive wid%, "WnRun", "wid%"
+  AssertIsPositive wnid%, "WnRun", "wnid%"
+
+  DIM wid%
+  LET wid% = WnGet%(wnid%, WnIndex.Wid)
 
   DIM cnid%
   LET cnid% = gwin(wid%, 0)
@@ -4719,13 +4706,10 @@ END SUB
 
 SUB WnRunName (name$)
  
-  DIM wid%
   DIM result AS WnResultType
-
-  wid% = WnFindWid(name$)
-  Assert wid% <> 0, "WnRunName", "wid cannot be 0"
-
-  WnRun wid%, result
+  DIM wnid%: wnid% = WnFind%(name$)
+  AssertIsPositive wnid%, "WnRunName", "wnid%"
+  WnRun wnid%, result
 
 END SUB
 
