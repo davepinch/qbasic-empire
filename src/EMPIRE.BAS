@@ -294,6 +294,7 @@ DECLARE SUB WnRefreshField (wnid%, fid%)
 DECLARE SUB WnRender (wnid%)
 DECLARE SUB WnRun (wnid%, result AS WnResultType)
 DECLARE SUB WnRunName (idname$)
+DECLARE SUB WnSet (wnid%, wnix%, value%)
 DECLARE FUNCTION WnAddButton% (wnid%, offsetX%, offsetY%, sizeX%, text$, value$)
 DECLARE FUNCTION WnCreate% ()
 DECLARE FUNCTION WnFindWnid% (wname$)
@@ -4076,7 +4077,8 @@ FUNCTION WnCreate%
 
   CtSet ctid%, CtIndex.Window, wnid%
   CtSet ctid%, CtIndex.ChildList, wincount
-
+  WnSet wnid%, WnIndex.Container, ctid%
+ 
   '
   ' Track the control as field #0
   '
@@ -4705,7 +4707,7 @@ SUB WnRunName (name$)
 END SUB
 
 SUB WnSet (wnid%, wnix%, value%)
-  AssertExpected ObSchema.Window, gobj(wnid%, ObSchema.Window).value, "WnSet", "ObSchema"
+  AssertExpected ObSchema.Window, gobj(wnid%, ObIndex.Schema).value, "WnSet", "ObSchema"
   ObSet wnid%, wnix%, value%
 END SUB
 
