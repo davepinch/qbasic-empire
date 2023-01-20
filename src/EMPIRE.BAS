@@ -212,8 +212,7 @@ DECLARE FUNCTION NebulaLabelRsid% (energy AS INTEGER)
 '
 ' Object API
 '
-DECLARE FUNCTION ObCreate% (schema%)
-DECLARE FUNCTION ObCreateChild% (schema%, parent%)
+DECLARE FUNCTION ObCreate% (schema%, parent%)
 DECLARE FUNCTION ObFindString% (schema%, obix%, value$)
 DECLARE FUNCTION ObFindValue% (schema%, obix%, value%)
 DECLARE FUNCTION ObGet% (obid%, obix%)
@@ -1284,7 +1283,7 @@ FUNCTION CtCreate% (kind%)
   '
   ' Creates an empty control
   '
-  DIM ctid%: ctid% = ObCreate%(ObSchema.Control)
+  DIM ctid%: ctid% = ObCreate%(ObSchema.Control, 0) ' *** allow parents
   AssertIsPositive ctid%, "CtCreate%", "ctid%"
 
   CtSet ctid%, CtIndex.Kind, kind%
@@ -1311,7 +1310,7 @@ FUNCTION CtCreateChild% (wid%, kind%)
   '
   ' Create a child control
   '
-  DIM ctid%: ctid% = ObCreateChild%(ObSchema.Control, cnid%)
+  DIM ctid%: ctid% = ObCreate%(ObSchema.Control, cnid%)
   
   gwin(wid%, fid%) = ctid%
   CtSet ctid%, CtIndex.Kind, kind%
@@ -2414,7 +2413,7 @@ SUB DrawText (text$)
 END SUB
 
 FUNCTION EvCreate%
-  EvCreate% = ObCreate%(ObSchema.Event)
+  EvCreate% = ObCreate%(ObSchema.Event, 0) ' *** allow parents
 END FUNCTION
 
 FUNCTION EvFind% (name$)
@@ -3129,7 +3128,7 @@ FUNCTION GetKey$
 END FUNCTION
 
 FUNCTION HbCreate%
-  HbCreate% = ObCreate%(ObSchema.Habitat)
+  HbCreate% = ObCreate%(ObSchema.Habitat, 0) '*** allow parent
 END FUNCTION
 
 FUNCTION HbFind% (name$)
@@ -3233,7 +3232,7 @@ FUNCTION LsCount% (lsid%)
 END FUNCTION
 
 FUNCTION LsCreate%
-  LsCreate% = ObCreate%(ObSchema.List)
+  LsCreate% = ObCreate%(ObSchema.List, 0) '*** allow parents
 END FUNCTION
 
 FUNCTION LsGet% (lsid%, n%)
@@ -3368,22 +3367,19 @@ SUB ObBind (obid%, obix%, expr$)
  
 END SUB
 
-FUNCTION ObCreate% (schema%)
- 
+FUNCTION ObCreate% (schema%, parent%)
+  '
+  ' Creates an object of the specified schema and parent.
+  '
   Assert gobids <= UBOUND(gobj, 1), "ObCreate%", "Out of object space"
 
   gobids = gobids + 1
  
   ObSet gobids, ObIndex.Schema, schema%
+  ObSet gobids, ObIndex.Parent, parent%
 
   ObCreate% = gobids
 
-END FUNCTION
-
-FUNCTION ObCreateChild% (schema%, parent%)
-  DIM obid%: obid% = ObCreate%(schema%)
-  ObSet obid%, ObIndex.Parent, parent%
-  ObCreateChild% = obid%
 END FUNCTION
 
 FUNCTION ObFindString% (schema%, obix%, value$)
@@ -3541,7 +3537,7 @@ SUB ObSetString (obid%, obix%, value$)
 END SUB
 
 FUNCTION PrCreate%
-  PrCreate% = ObCreate%(ObSchema.Person)
+  PrCreate% = ObCreate%(ObSchema.Person, 0) ' Allow parents
 END FUNCTION
 
 FUNCTION PrGet% (prid%, prix%)
@@ -3807,7 +3803,7 @@ FUNCTION Split% (text AS STRING, tokens() AS STRING)
 END FUNCTION
 
 FUNCTION StCreate%
-  StCreate% = ObCreate%(ObSchema.Style)
+  StCreate% = ObCreate%(ObSchema.Style, 0) ' *** allow parents
 END FUNCTION
 
 FUNCTION StFind% (name$)
@@ -4084,7 +4080,7 @@ FUNCTION WnCreate%
   '
   ' Create the root window object
   '
-  DIM wnid%: wnid% = ObCreate%(ObSchema.Window)
+  DIM wnid%: wnid% = ObCreate%(ObSchema.Window, 0) ' *** allow parents
   AssertIsPositive wnid%, "WnCreate%", "wnid%"
 
   '
