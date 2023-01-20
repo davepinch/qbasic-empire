@@ -169,13 +169,13 @@ DECLARE FUNCTION EvTestTrigger% (evid%, tid%)
 DECLARE SUB ExecFile (filename AS STRING)
 DECLARE FUNCTION ExecCmd% (cmd$)
 DECLARE FUNCTION ExecCmdEvid% (ntoken%, stoken$(), evid%)
-DECLARE FUNCTION ExecCmdFid% (ntoken%, stoken$(), wnid%, fid%)
+DECLARE FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
 DECLARE FUNCTION ExecCmdHbid% (ntoken%, stoken$(), hbid%)
 DECLARE FUNCTION ExecCmdPrid% (ntoken%, stoken$(), prid%)
-DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wnid%)
+DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wid%)
 DECLARE FUNCTION ExecCmdStid% (ntoken%, stoken$(), stid%)
 DECLARE FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
-DECLARE FUNCTION ExecCmdWnid% (ntoken%, stoken$(), wnid%, fid%)
+DECLARE FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
 DECLARE FUNCTION ExecResource% (rsid%)
 
 '
@@ -2532,7 +2532,7 @@ FUNCTION ExecCmd% (cmd$)
   SHARED prid%
   SHARED stid%
   SHARED tid%
-  SHARED wnid%
+  SHARED wid%
 
   DIM result%
  
@@ -2553,9 +2553,9 @@ FUNCTION ExecCmd% (cmd$)
   END IF
 
   IF fid% > 0 THEN
-    result% = ExecCmdFid%(ntoken%, stoken$(), wnid%, fid%)
-  ELSEIF wnid% > 0 THEN
-    result% = ExecCmdWnid%(ntoken%, stoken$(), wnid%, fid%)
+    result% = ExecCmdFid%(ntoken%, stoken$(), wid%, fid%)
+  ELSEIF wid% > 0 THEN
+    result% = ExecCmdWid%(ntoken%, stoken$(), wid%, fid%)
   ELSEIF evid% > 0 THEN
     result% = ExecCmdEvid%(ntoken%, stoken$(), evid%)
   ELSEIF hbid% > 0 THEN
@@ -2567,7 +2567,7 @@ FUNCTION ExecCmd% (cmd$)
   ELSEIF tid% > 0 THEN
     result% = ExecCmdTid%(ntoken%, stoken$(), tid%)
   ELSE
-    result% = ExecCmdRoot%(ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wnid%)
+    result% = ExecCmdRoot%(ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wid%)
   END IF
 
   Assert result% = CmdResult.OK, "ExecCmd", "Malformed: " + cmd$
@@ -2600,13 +2600,13 @@ FUNCTION ExecCmdEvid% (ntoken%, stoken$(), evid%)
 
 END FUNCTION
 
-FUNCTION ExecCmdFid% (ntoken%, stoken$(), wnid%, fid%)
+FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
 
-  AssertIsPositive wnid%, "ExecCmdFid%", "wnid%"
+  AssertIsPositive wid%, "ExecCmdFid%", "wid%"
   AssertIsPositive fid%, "ExecCmdFid%", "fid%"
 
   DIM ctid%
-  LET ctid% = gwin(wnid%, fid%)
+  LET ctid% = gwin(wid%, fid%)
 
   DIM endtag AS STRING
   DIM kind%
@@ -2736,14 +2736,14 @@ FUNCTION ExecCmdPrid% (ntoken%, stoken$(), prid%)
   
 END FUNCTION
 
-FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wnid%)
+FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wid%)
 
   AssertIsZero evid%, "ExecCmdRoot%", "evid%"
   AssertIsZero hbid%, "ExecCmdRoot%", "hbid%"
   AssertIsZero prid%, "ExecCmdRoot%", "prid%"
   AssertIsZero stid%, "ExecCmdRoot%", "stid%"
   AssertIsZero tid%, "ExecCmdRoot%", "tid%"
-  AssertIsZero wnid%, "ExecCmdRoot%", "wnid%"
+  AssertIsZero wid%, "ExecCmdRoot%", "wid%"
 
   ExecCmdRoot% = CmdResult.OK
 
@@ -2855,7 +2855,7 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wni
       tid% = triggers
 
     CASE "window"
-      wnid% = WnCreate%
+      wid% = WnCreate%
 
     CASE "winrun"
       WnRunName stoken$(1)
@@ -2924,53 +2924,53 @@ FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
 
 END FUNCTION
 
-FUNCTION ExecCmdWnid% (ntoken%, stoken$(), wnid%, fid%)
+FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
 
-  AssertIsPositive wnid%, "ExecCmdWnid%", "wnid%"
-  AssertIsZero fid%, "ExecCmdWnid%", "fid%"
+  AssertIsPositive wid%, "ExecCmdWid%", "wid%"
+  AssertIsZero fid%, "ExecCmdWid%", "fid%"
 
   DIM wnidctid%
-  LET wnidctid% = gwin(wnid%, 0)
+  LET wnidctid% = gwin(wid%, 0)
 
-  ExecuteCommandWnid% = CmdResult.OK
+  ExecuteCommandWid% = CmdResult.OK
 
   IF ntoken% = 1 THEN
 
     SELECT CASE stoken$(0)
      
       CASE "endwindow"
-        wnid% = 0
+        wid% = 0
         wnidctid% = 0
 
       CASE "boolean"
-        fid% = CtCreateChild%(wnid%, CtKind.Boolean)
+        fid% = CtCreateChild%(wid%, CtKind.Boolean)
 
       CASE "box"
-        fid% = CtCreateChild%(wnid%, CtKind.Box)
+        fid% = CtCreateChild%(wid%, CtKind.Box)
 
       CASE "button"
-        fid% = CtCreateChild%(wnid%, CtKind.Button)
+        fid% = CtCreateChild%(wid%, CtKind.Button)
    
       CASE "file"
-        fid% = CtCreateChild%(wnid%, CtKind.File)
+        fid% = CtCreateChild%(wid%, CtKind.File)
 
       CASE "integer"
-        fid% = CtCreateChild%(wnid%, CtKind.Integer)
+        fid% = CtCreateChild%(wid%, CtKind.Integer)
 
       CASE "label"
-        fid% = CtCreateChild%(wnid%, CtKind.Label)
+        fid% = CtCreateChild%(wid%, CtKind.Label)
    
       CASE "nebula"
-        fid% = CtCreateChild%(wnid%, CtKind.Nebula)
+        fid% = CtCreateChild%(wid%, CtKind.Nebula)
 
       CASE "popup"
-        fid% = CtCreateChild%(wnid%, CtKind.Popup)
+        fid% = CtCreateChild%(wid%, CtKind.Popup)
 
       CASE "separator"
-        fid% = CtCreateChild%(wnid%, CtKind.Separator)
+        fid% = CtCreateChild%(wid%, CtKind.Separator)
 
       CASE ELSE
-        ExecuteCommandWnid% = CmdResult.Malformed
+        ExecuteCommandWid% = CmdResult.Malformed
 
     END SELECT
 
@@ -2978,14 +2978,14 @@ FUNCTION ExecCmdWnid% (ntoken%, stoken$(), wnid%, fid%)
   END IF
 
   IF ntoken% <> 2 THEN
-    ExecuteCommandWnid% = CmdResult.Malformed
+    ExecuteCommandWid% = CmdResult.Malformed
     EXIT FUNCTION
   END IF
 
   SELECT CASE stoken$(0)
 
     CASE ".arrowexit" ' ***
-      win(wnid%).arrowexit = VAL(stoken$(1))
+      win(wid%).arrowexit = VAL(stoken$(1))
 
     CASE ".name"
       CtSet wnidctid%, CtIndex.Name, RsCreate%(stoken$(1))
