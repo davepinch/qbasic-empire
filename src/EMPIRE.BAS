@@ -218,6 +218,7 @@ DECLARE FUNCTION ObFindString% (schema%, obix%, value$)
 DECLARE FUNCTION ObFindValue% (schema%, obix%, value%)
 DECLARE FUNCTION ObGet% (obid%, obix%)
 DECLARE FUNCTION ObGetString$ (obid%, obix%)
+DECLARE FUNCTION ObMapSchema% (name$)
 DECLARE FUNCTION ObResolveParam% (obid%, value%)
 DECLARE FUNCTION ObResolveFocused% (obid%, value%)
 DECLARE SUB ObBind (obid%, obix%, expr$)
@@ -3463,6 +3464,27 @@ END FUNCTION
 FUNCTION ObGetString$ (obid%, obix%)
   DIM rsid%: rsid% = ObGet%(obid%, obix%)
   ObGetString$ = RsGet$(rsid%)
+END FUNCTION
+
+FUNCTION ObMapSchema% (name$)
+  SELECT CASE name$
+  
+    CASE "Control"
+      ObMapSchema% = ObSchema.Control
+
+    CASE "Habitat"
+      ObMapSchema% = ObSchema.Habitat
+
+    CASE "Person"
+      ObMapSchema% = ObSchema.Person
+
+    CASE "Style"
+      ObMapSchema% = ObSchema.Style
+
+    CASE "Window"
+      ObMapSchema% = ObSchema.Window
+
+  END SELECT
 END FUNCTION
 
 FUNCTION ObResolveFocused% (obid%, value%)
