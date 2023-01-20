@@ -115,7 +115,6 @@ DECLARE SUB CtSet (ctid%, ctix%, value%)
 DECLARE SUB CtSetParam (ctid%, value%)
 DECLARE FUNCTION CtCreateChild% (wid%, kind%)
 DECLARE FUNCTION CtGet% (ctid%, ctix%)
-DECLARE FUNCTION CtGetName$ (ctid%)
 DECLARE FUNCTION CtGetOffsetX% (ctid%)
 DECLARE FUNCTION CtGetOffsetY% (ctid%)
 DECLARE FUNCTION CtGetParam% (ctid%)
@@ -218,6 +217,7 @@ DECLARE FUNCTION NebulaLabelRsid% (energy AS INTEGER)
 DECLARE FUNCTION ObCreate% (schema%)
 DECLARE FUNCTION ObCreateChild% (schema%, parent%)
 DECLARE FUNCTION ObFindString% (schema%, obix%, value$)
+DECLARE FUNCTION ObFindValue% (schema%, obix%, value%)
 DECLARE FUNCTION ObGet% (obid%, obix%)
 DECLARE FUNCTION ObGetString$ (obid%, obix%)
 DECLARE FUNCTION ObResolveParam% (obid%, value%)
@@ -296,7 +296,8 @@ DECLARE SUB WnRunName (idname$)
 DECLARE SUB WnSet (wnid%, wnix%, value%)
 DECLARE FUNCTION WnAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
 DECLARE FUNCTION WnCreate% ()
-DECLARE FUNCTION WnFindWid% (wname$)
+DECLARE FUNCTION WnFind% (name$)
+DECLARE FUNCTION WnFindWid% (name$)
 DECLARE FUNCTION WnGet% (wnid%, wnix%)
 DECLARE FUNCTION WnMap% (name$)
 DECLARE FUNCTION WnMapKey% (wid%, pressed$)
@@ -1792,10 +1793,6 @@ FUNCTION CtGet% (ctid%, ctix%)
   CtGet% = ObGet%(ctid%, ctix%)
 END FUNCTION
 
-FUNCTION CtGetName$ (ctid%)
-  CtGetName$ = ObGetString$(ctid%, CtIndex.Name)
-END FUNCTION
-
 FUNCTION CtGetOffsetX% (ctid%)
   CtGetOffsetX% = ObGet%(ctid%, CtIndex.OffsetX)
 END FUNCTION
@@ -2992,8 +2989,8 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
     CASE ".arrowexit"
       WnSet wnid%, WnIndex.ArrowExit, VAL(stoken$(1))
 
-    CASE ".name" ' '***
-      CtSet cnid%, CtIndex.Name, RsCreate%(stoken$(1))
+    CASE ".name"
+      WnSet wnid%, WnIndex.Name, RsCreate%(stoken$(1))
  
     CASE ".param" ' '***
       CtSetParam cnid%, VAL(stoken$(2))
@@ -3203,8 +3200,8 @@ SUB InboxAdd (subject AS STRING, filename AS STRING)
 
   count = count + 1
 
-  wid% = WnFindWid("Inbox")
-  fid% = WnAddButton(wid%, 1, count, 20, " " + subject, filename)
+  wid% = WnFindWid%("Inbox")
+  fid% = WnAddButton%(wid%, 1, count, 20, " " + subject, filename)
 
   AtlasSetStatus "Mail arrived"
   ShFile "NEWMAIL.PCB"
@@ -3434,6 +3431,19 @@ FUNCTION ObFindString% (schema%, obix%, value$)
 
     END IF
 
+  NEXT
+
+END FUNCTION
+
+FUNCTION ObFindValue% (schema%, obix%, value%)
+ 
+  DIM obid%
+  FOR obid% = 1 TO UBOUND(gobj, 1)
+    IF gobj(obid%, ObIndex.Schema).value = schema% THEN
+      IF ObGet%(obid%, obix%) = value% THEN
+        ObFindValue% = obid%
+      END IF
+    END IF
   NEXT
 
 END FUNCTION
@@ -4109,21 +4119,18 @@ SUB WnDraw (wid%)
 
 END SUB
 
-FUNCTION WnFindWid% (wname$)
- 
-  DIM wid%
-  FOR wid% = 1 TO gwid%
-   
-    DIM cnid%
-    LET cnid% = gwin(wid%, 0)
-   
-    IF CtGetName$(cnid%) = wname$ THEN
-      WnFindWid% = wid%
-      EXIT FUNCTION
-    END IF
-  NEXT
+FUNCTION WnFind% (name$)
+  WnFind% = ObFindString%(ObSchema.Window, WnIndex.Name, name$)
+END FUNCTION
 
-  WnFindWid% = 0
+FUNCTION WnFindWid% (name$)
+ 
+  DIM wnid%
+  LET wnid% = ObFindString%(ObSchema.Window, WnIndex.Name, name$)
+
+  IF wnid% > 0 THEN
+    WnFindWid% = WnGet%(wnid%, WnIndex.Wid)
+  END IF
 
 END FUNCTION
 
