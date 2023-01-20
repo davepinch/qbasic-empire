@@ -99,7 +99,7 @@ DECLARE FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS I
 ' Control API
 '
 DECLARE FUNCTION CtCreate% (kind%)
-DECLARE SUB CtDraw (wnid%, fid%)
+DECLARE SUB CtDraw (wid%, fid%)
 DECLARE SUB CtDrawBox (ctid%)
 DECLARE SUB CtDrawBox0 (ctid%)
 DECLARE SUB CtDrawBox1 (ctid%)
@@ -107,13 +107,13 @@ DECLARE SUB CtDrawBox2 (ctid%)
 DECLARE SUB CtDrawFile (ctid%)
 DECLARE SUB CtDrawNebula (ctid%)
 DECLARE SUB CtDrawSeparator (ctid%)
-DECLARE SUB CtDrawText (wnid%, fid%)
+DECLARE SUB CtDrawText (wid%, fid%)
 DECLARE SUB CtKey (ctid%, keypress$)
 DECLARE SUB CtKeyBoolean (ctid%, keypress$)
 DECLARE SUB CtKeyInteger (ctid%, keypress$)
 DECLARE SUB CtSet (ctid%, ctix%, value%)
 DECLARE SUB CtSetParam (ctid%, value%)
-DECLARE FUNCTION CtCreateChild% (wnid%, kind%)
+DECLARE FUNCTION CtCreateChild% (wid%, kind%)
 DECLARE FUNCTION CtGet% (ctid%, ctix%)
 DECLARE FUNCTION CtGetName$ (ctid%)
 DECLARE FUNCTION CtGetOffsetX% (ctid%)
@@ -282,21 +282,21 @@ DECLARE FUNCTION VideoGetVisual% ()
 '
 ' Window API
 '
-DECLARE SUB WnClose (wnid%)
-DECLARE SUB WnDraw (wnid%)
-DECLARE SUB WnFocusOn (wnid%, fid%)
-DECLARE SUB WnFocusOnFirst (wnid%)
-DECLARE SUB WnFocusOnLast (wnid%)
-DECLARE SUB WnFocusOnNext (wnid%)
-DECLARE SUB WnFocusOnPrevious (wnid%)
-DECLARE SUB WnRefreshField (wnid%, fid%)
-DECLARE SUB WnRender (wnid%)
-DECLARE SUB WnRun (wnid%, result AS WnResultType)
+DECLARE SUB WnClose (wid%)
+DECLARE SUB WnDraw (wid%)
+DECLARE SUB WnFocusOn (wid%, fid%)
+DECLARE SUB WnFocusOnFirst (wid%)
+DECLARE SUB WnFocusOnLast (wid%)
+DECLARE SUB WnFocusOnNext (wid%)
+DECLARE SUB WnFocusOnPrevious (wid%)
+DECLARE SUB WnRefreshField (wid%, fid%)
+DECLARE SUB WnRender (wid%)
+DECLARE SUB WnRun (wid%, result AS WnResultType)
 DECLARE SUB WnRunName (idname$)
 DECLARE SUB WnSet (wnid%, wnix%, value%)
-DECLARE FUNCTION WnAddButton% (wnid%, offsetX%, offsetY%, sizeX%, text$, value$)
+DECLARE FUNCTION WnAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
 DECLARE FUNCTION WnCreate% ()
-DECLARE FUNCTION WnFindWnid% (wname$)
+DECLARE FUNCTION WnFindWid% (wname$)
 DECLARE FUNCTION WnGet% (wnid%, wnix%)
 DECLARE FUNCTION WnMap% (name$)
 DECLARE FUNCTION WnMapKey% (wid%, pressed$)
@@ -1292,44 +1292,44 @@ FUNCTION CtCreate% (kind%)
 
 END FUNCTION
 
-FUNCTION CtCreateChild% (wnid%, kind%)
+FUNCTION CtCreateChild% (wid%, kind%)
 
-  Assert wnid% > 0, "CtCreateChild%", "wnid cannot be 0"
+  Assert wid% > 0, "CtCreateChild%", "wid cannot be 0"
 
   '
   ' Get a new field index
   '
-  DIM fid%: fid% = win(wnid%).fields + 1
-  win(wnid%).fields = fid%
+  DIM fid%: fid% = win(wid%).fields + 1
+  win(wid%).fields = fid%
 
   '
   ' Create a child control
   '
-  DIM ctid%: ctid% = ObCreateChild%(ObSchema.Control, gwin(wnid%, 0))
+  DIM ctid%: ctid% = ObCreateChild%(ObSchema.Control, gwin(wid%, 0))
  
-  gwin(wnid%, fid%) = ctid%
+  gwin(wid%, fid%) = ctid%
   CtSet ctid%, CtIndex.Kind, kind%
   CtCreateChild% = fid%
 
 END FUNCTION
 
-SUB CtDraw (wnid%, fid%)
+SUB CtDraw (wid%, fid%)
 
   DIM ctid%
-  LET ctid% = gwin(wnid%, fid%)
+  LET ctid% = gwin(wid%, fid%)
 
   SELECT CASE CtGet%(ctid%, CtIndex.Kind)
     '
     ' Check the most common kinds first
     '
     CASE CtKind.Button
-      CtDrawText wnid%, fid%
+      CtDrawText wid%, fid%
 
     CASE CtKind.Box
       CtDrawBox ctid%
 
     CASE CtKind.Label
-      CtDrawText wnid%, fid%
+      CtDrawText wid%, fid%
 
     CASE CtKind.File
       CtDrawFile ctid%
@@ -1341,7 +1341,7 @@ SUB CtDraw (wnid%, fid%)
       CtDrawNebula ctid%
 
     CASE ELSE
-      CtDrawText wnid%, fid%
+      CtDrawText wid%, fid%
 
   END SELECT
 
@@ -1739,13 +1739,13 @@ SUB CtDrawSeparator (ctid%)
 
 END SUB
 
-SUB CtDrawText (wnid%, fid%)
+SUB CtDrawText (wid%, fid%)
 
-  DIM wnidctid%
-  LET wnidctid% = gwin(wnid%, 0)
+  DIM cnid%
+  LET cnid% = gwin(wid%, 0)
 
   DIM fidctid%
-  LET fidctid% = gwin(wnid%, fid%)
+  LET fidctid% = gwin(wid%, fid%)
 
   DIM size AS INTEGER
   DIM sx   AS INTEGER
@@ -1764,7 +1764,7 @@ SUB CtDrawText (wnid%, fid%)
   '
   DIM stid%
   LET stid% = CtGetStyle(fidctid%)
-  IF CtGetSelected(wnidctid%) = fid% THEN
+  IF CtGetSelected(cnid%) = fid% THEN
     DrawColor StGet%(stid%, StIndex.SelectedColor)
   ELSE
     DrawColor StGet%(stid%, StIndex.TextColor)
@@ -2652,7 +2652,7 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       CtSet ctid%, CtIndex.OffsetY, VAL(stoken$(1))
 
     CASE ".popup", ".child" ' ***
-      CtSet ctid%, CtIndex.Popup, WnFindWnid%(stoken$(1))
+      CtSet ctid%, CtIndex.Popup, WnFindWid%(stoken$(1))
    
     CASE ".sizex"
       CtSet ctid%, CtIndex.SizeX, VAL(stoken$(1))
@@ -2708,7 +2708,7 @@ FUNCTION ExecCmdHbid% (ntoken%, stoken$(), hbid%)
       HbSet hbid%, HbIndex.Name, RsCreate%(stoken$(1))
 
     CASE ".window"
-      HbSet hbid%, HbIndex.Window, WnFindWnid%(stoken$(1))
+      HbSet hbid%, HbIndex.Window, WnFindWid%(stoken$(1))
 
     CASE ELSE
       ExecCmdHbid = CmdResult.Malformed
@@ -3089,21 +3089,21 @@ SUB GameMoveOffset (offsetX%, offsetY%)
     '
     ' Run the window handling this habitat
     '
-    DIM hbidwnid%
-    LET hbidwnid% = HbGet%(hbid%, HbIndex.Window)
+    DIM hbidwid%
+    LET hbidwid% = HbGet%(hbid%, HbIndex.Window)
 
-    IF hbidwnid% > 0 THEN
+    IF hbidwid% > 0 THEN
      
       AtlasDrawSelect cx, cy, 1
 
       '
       ' HACK: set window parameter value
       '
-      DIM hbidwnidctid%
-      LET hbidwnidctid% = gwin(hbidwnid%, 0)
-      CtSetParam hbidwnidctid%, hbid%
+      DIM hbidwidctid%
+      LET hbidwidctid% = gwin(hbidwid%, 0)
+      CtSetParam hbidwidctid%, hbid%
      
-      WnRun hbidwnid%, wresult
+      WnRun hbidwid%, wresult
      
       IF wresult.action = WnAction.Execute THEN
         '
@@ -3196,14 +3196,14 @@ END SUB
 SUB InboxAdd (subject AS STRING, filename AS STRING)
  
   DIM fid%
-  DIM wnid%
+  DIM wid%
  
   SHARED count AS INTEGER
 
   count = count + 1
 
-  wnid% = WnFindWnid("Inbox")
-  fid% = WnAddButton(wnid%, 1, count, 20, " " + subject, filename)
+  wid% = WnFindWid("Inbox")
+  fid% = WnAddButton(wid%, 1, count, 20, " " + subject, filename)
 
   AtlasSetStatus "Mail arrived"
   ShFile "NEWMAIL.PCB"
@@ -3474,14 +3474,14 @@ FUNCTION ObResolveFocused% (obid%, value%)
   LET parent% = ObGet%(obid%, ObIndex.Parent)
   AssertIsPositive parent%, "ObResolveFocused%", "parent%"
 
-  DIM wnid%
-  LET wnid% = CtGet%(parent%, CtIndex.ChildList)
+  DIM wid%
+  LET wid% = CtGet%(parent%, CtIndex.ChildList)
 
   DIM sel%
   LET sel% = CtGetSelected%(parent%)
      
   DIM selctid%
-  LET selctid% = gwin(wnid%, sel%)
+  LET selctid% = gwin(wid%, sel%)
 
   ObResolveFocused% = CtGet%(selctid%, CtIndex.Value)
 
@@ -3654,7 +3654,7 @@ SUB SetupGame
   DIM cresult AS INTEGER
   DIM wresult AS WnResultType
  
-  WnRun WnFindWnid("Start"), wresult
+  WnRun WnFindWid("Start"), wresult
  
   IF wresult.action = WnAction.Execute THEN
     cresult = ExecResource%(wresult.cmdrsid)
@@ -3841,13 +3841,13 @@ END SUB
 
 SUB UI.Run
  
-  DIM menuwnid AS INTEGER
-  DIM cresult  AS INTEGER
-  DIM wresult  AS WnResultType
+  DIM menuwid AS INTEGER
+  DIM cresult AS INTEGER
+  DIM wresult AS WnResultType
 
   UI.SetPage UIPage.Atlas
 
-  menuwnid = WnFindWnid("Menu")
+  menuwid = WnFindWid%("Menu")
 
   DO
     
@@ -3863,7 +3863,7 @@ SUB UI.Run
 
     END SELECT
 
-    WnRun menuwnid, wresult
+    WnRun menuwid, wresult
     IF wresult.action = WnAction.Execute THEN
       cresult = ExecResource%(wresult.cmdrsid)
     END IF
@@ -4014,15 +4014,15 @@ SUB VideoScreen (activepage%, visualpage%)
   
 END SUB
 
-FUNCTION WnAddButton% (wnid%, offsetX%, offsetY%, sizeX%, text$, value$)
+FUNCTION WnAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
 
-  AssertIsPositive wnid%, "WnAddButton%", "wnid%"
+  AssertIsPositive wid%, "WnAddButton%", "wid%"
 
   DIM fid%
-  LET fid% = CtCreateChild(wnid%, CtKind.Button)
+  LET fid% = CtCreateChild(wid%, CtKind.Button)
 
   DIM ctid%
-  LET ctid% = gwin(wnid%, fid%)
+  LET ctid% = gwin(wid%, fid%)
 
   CtSet ctid%, CtIndex.Command, 0
   CtSet ctid%, CtIndex.OffsetX, offsetX%
@@ -4037,15 +4037,15 @@ FUNCTION WnAddButton% (wnid%, offsetX%, offsetY%, sizeX%, text$, value$)
 
 END FUNCTION
 
-SUB WnClose (wnid%)
+SUB WnClose (wid%)
 
-  AssertIsPositive wnid%, "WnClose", "wnid%"
+  AssertIsPositive wid%, "WnClose", "wid%"
 
   IF winstacked = 0 THEN
   
     AssertFail "WnClose", "No windows"
 
-  ELSEIF winstack(winstacked).wnid <> wnid% THEN
+  ELSEIF winstack(winstacked).wnid <> wid% THEN
 
     AssertFail "WnClose", "Not supported; specify top window only"
 
@@ -4075,67 +4075,66 @@ FUNCTION WnCreate%
   '
   ' Create a container to hold controls
   '
-  DIM ctid%: ctid% = CtCreate(CtKind.Container)
-  AssertIsPositive ctid%, "WnCreate%", "ctid%"
+  DIM cnid%: cnid% = CtCreate(CtKind.Container)
+  AssertIsPositive cnid%, "WnCreate%", "cnid%"
 
-  CtSet ctid%, CtIndex.Window, wnid%
-  CtSet ctid%, CtIndex.ChildList, wincount
-  WnSet wnid%, WnIndex.Container, ctid%
+  CtSet cnid%, CtIndex.Window, wnid%
+  CtSet cnid%, CtIndex.ChildList, wincount
+  WnSet wnid%, WnIndex.Container, cnid%
  
   '
   ' Track the control as field #0
   '
-  gwin(wincount, 0) = ctid%
+  gwin(wincount, 0) = cnid%
   WnCreate% = wincount
 
 END FUNCTION
 
-SUB WnDraw (wnid%)
+SUB WnDraw (wid%)
 
-  AssertIsPositive wnid%, "WnDraw", "wnid"
+  AssertIsPositive wid%, "WnDraw", "wid"
 
   DIM fid%
-  FOR fid% = 1 TO win(wnid%).fields
-    CtDraw wnid%, fid%
+  FOR fid% = 1 TO win(wid%).fields
+    CtDraw wid%, fid%
   NEXT
 
 END SUB
 
-FUNCTION WnFindWnid% (wname$)
+FUNCTION WnFindWid% (wname$)
  
-  DIM wnid%
-
-  FOR wnid% = 1 TO wincount
+  DIM wid%
+  FOR wid% = 1 TO wincount
    
-    DIM ctid%
-    LET ctid% = gwin(wnid%, 0)
+    DIM cnid%
+    LET cnid% = gwin(wid%, 0)
    
-    IF CtGetName$(ctid%) = wname$ THEN
-      WnFindWnid% = wnid%
+    IF CtGetName$(cnid%) = wname$ THEN
+      WnFindWid% = wid%
       EXIT FUNCTION
     END IF
   NEXT
 
-  WnFindWnid% = 0
+  WnFindWid% = 0
 
 END FUNCTION
 
-SUB WnFocusOn (wnid%, fid%)
+SUB WnFocusOn (wid%, fid%)
   '
   ' Sets focus to a field
   '
 
-  AssertIsPositive wnid%, "WnFocusOn", "wnid%"
+  AssertIsPositive wid%, "WnFocusOn", "wid%"
   Assert fid% >= 0, "WnFocusOn", "fid cannot be negative"
 
   DIM fidctid%
-  LET fidctid% = gwin(wnid%, fid%)
+  LET fidctid% = gwin(wid%, fid%)
 
-  DIM wnidctid%
-  LET wnidctid% = gwin(wnid%, 0)
+  DIM cnid%
+  LET cnid% = gwin(wid%, 0)
 
   DIM old%
-  LET old% = CtGetSelected(wnidctid%)
+  LET old% = CtGetSelected(cnid%)
 
   IF old% = fid% THEN
     '
@@ -4144,41 +4143,41 @@ SUB WnFocusOn (wnid%, fid%)
     EXIT SUB
   END IF
 
-  CtSet wnidctid%, CtIndex.Selected, fid%
+  CtSet cnid%, CtIndex.Selected, fid%
 
   IF old% > 0 THEN
-    WnRefreshField wnid%, old%
+    WnRefreshField wid%, old%
   END IF
 
   IF fid% > 0 THEN
-    WnRefreshField wnid%, fid%
+    WnRefreshField wid%, fid%
   END IF
 
 END SUB
 
-SUB WnFocusOnFirst (wnid%)
+SUB WnFocusOnFirst (wid%)
   '
   ' Selects the first selectable field
   '
 
-  AssertIsPositive wnid%, "WnFocusOnFirst", "wnid%"
+  AssertIsPositive wid%, "WnFocusOnFirst", "wid%"
 
-  IF win(wnid%).fields = 0 THEN
+  IF win(wid%).fields = 0 THEN
     '
     ' This window has no fields
     '
-    WnFocusOn wnid%, 0
+    WnFocusOn wid%, 0
 
   ELSE
  
     DIM fid%
-    FOR fid% = 1 TO win(wnid%).fields
+    FOR fid% = 1 TO win(wid%).fields
      
       DIM ctid%
-      LET ctid% = gwin(wnid%, fid%)
+      LET ctid% = gwin(wid%, fid%)
 
       IF CtSelectable%(ctid%) THEN
-        WnFocusOn wnid%, fid%
+        WnFocusOn wid%, fid%
         EXIT SUB
       END IF
     NEXT
@@ -4186,35 +4185,35 @@ SUB WnFocusOnFirst (wnid%)
     '
     ' None of the fields were selectable
     '
-    WnFocusOn wnid%, 0
+    WnFocusOn wid%, 0
 
   END IF
 
 END SUB
 
-SUB WnFocusOnLast (wnid%)
+SUB WnFocusOnLast (wid%)
   '
   ' Selects the last selectable field
   '
 
-  AssertIsPositive wnid%, "WnFocusOnLast", "wnid%"
+  AssertIsPositive wid%, "WnFocusOnLast", "wid%"
 
-  IF win(wnid%).fields = 0 THEN
+  IF win(wid%).fields = 0 THEN
     '
     ' This window has no fields
     '
-    WnFocusOn wnid%, 0
+    WnFocusOn wid%, 0
 
   ELSE
 
     DIM fid%
-    FOR fid% = win(wnid%).fields TO 1 STEP -1
+    FOR fid% = win(wid%).fields TO 1 STEP -1
      
       DIM ctid%
-      LET ctid% = gwin(wnid%, fid%)
+      LET ctid% = gwin(wid%, fid%)
 
       IF CtSelectable%(ctid%) THEN
-        WnFocusOn wnid%, fid%
+        WnFocusOn wid%, fid%
         EXIT SUB
       END IF
     NEXT
@@ -4222,26 +4221,26 @@ SUB WnFocusOnLast (wnid%)
     '
     ' None of the fields were selectable
     '
-    WnFocusOn wnid%, 0
+    WnFocusOn wid%, 0
 
   END IF
 
 END SUB
 
-SUB WnFocusOnNext (wnid%)
+SUB WnFocusOnNext (wid%)
   '
   ' Selects the next selectable field
   '
 
-  AssertIsPositive wnid%, "WnFocusOnNext", "wnid%"
+  AssertIsPositive wid%, "WnFocusOnNext", "wid%"
 
-  DIM wnidctid%
-  LET wnidctid% = gwin(wnid%, 0)
+  DIM cnid%
+  LET cnid% = gwin(wid%, 0)
 
   DIM fid%
   DIM firstFid%
 
-  IF win(wnid%).fields = 0 THEN
+  IF win(wid%).fields = 0 THEN
    
     fid% = 0
  
@@ -4250,7 +4249,7 @@ SUB WnFocusOnNext (wnid%)
     '
     ' Get the starting field
     '
-    LET firstFid% = CtGetSelected(wnidctid%)
+    LET firstFid% = CtGetSelected(cnid%)
     IF firstFid% = 0 THEN
       firstFid% = 1
     END IF
@@ -4263,12 +4262,12 @@ SUB WnFocusOnNext (wnid%)
       ' Move to the next field
       '
       fid% = fid% + 1
-      IF fid% > win(wnid%).fields THEN
+      IF fid% > win(wid%).fields THEN
         fid% = 1
       END IF
 
       DIM fidctid%
-      LET fidctid% = gwin(wnid%, fid%)
+      LET fidctid% = gwin(wid%, fid%)
 
       IF CtSelectable%(fidctid%) THEN
         EXIT DO
@@ -4286,24 +4285,24 @@ SUB WnFocusOnNext (wnid%)
 
   END IF
 
-  WnFocusOn wnid%, fid%
+  WnFocusOn wid%, fid%
 
 END SUB
 
-SUB WnFocusOnPrevious (wnid%)
+SUB WnFocusOnPrevious (wid%)
   '
   ' Selects the field before the current one (looping around)
   '
 
-  AssertIsPositive wnid%, "WnFocusOnPrevious", "wnid%"
+  AssertIsPositive wid%, "WnFocusOnPrevious", "wid%"
 
-  DIM wnidctid%
-  LET wnidctid% = gwin(wnid%, 0)
+  DIM cnid%
+  LET cnid% = gwin(wid%, 0)
 
   DIM fid%
   DIM startingFid%
 
-  IF win(wnid%).fields = 0 THEN
+  IF win(wid%).fields = 0 THEN
    
     fid% = 0
 
@@ -4312,7 +4311,7 @@ SUB WnFocusOnPrevious (wnid%)
     '
     ' Get the starting field
     '
-    LET startingFid% = CtGetSelected(wnidctid%)
+    LET startingFid% = CtGetSelected(cnid%)
     IF startingFid% = 0 THEN
       startingFid% = 1
     END IF
@@ -4326,11 +4325,11 @@ SUB WnFocusOnPrevious (wnid%)
    
       fid% = fid% - 1
       IF fid% = 0 THEN
-        fid% = win(wnid%).fields
+        fid% = win(wid%).fields
       END IF
 
       DIM fidctid%
-      LET fidctid% = gwin(wnid%, fid%)
+      LET fidctid% = gwin(wid%, fid%)
 
       IF CtSelectable%(fidctid%) THEN
         EXIT DO
@@ -4348,7 +4347,7 @@ SUB WnFocusOnPrevious (wnid%)
 
   END IF
 
-  WnFocusOn wnid%, fid%
+  WnFocusOn wid%, fid%
 
 END SUB
 
@@ -4486,24 +4485,24 @@ FUNCTION WnMapKey% (wid%, pressed$)
 
 END FUNCTION
 
-SUB WnRefreshField (wnid%, fid%)
+SUB WnRefreshField (wid%, fid%)
 
   DIM ctid%
   DIM n AS INTEGER
 
   IF winstacked > 0 THEN
-    IF winstack(winstacked).wnid = wnid% THEN
+    IF winstack(winstacked).wnid = wid% THEN
      
-      FOR n = 1 TO win(wnid%).fields
+      FOR n = 1 TO win(wid%).fields
        
-        ctid% = gwin(wnid%, n)
+        ctid% = gwin(wid%, n)
 
         IF n = fid% THEN
-          CtDraw wnid%, n
+          CtDraw wid%, n
         ELSEIF CtRedirected%(ctid%, CtIndex.Text) THEN
-          CtDraw wnid%, n
+          CtDraw wid%, n
         ELSEIF CtRedirected%(ctid%, CtIndex.Value) THEN
-          CtDraw wnid%, n
+          CtDraw wid%, n
         END IF
       NEXT
 
@@ -4512,13 +4511,13 @@ SUB WnRefreshField (wnid%, fid%)
 
 END SUB
 
-SUB WnRender (wnid%)
+SUB WnRender (wid%)
   '
   ' Displays the window and gives it focus
   '
   
-  DIM wnidctid%
-  LET wnidctid% = gwin(wnid%, 0)
+  DIM cnid%
+  LET cnid% = gwin(wid%, 0)
 
   DIM backpage AS INTEGER
   DIM workpage AS INTEGER
@@ -4535,7 +4534,7 @@ SUB WnRender (wnid%)
 
   winstacked = winstacked + 1
  
-  winstack(winstacked).wnid = wnid%
+  winstack(winstacked).wnid = wid%
   winstack(winstacked).backpage = backpage
   winstack(winstacked).workpage = workpage
 
@@ -4544,13 +4543,13 @@ SUB WnRender (wnid%)
   '
   VideoScreen workpage, backpage
   PCOPY backpage, workpage
-  WnDraw wnid%
+  WnDraw wid%
   
   '
   ' Set focus to a field
   '
-  IF CtGetSelected(wnidctid%) = 0 THEN
-    WnFocusOnFirst wnid%
+  IF CtGetSelected(cnid%) = 0 THEN
+    WnFocusOnFirst wid%
   END IF
 
   '
@@ -4560,17 +4559,17 @@ SUB WnRender (wnid%)
 
 END SUB
 
-SUB WnRun (wnid%, result AS WnResultType)
+SUB WnRun (wid%, result AS WnResultType)
 
-  AssertIsPositive wnid%, "WnRun", "wnid%"
+  AssertIsPositive wid%, "WnRun", "wid%"
 
-  DIM wnidctid%
-  LET wnidctid% = gwin(wnid%, 0)
+  DIM cnid%
+  LET cnid% = gwin(wid%, 0)
 
   DIM nopopups AS INTEGER
   DIM pressed  AS STRING
 
-  WnRender wnid%
+  WnRender wid%
 
   DO
 
@@ -4582,12 +4581,12 @@ SUB WnRun (wnid%, result AS WnResultType)
 
       IF nopopups THEN
         EXIT DO
-      ELSEIF CtGetSelected(wnidctid%) = 0 THEN
+      ELSEIF CtGetSelected(cnid%) = 0 THEN
         EXIT DO
       END IF
 
       DIM selectedCtid%
-      LET selectedCtid% = gwin(wnid%, CtGetSelected(wnidctid%))
+      LET selectedCtid% = gwin(wid%, CtGetSelected(cnid%))
 
       IF CtGet%(selectedCtid%, CtIndex.Kind) <> CtKind.Popup THEN
        
@@ -4616,14 +4615,14 @@ SUB WnRun (wnid%, result AS WnResultType)
             ' The user selected a command from the popup. The result
             ' will be passed up via the output result parameter.
             '
-            WnClose wnid%
+            WnClose wid%
             EXIT SUB
          
           CASE WnAction.ExitLeft
-            WnFocusOnPrevious wnid%
+            WnFocusOnPrevious wid%
          
           CASE WnAction.ExitRight
-            WnFocusOnNext wnid%
+            WnFocusOnNext wid%
          
           CASE ELSE
             EXIT DO
@@ -4636,66 +4635,66 @@ SUB WnRun (wnid%, result AS WnResultType)
 
     pressed = GetKey$
    
-    SELECT CASE WnMapKey%(wnid%, pressed)
+    SELECT CASE WnMapKey%(wid%, pressed)
      
       CASE WnAction.Cancel
         result.action = WnAction.Cancel
         result.canceled = True
         result.cmdrsid = 0
-        result.selected = CtGetSelected(wnidctid%)
-        WnClose wnid%
+        result.selected = CtGetSelected(cnid%)
+        WnClose wid%
         EXIT SUB
 
       CASE WnAction.Complete
         result.action = WnAction.Complete
         result.canceled = False
         result.cmdrsid = 0
-        result.selected = CtGetSelected(wnidctid%)
-        WnClose wnid%
+        result.selected = CtGetSelected(cnid%)
+        WnClose wid%
         EXIT SUB
 
       CASE WnAction.Execute
         result.action = WnAction.Execute
         result.canceled = False
-        result.selected = CtGetSelected(wnidctid%)
-        result.cmdrsid = CtGet%(gwin(wnid%, result.selected), CtIndex.Command)
-        WnClose wnid%
+        result.selected = CtGetSelected(cnid%)
+        result.cmdrsid = CtGet%(gwin(wid%, result.selected), CtIndex.Command)
+        WnClose wid%
         EXIT SUB
 
       CASE WnAction.ExitLeft
         result.action = WnAction.ExitLeft
         result.canceled = True
         result.cmdrsid = 0
-        result.selected = CtGetSelected(wnidctid%)
-        WnClose wnid%
+        result.selected = CtGetSelected(cnid%)
+        WnClose wid%
         EXIT SUB
 
       CASE WnAction.ExitRight
         result.action = WnAction.ExitRight
         result.canceled = True
         result.cmdrsid = 0
-        result.selected = CtGetSelected(wnidctid%)
-        WnClose wnid%
+        result.selected = CtGetSelected(cnid%)
+        WnClose wid%
         EXIT SUB
 
       CASE WnAction.OpenPopup
         nopopups = False
 
       CASE WnAction.SelectFirst
-        WnFocusOnFirst wnid%
+        WnFocusOnFirst wid%
 
       CASE WnAction.SelectLast
-        WnFocusOnLast wnid%
+        WnFocusOnLast wid%
 
       CASE WnAction.SelectNext
-        WnFocusOnNext wnid%
+        WnFocusOnNext wid%
 
       CASE WnAction.SelectPrevious
-        WnFocusOnPrevious wnid%
+        WnFocusOnPrevious wid%
 
       CASE ELSE
-        CtKey gwin(wnid%, CtGetSelected(wnidctid%)), pressed
-        WnRefreshField wnid%, CtGetSelected(wnidctid%)
+        CtKey gwin(wid%, CtGetSelected(cnid%)), pressed
+        WnRefreshField wid%, CtGetSelected(cnid%)
 
     END SELECT
 
@@ -4705,13 +4704,13 @@ END SUB
 
 SUB WnRunName (name$)
  
-  DIM wnid%
+  DIM wid%
   DIM result AS WnResultType
 
-  wnid% = WnFindWnid(name$)
-  Assert wnid% <> 0, "WnRunName", "wnid cannot be 0"
+  wid% = WnFindWid(name$)
+  Assert wid% <> 0, "WnRunName", "wid cannot be 0"
 
-  WnRun wnid%, result
+  WnRun wid%, result
 
 END SUB
 
