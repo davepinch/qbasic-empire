@@ -48,7 +48,6 @@ TYPE WnStackItem
 END TYPE
 
 TYPE WnType
-  arrowexit  AS INTEGER
   fields     AS INTEGER
 END TYPE
 
@@ -300,7 +299,7 @@ DECLARE FUNCTION WnCreate% ()
 DECLARE FUNCTION WnFindWnid% (wname$)
 DECLARE FUNCTION WnGet% (wnid%, wnix%)
 DECLARE FUNCTION WnMap% (name$)
-DECLARE FUNCTION WnMapKey% (wnid%, pressed$)
+DECLARE FUNCTION WnMapKey% (wid%, pressed$)
 
 '
 ' World
@@ -2989,22 +2988,22 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
 
   SELECT CASE stoken$(0)
 
-    CASE ".arrowexit" ' ***
-      win(wid%).arrowexit = VAL(stoken$(1))
+    CASE ".arrowexit"
+      WnSet wnid%, WnIndex.ArrowExit, VAL(stoken$(1))
 
-    CASE ".name"
+    CASE ".name" ' '***
       CtSet cnid%, CtIndex.Name, RsCreate%(stoken$(1))
  
-    CASE ".param"
+    CASE ".param" ' '***
       CtSetParam cnid%, VAL(stoken$(2))
 
-    CASE ".posx" ' ***
+    CASE ".posx" ' '***
       CtSet cnid%, CtIndex.OffsetX, VAL(stoken$(1)) - 1
 
-    CASE ".posy" ' ***
+    CASE ".posy" ' '***
       CtSet cnid%, CtIndex.OffsetY, VAL(stoken$(1)) - 1
 
-    CASE ".style"
+    CASE ".style" '***
       CtSet cnid%, CtIndex.Style, StFind%(stoken$(1)) ' ***
 
     CASE ELSE
@@ -4390,10 +4389,13 @@ FUNCTION WnMap% (name$)
 
 END FUNCTION
 
-FUNCTION WnMapKey% (wnid%, pressed$)
+FUNCTION WnMapKey% (wid%, pressed$)
 
-  DIM wnidctid%
-  LET wnidctid% = gwin(wnid%, 0)
+  DIM cnid%
+  LET cnid% = gwin(wid%, 0)
+
+  DIM wnid%
+  LET wnid% = CtGet%(cnid%, CtIndex.Window)
 
   DIM popupctid    AS INTEGER
   DIM cmdrsid      AS INTEGER
@@ -4405,18 +4407,21 @@ FUNCTION WnMapKey% (wnid%, pressed$)
   ' ArrowExit bit 0 means to exit when navigating left
   ' ArrowExit bit 1 means to exit when nagivating right
   '
+  DIM arrowexit%
+  LET arrowexit% = WnGet%(wnid%, WnIndex.ArrowExit)
+
   DIM exitLeft%
-  LET exitLeft% = win(wnid%).arrowexit AND &H1
+  LET exitLeft% = arrowexit% AND &H1
  
   DIM exitRight%
-  LET exitRight% = win(wnid%).arrowexit AND &H2
+  LET exitRight% = arrowexit% AND &H2
  
   '
   ' Get the index of the control with focus
   '
-  selected = CtGetSelected(wnidctid%)
+  selected = CtGetSelected(cnid%)
   IF selected > 0 THEN
-    selectedCtid = gwin(wnid%, selected)
+    selectedCtid = gwin(wid%, selected)
     popupctid = CtGet%(selectedCtid, CtIndex.Popup)
     cmdrsid = CtGet%(selectedCtid, CtIndex.Command)
   END IF
