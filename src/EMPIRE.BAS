@@ -2929,8 +2929,8 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
   AssertIsPositive wid%, "ExecCmdWid%", "wid%"
   AssertIsZero fid%, "ExecCmdWid%", "fid%"
 
-  DIM wnidctid%
-  LET wnidctid% = gwin(wid%, 0)
+  DIM cnid%
+  LET cnid% = gwin(wid%, 0)
 
   ExecuteCommandWid% = CmdResult.OK
 
@@ -2940,7 +2940,7 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
      
       CASE "endwindow"
         wid% = 0
-        wnidctid% = 0
+        cnid% = 0
 
       CASE "boolean"
         fid% = CtCreateChild%(wid%, CtKind.Boolean)
@@ -2988,19 +2988,19 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
       win(wid%).arrowexit = VAL(stoken$(1))
 
     CASE ".name"
-      CtSet wnidctid%, CtIndex.Name, RsCreate%(stoken$(1))
+      CtSet cnid%, CtIndex.Name, RsCreate%(stoken$(1))
  
     CASE ".param"
-      CtSetParam wnidctid%, VAL(stoken$(2))
+      CtSetParam cnid%, VAL(stoken$(2))
 
     CASE ".posx" ' ***
-      CtSet wnidctid%, CtIndex.OffsetX, VAL(stoken$(1)) - 1
+      CtSet cnid%, CtIndex.OffsetX, VAL(stoken$(1)) - 1
 
     CASE ".posy" ' ***
-      CtSet wnidctid%, CtIndex.OffsetY, VAL(stoken$(1)) - 1
+      CtSet cnid%, CtIndex.OffsetY, VAL(stoken$(1)) - 1
 
     CASE ".style"
-      CtSet wnidctid%, CtIndex.Style, StFind%(stoken$(1)) ' ***
+      CtSet cnid%, CtIndex.Style, StFind%(stoken$(1)) ' ***
 
     CASE ELSE
       result = CmdResult.Malformed
