@@ -532,6 +532,8 @@ DIM SHARED gwin(1 TO 20, 0 TO 13)  AS INTEGER
 DIM SHARED gobids                  AS INTEGER
 DIM SHARED gwid%
 
+DIM SHARED cached.children(1 TO 200, 1 TO 20) AS INTEGER
+
 DIM SHARED area(1 TO 35)         AS AreaType
 DIM SHARED atlasitem(1 TO 35)    AS AtlasItemType
 DIM SHARED atlaspage             AS INTEGER
@@ -3376,7 +3378,10 @@ FUNCTION ObCreate% (schema%, parent%)
   gobids = gobids + 1
  
   ObSet gobids, ObIndex.Schema, schema%
-  ObSet gobids, ObIndex.Parent, parent%
+ 
+  IF parent% > 0 THEN
+    ObSet gobids, ObIndex.Parent, parent%
+  END IF
 
   ObCreate% = gobids
 
@@ -3522,7 +3527,53 @@ FUNCTION ObResolveParam% (obid%, value%)
 END FUNCTION
 
 SUB ObSet (obid%, obix%, value%)
+ 
+  DIM n%
+
+  '
+  ' Update the cache if the current parent is changing
+  '
+  IF obix% = ObIndex.Parent THEN
+  
+    DIM current%: current% = ObGet%(obid%, ObIndex.Parent)
+    IF current% > 0 AND current% <> value% THEN
+      '
+      ' This object has a current parent that is changing.
+      '
+      DIM removed%
+      FOR n% = LBOUND(cached.children, 2) TO UBOUND(cached.children, 2)
+        IF cached.children(current%, n%) = obid% THEN
+          cached.children(current%, n%) = 0
+          removed% = True
+          EXIT FOR
+        END IF
+      NEXT
+
+      Assert removed%, "ObSet", "removed%"
+
+    END IF
+
+  END IF
+
   gobj(obid%, obix%).value = value%
+
+  '
+  ' Update the cache with the new parent
+  '
+  IF obix% = ObIndex.Parent THEN
+    IF value% > 0 THEN
+      DIM added%
+      FOR n% = LBOUND(cached.children, 2) TO UBOUND(cached.children, 2)
+        IF cached.children(value%, n%) = 0 THEN
+          cached.children(value%, n%) = obid%
+          added% = True
+          EXIT FOR
+        END IF
+      NEXT
+      Assert added%, "ObSet", "added%"
+    END IF
+  END IF
+
 END SUB
 
 SUB ObSetString (obid%, obix%, value$)
