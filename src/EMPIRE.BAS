@@ -2933,6 +2933,10 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
   DIM cnid%
   LET cnid% = gwin(wid%, 0)
 
+  DIM wnid%
+  LET wnid% = CtGet%(cnid%, CtIndex.Window)
+  AssertIsPositive wnid%, "ExecCmdWid%", "wnid%"
+
   ExecuteCommandWid% = CmdResult.OK
 
   IF ntoken% = 1 THEN
