@@ -519,6 +519,7 @@ CONST WnIndex.ArrowExit = 3
 CONST WnIndex.Container = 4
 CONST WnIndex.Focused = 5
 CONST WnIndex.Param = 6
+CONST WnIndex.Wid = 7
 
 '
 ' Global atlas variables
@@ -531,6 +532,7 @@ DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS IN
 DIM SHARED gobj(1 TO 200, 0 TO 16) AS PropType
 DIM SHARED gwin(1 TO 20, 0 TO 13)  AS INTEGER
 DIM SHARED gobids                  AS INTEGER
+DIM SHARED gwid%
 
 DIM SHARED area(1 TO 35)         AS AreaType
 DIM SHARED atlasitem(1 TO 35)    AS AtlasItemType
@@ -546,7 +548,6 @@ DIM SHARED vallocated            AS INTEGER
 DIM SHARED vstack(0 TO 5)        AS INTEGER
 DIM SHARED vstacked              AS INTEGER
 DIM SHARED win(1 TO 15)          AS WnType
-DIM SHARED wincount              AS INTEGER
 DIM SHARED winstack(1 TO 3)      AS WnStackItem
 DIM SHARED winstacked            AS INTEGER
 
@@ -4064,8 +4065,6 @@ END SUB
 
 FUNCTION WnCreate%
  
-  wincount = wincount + 1
- 
   '
   ' Create the root window object
   '
@@ -4073,20 +4072,29 @@ FUNCTION WnCreate%
   AssertIsPositive wnid%, "WnCreate%", "wnid%"
 
   '
+  ' Set the wid (legacy)
+  '
+  gwid% = gwid% + 1
+  WnSet wnid%, WnIndex.Wid, gwid%
+
+  '
   ' Create a container to hold controls
   '
   DIM cnid%: cnid% = CtCreate(CtKind.Container)
   AssertIsPositive cnid%, "WnCreate%", "cnid%"
 
-  CtSet cnid%, CtIndex.Window, wnid%
-  CtSet cnid%, CtIndex.ChildList, wincount
+  '
+  ' Cross-link the window and container
+  '
   WnSet wnid%, WnIndex.Container, cnid%
+  CtSet cnid%, CtIndex.Window, wnid%
+  CtSet cnid%, CtIndex.ChildList, gwid%
  
   '
   ' Track the control as field #0
   '
-  gwin(wincount, 0) = cnid%
-  WnCreate% = wincount
+  gwin(gwid%, 0) = cnid%
+  WnCreate% = gwid%
 
 END FUNCTION
 
@@ -4104,7 +4112,7 @@ END SUB
 FUNCTION WnFindWid% (wname$)
  
   DIM wid%
-  FOR wid% = 1 TO wincount
+  FOR wid% = 1 TO gwid%
    
     DIM cnid%
     LET cnid% = gwin(wid%, 0)
