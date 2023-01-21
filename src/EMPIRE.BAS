@@ -547,8 +547,8 @@ DIM SHARED gwin(1 TO 20, 0 TO 13)  AS INTEGER
 DIM SHARED gobids                  AS INTEGER
 DIM SHARED gwid%
 
-DIM SHARED cached.children(1 TO MaxObjects, 1 TO MaxChildren) AS INTEGER
-DIM SHARED per.schema(1 TO 20, 0 TO MaxObjects) AS INTEGER
+DIM SHARED per.parent(1 TO MaxObjects, 0 TO MaxChildren) AS INTEGER
+DIM SHARED per.schema(1 TO ObSchemas, 0 TO MaxObjects) AS INTEGER
 
 DIM SHARED area(1 TO 35)         AS AreaType
 DIM SHARED atlasitem(1 TO 35)    AS AtlasItemType
@@ -3528,62 +3528,29 @@ END FUNCTION
 
 SUB ObSet (obid%, obix%, value%)
  
-  DIM n%
-
-  '
-  ' Update the cache if the current parent is changing
-  '
-  IF obix% = ObIndex.Parent THEN
-  
-    DIM current%: current% = ObGet%(obid%, ObIndex.Parent)
-    IF current% > 0 AND current% <> value% THEN
-      '
-      ' This object has a current parent that is changing.
-      '
-      DIM removed%
-      FOR n% = LBOUND(cached.children, 2) TO UBOUND(cached.children, 2)
-        IF cached.children(current%, n%) = obid% THEN
-          cached.children(current%, n%) = 0
-          removed% = True
-          EXIT FOR
-        END IF
-      NEXT
-
-      Assert removed%, "ObSet", "removed%"
-
-    END IF
-
-  END IF
-
   gobj(obid%, obix%).value = value%
 
   SELECT CASE obix%
    
+    CASE ObIndex.Parent
+      '
+      ' per.parent
+      '
+      IF value% > 0 THEN
+        per.parent(value%, 0) = per.parent(value%, 0) + 1
+        per.parent(value%, per.parent(value%, 0)) = obid%
+      END IF
+
     CASE ObIndex.Schema
       '
       ' per.schema
       '
-      per.schema(value%, 0) = per.schema(value%, 0) + 1
-      per.schema(value%, per.schema(value%, 0)) = obid%
+      IF value% > 0 THEN
+        per.schema(value%, 0) = per.schema(value%, 0) + 1
+        per.schema(value%, per.schema(value%, 0)) = obid%
+      END IF
 
   END SELECT
-
-  '
-  ' Update the cache with the new parent
-  '
-  IF obix% = ObIndex.Parent THEN
-    IF value% > 0 THEN
-      DIM added%
-      FOR n% = LBOUND(cached.children, 2) TO UBOUND(cached.children, 2)
-        IF cached.children(value%, n%) = 0 THEN
-          cached.children(value%, n%) = obid%
-          added% = True
-          EXIT FOR
-        END IF
-      NEXT
-      Assert added%, "ObSet", "added%"
-    END IF
-  END IF
 
 END SUB
 
