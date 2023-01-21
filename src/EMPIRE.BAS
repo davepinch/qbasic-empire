@@ -4652,11 +4652,8 @@ SUB WnRun (wnid%, result AS WnResultType)
 
   AssertIsPositive wnid%, "WnRun", "wnid%"
 
-  DIM wid%
-  LET wid% = WnGet%(wnid%, WnIndex.Wid)
-
-  DIM cnid%
-  LET cnid% = gwin(wid%, 0)
+  DIM wid%: wid% = WnGet%(wnid%, WnIndex.Wid)
+  DIM cnid%: cnid% = WnGet%(wnid%, WnIndex.Container)
 
   DIM nopopups AS INTEGER
   DIM pressed  AS STRING
