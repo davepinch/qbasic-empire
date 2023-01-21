@@ -148,16 +148,14 @@ DECLARE FUNCTION DrawLength% (text$)
 '
 ' Event API
 '
-DECLARE SUB EvIncrement (name$)
+DECLARE SUB EvInc (name$)
 DECLARE SUB EvFire (evid%)
-DECLARE SUB EvSetName (evid%, name$)
-DECLARE SUB EvSetValue (evid%, value%)
+DECLARE SUB EvSet (evid%, evix%, value%)
 DECLARE FUNCTION EvCreate% ()
 DECLARE FUNCTION EvFind% (name$)
-DECLARE FUNCTION EvGetValue% (evid%)
+DECLARE FUNCTION EvGet% (evid%, evix%)
 DECLARE FUNCTION EvMap% (name$)
 DECLARE FUNCTION EvParseOperator% (opname$)
-DECLARE FUNCTION EvTestTrigger% (evid%, tid%)
 
 '
 ' Execution/commands
@@ -2428,27 +2426,36 @@ SUB EvFire (evid%)
   DIM tid%
  
   FOR tid% = 1 TO triggers
-    IF EvTestTrigger%(evid%, tid%) THEN
-      result% = ExecResource(trigger(tid%).cmdrsid)
+   
+    IF trigger(tid%).evid = evid% THEN
+      IF trigger(tid%).operator = OpEquals THEN
+        IF trigger(tid%).operand = EvGet%(evid%, EvIndex.Value) THEN
+          result% = ExecResource(trigger(tid%).cmdrsid)
+        END IF
+      END IF
     END IF
+
   NEXT
 
 END SUB
 
-FUNCTION EvGetValue% (evid%)
-  EvGetValue% = ObGet%(evid%, EvIndex.Value)
+FUNCTION EvGet% (evid%, evix%)
+  AssertExpected ObSchema.Event, gobj(evid%, ObIndex.Schema).value, "EvGet%", "ObSchema"
+  EvGet% = ObGet%(evid%, evix%)
 END FUNCTION
 
-SUB EvIncrement (name$)
+SUB EvInc (name$)
  
-  DIM evid%
-  LET evid% = EvFind%(name$)
+  DIM evid%: evid% = EvFind%(name$)
  
   IF evid% > 0 THEN
+   
     DIM value%
-    LET value% = EvGetValue%(evid%) + 1
-    EvSetValue evid%, value%
+    LET value% = EvGet%(evid%, EvIndex.Value) + 1
+   
+    EvSet evid%, EvIndex.Value, value%
     EvFire evid%
+ 
   END IF
 
 END SUB
@@ -2487,35 +2494,10 @@ FUNCTION EvParseOperator% (opname$)
 
 END FUNCTION
 
-SUB EvSetName (evid%, name$)
-  ObSetString evid%, EvIndex.Name, name$
+SUB EvSet (evid%, evix%, value%)
+  AssertExpected ObSchema.Event, gobj(evid%, ObIndex.Schema).value, "EvSet", "ObSchema"
+  ObSet evid%, evix%, value%
 END SUB
-
-SUB EvSetValue (evid%, value%)
-  ObSet evid%, EvIndex.Value, value%
-END SUB
-
-FUNCTION EvTestTrigger% (evid%, tid%)
-
-  AssertIsPositive evid%, "EvTestTrigger%", "evid%"
-  AssertIsPositive tid%, "EvTestTrigger%", "tid%"
-
-  IF trigger(tid%).evid <> evid% THEN
-   
-    EvTestTrigger% = False
-
-  ELSE
-
-    SELECT CASE trigger(tid%).operator
-      CASE OpEquals
-        EvTestTrigger% = trigger(tid%).operand = EvGetValue%(evid%)
-      CASE ELSE
-        EvTestTrigger% = False
-    END SELECT
-
-  END IF
-
-END FUNCTION
 
 FUNCTION ExecCmd% (cmd$)
 
@@ -2581,10 +2563,10 @@ FUNCTION ExecCmdEvid% (ntoken%, stoken$(), evid%)
       evid% = 0
 
     CASE ".name"
-      EvSetName evid%, stoken$(1)
+      EvSet evid%, EvIndex.Name, RsCreate%(stoken$(1))
 
     CASE ".value"
-      EvSetValue evid%, VAL(stoken$(1))
+      EvSet evid%, EvIndex.Value, VAL(stoken$(1))
 
     CASE ELSE
       ExecCmdEvid% = CmdResult.Malformed
@@ -3073,7 +3055,7 @@ SUB GameMoveOffset (offsetX%, offsetY%)
   aid = AtlasGetValue(cx, cy, 0)
   IF aid = 0 THEN
     AtlasMoveItem idx, cx, cy
-    EvIncrement "AtlasMoves"
+    EvInc "AtlasMoves"
   ELSE
 
     DIM hbid%
@@ -4857,7 +4839,7 @@ SUB WorldHarvest (aid%)
 
   IF energy% = 0 THEN
     WorldRemove aid%
-    EvIncrement "NebulaDepleted"
+    EvInc "NebulaDepleted"
   END IF
 
 END SUB
