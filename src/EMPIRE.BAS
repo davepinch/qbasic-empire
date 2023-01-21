@@ -288,7 +288,7 @@ DECLARE SUB WnFocusOnLast (wid%)
 DECLARE SUB WnFocusOnNext (wid%)
 DECLARE SUB WnFocusOnPrevious (wid%)
 DECLARE SUB WnRefreshField (wid%, fid%)
-DECLARE SUB WnRender (wid%)
+DECLARE SUB WnRender (wnid%)
 DECLARE SUB WnRun (wnid%, result AS WnResultType)
 DECLARE SUB WnRunName (idname$)
 DECLARE SUB WnSet (wnid%, wnix%, value%)
@@ -4600,13 +4600,13 @@ SUB WnRefreshField (wid%, fid%)
 
 END SUB
 
-SUB WnRender (wid%)
+SUB WnRender (wnid%)
   '
   ' Displays the window and gives it focus
   '
   
-  DIM cnid%
-  LET cnid% = gwin(wid%, 0)
+  DIM cnid%: cnid% = WnGet%(wnid%, WnIndex.Container)
+  DIM wid%: wid% = WnGet%(wnid%, WnIndex.Wid)
 
   DIM backpage AS INTEGER
   DIM workpage AS INTEGER
@@ -4661,7 +4661,7 @@ SUB WnRun (wnid%, result AS WnResultType)
   DIM nopopups AS INTEGER
   DIM pressed  AS STRING
 
-  WnRender wid%
+  WnRender wnid%
 
   DO
 
