@@ -27,13 +27,6 @@ TYPE PropType
   value AS INTEGER
 END TYPE
 
-TYPE TriggerType
-  evid     AS INTEGER
-  operator AS INTEGER
-  operand  AS INTEGER
-  cmdrsid  AS INTEGER
-END TYPE
-
 TYPE WnResultType
   action   AS INTEGER
   canceled AS INTEGER
@@ -136,7 +129,7 @@ DECLARE SUB DgTimer ()
 DECLARE FUNCTION DgGarble$ (text$, percent!)
 
 '
-' Drawing
+' Drawing API
 '
 DECLARE SUB DrawBackground (sx1%, sy1%, sx2%, sy2%, backcolor%)
 DECLARE SUB DrawColor (attr%)
@@ -168,7 +161,7 @@ DECLARE FUNCTION ExecCmdHbid% (ntoken%, stoken$(), hbid%)
 DECLARE FUNCTION ExecCmdPrid% (ntoken%, stoken$(), prid%)
 DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wid%)
 DECLARE FUNCTION ExecCmdStid% (ntoken%, stoken$(), stid%)
-DECLARE FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
+DECLARE FUNCTION ExecCmdTrid% (ntoken%, stoken$(), trid%)
 DECLARE FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
 DECLARE FUNCTION ExecResource% (rsid%)
 
@@ -219,6 +212,7 @@ DECLARE FUNCTION ObMapSchema% (name$)
 DECLARE FUNCTION ObResolveParam% (obid%, value%)
 DECLARE FUNCTION ObResolveFocused% (obid%, value%)
 DECLARE SUB ObBind (obid%, obix%, expr$)
+DECLARE SUB ObInc (obid%, obix%)
 DECLARE SUB ObSet (obid%, obix%, value%)
 DECLARE SUB ObSetString (obid%, obix%, value$)
 
@@ -255,6 +249,14 @@ DECLARE FUNCTION StFind% (name$)
 DECLARE FUNCTION StGet% (stid%, stid%)
 DECLARE FUNCTION StMap% (name$)
 DECLARE SUB StSet (stid%, stix%, value%)
+
+'
+' Trigger API
+'
+DECLARE SUB TrSet (trid%, trix%, value%)
+DECLARE FUNCTION TrCreate% ()
+DECLARE FUNCTION TrGet% (trid%, trix%)
+DECLARE FUNCTION TrMap% (name$)
 
 '
 ' UI
@@ -444,7 +446,9 @@ CONST ObSchema.Habitat = 3
 CONST ObSchema.List = 4
 CONST ObSchema.Person = 5
 CONST ObSchema.Style = 6
-CONST ObSchema.Window = 7
+CONST ObSchema.Trigger = 7
+CONST ObSchema.Window = 8
+CONST ObSchemas = 8
 
 '
 ' Operators
@@ -484,6 +488,16 @@ CONST StIndex.SelectedColor = 5
 CONST StIndex.TextColor = 6
 
 '
+' Trigger properties
+'
+CONST TrIndex.Schema = 0
+CONST TrIndex.Name = 1
+CONST TrIndex.Parent = 2
+CONST TrIndex.Event = 3
+CONST TrIndex.Equals = 4
+CONST TrIndex.Command = 5
+
+'
 ' UIPage.* constants
 '
 CONST UIPage.None = 0
@@ -517,6 +531,9 @@ CONST WnIndex.Focused = 5
 CONST WnIndex.Param = 6
 CONST WnIndex.Wid = 7
 
+CONST MaxChildren = 20
+CONST MaxObjects = 200
+
 '
 ' Global atlas variables
 '
@@ -525,12 +542,13 @@ DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS IN
 '
 ' Globals
 '
-DIM SHARED gobj(1 TO 200, 0 TO 16) AS PropType
+DIM SHARED gobj(1 TO MaxObjects, 0 TO 16) AS PropType
 DIM SHARED gwin(1 TO 20, 0 TO 13)  AS INTEGER
 DIM SHARED gobids                  AS INTEGER
 DIM SHARED gwid%
 
-DIM SHARED cached.children(1 TO 200, 1 TO 20) AS INTEGER
+DIM SHARED cached.children(1 TO MaxObjects, 1 TO MaxChildren) AS INTEGER
+DIM SHARED per.schema(1 TO 20, 0 TO MaxObjects) AS INTEGER
 
 DIM SHARED area(1 TO 35)         AS AreaType
 DIM SHARED atlasitem(1 TO 35)    AS AtlasItemType
@@ -539,8 +557,6 @@ DIM SHARED listening             AS INTEGER
 DIM SHARED playeraid             AS INTEGER
 REDIM SHARED resource(1 TO 200)  AS STRING
 DIM SHARED resources             AS INTEGER
-DIM SHARED trigger(1 TO 5)       AS TriggerType
-DIM SHARED triggers              AS INTEGER
 DIM SHARED uiCurrentPage         AS INTEGER
 DIM SHARED vallocated            AS INTEGER
 DIM SHARED vstack(0 TO 5)        AS INTEGER
@@ -2422,21 +2438,28 @@ END FUNCTION
 
 SUB EvFire (evid%)
 
-  DIM result%
-  DIM tid%
- 
-  FOR tid% = 1 TO triggers
+  DIM n%
+  FOR n% = 1 TO per.schema(ObSchema.Trigger, 0)
    
-    IF trigger(tid%).evid = evid% THEN
-      IF trigger(tid%).operator = OpEquals THEN
-        IF trigger(tid%).operand = EvGet%(evid%, EvIndex.Value) THEN
-          result% = ExecResource(trigger(tid%).cmdrsid)
-        END IF
+    DIM trid%: trid% = per.schema(ObSchema.Trigger, n%)
+
+    '
+    ' Match the event
+    '
+    IF TrGet%(trid%, TrIndex.Event) = evid% THEN
+    
+      '
+      ' Match the value
+      '
+      IF TrGet%(trid%, TrIndex.Equals) = EvGet%(evid%, EvIndex.Value) THEN
+        DIM rsid%: rsid% = TrGet%(trid%, TrIndex.Command)
+        DIM result%: result% = ExecResource(rsid%)
       END IF
+
     END IF
 
   NEXT
-
+ 
 END SUB
 
 FUNCTION EvGet% (evid%, evix%)
@@ -2447,15 +2470,9 @@ END FUNCTION
 SUB EvInc (name$)
  
   DIM evid%: evid% = EvFind%(name$)
- 
   IF evid% > 0 THEN
-   
-    DIM value%
-    LET value% = EvGet%(evid%, EvIndex.Value) + 1
-   
-    EvSet evid%, EvIndex.Value, value%
+    ObInc evid%, EvIndex.Value
     EvFire evid%
- 
   END IF
 
 END SUB
@@ -2506,7 +2523,7 @@ FUNCTION ExecCmd% (cmd$)
   SHARED hbid%
   SHARED prid%
   SHARED stid%
-  SHARED tid%
+  SHARED trid%
   SHARED wid%
 
   DIM result%
@@ -2539,10 +2556,10 @@ FUNCTION ExecCmd% (cmd$)
     result% = ExecCmdPrid%(ntoken%, stoken$(), prid%)
   ELSEIF stid% > 0 THEN
     result% = ExecCmdStid%(ntoken%, stoken$(), stid%)
-  ELSEIF tid% > 0 THEN
-    result% = ExecCmdTid%(ntoken%, stoken$(), tid%)
+  ELSEIF trid% > 0 THEN
+    result% = ExecCmdTrid%(ntoken%, stoken$(), trid%)
   ELSE
-    result% = ExecCmdRoot%(ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wid%)
+    result% = ExecCmdRoot%(ntoken%, stoken$(), evid%, hbid%, prid%, stid%, trid%, wid%)
   END IF
 
   Assert result% = CmdResult.OK, "ExecCmd", "Malformed: " + cmd$
@@ -2711,13 +2728,13 @@ FUNCTION ExecCmdPrid% (ntoken%, stoken$(), prid%)
   
 END FUNCTION
 
-FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wid%)
+FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, trid%, wid%)
 
   AssertIsZero evid%, "ExecCmdRoot%", "evid%"
   AssertIsZero hbid%, "ExecCmdRoot%", "hbid%"
   AssertIsZero prid%, "ExecCmdRoot%", "prid%"
   AssertIsZero stid%, "ExecCmdRoot%", "stid%"
-  AssertIsZero tid%, "ExecCmdRoot%", "tid%"
+  AssertIsZero trid%, "ExecCmdRoot%", "trid%"
   AssertIsZero wid%, "ExecCmdRoot%", "wid%"
 
   ExecCmdRoot% = CmdResult.OK
@@ -2826,8 +2843,7 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wid
       stid% = StCreate%
 
     CASE "trigger" ' ***
-      triggers = triggers + 1
-      tid% = triggers
+      trid% = TrCreate%
 
     CASE "window"
       wid% = WnCreate%
@@ -2875,25 +2891,26 @@ FUNCTION ExecCmdStid% (ntoken%, stoken$(), stid%)
   
 END FUNCTION
 
-FUNCTION ExecCmdTid% (ntoken%, stoken$(), tid%)
+FUNCTION ExecCmdTrid% (ntoken%, stoken$(), trid%)
 
-  AssertIsPositive tid%, "ExecCmdTid", "tid"
+  AssertIsPositive trid%, "ExecCmdTrid%", "trid%"
 
   SELECT CASE LCASE$(stoken$(0))
 
-    CASE ".command"
-      trigger(tid%).cmdrsid = RsCreate(stoken$(1))
-
     CASE "endtrigger"
-      tid% = 0
+      trid% = 0
 
-    CASE ".when"
-      trigger(tid%).evid = EvFind%(stoken$(1))
-      trigger(tid%).operator = EvParseOperator%(stoken$(2))
-      trigger(tid%).operand = VAL(stoken$(3))
+    CASE ".event"
+      TrSet trid%, TrIndex.Event, EvFind%(stoken$(1))
+
+    CASE ".equals"
+      TrSet trid%, TrIndex.Equals, VAL(stoken$(1))
+
+    CASE ".command"
+      TrSet trid%, TrIndex.Command, RsCreate%(stoken$(1))
 
     CASE ELSE
-      ExecCmdTid% = CmdResult.Malformed
+      ExecCmdTrid% = CmdResult.Malformed
 
   END SELECT
 
@@ -3360,10 +3377,7 @@ FUNCTION ObCreate% (schema%, parent%)
   gobids = gobids + 1
  
   ObSet gobids, ObIndex.Schema, schema%
- 
-  IF parent% > 0 THEN
-    ObSet gobids, ObIndex.Parent, parent%
-  END IF
+  ObSet gobids, ObIndex.Parent, parent%
 
   ObCreate% = gobids
 
@@ -3448,6 +3462,10 @@ FUNCTION ObGetString$ (obid%, obix%)
   DIM rsid%: rsid% = ObGet%(obid%, obix%)
   ObGetString$ = RsGet$(rsid%)
 END FUNCTION
+
+SUB ObInc (obid%, obix%)
+  ObSet obid%, obix%, ObGet%(obid%, obix%) + 1
+END SUB
 
 FUNCTION ObMapSchema% (name$)
   SELECT CASE name$
@@ -3538,6 +3556,17 @@ SUB ObSet (obid%, obix%, value%)
   END IF
 
   gobj(obid%, obix%).value = value%
+
+  SELECT CASE obix%
+   
+    CASE ObIndex.Schema
+      '
+      ' per.schema
+      '
+      per.schema(value%, 0) = per.schema(value%, 0) + 1
+      per.schema(value%, per.schema(value%, 0)) = obid%
+
+  END SELECT
 
   '
   ' Update the cache with the new parent
@@ -3883,6 +3912,49 @@ END FUNCTION
 SUB StSet (stid%, stix%, value%)
   AssertExpected ObSchema.Style, gobj(stid%, ObIndex.Schema).value, "StSet", "ObSchema"
   ObSet stid%, stix%, value%
+END SUB
+
+FUNCTION TrCreate%
+  TrCreate% = ObCreate%(ObSchema.Trigger, 0)
+END FUNCTION
+
+FUNCTION TrGet% (trid%, trix%)
+  AssertExpected ObSchema.Trigger, gobj(trid%, ObIndex.Schema).value, "TrGet%", "ObSchema"
+  TrGet% = ObGet%(trid%, trix%)
+END FUNCTION
+
+FUNCTION TrMap% (name$)
+
+  SELECT CASE name$
+   
+    CASE "Schema"
+      TrMap% = TrIndex.Schema
+   
+    CASE "Name"
+      TrMap% = TrIndex.Name
+
+    CASE "Parent"
+      TrMap% = TrIndex.Parent
+
+    CASE "Event"
+      TrMap% = TrIndex.Event
+
+    CASE "Match"
+      TrMap% = TrIndex.Match
+
+    CASE "Command"
+      TrMap% = TrIndex.Command
+
+    CASE ELSE
+      TrMap% = ObIndex.Invalid
+
+  END SELECT
+
+END FUNCTION
+
+SUB TrSet (trid%, trix%, value%)
+  AssertExpected ObSchema.Trigger, gobj(trid%, ObIndex.Schema).value, "TrSet", "ObSchema"
+  ObSet trid%, trix%, value%
 END SUB
 
 SUB UI.Run
