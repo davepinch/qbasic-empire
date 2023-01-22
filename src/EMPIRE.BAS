@@ -86,7 +86,7 @@ DECLARE FUNCTION AtlasGetScreenX% (cx AS INTEGER)
 DECLARE FUNCTION AtlasGetScreenY% (cy AS INTEGER)
 DECLARE FUNCTION AtlasGetValue% (cx AS INTEGER, cy AS INTEGER, default AS INTEGER)
 DECLARE FUNCTION AtlasIndexOf% (value AS INTEGER)
-DECLARE FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS INTEGER, outpress AS STRING)
+DECLARE FUNCTION AtlasPrompt% (promptFor AS INTEGER, outcx AS INTEGER, outcy AS INTEGER, outpress AS STRING)
 
 '
 ' Control API
@@ -1109,7 +1109,7 @@ SUB AtlasPlotRandom
   
 END SUB
 
-FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS INTEGER, outpress AS STRING)
+FUNCTION AtlasPrompt% (promptFor AS INTEGER, outcx AS INTEGER, outcy AS INTEGER, outpress AS STRING)
   '
   ' Prompts the user to select a cell and either returns the
   ' selected coordinates or (0,0) if canceled.
