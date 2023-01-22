@@ -109,7 +109,6 @@ DECLARE FUNCTION CtGet% (ctid%, ctix%)
 DECLARE FUNCTION CtGetScreenX% (ctid%)
 DECLARE FUNCTION CtGetScreenY% (ctid%)
 DECLARE FUNCTION CtGetStyle% (ctid%)
-DECLARE FUNCTION CtGetValue$ (ctid%)
 DECLARE FUNCTION CtMap% (name$)
 DECLARE FUNCTION CtRedirected% (ctid%, pid%)
 DECLARE FUNCTION CtSelectable% (ctid%)
@@ -1538,19 +1537,22 @@ END SUB
 
 SUB CtDrawFile (ctid%)
 
-  DIM filename AS STRING
-  DIM sx AS INTEGER
-  DIM sy AS INTEGER
-
-  filename = CtGetValue$(ctid%)
-  IF LEN(filename) = 0 THEN
+  DIM rsid%
+  LET rsid% = CtGet%(ctid%, CtIndex.Value)
+  IF rsid% = 0 THEN
     EXIT SUB
   END IF
 
-  sx = CtGetScreenX%(ctid%)
-  sy = CtGetScreenY%(ctid%)
+  DIM filename$
+  LET filename$ = RsGet$(rsid%)
+  IF LEN(filename$) = 0 THEN
+    EXIT SUB
+  END IF
+ 
+  DIM sx%: sx% = CtGetScreenX%(ctid%)
+  DIM sy%: sy% = CtGetScreenY%(ctid%)
 
-  DrawFileAt filename, sx, sy
+  DrawFileAt filename$, sx%, sy%
 
 END SUB
 
@@ -1847,10 +1849,6 @@ FUNCTION CtGetStyle% (ctid%)
 
   CtGetStyle% = stid%
   
-END FUNCTION
-
-FUNCTION CtGetValue$ (ctid%)
-  CtGetValue$ = ObGetString$(ctid%, CtIndex.Value)
 END FUNCTION
 
 SUB CtKey (ctid%, keypress$)
