@@ -106,11 +106,8 @@ DECLARE SUB CtKeyInteger (ctid%, keypress$)
 DECLARE SUB CtSet (ctid%, ctix%, value%)
 DECLARE FUNCTION CtCreate% (kind%, parent%)
 DECLARE FUNCTION CtGet% (ctid%, ctix%)
-DECLARE FUNCTION CtGetOffsetX% (ctid%)
-DECLARE FUNCTION CtGetOffsetY% (ctid%)
 DECLARE FUNCTION CtGetScreenX% (ctid%)
 DECLARE FUNCTION CtGetScreenY% (ctid%)
-DECLARE FUNCTION CtGetSelected% (ctid%)
 DECLARE FUNCTION CtGetStyle% (ctid%)
 DECLARE FUNCTION CtGetValue$ (ctid%)
 DECLARE FUNCTION CtMap% (name$)
@@ -204,8 +201,7 @@ DECLARE FUNCTION NebulaLabelRsid% (energy AS INTEGER)
 '
 DECLARE FUNCTION ObCreate% (schema%, parent%)
 DECLARE FUNCTION ObFindString% (schema%, obix%, value$)
-DECLARE FUNCTION ObFindValue% (schema%, obix%, value%)
-DECLARE FUNCTION ObGet% (obid%, obix%)
+DECLARE FUNCTION ObGet% (schema%, obid%, obix%)
 DECLARE FUNCTION ObGetString$ (obid%, obix%)
 DECLARE FUNCTION ObMapSchema% (name$)
 DECLARE FUNCTION ObResolveParam% (obid%, value%)
@@ -1764,7 +1760,7 @@ SUB CtDrawText (wid%, fid%)
   '
   DIM stid%
   LET stid% = CtGetStyle(fidctid%)
-  IF CtGetSelected(cnid%) = fid% THEN
+  IF CtGet%(cnid%, CtIndex.Selected) = fid% THEN
     DrawColor StGet%(stid%, StIndex.SelectedColor)
   ELSE
     DrawColor StGet%(stid%, StIndex.TextColor)
@@ -1787,16 +1783,7 @@ SUB CtDrawText (wid%, fid%)
 END SUB
 
 FUNCTION CtGet% (ctid%, ctix%)
-  AssertExpected ObSchema.Control, gobj(ctid%, ObIndex.Schema).value, "CtGet%", "ObSchema"
-  CtGet% = ObGet%(ctid%, ctix%)
-END FUNCTION
-
-FUNCTION CtGetOffsetX% (ctid%)
-  CtGetOffsetX% = ObGet%(ctid%, CtIndex.OffsetX)
-END FUNCTION
-
-FUNCTION CtGetOffsetY% (ctid%)
-  CtGetOffsetY% = ObGet%(ctid%, CtIndex.OffsetY)
+  CtGet% = ObGet%(ObSchema.Control, ctid%, ctix%)
 END FUNCTION
 
 FUNCTION CtGetScreenX% (ctid%)
@@ -1808,7 +1795,7 @@ FUNCTION CtGetScreenX% (ctid%)
   LET parent% = CtGet%(ctid%, CtIndex.Parent)
 
   IF parent% > 0 THEN
-    IF ObGet%(parent%, ObIndex.Schema) = ObSchema.Control THEN
+    IF ObGet%(0, parent%, ObIndex.Schema) = ObSchema.Control THEN
       CtGetScreenX% = offsetx% + CtGetScreenX%(parent%)
       EXIT FUNCTION
     END IF
@@ -1827,7 +1814,7 @@ FUNCTION CtGetScreenY% (ctid%)
   LET parent% = CtGet%(ctid%, CtIndex.Parent)
 
   IF parent% > 0 THEN
-    IF ObGet%(parent%, ObIndex.Schema) = ObSchema.Control THEN
+    IF ObGet%(0, parent%, ObIndex.Schema) = ObSchema.Control THEN
       CtGetScreenY% = offsety% + CtGetScreenY%(parent%)
       EXIT FUNCTION
     END IF
@@ -1835,10 +1822,6 @@ FUNCTION CtGetScreenY% (ctid%)
  
   CtGetScreenY% = offsety% + 1
 
-END FUNCTION
-
-FUNCTION CtGetSelected% (ctid%)
-  CtGetSelected% = ObGet%(ctid%, CtIndex.Selected)
 END FUNCTION
 
 FUNCTION CtGetStyle% (ctid%)
@@ -1856,7 +1839,7 @@ FUNCTION CtGetStyle% (ctid%)
     LET parent% = CtGet%(ctid%, CtIndex.Parent)
 
     IF parent% > 0 THEN
-      IF ObGet%(parent%, ObIndex.Schema) = ObSchema.Control THEN
+      IF ObGet%(0, parent%, ObIndex.Schema) = ObSchema.Control THEN
         stid% = CtGetStyle%(parent%)
       END IF
     END IF
@@ -2455,8 +2438,7 @@ SUB EvFire (evid%)
 END SUB
 
 FUNCTION EvGet% (evid%, evix%)
-  AssertExpected ObSchema.Event, gobj(evid%, ObIndex.Schema).value, "EvGet%", "ObSchema"
-  EvGet% = ObGet%(evid%, evix%)
+  EvGet% = ObGet%(ObSchema.Event, evid%, evix%)
 END FUNCTION
 
 SUB EvInc (name$)
@@ -3123,8 +3105,7 @@ FUNCTION HbFind% (name$)
 END FUNCTION
 
 FUNCTION HbGet% (hbid%, hbix%)
-  AssertExpected ObSchema.Habitat, gobj(hbid%, ObIndex.Schema).value, "HbGet%", "ObSchema"
-  HbGet% = ObGet%(hbid%, hbix%)
+  HbGet% = ObGet%(ObSchema.Habitat, hbid%, hbix%)
 END FUNCTION
 
 FUNCTION HbMap% (name$)
@@ -3220,7 +3201,7 @@ FUNCTION LsCapacity%
 END FUNCTION
 
 FUNCTION LsCount% (lsid%)
-  LsCount% = ObGet%(lsid%, LsIndex.Count)
+  LsCount% = ObGet%(ObSchema.List, lsid%, LsIndex.Count)
 END FUNCTION
 
 FUNCTION LsCreate%
@@ -3240,7 +3221,7 @@ FUNCTION LsGet% (lsid%, n%)
   DIM lsix%
   LET lsix% = n% + LsIndex.First - 1
  
-  LsGet% = ObGet%(lsid%, lsix%)
+  LsGet% = ObGet%(ObSchema.List, lsid%, lsix%)
 
 END FUNCTION
 
@@ -3383,7 +3364,7 @@ FUNCTION ObFindString% (schema%, obix%, value$)
      
     IF gobj(obid%, ObIndex.Schema).value = schema% THEN
       
-      DIM rsid%: rsid% = ObGet%(obid%, obix%)
+      DIM rsid%: rsid% = ObGet%(0, obid%, obix%)
       
       IF rsid% = 0 THEN
         '
@@ -3410,26 +3391,19 @@ FUNCTION ObFindString% (schema%, obix%, value$)
 
 END FUNCTION
 
-FUNCTION ObFindValue% (schema%, obix%, value%)
- 
-  DIM obid%
-  FOR obid% = 1 TO UBOUND(gobj, 1)
-    IF gobj(obid%, ObIndex.Schema).value = schema% THEN
-      IF ObGet%(obid%, obix%) = value% THEN
-        ObFindValue% = obid%
-      END IF
-    END IF
-  NEXT
-
-END FUNCTION
-
-FUNCTION ObGet% (obid%, obix%)
+FUNCTION ObGet% (schema%, obid%, obix%)
 
   DIM flags%
   LET flags% = gobj(obid%, obix%).flags
 
   DIM value%
   LET value% = gobj(obid%, obix%).value
+
+  IF schema% > 0 THEN
+    IF schema% <> gobj(obid%, ObIndex.Schema).value THEN
+      AssertFail "ObGet%", "schema mismatch"
+    END IF
+  END IF
 
   SELECT CASE flags%
 
@@ -3450,12 +3424,12 @@ FUNCTION ObGet% (obid%, obix%)
 END FUNCTION
 
 FUNCTION ObGetString$ (obid%, obix%)
-  DIM rsid%: rsid% = ObGet%(obid%, obix%)
+  DIM rsid%: rsid% = ObGet%(0, obid%, obix%)
   ObGetString$ = RsGet$(rsid%)
 END FUNCTION
 
 SUB ObInc (obid%, obix%)
-  ObSet obid%, obix%, ObGet%(obid%, obix%) + 1
+  ObSet obid%, obix%, ObGet%(0, obid%, obix%) + 1
 END SUB
 
 FUNCTION ObMapSchema% (name$)
@@ -3482,14 +3456,14 @@ END FUNCTION
 FUNCTION ObResolveFocused% (obid%, value%)
 
   DIM parent%
-  LET parent% = ObGet%(obid%, ObIndex.Parent)
+  LET parent% = ObGet%(0, obid%, ObIndex.Parent)
   AssertIsPositive parent%, "ObResolveFocused%", "parent%"
 
   DIM wid%
   LET wid% = CtGet%(parent%, CtIndex.ChildList)
 
   DIM sel%
-  LET sel% = CtGetSelected%(parent%)
+  LET sel% = CtGet%(parent%, CtIndex.Selected)
      
   DIM selctid%
   LET selctid% = gwin(wid%, sel%)
@@ -3548,7 +3522,7 @@ END SUB
 SUB ObSetString (obid%, obix%, value$)
 
   DIM rsid%
-  LET rsid% = ObGet%(obid%, obix%)
+  LET rsid% = ObGet%(0, obid%, obix%)
 
   RsSet rsid%, value$
 
@@ -3561,8 +3535,7 @@ FUNCTION PrCreate%
 END FUNCTION
 
 FUNCTION PrGet% (prid%, prix%)
-  AssertExpected ObSchema.Person, gobj(prid%, ObIndex.Schema).value, "PrGet%", "ObSchema"
-  PrGet% = ObGet%(prid%, prix%)
+  PrGet% = ObGet%(ObSchema.Person, prid%, prix%)
 END FUNCTION
 
 FUNCTION PrMap% (name$)
@@ -3600,7 +3573,7 @@ FUNCTION PrRandomly%
   DIM items%(1 TO 100)
 
   FOR index% = LBOUND(gobj, 1) TO UBOUND(gobj, 1)
-    IF ObGet%(index%, ObIndex.Schema) = ObSchema.Person THEN
+    IF ObGet%(0, index%, ObIndex.Schema) = ObSchema.Person THEN
       count% = count% + 1
       items%(count%) = index%
     END IF
@@ -3831,8 +3804,7 @@ FUNCTION StFind% (name$)
 END FUNCTION
 
 FUNCTION StGet% (stid%, stix%)
-  AssertExpected ObSchema.Style, gobj(stid%, ObIndex.Schema).value, "StGet%", "ObSchema"
-  StGet% = ObGet%(stid%, stix%)
+  StGet% = ObGet%(ObSchema.Style, stid%, stix%)
 END FUNCTION
 
 FUNCTION StMap% (name$)
@@ -3877,8 +3849,7 @@ FUNCTION TrCreate%
 END FUNCTION
 
 FUNCTION TrGet% (trid%, trix%)
-  AssertExpected ObSchema.Trigger, gobj(trid%, ObIndex.Schema).value, "TrGet%", "ObSchema"
-  TrGet% = ObGet%(trid%, trix%)
+  TrGet% = ObGet%(ObSchema.Trigger, trid%, trix%)
 END FUNCTION
 
 FUNCTION TrMap% (name$)
@@ -4188,7 +4159,7 @@ SUB WnFocusOn (wid%, fid%)
   LET cnid% = gwin(wid%, 0)
 
   DIM old%
-  LET old% = CtGetSelected(cnid%)
+  LET old% = CtGet%(cnid%, CtIndex.Selected)
 
   IF old% = fid% THEN
     '
@@ -4303,7 +4274,7 @@ SUB WnFocusOnNext (wid%)
     '
     ' Get the starting field
     '
-    LET firstFid% = CtGetSelected(cnid%)
+    LET firstFid% = CtGet%(cnid%, CtIndex.Selected)
     IF firstFid% = 0 THEN
       firstFid% = 1
     END IF
@@ -4365,7 +4336,7 @@ SUB WnFocusOnPrevious (wid%)
     '
     ' Get the starting field
     '
-    LET startingFid% = CtGetSelected(cnid%)
+    LET startingFid% = CtGet%(cnid%, CtIndex.Selected)
     IF startingFid% = 0 THEN
       startingFid% = 1
     END IF
@@ -4406,8 +4377,7 @@ SUB WnFocusOnPrevious (wid%)
 END SUB
 
 FUNCTION WnGet% (wnid%, wnix%)
-  AssertExpected ObSchema.Window, gobj(wnid%, ObIndex.Schema).value, "WnGet%", "ObSchema"
-  WnGet% = ObGet%(wnid%, wnix%)
+  WnGet% = ObGet%(ObSchema.Window, wnid%, wnix%)
 END FUNCTION
 
 FUNCTION WnMap% (name$)
@@ -4472,7 +4442,7 @@ FUNCTION WnMapKey% (wid%, pressed$)
   '
   ' Get the index of the control with focus
   '
-  selected = CtGetSelected(cnid%)
+  selected = CtGet%(cnid%, CtIndex.Selected)
   IF selected > 0 THEN
     selectedCtid = gwin(wid%, selected)
     popupctid = CtGet%(selectedCtid, CtIndex.Popup)
@@ -4605,7 +4575,7 @@ SUB WnRender (wnid%)
   '
   ' Set focus to a field
   '
-  IF CtGetSelected(cnid%) = 0 THEN
+  IF CtGet%(cnid%, CtIndex.Selected) = 0 THEN
     WnFocusOnFirst wid%
   END IF
 
@@ -4641,12 +4611,12 @@ SUB WnRun (wnid%, result AS WnResultType)
 
       IF nopopups THEN
         EXIT DO
-      ELSEIF CtGetSelected(cnid%) = 0 THEN
+      ELSEIF CtGet%(cnid%, CtIndex.Selected) = 0 THEN
         EXIT DO
       END IF
 
       DIM selectedCtid%
-      LET selectedCtid% = gwin(wid%, CtGetSelected(cnid%))
+      LET selectedCtid% = gwin(wid%, CtGet%(cnid%, CtIndex.Selected))
 
       IF CtGet%(selectedCtid%, CtIndex.Kind) <> CtKind.Popup THEN
        
@@ -4701,7 +4671,7 @@ SUB WnRun (wnid%, result AS WnResultType)
         result.action = WnAction.Cancel
         result.canceled = True
         result.cmdrsid = 0
-        result.selected = CtGetSelected(cnid%)
+        result.selected = CtGet%(cnid%, CtIndex.Selected)
         WnClose wid%
         EXIT SUB
 
@@ -4709,14 +4679,14 @@ SUB WnRun (wnid%, result AS WnResultType)
         result.action = WnAction.Complete
         result.canceled = False
         result.cmdrsid = 0
-        result.selected = CtGetSelected(cnid%)
+        result.selected = CtGet%(cnid%, CtIndex.Selected)
         WnClose wid%
         EXIT SUB
 
       CASE WnAction.Execute
         result.action = WnAction.Execute
         result.canceled = False
-        result.selected = CtGetSelected(cnid%)
+        result.selected = CtGet%(cnid%, CtIndex.Selected)
         result.cmdrsid = CtGet%(gwin(wid%, result.selected), CtIndex.Command)
         WnClose wid%
         EXIT SUB
@@ -4725,7 +4695,7 @@ SUB WnRun (wnid%, result AS WnResultType)
         result.action = WnAction.ExitLeft
         result.canceled = True
         result.cmdrsid = 0
-        result.selected = CtGetSelected(cnid%)
+        result.selected = CtGet%(cnid%, CtIndex.Selected)
         WnClose wid%
         EXIT SUB
 
@@ -4733,7 +4703,7 @@ SUB WnRun (wnid%, result AS WnResultType)
         result.action = WnAction.ExitRight
         result.canceled = True
         result.cmdrsid = 0
-        result.selected = CtGetSelected(cnid%)
+        result.selected = CtGet%(cnid%, CtIndex.Selected)
         WnClose wid%
         EXIT SUB
 
@@ -4753,8 +4723,8 @@ SUB WnRun (wnid%, result AS WnResultType)
         WnFocusOnPrevious wid%
 
       CASE ELSE
-        CtKey gwin(wid%, CtGetSelected(cnid%)), pressed
-        WnRefreshField wid%, CtGetSelected(cnid%)
+        CtKey gwin(wid%, CtGet%(cnid%, CtIndex.Selected)), pressed
+        WnRefreshField wid%, CtGet%(cnid%, CtIndex.Selected)
 
     END SELECT
 
