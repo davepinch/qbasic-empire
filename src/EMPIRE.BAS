@@ -361,7 +361,6 @@ CONST CtKind.Box = 2
 CONST CtKind.Button = 3
 CONST CtKind.Container = 4
 CONST CtKind.File = 5
-CONST CtKind.Integer = 6
 CONST CtKind.Label = 7
 CONST CtKind.Popup = 8
 CONST CtKind.Separator = 9
@@ -1864,9 +1863,6 @@ SUB CtKey (ctid%, keypress$)
     CASE CtKind.Boolean
       CtKeyBoolean ctid%, keypress$
 
-    CASE CtKind.Integer
-      CtKeyInteger ctid%, keypress$
-
   END SELECT
 
 END SUB
@@ -1906,34 +1902,6 @@ SUB CtKeyBoolean (ctid%, keypress$)
   ELSE
     CtSet ctid%, CtIndex.Text, rsid.n%
   END IF
-
-END SUB
-
-SUB CtKeyInteger (ctid%, keypress$)
-  '
-  ' Sends a key to an integer field
-  '
-
-  DIM buf$
-  LET buf$ = RsGet$(CtGet%(ctid%, CtIndex.Text))
-
-  SELECT CASE keypress$
-   
-    CASE CHR$(ASCII.Backspace)
-
-      IF LEN(buf$) > 0 THEN
-        buf$ = LEFT$(buf$, LEN(buf$) - 1)
-      END IF
-
-    CASE "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
-
-      IF LEN(buf$) < CtGet%(ctid%, CtIndex.SizeX) THEN
-        buf$ = buf$ + keypress$
-      END IF
-
-  END SELECT
-
-  ObSetString ctid%, CtIndex.Text, buf$
 
 END SUB
 
@@ -2017,9 +1985,6 @@ FUNCTION CtSelectable% (ctid%)
         CtSelectable% = True
 
       CASE CtKind.Boolean
-        CtSelectable% = True
-
-      CASE CtKind.Integer
         CtSelectable% = True
 
       CASE CtKind.Popup
@@ -2566,8 +2531,6 @@ FUNCTION ExecCmdCtid% (ntoken%, stoken$(), ctid%)
       endtag = "endseparator"
     CASE CtKind.Boolean
       endtag = "endboolean"
-    CASE CtKind.Integer
-      endtag = "endinteger"
     CASE CtKind.Nebula
       endtag = "endnebula"
     CASE ELSE
@@ -2913,9 +2876,6 @@ FUNCTION ExecCmdWnid% (ntoken%, stoken$(), wnid%, ctid%)
    
       CASE "file"
         ctid% = WnAppend%(wnid%, CtKind.File)
-
-      CASE "integer"
-        ctid% = WnAppend%(wnid%, CtKind.Integer)
 
       CASE "label"
         ctid% = WnAppend%(wnid%, CtKind.Label)
