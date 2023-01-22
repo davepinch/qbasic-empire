@@ -91,7 +91,6 @@ DECLARE FUNCTION AtlasPrompt (promptFor AS INTEGER, outcx AS INTEGER, outcy AS I
 '
 ' Control API
 '
-DECLARE FUNCTION CtCreate% (kind%)
 DECLARE SUB CtDraw (wid%, fid%)
 DECLARE SUB CtDrawBox (ctid%)
 DECLARE SUB CtDrawBox0 (ctid%)
@@ -105,7 +104,7 @@ DECLARE SUB CtKey (ctid%, keypress$)
 DECLARE SUB CtKeyBoolean (ctid%, keypress$)
 DECLARE SUB CtKeyInteger (ctid%, keypress$)
 DECLARE SUB CtSet (ctid%, ctix%, value%)
-DECLARE FUNCTION CtCreateChild% (wid%, kind%)
+DECLARE FUNCTION CtCreate% (kind%, parent%)
 DECLARE FUNCTION CtGet% (ctid%, ctix%)
 DECLARE FUNCTION CtGetOffsetX% (ctid%)
 DECLARE FUNCTION CtGetOffsetY% (ctid%)
@@ -155,20 +154,20 @@ DECLARE FUNCTION EvParseOperator% (opname$)
 '
 DECLARE SUB ExecFile (filename AS STRING)
 DECLARE FUNCTION ExecCmd% (cmd$)
+DECLARE FUNCTION ExecCmdCtid% (ntoken%, stoken$(), ctid%)
 DECLARE FUNCTION ExecCmdEvid% (ntoken%, stoken$(), evid%)
-DECLARE FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
 DECLARE FUNCTION ExecCmdHbid% (ntoken%, stoken$(), hbid%)
 DECLARE FUNCTION ExecCmdPrid% (ntoken%, stoken$(), prid%)
-DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, tid%, wid%)
+DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, trid%, wnid%)
 DECLARE FUNCTION ExecCmdStid% (ntoken%, stoken$(), stid%)
 DECLARE FUNCTION ExecCmdTrid% (ntoken%, stoken$(), trid%)
-DECLARE FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
+DECLARE FUNCTION ExecCmdWnid% (ntoken%, stoken$(), wnid%, ctid%)
 DECLARE FUNCTION ExecResource% (rsid%)
 
 '
 ' Game
 '
-DECLARE SUB GameMoveOffset (offsetX%, offsetY%)
+DECLARE SUB GameMoveOffset (offsetx%, offsety%)
 
 '
 ' Habitat API
@@ -182,7 +181,7 @@ DECLARE SUB HbSet (hbid%, hbix%, value%)
 '
 ' Inbox
 '
-DECLARE SUB InboxAdd (subject AS STRING, filename AS STRING)
+DECLARE SUB InboxAdd (subject$, filename$)
 
 '
 ' List API
@@ -292,10 +291,9 @@ DECLARE SUB WnRender (wnid%)
 DECLARE SUB WnRun (wnid%, result AS WnResultType)
 DECLARE SUB WnRunName (idname$)
 DECLARE SUB WnSet (wnid%, wnix%, value%)
-DECLARE FUNCTION WnAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
+DECLARE FUNCTION WnAppend% (wnid%, kind%)
 DECLARE FUNCTION WnCreate% ()
 DECLARE FUNCTION WnFind% (name$)
-DECLARE FUNCTION WnFindWid% (name$)
 DECLARE FUNCTION WnGet% (wnid%, wnix%)
 DECLARE FUNCTION WnMap% (name$)
 DECLARE FUNCTION WnMapKey% (wid%, pressed$)
@@ -1295,43 +1293,14 @@ SUB AtlasSetStatusEx (text$, attr%)
 
 END SUB
 
-FUNCTION CtCreate% (kind%)
+FUNCTION CtCreate% (kind%, parent%)
   '
   ' Creates an empty control
   '
-  DIM ctid%: ctid% = ObCreate%(ObSchema.Control, 0) ' *** allow parents
+  DIM ctid%: ctid% = ObCreate%(ObSchema.Control, parent%)
   AssertIsPositive ctid%, "CtCreate%", "ctid%"
-
   CtSet ctid%, CtIndex.Kind, kind%
   CtCreate% = ctid%
-
-END FUNCTION
-
-FUNCTION CtCreateChild% (wid%, kind%)
-
-  Assert wid% > 0, "CtCreateChild%", "wid cannot be 0"
-
-  '
-  ' Get the parent window
-  '
-  DIM cnid%: cnid% = gwin(wid%, 0)
-  DIM wnid%: wnid% = CtGet%(cnid%, CtIndex.Window)
-
-  '
-  ' Get a new field index
-  '
-  DIM fid%: fid% = win(wid%).fields + 1
-  win(wid%).fields = fid%
-
-  '
-  ' Create a child control
-  '
-  DIM ctid%: ctid% = ObCreate%(ObSchema.Control, cnid%)
-  
-  gwin(wid%, fid%) = ctid%
-  CtSet ctid%, CtIndex.Kind, kind%
-  CtSet ctid%, CtIndex.Window, wnid%
-  CtCreateChild% = fid%
 
 END FUNCTION
 
@@ -1340,7 +1309,10 @@ SUB CtDraw (wid%, fid%)
   DIM ctid%
   LET ctid% = gwin(wid%, fid%)
 
-  SELECT CASE CtGet%(ctid%, CtIndex.Kind)
+  DIM kind%
+  LET kind% = CtGet%(ctid%, CtIndex.Kind)
+
+  SELECT CASE kind%
     '
     ' Check the most common kinds first
     '
@@ -1362,8 +1334,14 @@ SUB CtDraw (wid%, fid%)
     CASE CtKind.Nebula
       CtDrawNebula ctid%
 
-    CASE ELSE
+    CASE CtKind.Popup
       CtDrawText wid%, fid%
+
+    CASE CtKind.Boolean
+      CtDrawText wid%, fid%
+
+    CASE ELSE
+      AssertFail "CtDraw", "unsupported kind" + STR$(kind%)
 
   END SELECT
 
@@ -1372,7 +1350,7 @@ END SUB
 SUB CtDrawBox (ctid%)
 
   DIM stid%
-  LET stid% = CtGetStyle(ctid%)
+  LET stid% = CtGetStyle%(ctid%)
 
   SELECT CASE StGet%(stid%, StIndex.BorderType)
  
@@ -1823,27 +1801,39 @@ END FUNCTION
 
 FUNCTION CtGetScreenX% (ctid%)
 
-  DIM parentctid%
-  LET parentctid% = CtGet%(ctid%, CtIndex.Parent)
+  DIM offsetx%
+  LET offsetx% = CtGet%(ctid%, CtIndex.OffsetX)
 
-  IF parentctid% = 0 THEN
-    CtGetScreenX% = CtGetOffsetX%(ctid%) + 1
-  ELSE
-    CtGetScreenX% = CtGetOffsetX%(ctid%) + CtGetScreenX%(parentctid%)
+  DIM parent%
+  LET parent% = CtGet%(ctid%, CtIndex.Parent)
+
+  IF parent% > 0 THEN
+    IF ObGet%(parent%, ObIndex.Schema) = ObSchema.Control THEN
+      CtGetScreenX% = offsetx% + CtGetScreenX%(parent%)
+      EXIT FUNCTION
+    END IF
   END IF
+ 
+  CtGetScreenX% = offsetx% + 1
 
 END FUNCTION
 
 FUNCTION CtGetScreenY% (ctid%)
 
-  DIM parentctid%
-  LET parentctid% = CtGet%(ctid%, CtIndex.Parent)
+  DIM offsety%
+  LET offsety% = CtGet%(ctid%, CtIndex.OffsetY)
+ 
+  DIM parent%
+  LET parent% = CtGet%(ctid%, CtIndex.Parent)
 
-  IF parentctid% = 0 THEN
-    CtGetScreenY% = CtGetOffsetY%(ctid%) + 1
-  ELSE
-    CtGetScreenY% = CtGetOffsetY%(ctid%) + CtGetScreenY%(parentctid%)
+  IF parent% > 0 THEN
+    IF ObGet%(parent%, ObIndex.Schema) = ObSchema.Control THEN
+      CtGetScreenY% = offsety% + CtGetScreenY%(parent%)
+      EXIT FUNCTION
+    END IF
   END IF
+ 
+  CtGetScreenY% = offsety% + 1
 
 END FUNCTION
 
@@ -1856,17 +1846,19 @@ FUNCTION CtGetStyle% (ctid%)
   AssertIsPositive ctid%, "CtGetStyle%", "ctid%"
 
   DIM stid%
-  LET stid% = ObGet%(ctid%, CtIndex.Style)
+  LET stid% = CtGet%(ctid%, CtIndex.Style)
  
   IF stid% = 0 THEN
     '
     ' Inherit from the parent control
     '
-    DIM parentctid%
-    LET parentctid% = CtGet%(ctid%, CtIndex.Parent)
+    DIM parent%
+    LET parent% = CtGet%(ctid%, CtIndex.Parent)
 
-    IF parentctid% > 0 THEN
-      stid% = CtGetStyle%(parentctid%)
+    IF parent% > 0 THEN
+      IF ObGet%(parent%, ObIndex.Schema) = ObSchema.Control THEN
+        stid% = CtGetStyle%(parent%)
+      END IF
     END IF
 
   END IF
@@ -2518,14 +2510,15 @@ END SUB
 
 FUNCTION ExecCmd% (cmd$)
 
+  SHARED ctid%
   SHARED evid%
-  SHARED fid%
   SHARED hbid%
   SHARED prid%
   SHARED stid%
   SHARED trid%
-  SHARED wid%
+  SHARED wnid%
 
+  'ShPrint cmd$
   DIM result%
  
   '
@@ -2544,10 +2537,10 @@ FUNCTION ExecCmd% (cmd$)
     stoken$(0) = LCASE$(stoken$(0))
   END IF
 
-  IF fid% > 0 THEN
-    result% = ExecCmdFid%(ntoken%, stoken$(), wid%, fid%)
-  ELSEIF wid% > 0 THEN
-    result% = ExecCmdWid%(ntoken%, stoken$(), wid%, fid%)
+  IF ctid% > 0 THEN
+    result% = ExecCmdCtid%(ntoken%, stoken$(), ctid%)
+  ELSEIF wnid% > 0 THEN
+    result% = ExecCmdWnid%(ntoken%, stoken$(), wnid%, ctid%)
   ELSEIF evid% > 0 THEN
     result% = ExecCmdEvid%(ntoken%, stoken$(), evid%)
   ELSEIF hbid% > 0 THEN
@@ -2559,7 +2552,7 @@ FUNCTION ExecCmd% (cmd$)
   ELSEIF trid% > 0 THEN
     result% = ExecCmdTrid%(ntoken%, stoken$(), trid%)
   ELSE
-    result% = ExecCmdRoot%(ntoken%, stoken$(), evid%, hbid%, prid%, stid%, trid%, wid%)
+    result% = ExecCmdRoot%(ntoken%, stoken$(), evid%, hbid%, prid%, stid%, trid%, wnid%)
   END IF
 
   Assert result% = CmdResult.OK, "ExecCmd", "Malformed: " + cmd$
@@ -2568,37 +2561,9 @@ FUNCTION ExecCmd% (cmd$)
 
 END FUNCTION
 
-FUNCTION ExecCmdEvid% (ntoken%, stoken$(), evid%)
+FUNCTION ExecCmdCtid% (ntoken%, stoken$(), ctid%)
 
-  AssertIsPositive evid%, "ExecCmdEvid%", "evid%"
-
-  ExecCmdEvid% = CmdResult.OK
-
-  SELECT CASE stoken$(0)
-   
-    CASE "endevent"
-      evid% = 0
-
-    CASE ".name"
-      EvSet evid%, EvIndex.Name, RsCreate%(stoken$(1))
-
-    CASE ".value"
-      EvSet evid%, EvIndex.Value, VAL(stoken$(1))
-
-    CASE ELSE
-      ExecCmdEvid% = CmdResult.Malformed
-
-  END SELECT
-
-END FUNCTION
-
-FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
-
-  AssertIsPositive wid%, "ExecCmdFid%", "wid%"
-  AssertIsPositive fid%, "ExecCmdFid%", "fid%"
-
-  DIM ctid%
-  LET ctid% = gwin(wid%, fid%)
+  AssertIsPositive ctid%, "ExecCmdCtid%", "ctid%"
 
   DIM endtag AS STRING
   DIM kind%
@@ -2624,15 +2589,15 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
     CASE CtKind.Nebula
       endtag = "endnebula"
     CASE ELSE
-      AssertFail "ExecCmdFid", "Unknown kind:" + STR$(kind%)
+      AssertFail "ExecCmdCtid", "Unknown kind:" + STR$(kind%)
   END SELECT
 
-  ExecCmdFid% = CmdResult.OK
+  ExecCmdCtid% = CmdResult.OK
 
   SELECT CASE stoken$(0)
     
     CASE endtag
-      fid% = 0
+      ctid% = 0
 
     CASE ".command"
       CtSet ctid%, CtIndex.Command, RsCreate%(stoken$(1))
@@ -2670,7 +2635,31 @@ FUNCTION ExecCmdFid% (ntoken%, stoken$(), wid%, fid%)
       END IF
 
     CASE ELSE
-      ExecCmdFid% = CmdResult.Malformed
+      ExecCmdCtid% = CmdResult.Malformed
+
+  END SELECT
+
+END FUNCTION
+
+FUNCTION ExecCmdEvid% (ntoken%, stoken$(), evid%)
+
+  AssertIsPositive evid%, "ExecCmdEvid%", "evid%"
+
+  ExecCmdEvid% = CmdResult.OK
+
+  SELECT CASE stoken$(0)
+   
+    CASE "endevent"
+      evid% = 0
+
+    CASE ".name"
+      EvSet evid%, EvIndex.Name, RsCreate%(stoken$(1))
+
+    CASE ".value"
+      EvSet evid%, EvIndex.Value, VAL(stoken$(1))
+
+    CASE ELSE
+      ExecCmdEvid% = CmdResult.Malformed
 
   END SELECT
 
@@ -2728,14 +2717,14 @@ FUNCTION ExecCmdPrid% (ntoken%, stoken$(), prid%)
   
 END FUNCTION
 
-FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, trid%, wid%)
+FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, trid%, wnid%)
 
   AssertIsZero evid%, "ExecCmdRoot%", "evid%"
   AssertIsZero hbid%, "ExecCmdRoot%", "hbid%"
   AssertIsZero prid%, "ExecCmdRoot%", "prid%"
   AssertIsZero stid%, "ExecCmdRoot%", "stid%"
   AssertIsZero trid%, "ExecCmdRoot%", "trid%"
-  AssertIsZero wid%, "ExecCmdRoot%", "wid%"
+  AssertIsZero wnid%, "ExecCmdRoot%", "wnid%"
 
   ExecCmdRoot% = CmdResult.OK
 
@@ -2842,11 +2831,11 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, trid%, wi
     CASE "style"
       stid% = StCreate%
 
-    CASE "trigger" ' ***
+    CASE "trigger"
       trid% = TrCreate%
 
     CASE "window"
-      wid% = WnCreate%
+      wnid% = WnCreate%
 
     CASE "winrun"
       WnRunName stoken$(1)
@@ -2916,57 +2905,50 @@ FUNCTION ExecCmdTrid% (ntoken%, stoken$(), trid%)
 
 END FUNCTION
 
-FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
+FUNCTION ExecCmdWnid% (ntoken%, stoken$(), wnid%, ctid%)
 
-  AssertIsPositive wid%, "ExecCmdWid%", "wid%"
-  AssertIsZero fid%, "ExecCmdWid%", "fid%"
-
-  DIM cnid%
-  LET cnid% = gwin(wid%, 0)
-
-  DIM wnid%
-  LET wnid% = CtGet%(cnid%, CtIndex.Window)
   AssertIsPositive wnid%, "ExecCmdWid%", "wnid%"
+  AssertIsZero ctid%, "ExecCmdWid%", "ctid%"
 
-  ExecuteCommandWid% = CmdResult.OK
+  ExecuteCommandWnid% = CmdResult.OK
 
   IF ntoken% = 1 THEN
 
     SELECT CASE stoken$(0)
      
       CASE "endwindow"
-        wid% = 0
-        cnid% = 0
+        wnid% = 0
+        ctid% = 0
 
       CASE "boolean"
-        fid% = CtCreateChild%(wid%, CtKind.Boolean)
+        ctid% = WnAppend%(wnid%, CtKind.Boolean)
 
       CASE "box"
-        fid% = CtCreateChild%(wid%, CtKind.Box)
+        ctid% = WnAppend%(wnid%, CtKind.Box)
 
       CASE "button"
-        fid% = CtCreateChild%(wid%, CtKind.Button)
+        ctid% = WnAppend%(wnid%, CtKind.Button)
    
       CASE "file"
-        fid% = CtCreateChild%(wid%, CtKind.File)
+        ctid% = WnAppend%(wnid%, CtKind.File)
 
       CASE "integer"
-        fid% = CtCreateChild%(wid%, CtKind.Integer)
+        ctid% = WnAppend%(wnid%, CtKind.Integer)
 
       CASE "label"
-        fid% = CtCreateChild%(wid%, CtKind.Label)
+        ctid% = WnAppend%(wnid%, CtKind.Label)
    
       CASE "nebula"
-        fid% = CtCreateChild%(wid%, CtKind.Nebula)
+        ctid% = WnAppend%(wnid%, CtKind.Nebula)
 
       CASE "popup"
-        fid% = CtCreateChild%(wid%, CtKind.Popup)
+        ctid% = WnAppend%(wnid%, CtKind.Popup)
 
       CASE "separator"
-        fid% = CtCreateChild%(wid%, CtKind.Separator)
+        ctid% = WnAppend%(wnid%, CtKind.Separator)
 
       CASE ELSE
-        ExecuteCommandWid% = CmdResult.Malformed
+        ExecuteCommandWnid% = CmdResult.Malformed
 
     END SELECT
 
@@ -2977,6 +2959,10 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
     ExecuteCommandWid% = CmdResult.Malformed
     EXIT FUNCTION
   END IF
+
+  DIM cnid%
+  LET cnid% = WnGet%(wnid%, WnIndex.Container)
+  AssertIsPositive cnid%, "ExecCmdWnid", "cnid%"
 
   SELECT CASE stoken$(0)
 
@@ -2995,8 +2981,8 @@ FUNCTION ExecCmdWid% (ntoken%, stoken$(), wid%, fid%)
     CASE ".posy" ' '***
       CtSet cnid%, CtIndex.OffsetY, VAL(stoken$(1)) - 1
 
-    CASE ".style" '***
-      CtSet cnid%, CtIndex.Style, StFind%(stoken$(1)) ' ***
+    CASE ".style"
+      CtSet cnid%, CtIndex.Style, StFind%(stoken$(1))
 
     CASE ELSE
       result = CmdResult.Malformed
@@ -3035,7 +3021,7 @@ FUNCTION ExecResource% (rsid%)
 
 END FUNCTION
 
-SUB GameMoveOffset (offsetX%, offsetY%)
+SUB GameMoveOffset (offsetx%, offsety%)
  
   DIM aid     AS INTEGER
   DIM cx      AS INTEGER
@@ -3059,8 +3045,8 @@ SUB GameMoveOffset (offsetX%, offsetY%)
   '
   ' Calculate next coordinates
   '
-  cx = cx + offsetX%
-  cy = cy + offsetY%
+  cx = cx + offsetx%
+  cy = cy + offsety%
   IF cx < LBOUND(atlasGrid, 1) THEN cx = UBOUND(atlasGrid, 1)
   IF cx > UBOUND(atlasGrid, 1) THEN cx = LBOUND(atlasGrid, 1)
   IF cy < LBOUND(atlasGrid, 2) THEN cy = UBOUND(atlasGrid, 2)
@@ -3178,17 +3164,22 @@ SUB HbSet (hbid%, hbix%, value%)
   ObSet hbid%, hbix%, value%
 END SUB
 
-SUB InboxAdd (subject AS STRING, filename AS STRING)
- 
-  DIM fid%
-  DIM wid%
+SUB InboxAdd (subject$, filename$)
  
   SHARED count AS INTEGER
-
   count = count + 1
 
-  wid% = WnFindWid%("Inbox")
-  fid% = WnAddButton%(wid%, 1, count, 20, " " + subject, filename)
+  DIM wnid%: wnid% = WnFind%("Inbox")
+  DIM ctid%: ctid% = WnAppend%(wnid%, CtKind.Button)
+
+  CtSet ctid%, CtIndex.Command, 0
+  CtSet ctid%, CtIndex.OffsetX, 1
+  CtSet ctid%, CtIndex.OffsetY, count%
+  CtSet ctid%, CtIndex.Popup, 0
+  CtSet ctid%, CtIndex.SizeX, 20
+  CtSet ctid%, CtIndex.SizeY, 1
+  CtSet ctid%, CtIndex.Text, RsCreate%(" " + subject$)
+  CtSet ctid%, CtIndex.Value, RsCreate%(filename$)
 
   AtlasSetStatus "Mail arrived"
   ShFile "NEWMAIL.PCB"
@@ -4099,26 +4090,21 @@ SUB VideoScreen (activepage%, visualpage%)
   
 END SUB
 
-FUNCTION WnAddButton% (wid%, offsetX%, offsetY%, sizeX%, text$, value$)
+FUNCTION WnAppend% (wnid%, kind%)
+   
+  DIM cnid%: cnid% = WnGet%(wnid%, WnIndex.Container)
+  DIM ctid%: ctid% = CtCreate%(kind%, cnid%)
+  CtSet ctid%, CtIndex.Window, wnid%
+ 
+  '
+  ' Legacy
+  '
+  DIM wid%: wid% = WnGet%(wnid%, WnIndex.Wid)
+  DIM fid%: fid% = win(wid%).fields + 1
+  win(wid%).fields = fid%
+  gwin(wid%, fid%) = ctid%
 
-  AssertIsPositive wid%, "WnAddButton%", "wid%"
-
-  DIM fid%
-  LET fid% = CtCreateChild(wid%, CtKind.Button)
-
-  DIM ctid%
-  LET ctid% = gwin(wid%, fid%)
-
-  CtSet ctid%, CtIndex.Command, 0
-  CtSet ctid%, CtIndex.OffsetX, offsetX%
-  CtSet ctid%, CtIndex.OffsetY, offsetY%
-  CtSet ctid%, CtIndex.Popup, 0
-  CtSet ctid%, CtIndex.SizeX, sizeX%
-  CtSet ctid%, CtIndex.SizeY, 1
-  CtSet ctid%, CtIndex.Text, RsCreate%(text$)
-  CtSet ctid%, CtIndex.Value, RsCreate%(value$)
-
-  WnAddButton% = fid%
+  WnAppend% = ctid%
 
 END FUNCTION
 
@@ -4149,22 +4135,10 @@ END SUB
 
 FUNCTION WnCreate%
  
-  '
-  ' Create the root window object
-  '
   DIM wnid%: wnid% = ObCreate%(ObSchema.Window, 0) ' *** allow parents
+  DIM cnid%: cnid% = CtCreate(CtKind.Container, wnid%)
+ 
   AssertIsPositive wnid%, "WnCreate%", "wnid%"
-
-  '
-  ' Set the wid (legacy)
-  '
-  gwid% = gwid% + 1
-  WnSet wnid%, WnIndex.Wid, gwid%
-
-  '
-  ' Create a container to hold controls
-  '
-  DIM cnid%: cnid% = CtCreate(CtKind.Container)
   AssertIsPositive cnid%, "WnCreate%", "cnid%"
 
   '
@@ -4172,13 +4146,15 @@ FUNCTION WnCreate%
   '
   WnSet wnid%, WnIndex.Container, cnid%
   CtSet cnid%, CtIndex.Window, wnid%
+
+  '
+  ' Legacy
+  '
+  gwid% = gwid% + 1
+  WnSet wnid%, WnIndex.Wid, gwid%
   CtSet cnid%, CtIndex.ChildList, gwid%
- 
-  '
-  ' Track the control as field #0
-  '
   gwin(gwid%, 0) = cnid%
-  WnCreate% = gwid%
+  WnCreate% = wnid%
 
 END FUNCTION
 
@@ -4195,17 +4171,6 @@ END SUB
 
 FUNCTION WnFind% (name$)
   WnFind% = ObFindString%(ObSchema.Window, WnIndex.Name, name$)
-END FUNCTION
-
-FUNCTION WnFindWid% (name$)
- 
-  DIM wnid%
-  LET wnid% = ObFindString%(ObSchema.Window, WnIndex.Name, name$)
-
-  IF wnid% > 0 THEN
-    WnFindWid% = WnGet%(wnid%, WnIndex.Wid)
-  END IF
-
 END FUNCTION
 
 SUB WnFocusOn (wid%, fid%)
@@ -4606,7 +4571,10 @@ SUB WnRender (wnid%)
   '
   
   DIM cnid%: cnid% = WnGet%(wnid%, WnIndex.Container)
+  AssertIsPositive cnid%, "WnRender", "cnid%"
+
   DIM wid%: wid% = WnGet%(wnid%, WnIndex.Wid)
+  AssertIsPositive wid%, "WnRender", "wid%"
 
   DIM backpage AS INTEGER
   DIM workpage AS INTEGER
@@ -4653,7 +4621,10 @@ SUB WnRun (wnid%, result AS WnResultType)
   AssertIsPositive wnid%, "WnRun", "wnid%"
 
   DIM wid%: wid% = WnGet%(wnid%, WnIndex.Wid)
+  AssertIsPositive wid%, "WnRun", "wid%"
+
   DIM cnid%: cnid% = WnGet%(wnid%, WnIndex.Container)
+  AssertIsPositive cnid%, "WnRun", "cnid%"
 
   DIM nopopups AS INTEGER
   DIM pressed  AS STRING
