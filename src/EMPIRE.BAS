@@ -208,7 +208,6 @@ DECLARE FUNCTION ObResolveFocused% (obid%, value%)
 DECLARE SUB ObBind (obid%, obix%, expr$)
 DECLARE SUB ObInc (obid%, obix%)
 DECLARE SUB ObSet (obid%, obix%, value%)
-DECLARE SUB ObSetString (obid%, obix%, value$)
 
 '
 ' Person API
@@ -3474,17 +3473,6 @@ SUB ObSet (obid%, obix%, value%)
       END IF
 
   END SELECT
-
-END SUB
-
-SUB ObSetString (obid%, obix%, value$)
-
-  DIM rsid%
-  LET rsid% = ObGet%(0, obid%, obix%)
-
-  RsSet rsid%, value$
-
-  ObSet obid%, obix%, rsid%
 
 END SUB
 
