@@ -194,8 +194,8 @@ DECLARE FUNCTION ObMapSchema% (name$)
 DECLARE FUNCTION ObResolveParam% (obid%, value%)
 DECLARE FUNCTION ObResolveFocused% (obid%, value%)
 DECLARE SUB ObBind (obid%, obix%, expr$)
-DECLARE SUB ObInc (obid%, obix%)
-DECLARE SUB ObSet (obid%, obix%, value%)
+DECLARE SUB ObInc (schema%, obid%, obix%)
+DECLARE SUB ObSet (schema%, obid%, obix%, value%)
 
 '
 ' Person API
@@ -1985,8 +1985,7 @@ FUNCTION CtSelectable% (ctid%)
 END FUNCTION
 
 SUB CtSet (ctid%, ctix%, value%)
-  AssertExpected ObSchema.Control, gobj(ctid%, ObIndex.Schema).value, "CtSet", "ObSchema"
-  ObSet ctid%, ctix%, value%
+  ObSet ObSchema.Control, ctid%, ctix%, value%
 END SUB
 
 FUNCTION DgGarble$ (text$, percent!)
@@ -2395,7 +2394,7 @@ SUB EvInc (name$)
  
   DIM evid%: evid% = EvFind%(name$)
   IF evid% > 0 THEN
-    ObInc evid%, EvIndex.Value
+    ObInc ObSchema.Event, evid%, EvIndex.Value
     EvFire evid%
   END IF
 
@@ -2425,8 +2424,7 @@ FUNCTION EvMap% (name$)
 END FUNCTION
 
 SUB EvSet (evid%, evix%, value%)
-  AssertExpected ObSchema.Event, gobj(evid%, ObIndex.Schema).value, "EvSet", "ObSchema"
-  ObSet evid%, evix%, value%
+  ObSet ObSchema.Event, evid%, evix%, value%
 END SUB
 
 FUNCTION ExecCmd% (cmd$)
@@ -3075,8 +3073,7 @@ FUNCTION HbMap% (name$)
 END FUNCTION
 
 SUB HbSet (hbid%, hbix%, value%)
-  AssertExpected ObSchema.Habitat, gobj(hbid%, ObIndex.Schema).value, "HbSet", "ObSchema"
-  ObSet hbid%, hbix%, value%
+  ObSet ObSchema.Habitat, hbid%, hbix%, value%
 END SUB
 
 SUB InboxAdd (subject$, filename$)
@@ -3204,8 +3201,8 @@ FUNCTION ObCreate% (schema%, parent%)
 
   gobids = gobids + 1
  
-  ObSet gobids, ObIndex.Schema, schema%
-  ObSet gobids, ObIndex.Parent, parent%
+  ObSet 0, gobids, ObIndex.Schema, schema%
+  ObSet 0, gobids, ObIndex.Parent, parent%
 
   ObCreate% = gobids
 
@@ -3279,8 +3276,8 @@ FUNCTION ObGet% (schema%, obid%, obix%)
 
 END FUNCTION
 
-SUB ObInc (obid%, obix%)
-  ObSet obid%, obix%, ObGet%(0, obid%, obix%) + 1
+SUB ObInc (schema%, obid%, obix%)
+  ObSet schema%, obid%, obix%, ObGet%(0, obid%, obix%) + 1
 END SUB
 
 FUNCTION ObMapSchema% (name$)
@@ -3342,8 +3339,14 @@ FUNCTION ObResolveParam% (obid%, value%)
 
 END FUNCTION
 
-SUB ObSet (obid%, obix%, value%)
+SUB ObSet (schema%, obid%, obix%, value%)
  
+  IF schema% > 0 THEN
+    IF schema% <> gobj(obid%, ObIndex.Schema).value THEN
+      AssertFail "ObSet", "schema mismatch"
+    END IF
+  END IF
+
   gobj(obid%, obix%).value = value%
 
   SELECT CASE obix%
@@ -3427,8 +3430,7 @@ FUNCTION PrRandomly%
 END FUNCTION
 
 SUB PrSet (prid%, prix%, value%)
-  AssertExpected ObSchema.Person, gobj(prid%, ObIndex.Schema).value, "PrSet%", "ObSchema"
-  ObSet prid%, prix%, value%
+  ObSet ObSchema.Person, prid%, prix%, value%
 END SUB
 
 FUNCTION RsCreate% (value$)
@@ -3680,8 +3682,7 @@ FUNCTION StMap% (name$)
 END FUNCTION
 
 SUB StSet (stid%, stix%, value%)
-  AssertExpected ObSchema.Style, gobj(stid%, ObIndex.Schema).value, "StSet", "ObSchema"
-  ObSet stid%, stix%, value%
+  ObSet ObSchema.Style, stid%, stix%, value%
 END SUB
 
 FUNCTION TrCreate%
@@ -3722,8 +3723,7 @@ FUNCTION TrMap% (name$)
 END FUNCTION
 
 SUB TrSet (trid%, trix%, value%)
-  AssertExpected ObSchema.Trigger, gobj(trid%, ObIndex.Schema).value, "TrSet", "ObSchema"
-  ObSet trid%, trix%, value%
+  ObSet ObSchema.Trigger, trid%, trix%, value%
 END SUB
 
 SUB UI.Run
@@ -4582,8 +4582,7 @@ SUB WnRunName (name$)
 END SUB
 
 SUB WnSet (wnid%, wnix%, value%)
-  AssertExpected ObSchema.Window, gobj(wnid%, ObIndex.Schema).value, "WnSet", "ObSchema"
-  ObSet wnid%, wnix%, value%
+  ObSet ObSchema.Window, wnid%, wnix%, value%
 END SUB
 
 FUNCTION WorldAdd% (hbid%, cx%, cy%)
