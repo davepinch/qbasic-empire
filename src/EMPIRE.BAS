@@ -2621,7 +2621,7 @@ FUNCTION ExecCmdPrid% (ntoken%, stoken$(), prid%)
 
   SELECT CASE stoken$(0)
    
-    CASE "endperson", "endpersona" ' ***
+    CASE "endperson"
       prid% = 0
 
     CASE ".label"
@@ -2684,7 +2684,7 @@ FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, trid%, wn
     CASE "newgame"
       ExecFile "WORLD.CFG"
 
-    CASE "person", "persona"
+    CASE "person"
       prid% = PrCreate%
 
     CASE "print"

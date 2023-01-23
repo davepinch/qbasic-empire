@@ -15,10 +15,11 @@ if "%1" == "inbox"    goto :configInbox
 if "%1" == "m"        goto :configMenu
 if "%1" == "menu"     goto :configMenu
 if "%1" == "menus"    goto :configMenu
-if "%1" == "p"        goto :configPersonas
-if "%1" == "per"      goto :configPersonas
-if "%1" == "persona"  goto :configPersonas
-if "%1" == "personas" goto :configPersonas
+if "%1" == "p"        goto :configPersons
+if "%1" == "per"      goto :configPersons
+if "%1" == "person"   goto :configPersons
+if "%1" == "persons"  goto :configPersons
+if "%1" == "people"   goto :configPersons
 if "%1" == "w"        goto :configWorld
 if "%1" == "world"    goto :configWorld
 if "%1" == "*"        goto :dirCFG
@@ -44,8 +45,8 @@ if "%1" == "dir"      goto :dirCFG
   qbasic /editor menu.cfg
   goto :done
 
-:configPersonas
-  qbasic /editor personas.cfg
+:configPersons
+  qbasic /editor persons.cfg
   goto :done
 
 :configWorld
