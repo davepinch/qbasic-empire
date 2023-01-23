@@ -89,6 +89,17 @@ DECLARE FUNCTION AtlasIndexOf% (value AS INTEGER)
 DECLARE FUNCTION AtlasPrompt% (promptFor AS INTEGER, outcx AS INTEGER, outcy AS INTEGER, outpress AS STRING)
 
 '
+' Container Control API
+'
+DECLARE FUNCTION CnFocus% (cnid%)
+DECLARE FUNCTION CnFocusFirst% (cnid%)
+DECLARE FUNCTION CnFocusLast% (cnid%)
+DECLARE FUNCTION CnFocusNext% (cnid%)
+DECLARE FUNCTION CnFocusPrevious% (cnid%)
+DECLARE FUNCTION CnIndexOf% (cnid%, child%)
+DECLARE FUNCTION CnUnfocus% (cnid%)
+
+'
 ' Control API
 '
 DECLARE SUB CtDraw (wid%, fid%)
@@ -105,13 +116,16 @@ DECLARE SUB CtKeyBoolean (ctid%, keypress$)
 DECLARE SUB CtKeyInteger (ctid%, keypress$)
 DECLARE SUB CtSet (ctid%, ctix%, value%)
 DECLARE FUNCTION CtCreate% (kind%, parent%)
+DECLARE FUNCTION CtFocus% (ctid%)
 DECLARE FUNCTION CtGet% (ctid%, ctix%)
 DECLARE FUNCTION CtGetScreenX% (ctid%)
 DECLARE FUNCTION CtGetScreenY% (ctid%)
 DECLARE FUNCTION CtGetStyle% (ctid%)
+DECLARE FUNCTION CtIs% (ctid%)
 DECLARE FUNCTION CtMap% (name$)
 DECLARE FUNCTION CtRedirected% (ctid%, pid%)
 DECLARE FUNCTION CtSelectable% (ctid%)
+DECLARE FUNCTION CtUnfocus% (ctid%)
 
 '
 ' Dialog API
@@ -190,6 +204,7 @@ DECLARE FUNCTION NebulaLabelRsid% (energy AS INTEGER)
 DECLARE FUNCTION ObCreate% (schema%, parent%)
 DECLARE FUNCTION ObFindString% (schema%, obix%, value$)
 DECLARE FUNCTION ObGet% (schema%, obid%, obix%)
+DECLARE FUNCTION ObIs% (schema%, obid%)
 DECLARE FUNCTION ObMapSchema% (name$)
 DECLARE FUNCTION ObResolveParam% (obid%, value%)
 DECLARE FUNCTION ObResolveFocused% (obid%, value%)
@@ -1274,6 +1289,200 @@ SUB AtlasSetStatusEx (text$, attr%)
 
 END SUB
 
+FUNCTION CnFocus% (cnid%)
+
+  DIM focused%
+  LET focused% = CtGet%(cnid%, CtIndex.Selected)
+
+  IF focused% = 0 THEN
+    focused% = CnFocusFirst%(cnid%)
+  END IF
+
+  CnFocus% = focused%
+
+END FUNCTION
+
+FUNCTION CnFocusFirst% (cnid%)
+
+  AssertIsPositive cnid%, "CnFocusFirst", "cnid%"
+
+  DIM old%
+  LET old% = CtUnfocus%(cnid%)
+
+  DIM n%
+  FOR n% = 1 TO per.parent(cnid%, 0)
+     
+    DIM child%
+    LET child% = per.parent(cnid%, n%)
+    LET child% = CtFocus%(child%)
+
+    IF child% > 0 THEN
+      CnFocusFirst% = child%
+      EXIT FUNCTION
+    END IF
+
+  NEXT
+
+END FUNCTION
+
+FUNCTION CnFocusLast% (cnid%)
+
+  AssertIsPositive cnid%, "CnFocusLast", "cnid%"
+
+  DIM old%
+  LET old% = CtUnfocus%(cnid%)
+
+  DIM n%
+  FOR n% = per.parent(cnid%, 0) TO 1 STEP -1
+    
+    DIM child%
+    LET child% = per.parent(cnid%, n%)
+    LET child% = CtFocus%(child%)
+
+    IF child% > 0 THEN
+      CnFocusLast% = child%
+      EXIT FUNCTION
+    END IF
+
+  NEXT
+  
+END FUNCTION
+
+FUNCTION CnFocusNext% (cnid%)
+
+  AssertIsPositive cnid%, "CnFocusNext", "cnid%"
+
+  '
+  ' Exit if no children
+  '
+  DIM count%: count% = per.parent(cnid%, 0)
+  IF count% = 0 THEN
+    EXIT FUNCTION
+  END IF
+
+  '
+  ' Get the current value
+  '
+  DIM current%
+  LET current% = CtGet%(cnid%, CtIndex.Selected)
+
+  '
+  ' Get the starting index
+  '
+  DIM startat%
+  LET startat% = CnIndexOf%(cnid%, current%)
+
+  '
+  ' Find the first control to take focus, looping around if necessary
+  '
+  DIM n%
+  LET n% = startat%
+
+  DO
+   
+    '
+    ' Move to the next control
+    '
+    n% = n% + 1
+    IF n% > count% THEN
+      n% = 1
+    END IF
+
+    IF n% = startat% THEN
+      '
+      ' We found the starting one, which was focused already
+      '
+      CnFocusNext% = current%
+      EXIT FUNCTION
+    END IF
+
+    '
+    ' See if this control will take focus
+    '
+    DIM focused%
+    LET focused% = CtFocus%(per.parent(cnid%, n%))
+    IF focused% > 0 THEN
+      CtSet cnid%, CtIndex.Selected, focused%
+      CnFocusNext% = focused%
+      EXIT FUNCTION
+    END IF
+
+  LOOP
+  
+END FUNCTION
+
+FUNCTION CnFocusPrevious% (cnid%)
+
+  AssertIsPositive cnid%, "CnFocusPrevious", "cnid%"
+
+  '
+  ' Exit if no children
+  '
+  DIM count%: count% = per.parent(cnid%, 0)
+  IF count% = 0 THEN
+    EXIT FUNCTION
+  END IF
+
+  '
+  ' Get the current value
+  '
+  DIM current%
+  LET current% = CtGet%(cnid%, CtIndex.Selected)
+
+  '
+  ' Get the starting index
+  '
+  DIM startat%
+  LET startat% = CnIndexOf%(cnid%, current%)
+
+  '
+  ' Find the previous control to take focus, looping around if necessary
+  '
+  DIM n%
+  LET n% = startat%
+
+  DO
+  
+    '
+    ' Move to the previous control
+    '
+    n% = n% - 1
+    IF n% = 0 THEN
+      n% = count%
+    END IF
+
+    IF n% = startat% THEN
+      '
+      ' We found the starting one, which was focused already
+      '
+      CnFocusPrevious% = current%
+      EXIT FUNCTION
+    END IF
+
+    '
+    ' See if this control will take focus
+    '
+    DIM focused%
+    LET focused% = CtFocus%(per.parent(cnid%, n%))
+    IF focused% > 0 THEN
+      CtSet cnid%, CtIndex.Selected, focused%
+      CnFocusPrevious% = focused%
+      EXIT FUNCTION
+    END IF
+
+  LOOP
+
+END FUNCTION
+
+FUNCTION CnIndexOf% (cnid%, child%)
+  DIM n%
+  FOR n% = 1 TO per.parent(cnid%, 0)
+    IF per.parent(cnid%, n%) = child% THEN
+      CnIndexOf% = n%
+    END IF
+  NEXT
+END FUNCTION
+
 FUNCTION CtCreate% (kind%, parent%)
   '
   ' Creates an empty control
@@ -1770,6 +1979,32 @@ SUB CtDrawText (wid%, fid%)
 
 END SUB
 
+FUNCTION CtFocus% (ctid%)
+
+  IF NOT CtIs%(ctid%) THEN
+    '
+    ' This is not a control
+    '
+    CtFocus% = 0
+    EXIT FUNCTION
+  END IF
+
+  SELECT CASE CtGet%(ctid%, CtIndex.Kind)
+   
+    CASE CtKind.Boolean, CtKind.Button
+      CtSet ctid%, CtIndex.Selected, ctid%
+      CtFocus% = ctid%
+
+    CASE CtKind.Container
+      CtFocus% = CnFocus%(ctid%)
+
+    CASE ELSE
+      CtFocus% = 0
+
+  END SELECT
+
+END FUNCTION
+
 FUNCTION CtGet% (ctid%, ctix%)
   CtGet% = ObGet%(ObSchema.Control, ctid%, ctix%)
 END FUNCTION
@@ -1836,6 +2071,10 @@ FUNCTION CtGetStyle% (ctid%)
 
   CtGetStyle% = stid%
   
+END FUNCTION
+
+FUNCTION CtIs% (ctid%)
+  CtIs% = ObIs%(ObSchema.Control, ctid%)
 END FUNCTION
 
 SUB CtKey (ctid%, keypress$)
@@ -1987,6 +2226,25 @@ END FUNCTION
 SUB CtSet (ctid%, ctix%, value%)
   ObSet ObSchema.Control, ctid%, ctix%, value%
 END SUB
+
+FUNCTION CtUnfocus% (ctid%)
+
+  DIM unfocused%
+  LET unfocused% = CtGet%(cnid%, CtIndex.Selected)
+
+  IF unfocused% = ctid% THEN
+
+    CtSet ctid%, CtIndex.Selected, 0
+ 
+  ELSEIF unfocused% > 0 THEN
+
+    unfocused% = CtUnfocus%(unfocused%)
+   
+  END IF
+
+  CtUnfocus% = unfocused%
+  
+END FUNCTION
 
 FUNCTION DgGarble$ (text$, percent!)
 
@@ -2301,26 +2559,26 @@ SUB DrawText (text$)
   DIM backcolor AS INTEGER
   DIM forecolor AS INTEGER
   DIM nextAt    AS INTEGER
-  DIM startAt   AS INTEGER
+  DIM startat   AS INTEGER
 
   DIM batr AS INTEGER
   DIM fatr AS INTEGER
 
-  LET startAt = 1
+  LET startat = 1
 
   DO
  
     '
     ' Get the index of the next code
     '
-    nextAt = INSTR(startAt, text$, "@X")
+    nextAt = INSTR(startat, text$, "@X")
 
     IF nextAt = 0 THEN
       '
       ' No further codes found; print remaining characters
       '
-      IF startAt <= LEN(text$) THEN
-        PRINT RIGHT$(text$, LEN(text$) - startAt + 1);
+      IF startat <= LEN(text$) THEN
+        PRINT RIGHT$(text$, LEN(text$) - startat + 1);
       END IF
       EXIT DO
 
@@ -2335,7 +2593,7 @@ SUB DrawText (text$)
       '
       ' Code found; print characters up to the color code.
       '
-      PRINT MID$(text$, startAt, nextAt - startAt);
+      PRINT MID$(text$, startat, nextAt - startat);
 
       '
       ' Read the color values
@@ -2345,7 +2603,7 @@ SUB DrawText (text$)
       '
       ' Continue with the next character after the code
       '
-      startAt = nextAt + 4
+      startat = nextAt + 4
     END IF
 
   LOOP
@@ -3279,6 +3537,10 @@ END FUNCTION
 SUB ObInc (schema%, obid%, obix%)
   ObSet schema%, obid%, obix%, ObGet%(0, obid%, obix%) + 1
 END SUB
+
+FUNCTION ObIs% (schema%, obid%)
+  ObIs% = gobj(obid%, ObIndex.Schema).value = schema%
+END FUNCTION
 
 FUNCTION ObMapSchema% (name$)
   SELECT CASE name$
