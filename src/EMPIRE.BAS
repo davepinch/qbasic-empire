@@ -143,7 +143,6 @@ DECLARE FUNCTION EvCreate% ()
 DECLARE FUNCTION EvFind% (name$)
 DECLARE FUNCTION EvGet% (evid%, evix%)
 DECLARE FUNCTION EvMap% (name$)
-DECLARE FUNCTION EvParseOperator% (opname$)
 
 '
 ' Execution/commands
@@ -2431,17 +2430,6 @@ FUNCTION EvMap% (name$)
     CASE ELSE
       EvMap% = ObIndex.Invalid
 
-  END SELECT
-
-END FUNCTION
-
-FUNCTION EvParseOperator% (opname$)
-
-  SELECT CASE opname$
-    CASE "="
-      EvParseOperator% = OpEquals
-    CASE ELSE
-      EvParseOperator% = OpNone
   END SELECT
 
 END FUNCTION
