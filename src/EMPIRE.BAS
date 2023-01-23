@@ -201,7 +201,6 @@ DECLARE FUNCTION NebulaLabelRsid% (energy AS INTEGER)
 DECLARE FUNCTION ObCreate% (schema%, parent%)
 DECLARE FUNCTION ObFindString% (schema%, obix%, value$)
 DECLARE FUNCTION ObGet% (schema%, obid%, obix%)
-DECLARE FUNCTION ObGetString$ (obid%, obix%)
 DECLARE FUNCTION ObMapSchema% (name$)
 DECLARE FUNCTION ObResolveParam% (obid%, value%)
 DECLARE FUNCTION ObResolveFocused% (obid%, value%)
@@ -3378,11 +3377,6 @@ FUNCTION ObGet% (schema%, obid%, obix%)
 
   END SELECT
 
-END FUNCTION
-
-FUNCTION ObGetString$ (obid%, obix%)
-  DIM rsid%: rsid% = ObGet%(0, obid%, obix%)
-  ObGetString$ = RsGet$(rsid%)
 END FUNCTION
 
 SUB ObInc (obid%, obix%)
