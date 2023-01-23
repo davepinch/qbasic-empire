@@ -2886,14 +2886,14 @@ FUNCTION ExecCmdWnid% (ntoken%, stoken$(), wnid%, ctid%)
     CASE ".name"
       WnSet wnid%, WnIndex.Name, RsCreate%(stoken$(1))
  
+    CASE ".offsetx"
+      CtSet cnid%, CtIndex.OffsetX, VAL(stoken$(1))
+
+    CASE ".offsety"
+      CtSet cnid%, CtIndex.OffsetY, VAL(stoken$(1))
+
     CASE ".param"
       WnSet wnid%, WnIndex.Param, VAL(stoken$(2))
-
-    CASE ".posx" ' '***
-      CtSet cnid%, CtIndex.OffsetX, VAL(stoken$(1)) - 1
-
-    CASE ".posy" ' '***
-      CtSet cnid%, CtIndex.OffsetY, VAL(stoken$(1)) - 1
 
     CASE ".style"
       CtSet cnid%, CtIndex.Style, StFind%(stoken$(1))
