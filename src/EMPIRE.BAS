@@ -179,16 +179,6 @@ DECLARE SUB HbSet (hbid%, hbix%, value%)
 DECLARE SUB InboxAdd (subject$, filename$)
 
 '
-' List API
-'
-DECLARE FUNCTION LsAdd% (lsid%, value%)
-DECLARE FUNCTION LsCapacity% ()
-DECLARE FUNCTION LsCreate% ()
-DECLARE FUNCTION LsCount% (lsid%)
-DECLARE FUNCTION LsGet% (lsid%, n%)
-DECLARE SUB LsSet (lsid%, n%, value%)
-
-'
 ' Nebula
 '
 DECLARE FUNCTION NebulaLabel$ (energy AS INTEGER)
@@ -3108,84 +3098,6 @@ SUB InboxAdd (subject$, filename$)
 
   AtlasSetStatus "Mail arrived"
   ShFile "NEWMAIL.PCB"
-
-END SUB
-
-FUNCTION LsAdd% (lsid%, value%)
-  '
-  ' Adds a value to a list and returns the 1-based position of the value.
-  '
-  AssertIsPositive lsid%, "LsAdd%", "lsid%"
-
-  '
-  ' Get the 1-based position of the new value
-  '
-  DIM n%
-  LET n% = LsCount%(lsid%) + 1
-  Assert n% <= LsCapacity%, "LsAdd%", "n%"
-
-  '
-  ' Convert the 1-based position to a property index.
-  '
-  DIM lsix%
-  LET lsix% = n% + LsIndex.First - 1
-
-  '
-  ' Update the list count and set the value
-  '
-  ObSet lsid%, LsIndex.Count, n%
-  ObSet lsid%, lsix%, value%
-
-  LsAdd% = n%
-
-END FUNCTION
-
-FUNCTION LsCapacity%
-  LsCapacity% = UBOUND(gobj, 1) - LsIndex.First + 1
-END FUNCTION
-
-FUNCTION LsCount% (lsid%)
-  LsCount% = ObGet%(ObSchema.List, lsid%, LsIndex.Count)
-END FUNCTION
-
-FUNCTION LsCreate%
-  LsCreate% = ObCreate%(ObSchema.List, 0) '*** allow parents
-END FUNCTION
-
-FUNCTION LsGet% (lsid%, n%)
-  '
-  ' Gets the specified 1-based list item
-  '
-  AssertIsPositive lsid%, "LsGet%", "lsid%"
-  AssertIsPositive lsid%, "LsGet%", "n%"
-
-  '
-  ' Convert the 1-based position to a property index
-  '
-  DIM lsix%
-  LET lsix% = n% + LsIndex.First - 1
- 
-  LsGet% = ObGet%(ObSchema.List, lsid%, lsix%)
-
-END FUNCTION
-
-SUB LsSet (lsid%, n%, value%)
-  '
-  ' Sets the value at the 1-based position of the list.
-  '
-  AssertIsPositive lsid%, "LsSet", "lsid%"
-  AssertIsPositive fid%, "LsSet", "n%"
-
-  '
-  ' Convert the 1-based position to a property index
-  '
-  DIM lsix%
-  LET lsix% = n% + LsIndex.First - 1
-
-  '
-  ' Save the value
-  '
-  ObSet lsid%, lsix%, value%
 
 END SUB
 
