@@ -147,7 +147,7 @@ DECLARE FUNCTION EvMap% (name$)
 '
 ' Execution/commands
 '
-DECLARE SUB ExecFile (filename AS STRING)
+DECLARE SUB ExecFile (filename$)
 DECLARE FUNCTION ExecCmd% (cmd$)
 DECLARE FUNCTION ExecCmdCtid% (ntoken%, stoken$(), ctid%)
 DECLARE FUNCTION ExecCmdEvid% (ntoken%, stoken$(), evid%)
@@ -2907,21 +2907,21 @@ FUNCTION ExecCmdWnid% (ntoken%, stoken$(), wnid%, ctid%)
 
 END FUNCTION
 
-SUB ExecFile (filename AS STRING)
+SUB ExecFile (filename$)
 
-  DIM handle AS INTEGER
-  DIM result AS INTEGER
-  DIM text   AS STRING
+  DIM handle%
+  DIM result%
+  DIM text$
 
-  handle = FREEFILE
-  OPEN filename FOR INPUT ACCESS READ AS #handle
+  handle% = FREEFILE
+  OPEN filename$ FOR INPUT ACCESS READ AS #handle%
 
-  DO WHILE NOT EOF(handle)
-    LINE INPUT #handle, text
-    result = ExecCmd(text)
+  DO WHILE NOT EOF(handle%)
+    LINE INPUT #handle%, text$
+    result% = ExecCmd%(text$)
   LOOP
 
-  CLOSE #handle
+  CLOSE #handle%
 
 END SUB
 
