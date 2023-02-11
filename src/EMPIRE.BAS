@@ -175,6 +175,7 @@ DECLARE FUNCTION ObGet% (schema%, obid%, obix%)
 DECLARE FUNCTION ObIs% (schema%, obid%)
 DECLARE FUNCTION ObRecurse% (schema%, obid%, obix%, nullvalue%)
 DECLARE FUNCTION ObResolve% (obid%, expr$)
+DECLARE SUB ObDelete (obid%)
 DECLARE SUB ObDirtyDown (obid%)
 DECLARE SUB ObInc (schema%, obid%, obix%)
 DECLARE SUB ObSet (schema%, obid%, obix%, value%)
@@ -3776,6 +3777,44 @@ FUNCTION ObCreate% (schema%, parent%)
   ObCreate% = ob.count
 
 END FUNCTION
+
+SUB ObDelete (obid%)
+
+  '
+  ' vwPerParent and children
+  '
+  FOR n% = 1 TO vwPerParent(obid%, 0)
+    ObDelete vwPerParent(obid%, n%)
+    vwPerParent(obid%, n%) = 0
+  NEXT
+  vwPerParent(obid%, 0) = 0
+
+  '
+  ' vwPerSchema
+  '
+  DIM schema%: schema% = ObGet%(0, obid%, ObIndex.Schema)
+  DIM count%: count% = vwPerSchema(schema%, count%)
+  DIM found%
+
+  FOR n% = 1 TO count%
+    IF found% THEN
+      vwPerSchema(schema%, n% - 1) = vwPerSchema(schema%, n%)
+      vwPerSchema(schema%, n%) = 0
+    ELSEIF vwPerSchema(schema%, n%) = obid% THEN
+      vwPerSchema(schema%, n%) = 0
+      found% = True
+    END IF
+  NEXT
+
+  '
+  ' Delete object
+  '
+  FOR n% = LBOUND(obj, 2) TO UBOUND(obj, 2)
+    obj(obid%, n%).flags = 0
+    obj(obid%, n%).value = 0
+  NEXT
+
+END SUB
 
 SUB ObDirtyDown (obid%)
 
