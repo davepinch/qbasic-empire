@@ -8,12 +8,6 @@
 ' To exit QBASIC, press Alt, F, X.
 ' To view full screen (in DOSBox), press Alt-Enter.
 '
-TYPE AreaType
-  allocated AS INTEGER
-  hbid      AS INTEGER
-  energy    AS INTEGER
-END TYPE
-
 TYPE AtlasItemType
   allocated AS INTEGER
   cx        AS INTEGER
@@ -246,7 +240,6 @@ DECLARE SUB WorldHarvest (aid%)
 DECLARE SUB WorldRemove (aid%)
 DECLARE SUB WorldSetLabel (aid%, labelrsid%)
 DECLARE FUNCTION WorldAdd% (hbid%, cx%, cy%)
-DECLARE FUNCTION WorldNextId% ()
 
 '
 ' Declarations
@@ -394,6 +387,24 @@ HbHeader$(6) = "StartFile"
 HbHeader$(7) = "Window"
 
 '
+' Location properties
+'
+CONST LcIndex.Schema = 0
+CONST LcIndex.Dirty = 1
+CONST LcIndex.Name = 2
+CONST LcIndex.Parent = 3
+CONST LcIndex.Energy = 4
+CONST LcIndex.Habitat = 5
+
+REDIM SHARED LcHeader$(0 TO 15)
+LcHeader$(0) = "Schema"
+LcHeader$(1) = "Dirty"
+LcHeader$(2) = "Name"
+LcHeader$(3) = "Parent"
+LcHeader$(4) = "Energy"
+LcHeader$(5) = "Habitat"
+
+'
 ' Object bindings
 '
 CONST ObBinding.None = 0
@@ -422,29 +433,32 @@ CONST ObSchema.None = 0
 CONST ObSchema.Control = 1
 CONST ObSchema.Event = 2
 CONST ObSchema.Habitat = 3
-CONST ObSchema.Person = 4
-CONST ObSchema.Style = 5
-CONST ObSchema.Trigger = 6
-CONST ObSchema.Window = 7
-CONST ObSchemas = 7
+CONST ObSchema.Location = 4
+CONST ObSchema.Person = 5
+CONST ObSchema.Style = 6
+CONST ObSchema.Trigger = 7
+CONST ObSchema.Window = 8
+CONST ObSchemas = 8
 
 REDIM SHARED ObSchemaLabel(1 TO ObSchemas) AS STRING * 2
 ObSchemaLabel$(1) = "CT"
 ObSchemaLabel$(2) = "EV"
 ObSchemaLabel$(3) = "HB"
-ObSchemaLabel$(4) = "PR"
-ObSchemaLabel$(5) = "ST"
-ObSchemaLabel$(6) = "TR"
-ObSchemaLabel$(7) = "WN"
+ObSchemaLabel$(4) = "LC"
+ObSchemaLabel$(5) = "PR"
+ObSchemaLabel$(6) = "ST"
+ObSchemaLabel$(7) = "TR"
+ObSchemaLabel$(8) = "WN"
 
 REDIM SHARED ObSchemaName$(1 TO ObSchemas)
 ObSchemaName$(1) = "Control"
 ObSchemaName$(2) = "Event"
 ObSchemaName$(3) = "Habitat"
-ObSchemaName$(4) = "Person"
-ObSchemaName$(5) = "Style"
-ObSchemaName$(6) = "Trigger"
-ObSchemaName$(7) = "Window"
+ObSchemaName$(4) = "Location"
+ObSchemaName$(5) = "Person"
+ObSchemaName$(6) = "Style"
+ObSchemaName$(7) = "Trigger"
+ObSchemaName$(8) = "Window"
 
 '
 ' Person properties
@@ -581,7 +595,6 @@ DIM SHARED wn.workpage(1 TO 3) AS INTEGER
 DIM SHARED vwPerParent(1 TO MaxObjects, 0 TO MaxChildren) AS INTEGER
 DIM SHARED vwPerSchema(1 TO ObSchemas, 0 TO MaxObjects) AS INTEGER
 
-DIM SHARED area(1 TO 35)         AS AreaType
 DIM SHARED atlasitem(1 TO 35)    AS AtlasItemType
 DIM SHARED atlaspage             AS INTEGER
 DIM SHARED playeraid             AS INTEGER
@@ -3033,6 +3046,9 @@ FUNCTION ExMap% (schema%, propname$)
     CASE ObSchema.Habitat
       ExMap% = ExScan%(HbHeader$(), fixed$)
 
+    CASE ObSchema.Location
+      ExMap% = ExScan%(LcHeader$(), fixed$)
+
     CASE ObSchema.Person
       ExMap% = ExScan%(PrHeader$(), fixed$)
 
@@ -3603,7 +3619,6 @@ END FUNCTION
 
 SUB GameMoveOffset (offsetx%, offsety%)
  
-  DIM aid     AS INTEGER
   DIM cx      AS INTEGER
   DIM cy      AS INTEGER
   DIM idx     AS INTEGER
@@ -3634,14 +3649,14 @@ SUB GameMoveOffset (offsetx%, offsety%)
   '
   ' See what is at the next location
   '
-  aid = AtlasGetValue(cx, cy, 0)
-  IF aid = 0 THEN
+  DIM lcid%: lcid% = AtlasGetValue(cx, cy, 0)
+  IF lcid% = 0 THEN
     AtlasMoveItem idx, cx, cy
     EvInc "AtlasMoves"
   ELSE
 
     DIM hbid%
-    LET hbid% = area(aid).hbid
+    LET hbid% = ObGet%(ObSchema.Location, lcid%, LcIndex.Habitat)
       
     '
     ' Run the window handling this habitat
@@ -4832,15 +4847,13 @@ END FUNCTION
 
 FUNCTION WorldAdd% (hbid%, cx%, cy%)
 
-  DIM aid%
+  DIM lcid%: lcid% = ObCreate%(ObSchema.Location, 0)
 
-  aid% = WorldNextId%
-  area(aid%).allocated = True
-  area(aid%).hbid = hbid%
-  area(aid%).energy = 3
+  ObSet ObSchema.Location, lcid%, LcIndex.Habitat, hbid%
+  ObSet ObSchema.Location, lcid%, LcIndex.Energy, 3
 
-  AtlasAddItem cx%, cy%, aid%, ObGet%(ObSchema.Habitat, hbid%, HbIndex.Label)
-  WorldAdd% = aid%
+  AtlasAddItem cx%, cy%, lcid%, ObGet%(ObSchema.Habitat, hbid%, HbIndex.Label)
+  WorldAdd% = lcid%
 
 END FUNCTION
 
@@ -4886,73 +4899,30 @@ SUB WorldAddRandom (hbid%, count%)
 
 END SUB
 
-SUB WorldHarvest (aid%)
+SUB WorldHarvest (lcid%)
 
-  DbPositive aid%, "WorldHarvest", "aid%"
+  DbPositive lcid%, "WorldHarvest", "lcid%"
 
-  DIM energy%
-  LET energy% = area(aid%).energy
+  DIM energy%: energy% = ObGet%(ObSchema.Location, lcid%, LcIndex.Energy)
 
   IF energy% > 0 THEN
     energy% = energy% - 1
-    area(aid%).energy = energy%
+    ObSet ObSchema.Location, lcid%, LcIndex.Energy, energy%
   END IF
 
   IF energy% = 0 THEN
-    WorldRemove aid%
+    WorldRemove lcid%
     EvInc "NebulaDepleted"
   END IF
 
 END SUB
 
-FUNCTION WorldNextId%
-  '
-  ' Returns the next index to hold a new area
-  '
+SUB WorldRemove (lcid%)
 
-  STATIC idx AS INTEGER
+  DbPositive lcid%, "WorldRemove", "lcid%"
 
-  DIM Try AS INTEGER
-  LET Try = idx
-
-  DO
-    '
-    ' Try the next index
-    '
-    Try = Try + 1
-    IF Try > UBOUND(area) THEN
-      Try = LBOUND(area)
-    END IF
-
-    IF NOT area(Try).allocated THEN
-      '
-      ' An open slot was found - return its index
-      '
-      idx = Try
-      WorldNextId% = idx
-      EXIT FUNCTION
-    END IF
-
-    IF Try = idx THEN
-      '
-      ' The loop went all the way around - no open slots
-      '
-      WorldNextId% = 0
-      EXIT FUNCTION
-    END IF
-
-  LOOP
-
-END FUNCTION
-
-SUB WorldRemove (aid%)
-
-  DbPositive aid%, "WorldRemove", "aid%"
-
-  IF area(aid%).allocated THEN
-    area(aid%).allocated = False
-    AtlasRemoveValue aid%
-  END IF
+  ObDelete lcid%
+  AtlasRemoveValue lcid%
 
 END SUB
 
