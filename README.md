@@ -61,4 +61,4 @@ In the past you could get QBASIC from Microsoft by downloading the Windows 95 CD
 
 * https://web.archive.org/web/20120215074213/http://download.microsoft.com/download/win95upg/tool_s/1.0/w95/en-us/olddos.exe
 
-That link will download OLDDOS.EXE, which is a 16-bit MS-DOS self-extracting executable. Run it from the DOSBox command prompt to extract a variety of files into the current directory (run from DOSBox or your DOS emulator to avoid issues running 16-bit executables). You specifically need QBASIC.EXE and QBASIC.HLP (the other files can be deleted).
+That link will download OLDDOS.EXE, which is a 16-bit MS-DOS self-extracting executable. Run it from the DOSBox command prompt to extract the files into the current directory (run from DOSBox or your DOS emulator to avoid issues running 16-bit executables). You specifically need QBASIC.EXE and QBASIC.HLP (the other files can be deleted).

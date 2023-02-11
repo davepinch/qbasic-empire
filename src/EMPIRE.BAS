@@ -7,7 +7,7 @@
 ' To begin, press Shift + F5.
 ' To exit QBASIC, press Alt, F, X.
 ' To view full screen (in DOSBox), press Alt-Enter.
-
+'
 TYPE AreaType
   allocated AS INTEGER
   hbid      AS INTEGER
@@ -26,32 +26,6 @@ TYPE PropType
   flags AS INTEGER
   value AS INTEGER
 END TYPE
-
-TYPE WnResultType
-  action   AS INTEGER
-  canceled AS INTEGER
-  cmdrsid  AS INTEGER
-  selected AS INTEGER
-END TYPE
-
-TYPE WnStackItem
-  wnid     AS INTEGER
-  backpage AS INTEGER
-  workpage AS INTEGER
-END TYPE
-
-TYPE WnType
-  fields     AS INTEGER
-END TYPE
-
-'
-' Assertions
-'
-DECLARE SUB Assert (truth AS INTEGER, where AS STRING, what AS STRING)
-DECLARE SUB AssertExpected (expected%, actual%, where$, what$)
-DECLARE SUB AssertFail (where$, what$)
-DECLARE SUB AssertIsPositive (value%, where$, what$)
-DECLARE SUB AssertIsZero (value%, where$, what$)
 
 '
 ' Atlas
@@ -89,43 +63,45 @@ DECLARE FUNCTION AtlasIndexOf% (value AS INTEGER)
 DECLARE FUNCTION AtlasPrompt% (promptFor AS INTEGER, outcx AS INTEGER, outcy AS INTEGER, outpress AS STRING)
 
 '
-' Container Control API
-'
-DECLARE FUNCTION CnFocus% (cnid%)
-DECLARE FUNCTION CnFocusFirst% (cnid%)
-DECLARE FUNCTION CnFocusLast% (cnid%)
-DECLARE FUNCTION CnFocusNext% (cnid%)
-DECLARE FUNCTION CnFocusPrevious% (cnid%)
-DECLARE FUNCTION CnIndexOf% (cnid%, child%)
-DECLARE FUNCTION CnUnfocus% (cnid%)
-
-'
 ' Control API
 '
-DECLARE SUB CtDraw (wid%, fid%)
+DECLARE SUB CtDraw (ctid%)
 DECLARE SUB CtDrawBox (ctid%)
 DECLARE SUB CtDrawBox0 (ctid%)
 DECLARE SUB CtDrawBox1 (ctid%)
 DECLARE SUB CtDrawBox2 (ctid%)
+DECLARE SUB CtDrawContainer (ctid%)
 DECLARE SUB CtDrawFile (ctid%)
 DECLARE SUB CtDrawNebula (ctid%)
+DECLARE SUB CtDrawPopup (ctid%)
 DECLARE SUB CtDrawSeparator (ctid%)
-DECLARE SUB CtDrawText (wid%, fid%)
-DECLARE SUB CtKey (ctid%, keypress$)
-DECLARE SUB CtKeyBoolean (ctid%, keypress$)
-DECLARE SUB CtKeyInteger (ctid%, keypress$)
-DECLARE SUB CtSet (ctid%, ctix%, value%)
-DECLARE FUNCTION CtCreate% (kind%, parent%)
+DECLARE SUB CtDrawText (ctid%)
+DECLARE SUB CtUnfocus (ctid%)
+DECLARE FUNCTION CtAction% (action%, param%)
+DECLARE FUNCTION CtCanFocus% (ctid%)
 DECLARE FUNCTION CtFocus% (ctid%)
-DECLARE FUNCTION CtGet% (ctid%, ctix%)
+DECLARE FUNCTION CtFocusBack% (ctid%)
+DECLARE FUNCTION CtFocusFirst% (ctid%)
+DECLARE FUNCTION CtFocusLast% (ctid%)
+DECLARE FUNCTION CtFocusNext% (ctid%)
 DECLARE FUNCTION CtGetScreenX% (ctid%)
 DECLARE FUNCTION CtGetScreenY% (ctid%)
-DECLARE FUNCTION CtGetStyle% (ctid%)
-DECLARE FUNCTION CtIs% (ctid%)
-DECLARE FUNCTION CtMap% (name$)
-DECLARE FUNCTION CtRedirected% (ctid%, pid%)
-DECLARE FUNCTION CtSelectable% (ctid%)
-DECLARE FUNCTION CtUnfocus% (ctid%)
+DECLARE FUNCTION CtKey% (ctid%, keypress$)
+DECLARE FUNCTION CtKeyBoolean% (ctid%, keypress$)
+DECLARE FUNCTION CtKeyButton% (ctid%, keypress$)
+DECLARE FUNCTION CtKeyContainer% (ctid%, keypress$)
+DECLARE FUNCTION CtKeyPopup% (ctid%, keypress$)
+
+'
+' Debug API
+'
+DECLARE SUB DbAssert (truth AS INTEGER, where AS STRING, what AS STRING)
+DECLARE SUB DbBeginsWith (text$, prefix$, where$, what$)
+DECLARE SUB DbEquals (expected%, actual%, where$, what$)
+DECLARE SUB DbFail (where$, what$)
+DECLARE SUB DbPositive (value%, where$, what$)
+DECLARE SUB DbSet (schema%, obid%, obix%, value%)
+DECLARE SUB DbZero (value%, where$, what$)
 
 '
 ' Dialog API
@@ -152,45 +128,37 @@ DECLARE FUNCTION DrawLength% (text$)
 '
 DECLARE SUB EvInc (name$)
 DECLARE SUB EvFire (evid%)
-DECLARE SUB EvSet (evid%, evix%, value%)
-DECLARE FUNCTION EvCreate% ()
-DECLARE FUNCTION EvFind% (name$)
-DECLARE FUNCTION EvGet% (evid%, evix%)
 DECLARE FUNCTION EvMap% (name$)
 
 '
 ' Execution/commands
 '
-DECLARE SUB ExecFile (filename$)
-DECLARE FUNCTION ExecCmd% (cmd$)
-DECLARE FUNCTION ExecCmdCtid% (ntoken%, stoken$(), ctid%)
-DECLARE FUNCTION ExecCmdEvid% (ntoken%, stoken$(), evid%)
-DECLARE FUNCTION ExecCmdHbid% (ntoken%, stoken$(), hbid%)
-DECLARE FUNCTION ExecCmdPrid% (ntoken%, stoken$(), prid%)
-DECLARE FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, trid%, wnid%)
-DECLARE FUNCTION ExecCmdStid% (ntoken%, stoken$(), stid%)
-DECLARE FUNCTION ExecCmdTrid% (ntoken%, stoken$(), trid%)
-DECLARE FUNCTION ExecCmdWnid% (ntoken%, stoken$(), wnid%, ctid%)
-DECLARE FUNCTION ExecResource% (rsid%)
+DECLARE SUB ExPop ()
+DECLARE SUB ExPush (obid%)
+DECLARE SUB ExRunFile (filename$)
+DECLARE FUNCTION ExCmdListen% (token$(), count%)
+DECLARE FUNCTION ExCmdMail% (token$(), count%)
+DECLARE FUNCTION ExCmdReplot% (tokens$(), count%)
+DECLARE FUNCTION ExCmdSpawn% (tokens$(), count%)
+DECLARE FUNCTION ExMap% (schema%, propname$)
+DECLARE FUNCTION ExParse% (text$, tokens$(), comment%)
+DECLARE FUNCTION ExRun% (cmd$)
+DECLARE FUNCTION ExRunResource% (rsid%)
+DECLARE FUNCTION ExScan% (array$(), match$)
+DECLARE FUNCTION ExTop% ()
+DECLARE FUNCTION ExTryCmd% (tokens$(), count%)
+DECLARE FUNCTION ExTryControl% (name$)
+DECLARE FUNCTION ExTryEndControl% (tag$)
+DECLARE FUNCTION ExTryEndSchema% (tag$)
+DECLARE FUNCTION ExTryProperty% (name$, value$)
+DECLARE FUNCTION ExTrySchema% (name$)
+DECLARE FUNCTION ExUnquote$ (text$)
 
 '
 ' Game
 '
 DECLARE SUB GameMoveOffset (offsetx%, offsety%)
 
-'
-' Habitat API
-'
-DECLARE FUNCTION HbCreate% ()
-DECLARE FUNCTION HbFind% (name$)
-DECLARE FUNCTION HbGet% (hbid%, hbix%)
-DECLARE FUNCTION HbMap% (name$)
-DECLARE SUB HbSet (hbid%, hbix%, value%)
-
-'
-' Inbox
-'
-DECLARE SUB InboxAdd (subject$, filename$)
 
 '
 ' Nebula
@@ -202,24 +170,16 @@ DECLARE FUNCTION NebulaLabelRsid% (energy AS INTEGER)
 ' Object API
 '
 DECLARE FUNCTION ObCreate% (schema%, parent%)
-DECLARE FUNCTION ObFindString% (schema%, obix%, value$)
+DECLARE FUNCTION ObFind% (schema%, name$)
 DECLARE FUNCTION ObGet% (schema%, obid%, obix%)
 DECLARE FUNCTION ObIs% (schema%, obid%)
-DECLARE FUNCTION ObMapSchema% (name$)
-DECLARE FUNCTION ObResolveParam% (obid%, value%)
-DECLARE FUNCTION ObResolveFocused% (obid%, value%)
-DECLARE SUB ObBind (obid%, obix%, expr$)
+DECLARE FUNCTION ObRecurse% (schema%, obid%, obix%, nullvalue%)
+DECLARE FUNCTION ObResolve% (obid%, expr$)
+DECLARE SUB ObDirtyDown (obid%)
 DECLARE SUB ObInc (schema%, obid%, obix%)
 DECLARE SUB ObSet (schema%, obid%, obix%, value%)
-
-'
-' Person API
-'
-DECLARE FUNCTION PrCreate% ()
-DECLARE FUNCTION PrGet% (prid%, prix%)
-DECLARE FUNCTION PrMap% (name$)
-DECLARE FUNCTION PrRandomly% ()
-DECLARE SUB PrSet (prid%, prix%, value%)
+DECLARE SUB ObSetEx (schema%, obid%, obix%, value%, flags%)
+DECLARE SUB ObSetFlags (schema%, obid%, obix%, flags%)
 
 '
 ' Resource API
@@ -235,24 +195,9 @@ DECLARE SUB ShBeginDraw ()
 DECLARE SUB ShClear ()
 DECLARE SUB ShEndDraw ()
 DECLARE SUB ShFile (filename$)
+DECLARE SUB ShPause ()
 DECLARE SUB ShPrint (text$)
-
-'
-' Style API
-'
-DECLARE FUNCTION StCreate% ()
-DECLARE FUNCTION StFind% (name$)
-DECLARE FUNCTION StGet% (stid%, stid%)
-DECLARE FUNCTION StMap% (name$)
-DECLARE SUB StSet (stid%, stix%, value%)
-
-'
-' Trigger API
-'
-DECLARE SUB TrSet (trid%, trix%, value%)
-DECLARE FUNCTION TrCreate% ()
-DECLARE FUNCTION TrGet% (trid%, trix%)
-DECLARE FUNCTION TrMap% (name$)
+DECLARE SUB ShSerialize (obid%, indent%)
 
 '
 ' UI
@@ -263,37 +208,32 @@ DECLARE SUB UI.RunTerminal ()
 DECLARE SUB UI.SetPage (page AS INTEGER)
 
 '
-' Video pages
+' Video API
 '
-DECLARE SUB VideoFree (pagenum%)
-DECLARE SUB VideoPop ()
-DECLARE SUB VideoPushActive (active%)
-DECLARE SUB VideoScreen (activepage%, visualpage%)
-DECLARE FUNCTION VideoAlloc% ()
-DECLARE FUNCTION VideoGetActive% ()
-DECLARE FUNCTION VideoGetVisual% ()
+DECLARE SUB VdFree (pagenum%)
+DECLARE SUB VdPop ()
+DECLARE SUB VdPush (active%, visual%)
+DECLARE SUB VdPushActive (active%)
+DECLARE SUB VdPushVisual (visual%)
+DECLARE SUB VdScreen (activepage%, visualpage%)
+DECLARE SUB VdWatch (pagenum%)
+DECLARE FUNCTION VdAlloc% ()
+DECLARE FUNCTION VdActive% ()
+DECLARE FUNCTION VdVisual% ()
 
 '
 ' Window API
 '
-DECLARE SUB WnClose (wid%)
-DECLARE SUB WnDraw (wid%)
-DECLARE SUB WnFocusOn (wid%, fid%)
-DECLARE SUB WnFocusOnFirst (wid%)
-DECLARE SUB WnFocusOnLast (wid%)
-DECLARE SUB WnFocusOnNext (wid%)
-DECLARE SUB WnFocusOnPrevious (wid%)
-DECLARE SUB WnRefreshField (wid%, fid%)
-DECLARE SUB WnRender (wnid%)
-DECLARE SUB WnRun (wnid%, result AS WnResultType)
+DECLARE SUB WnClose (wnid%)
+DECLARE SUB WnDirty (wnid%)
+DECLARE SUB WnDraw (wnid%)
+DECLARE SUB WnOpen (wnid%)
+DECLARE SUB WnRun (wnid%)
 DECLARE SUB WnRunName (name$)
-DECLARE SUB WnSet (wnid%, wnix%, value%)
-DECLARE FUNCTION WnAppend% (wnid%, kind%)
-DECLARE FUNCTION WnCreate% ()
-DECLARE FUNCTION WnFind% (name$)
-DECLARE FUNCTION WnGet% (wnid%, wnix%)
-DECLARE FUNCTION WnMap% (name$)
-DECLARE FUNCTION WnMapKey% (wid%, pressed$)
+DECLARE FUNCTION WnCmd% (wnid%, cmd$)
+DECLARE FUNCTION WnFocus% (wnid%)
+DECLARE FUNCTION WnKey% (wnid%, keypress$)
+DECLARE FUNCTION WnUI% (wnid%)
 
 '
 ' World
@@ -312,16 +252,6 @@ DECLARE FUNCTION WorldNextId% ()
 '
 DECLARE SUB SetupGame ()
 DECLARE FUNCTION GetKey$ ()
-DECLARE FUNCTION Split% (text AS STRING, tokens() AS STRING)
-
-'
-' ASCII character constants
-'
-CONST ASCII.Backspace = 8
-CONST ASCII.Tab = 9
-CONST ASCII.Return = 13
-CONST ASCII.Escape = 27
-CONST ASCII.Space = 32
 
 '
 ' AtlasSelect constants
@@ -348,10 +278,13 @@ CONST True = -1
 CONST False = NOT True
 
 '
-' Command Results
+' Control actions in response to input
 '
-CONST CmdResult.OK = 0
-CONST CmdResult.Malformed = 1
+CONST CtAction.None = 0
+CONST CtAction.Handled = 1
+CONST CtAction.Cancel = 2
+CONST CtAction.Command = 3
+CONST CtAction.Window = 4
 
 '
 ' Control kinds
@@ -362,73 +295,124 @@ CONST CtKind.Box = 2
 CONST CtKind.Button = 3
 CONST CtKind.Container = 4
 CONST CtKind.File = 5
-CONST CtKind.Label = 7
+CONST CtKind.Label = 6
+CONST CtKind.Nebula = 7
 CONST CtKind.Popup = 8
 CONST CtKind.Separator = 9
-CONST CtKind.Nebula = 100
+CONST CtKinds = 9
+
+REDIM SHARED CtKindName$(1 TO CtKinds)
+CtKindName$(CtKind.Boolean) = "Boolean"
+CtKindName$(CtKind.Box) = "Box"
+CtKindName$(CtKind.Button) = "Button"
+CtKindName$(CtKind.Container) = "Container"
+CtKindName$(CtKind.File) = "File"
+CtKindName$(CtKind.Label) = "Label"
+CtKindName$(CtKind.Nebula) = "Nebula"
+CtKindName$(CtKind.Popup) = "Popup"
+CtKindName$(CtKind.Separator) = "Separator"
 
 '
 ' Control properties
 '
 CONST CtIndex.Schema = 0
-CONST CtIndex.Name = 1
-CONST CtIndex.Parent = 2
-CONST CtIndex.Value = 3
-CONST CtIndex.ChildList = 4
-CONST CtIndex.Command = 5
+CONST CtIndex.Dirty = 1
+CONST CtIndex.Name = 2
+CONST CtIndex.Parent = 3
+CONST CtIndex.Command = 4
+CONST CtIndex.Focused = 5
 CONST CtIndex.Kind = 6
 CONST CtIndex.OffsetX = 7
 CONST CtIndex.OffsetY = 8
-CONST CtIndex.Popup = 9
-CONST CtIndex.Selected = 10
-CONST CtIndex.SizeX = 11
-CONST CtIndex.SizeY = 12
-CONST CtIndex.Style = 13
-CONST CtIndex.Text = 14
-CONST CtIndex.Window = 15
+CONST CtIndex.SizeX = 9
+CONST CtIndex.SizeY = 10
+CONST CtIndex.Style = 11
+CONST CtIndex.Text = 12
+CONST CtIndex.Value = 13
+
+REDIM SHARED CtHeader$(0 TO 15)
+CtHeader$(0) = "Schema"
+CtHeader$(1) = "Dirty"
+CtHeader$(2) = "Name"
+CtHeader$(3) = "Parent"
+CtHeader$(4) = "Command"
+CtHeader$(5) = "Focused"
+CtHeader$(6) = "Kind"
+CtHeader$(7) = "OffsetX"
+CtHeader$(8) = "OffsetY"
+CtHeader$(9) = "SizeX"
+CtHeader$(10) = "SizeY"
+CtHeader$(11) = "Style"
+CtHeader$(12) = "Text"
+CtHeader$(13) = "Value"
 
 '
 ' Event properties
 '
 CONST EvIndex.Schema = 0
-CONST EvIndex.Name = 1
-CONST EvIndex.Parent = 2
-CONST EvIndex.Value = 3
+CONST EvIndex.Dirty = 1
+CONST EvIndex.Name = 2
+CONST EvIndex.Parent = 3
+CONST EvIndex.Value = 4
+
+REDIM SHARED EvHeader$(0 TO 15)
+EvHeader$(0) = "Schema"
+EvHeader$(1) = "Dirty"
+EvHeader$(2) = "Name"
+EvHeader$(3) = "Parent"
+EvHeader$(4) = "Value"
+
+'
+' Execution token types
+'
+CONST ExTokenType.None = 0
+CONST ExTokenType.Number = 1
+CONST ExTokenType.String = 2
+CONST ExTokenType.Unknown = 3
 
 '
 ' Habitat properties
 '
 CONST HbIndex.Schema = 0
-CONST HbIndex.Name = 1
-CONST HbIndex.Parent = 2
-CONST HbIndex.Backdrop = 3
-CONST HbIndex.Label = 4
-CONST HbIndex.StartFile = 5
-CONST HbIndex.Window = 6
+CONST HbIndex.Dirty = 1
+CONST HbIndex.Name = 2
+CONST HbIndex.Parent = 3
+CONST HbIndex.Backdrop = 4
+CONST HbIndex.Label = 5
+CONST HbIndex.StartFile = 6
+CONST HbIndex.Window = 7
 
-'
-' List properties
-'
-CONST LsIndex.Schema = 0
-CONST LsIndex.Name = 1
-CONST LsIndex.Parent = 2
-CONST LsIndex.Count = 3
-CONST LsIndex.First = 4
+REDIM SHARED HbHeader$(0 TO 15)
+HbHeader$(0) = "Schema"
+HbHeader$(1) = "Dirty"
+HbHeader$(2) = "Name"
+HbHeader$(3) = "Parent"
+HbHeader$(4) = "Backdrop"
+HbHeader$(5) = "Label"
+HbHeader$(6) = "StartFile"
+HbHeader$(7) = "Window"
 
 '
 ' Object bindings
 '
 CONST ObBinding.None = 0
-CONST ObBinding.Focused = 1
-CONST ObBinding.Param = 2
+CONST ObBinding.Expression = 1
+CONST ObBinding.Inherit = 3
 
 '
 ' Object properties
 '
 CONST ObIndex.Invalid = -1
 CONST ObIndex.Schema = 0
-CONST ObIndex.Name = 1
-CONST ObIndex.Parent = 2
+CONST ObIndex.Dirty = 1
+CONST ObIndex.Name = 2
+CONST ObIndex.Parent = 3
+
+REDIM SHARED ObHeader$(0 TO 15)
+ObHeader$(0) = "Schema"
+ObHeader$(1) = "Dirty"
+ObHeader$(2) = "Name"
+ObHeader$(3) = "Parent"
 
 '
 ' Object schemas
@@ -437,59 +421,87 @@ CONST ObSchema.None = 0
 CONST ObSchema.Control = 1
 CONST ObSchema.Event = 2
 CONST ObSchema.Habitat = 3
-CONST ObSchema.List = 4
-CONST ObSchema.Person = 5
-CONST ObSchema.Style = 6
-CONST ObSchema.Trigger = 7
-CONST ObSchema.Window = 8
-CONST ObSchemas = 8
+CONST ObSchema.Person = 4
+CONST ObSchema.Style = 5
+CONST ObSchema.Trigger = 6
+CONST ObSchema.Window = 7
+CONST ObSchemas = 7
 
-'
-' Operators
-'
-CONST OpNone = 0
-CONST OpEquals = 1
+REDIM SHARED ObSchemaLabel(1 TO ObSchemas) AS STRING * 2
+ObSchemaLabel$(ObSchema.Control) = "CT"
+ObSchemaLabel$(ObSchema.Event) = "EV"
+ObSchemaLabel$(ObSchema.Habitat) = "HB"
+ObSchemaLabel$(ObSchema.Person) = "PR"
+ObSchemaLabel$(ObSchema.Style) = "ST"
+ObSchemaLabel$(ObSchema.Trigger) = "TR"
+ObSchemaLabel$(ObSchema.Window) = "WN"
+
+REDIM SHARED ObSchemaName$(1 TO ObSchemas)
+ObSchemaName$(ObSchema.Control) = "Control"
+ObSchemaName$(ObSchema.Event) = "Event"
+ObSchemaName$(ObSchema.Habitat) = "Habitat"
+ObSchemaName$(ObSchema.Person) = "Person"
+ObSchemaName$(ObSchema.Style) = "Style"
+ObSchemaName$(ObSchema.Trigger) = "Trigger"
+ObSchemaName$(ObSchema.Window) = "Window"
 
 '
 ' Person properties
 '
 CONST PrIndex.Schema = 0
-CONST PrIndex.Name = 1
-CONST PrIndex.Parent = 2
-CONST PrIndex.Label = 3
+CONST PrIndex.Dirty = 1
+CONST PrIndex.Name = 2
+CONST PrIndex.Parent = 3
+CONST PrIndex.Label = 4
 
-'
-' ScanCode constants
-'
-CONST ScanCode.Home = 71
-CONST ScanCode.Up = 72
-CONST ScanCode.PageUp = 73
-CONST ScanCode.Left = 75
-CONST ScanCode.Right = 77
-CONST ScanCode.End = 79
-CONST ScanCode.Down = 80
-CONST ScanCode.PageDown = 81
+REDIM SHARED PrHeader$(0 TO 15)
+PrHeader$(0) = "Schema"
+PrHeader$(1) = "Dirty"
+PrHeader$(2) = "Name"
+PrHeader$(3) = "Parent"
+PrHeader$(4) = "Label"
 
 '
 ' Style properties
 '
 CONST StIndex.Schema = 0
-CONST StIndex.Name = 1
-CONST StIndex.Parent = 2
-CONST StIndex.BorderColor = 3
-CONST StIndex.BorderType = 4
-CONST StIndex.SelectedColor = 5
-CONST StIndex.TextColor = 6
+CONST StIndex.Dirty = 1
+CONST StIndex.Name = 2
+CONST StIndex.Parent = 3
+CONST StIndex.BorderColor = 4
+CONST StIndex.BorderType = 5
+CONST StIndex.SelectedColor = 6
+CONST StIndex.TextColor = 7
+
+REDIM SHARED StHeader$(0 TO 15)
+StHeader$(0) = "Schema"
+StHeader$(1) = "Dirty"
+StHeader$(2) = "Name"
+StHeader$(3) = "Parent"
+StHeader$(4) = "BorderColor"
+StHeader$(5) = "BorderType"
+StHeader$(6) = "SelectedColor"
+StHeader$(7) = "TextColor"
 
 '
 ' Trigger properties
 '
 CONST TrIndex.Schema = 0
-CONST TrIndex.Name = 1
-CONST TrIndex.Parent = 2
-CONST TrIndex.Event = 3
-CONST TrIndex.Equals = 4
-CONST TrIndex.Command = 5
+CONST TrIndex.Dirty = 1
+CONST TrIndex.Name = 2
+CONST TrIndex.Parent = 3
+CONST TrIndex.Event = 4
+CONST TrIndex.Equals = 5
+CONST TrIndex.Command = 6
+
+REDIM SHARED TrHeader$(0 TO 15)
+TrHeader$(0) = "Schema"
+TrHeader$(1) = "Dirty"
+TrHeader$(2) = "Name"
+TrHeader$(3) = "Parent"
+TrHeader$(4) = "Event"
+TrHeader$(5) = "Equals"
+TrHeader$(6) = "Command"
 
 '
 ' UIPage.* constants
@@ -499,65 +511,82 @@ CONST UIPage.Atlas = 1
 CONST UIPage.Terminal = 2
 
 '
-' Window actions
-'
-CONST WnAction.None = 0
-CONST WnAction.Cancel = 1
-CONST WnAction.Complete = 2
-CONST WnAction.Execute = 3
-CONST WnAction.ExitLeft = 4
-CONST WnAction.ExitRight = 5
-CONST WnAction.OpenPopup = 11
-CONST WnAction.SelectFirst = 12
-CONST WnAction.SelectLast = 13
-CONST WnAction.SelectNext = 14
-CONST WnAction.SelectPrevious = 15
-
-'
 ' Window properties
 '
 CONST WnIndex.Schema = 0
-CONST WnIndex.Name = 1
-CONST WnIndex.Parent = 2
-CONST WnIndex.ArrowExit = 3
-CONST WnIndex.Container = 4
-CONST WnIndex.Focused = 5
-CONST WnIndex.Param = 6
-CONST WnIndex.Wid = 7
+CONST WnIndex.Dirty = 1
+CONST WnIndex.Name = 2
+CONST WnIndex.Parent = 3
+CONST WnIndex.Param = 4
+CONST WnIndex.Root = 5
+
+REDIM SHARED WnHeader$(0 TO 15)
+WnHeader$(0) = "Schema"
+WnHeader$(1) = "Dirty"
+WnHeader$(2) = "Name"
+WnHeader$(3) = "Parent"
+WnHeader$(4) = "Param"
+WnHeader$(5) = "Root"
 
 CONST MaxChildren = 20
 CONST MaxObjects = 200
 
 '
-' Global atlas variables
+' Keyboard sequences
+'
+DIM SHARED KeyBackspace$: KeyBackspace$ = CHR$(8)
+DIM SHARED KeyDown$:      KeyDown$ = CHR$(0) + CHR$(80)
+DIM SHARED KeyEnd$:       KeyEnd$ = CHR$(0) + CHR$(79)
+DIM SHARED KeyEnter$:     KeyEnter$ = CHR$(13)
+DIM SHARED KeyEscape$:    KeyEscape$ = CHR$(27)
+DIM SHARED KeyHome$:      KeyHome$ = CHR$(0) + CHR$(71)
+DIM SHARED KeyLeft$:      KeyLeft$ = CHR$(0) + CHR$(75)
+DIM SHARED KeyPageDown$:  KeyPageDown$ = CHR$(0) + CHR$(81)
+DIM SHARED KeyPageUp$:    KeyPageUp$ = CHR$(0) + CHR$(73)
+DIM SHARED KeyRight$:     KeyRight$ = CHR$(0) + CHR$(77)
+DIM SHARED KeySpace$:     KeySpace$ = " "
+DIM SHARED KeyTab$:       KeyTab$ = CHR$(9)
+DIM SHARED KeyUp$:        KeyUp$ = CHR$(0) + CHR$(72)
+
+'
+' Global atlas grid
 '
 DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS INTEGER
                  
 '
-' Globals
+' Global object state
 '
-DIM SHARED gobj(1 TO MaxObjects, 0 TO 16) AS PropType
-DIM SHARED gwin(1 TO 20, 0 TO 13)  AS INTEGER
-DIM SHARED gobids                  AS INTEGER
-DIM SHARED gwid%
+DIM SHARED obj(1 TO MaxObjects, 0 TO 15) AS PropType
 
-DIM SHARED per.parent(1 TO MaxObjects, 0 TO MaxChildren) AS INTEGER
-DIM SHARED per.schema(1 TO ObSchemas, 0 TO MaxObjects) AS INTEGER
+'
+' Global runtime state
+'
+DIM SHARED db.debug            AS INTEGER
+DIM SHARED dg.listening        AS INTEGER
+DIM SHARED ex.depth            AS INTEGER
+DIM SHARED ex.stack(1 TO 10)   AS INTEGER
+DIM SHARED ob.count            AS INTEGER
+DIM SHARED vd.allocated        AS INTEGER
+DIM SHARED vd.stacked          AS INTEGER
+DIM SHARED vd.stack(0 TO 5)    AS INTEGER
+DIM SHARED wn.backpage(1 TO 3) AS INTEGER
+DIM SHARED wn.count            AS INTEGER
+DIM SHARED wn.wnid(1 TO 3)     AS INTEGER
+DIM SHARED wn.workpage(1 TO 3) AS INTEGER
+
+'
+' Views
+'
+DIM SHARED vwPerParent(1 TO MaxObjects, 0 TO MaxChildren) AS INTEGER
+DIM SHARED vwPerSchema(1 TO ObSchemas, 0 TO MaxObjects) AS INTEGER
 
 DIM SHARED area(1 TO 35)         AS AreaType
 DIM SHARED atlasitem(1 TO 35)    AS AtlasItemType
 DIM SHARED atlaspage             AS INTEGER
-DIM SHARED listening             AS INTEGER
 DIM SHARED playeraid             AS INTEGER
 REDIM SHARED resource(1 TO 200)  AS STRING
 DIM SHARED resources             AS INTEGER
 DIM SHARED uiCurrentPage         AS INTEGER
-DIM SHARED vallocated            AS INTEGER
-DIM SHARED vstack(0 TO 5)        AS INTEGER
-DIM SHARED vstacked              AS INTEGER
-DIM SHARED win(1 TO 15)          AS WnType
-DIM SHARED winstack(1 TO 3)      AS WnStackItem
-DIM SHARED winstacked            AS INTEGER
 
 ON TIMER(1) GOSUB HandleTimer
 
@@ -569,55 +598,10 @@ HandleTimer:
   '
   ' Executed when the game needs to perform periodic tasks
   '
-  IF listening > 0 THEN
+  IF dg.listening > 0 THEN
     DgTimer
   END IF
   RETURN
-
-SUB Assert (truth AS INTEGER, where AS STRING, what AS STRING)
-
-  IF NOT truth THEN
-   
-    DIM message AS STRING
-    LET message = where + ": " + what
-
-    AtlasSetStatusEx message, &H4F
-    ShPrint "@X4F" + message + "@X07"
-
-    IF GetKey$ <> CHR$(ASCII.Escape) THEN
-      END
-    END IF
- 
-  END IF
-
-END SUB
-
-SUB AssertExpected (expected%, actual%, where$, what$)
-
-  IF expected% <> actual% THEN
- 
-    DIM msg$
-    msg$ = what$ + " expected:" + STR$(expected%) + " actually:" + STR$(actual%)
-
-    AssertFail where$, msg$
-
-  END IF
-
-END SUB
-
-SUB AssertFail (where$, what$)
-  Assert 0, where$, what$
-END SUB
-
-SUB AssertIsPositive (value%, where$, what$)
-
-  Assert value% > 0, where$, what$ + " must be > 0 but value =" + STR$(value%)
-
-END SUB
-
-SUB AssertIsZero (value%, where$, what$)
-  Assert value% = 0, where$, what$ + " must be 0 but value =" + STR$(value%)
-END SUB
 
 SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, labelrsid AS INTEGER)
   '
@@ -630,7 +614,7 @@ SUB AtlasAddItem (cx AS INTEGER, cy AS INTEGER, value AS INTEGER, labelrsid AS I
   '
   idx = AtlasNextIndex%
   IF idx = 0 THEN
-    AssertFail "AtlasAddItem", "AtlasNextIndex returned 0"
+    DbFail "AtlasAddItem", "AtlasNextIndex returned 0"
     EXIT SUB
   END IF
 
@@ -657,7 +641,7 @@ SUB AtlasDraw
 END SUB
 
 SUB AtlasDrawBegin
-  VideoPushActive atlaspage
+  VdPushActive atlaspage
 END SUB
 
 SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
@@ -698,7 +682,7 @@ SUB AtlasDrawCell (cx AS INTEGER, cy AS INTEGER)
 END SUB
 
 SUB AtlasDrawEnd
-  VideoPop
+  VdPop
 END SUB
 
 SUB AtlasDrawGrid
@@ -709,7 +693,7 @@ END SUB
 
 SUB AtlasDrawItem (idx AS INTEGER)
  
-  AssertIsPositive idx, "AtlasDrawItem", "idx"
+  DbPositive idx, "AtlasDrawItem", "idx"
 
   IF atlasitem(idx).allocated THEN
     AtlasDrawCell atlasitem(idx).cx, atlasitem(idx).cy
@@ -934,25 +918,25 @@ FUNCTION AtlasNextIndex%
  
   STATIC idx AS INTEGER
 
-  DIM try AS INTEGER
-  LET try = idx
+  DIM Try AS INTEGER
+  LET Try = idx
 
   DO
     '
     ' Try the next index
     '
-    try = try + 1
-    IF try > UBOUND(atlasitem) THEN
-      try = 1
+    Try = Try + 1
+    IF Try > UBOUND(atlasitem) THEN
+      Try = 1
     END IF
 
-    IF NOT atlasitem(try).allocated THEN
-      idx = try
+    IF NOT atlasitem(Try).allocated THEN
+      idx = Try
       AtlasNextIndex = idx
       EXIT FUNCTION
     END IF
 
-    IF try = idx THEN
+    IF Try = idx THEN
       AtlasNextIndex = 0
       EXIT FUNCTION
     END IF
@@ -1160,12 +1144,12 @@ FUNCTION AtlasPrompt% (promptFor AS INTEGER, outcx AS INTEGER, outcy AS INTEGER,
 
     SELECT CASE keypress
   
-      CASE CHR$(ASCII.Escape)
+      CASE KeyEscape$
         outpress = keypress
         AtlasPrompt = False
         EXIT FUNCTION
 
-      CASE CHR$(ASCII.Return), " "
+      CASE KeyEnter$, " "
         IF valid THEN
           outcx = mx
           outcy = my
@@ -1174,44 +1158,44 @@ FUNCTION AtlasPrompt% (promptFor AS INTEGER, outcx AS INTEGER, outcy AS INTEGER,
           EXIT FUNCTION
         END IF
 
-      CASE CHR$(0) + CHR$(ScanCode.Up)
+      CASE KeyUp$
         '
         ' Up
         '
         my = my - 1
         IF my = 0 THEN my = AtlasStyle.GridSizeY
  
-      CASE CHR$(0) + CHR$(ScanCode.Down)
+      CASE KeyDown$
         '
         ' Down
         '
         my = my + 1
         IF my > AtlasStyle.GridSizeY THEN my = 1
      
-      CASE CHR$(0) + CHR$(ScanCode.Left)
+      CASE KeyLeft$
         '
         ' Left
         '
         mx = mx - 1
         IF mx = 0 THEN mx = AtlasStyle.GridSizeX
      
-      CASE CHR$(0) + CHR$(ScanCode.Right)
+      CASE KeyRight$
         '
         ' Right
         '
         mx = mx + 1
         IF mx > AtlasStyle.GridSizeX THEN mx = 1
 
-      CASE CHR$(0) + CHR$(ScanCode.Home)
+      CASE KeyHome$
         mx = 1
 
-      CASE CHR$(0) + CHR$(ScanCode.End)
+      CASE KeyEnd$
         mx = AtlasStyle.GridSizeX
 
-      CASE CHR$(0) + CHR$(ScanCode.PageUp)
+      CASE KeyPageUp$
         my = 1
 
-      CASE CHR$(0) + CHR$(ScanCode.PageDown)
+      CASE KeyPageDown$
         my = AtlasStyle.GridSizeY
 
     END SELECT
@@ -1264,7 +1248,7 @@ END SUB
 
 SUB AtlasSetLabel (idx AS INTEGER, labelrsid AS INTEGER)
  
-  AssertIsPositive idx, "AtlasSetLabel", "idx"
+  DbPositive idx, "AtlasSetLabel", "idx"
 
   atlasitem(idx).labelrsid = labelrsid
   AtlasDrawItem idx
@@ -1289,234 +1273,64 @@ SUB AtlasSetStatusEx (text$, attr%)
 
 END SUB
 
-FUNCTION CnFocus% (cnid%)
-
-  DIM focused%
-  LET focused% = CtGet%(cnid%, CtIndex.Selected)
-
-  IF focused% = 0 THEN
-    focused% = CnFocusFirst%(cnid%)
-  END IF
-
-  CnFocus% = focused%
-
+FUNCTION CtAction% (action%, param%)
+  DbAssert action% < &H10, "CtAction%", "action% too big"
+  DbAssert param% < &H1000, "CtAction%", "param% too big"
+  CtAction% = action% OR (param% * 16)
 END FUNCTION
 
-FUNCTION CnFocusFirst% (cnid%)
+FUNCTION CtCanFocus% (ctid%)
 
-  AssertIsPositive cnid%, "CnFocusFirst", "cnid%"
-
-  DIM old%
-  LET old% = CtUnfocus%(cnid%)
-
-  DIM n%
-  FOR n% = 1 TO per.parent(cnid%, 0)
-     
-    DIM child%
-    LET child% = per.parent(cnid%, n%)
-    LET child% = CtFocus%(child%)
-
-    IF child% > 0 THEN
-      CnFocusFirst% = child%
-      EXIT FUNCTION
-    END IF
-
-  NEXT
-
-END FUNCTION
-
-FUNCTION CnFocusLast% (cnid%)
-
-  AssertIsPositive cnid%, "CnFocusLast", "cnid%"
-
-  DIM old%
-  LET old% = CtUnfocus%(cnid%)
-
-  DIM n%
-  FOR n% = per.parent(cnid%, 0) TO 1 STEP -1
-    
-    DIM child%
-    LET child% = per.parent(cnid%, n%)
-    LET child% = CtFocus%(child%)
-
-    IF child% > 0 THEN
-      CnFocusLast% = child%
-      EXIT FUNCTION
-    END IF
-
-  NEXT
-  
-END FUNCTION
-
-FUNCTION CnFocusNext% (cnid%)
-
-  AssertIsPositive cnid%, "CnFocusNext", "cnid%"
-
-  '
-  ' Exit if no children
-  '
-  DIM count%: count% = per.parent(cnid%, 0)
-  IF count% = 0 THEN
+  IF ctid% = 0 THEN
     EXIT FUNCTION
   END IF
 
-  '
-  ' Get the current value
-  '
-  DIM current%
-  LET current% = CtGet%(cnid%, CtIndex.Selected)
-
-  '
-  ' Get the starting index
-  '
-  DIM startat%
-  LET startat% = CnIndexOf%(cnid%, current%)
-
-  '
-  ' Find the first control to take focus, looping around if necessary
-  '
-  DIM n%
-  LET n% = startat%
-
-  DO
-   
-    '
-    ' Move to the next control
-    '
-    n% = n% + 1
-    IF n% > count% THEN
-      n% = 1
-    END IF
-
-    IF n% = startat% THEN
-      '
-      ' We found the starting one, which was focused already
-      '
-      CnFocusNext% = current%
-      EXIT FUNCTION
-    END IF
-
-    '
-    ' See if this control will take focus
-    '
-    DIM focused%
-    LET focused% = CtFocus%(per.parent(cnid%, n%))
-    IF focused% > 0 THEN
-      CtSet cnid%, CtIndex.Selected, focused%
-      CnFocusNext% = focused%
-      EXIT FUNCTION
-    END IF
-
-  LOOP
-  
-END FUNCTION
-
-FUNCTION CnFocusPrevious% (cnid%)
-
-  AssertIsPositive cnid%, "CnFocusPrevious", "cnid%"
-
-  '
-  ' Exit if no children
-  '
-  DIM count%: count% = per.parent(cnid%, 0)
-  IF count% = 0 THEN
+  IF NOT ObIs%(ObSchema.Control, ctid%) THEN
     EXIT FUNCTION
   END IF
 
-  '
-  ' Get the current value
-  '
-  DIM current%
-  LET current% = CtGet%(cnid%, CtIndex.Selected)
-
-  '
-  ' Get the starting index
-  '
-  DIM startat%
-  LET startat% = CnIndexOf%(cnid%, current%)
-
-  '
-  ' Find the previous control to take focus, looping around if necessary
-  '
-  DIM n%
-  LET n% = startat%
-
-  DO
-  
-    '
-    ' Move to the previous control
-    '
-    n% = n% - 1
-    IF n% = 0 THEN
-      n% = count%
-    END IF
-
-    IF n% = startat% THEN
-      '
-      ' We found the starting one, which was focused already
-      '
-      CnFocusPrevious% = current%
-      EXIT FUNCTION
-    END IF
-
-    '
-    ' See if this control will take focus
-    '
-    DIM focused%
-    LET focused% = CtFocus%(per.parent(cnid%, n%))
-    IF focused% > 0 THEN
-      CtSet cnid%, CtIndex.Selected, focused%
-      CnFocusPrevious% = focused%
-      EXIT FUNCTION
-    END IF
-
-  LOOP
-
-END FUNCTION
-
-FUNCTION CnIndexOf% (cnid%, child%)
-  DIM n%
-  FOR n% = 1 TO per.parent(cnid%, 0)
-    IF per.parent(cnid%, n%) = child% THEN
-      CnIndexOf% = n%
-    END IF
-  NEXT
-END FUNCTION
-
-FUNCTION CtCreate% (kind%, parent%)
-  '
-  ' Creates an empty control
-  '
-  DIM ctid%: ctid% = ObCreate%(ObSchema.Control, parent%)
-  AssertIsPositive ctid%, "CtCreate%", "ctid%"
-  CtSet ctid%, CtIndex.Kind, kind%
-  CtCreate% = ctid%
-
-END FUNCTION
-
-SUB CtDraw (wid%, fid%)
-
-  DIM ctid%
-  LET ctid% = gwin(wid%, fid%)
-
-  DIM kind%
-  LET kind% = CtGet%(ctid%, CtIndex.Kind)
+  DIM kind%: kind% = ObGet%(ObSchema.Control, ctid%, CtIndex.Kind)
 
   SELECT CASE kind%
-    '
-    ' Check the most common kinds first
-    '
+   
+    CASE CtKind.Boolean, CtKind.Button, CtKind.Container, CtKind.Popup
+      CtCanFocus% = True
+   
+    CASE ELSE
+      CtCanFocus% = False
+ 
+  END SELECT
+
+END FUNCTION
+
+SUB CtDraw (ctid%)
+
+  DIM dirty%: dirty% = ObGet%(ObSchema.Control, ctid%, CtIndex.Dirty)
+  IF NOT dirty% THEN
+    EXIT SUB
+  END IF
+
+  DIM kind%: kind% = ObGet%(ObSchema.Control, ctid%, CtIndex.Kind)
+
+  SELECT CASE kind%
+   
     CASE CtKind.Button
-      CtDrawText wid%, fid%
+      CtDrawText ctid%
 
     CASE CtKind.Box
       CtDrawBox ctid%
 
+    CASE CtKind.Container
+      CtDrawContainer ctid%
+
     CASE CtKind.Label
-      CtDrawText wid%, fid%
+      CtDrawText ctid%
 
     CASE CtKind.File
       CtDrawFile ctid%
+
+    CASE CtKind.Popup
+      CtDrawPopup ctid%
 
     CASE CtKind.Separator
       CtDrawSeparator ctid%
@@ -1524,25 +1338,28 @@ SUB CtDraw (wid%, fid%)
     CASE CtKind.Nebula
       CtDrawNebula ctid%
 
-    CASE CtKind.Popup
-      CtDrawText wid%, fid%
-
     CASE CtKind.Boolean
-      CtDrawText wid%, fid%
+      CtDrawText ctid%
 
     CASE ELSE
-      AssertFail "CtDraw", "unsupported kind" + STR$(kind%)
+      DbFail "CtDraw", "unsupported kind" + STR$(kind%)
 
   END SELECT
+
+  ObSet ObSchema.Control, ctid%, CtIndex.Dirty, 0
 
 END SUB
 
 SUB CtDrawBox (ctid%)
 
-  DIM stid%
-  LET stid% = CtGetStyle%(ctid%)
+  DIM stid%: stid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Style)
+ 
+  DIM bordertype%
+  IF stid% > 0 THEN
+    bordertype% = ObGet%(ObSchema.Style, stid%, StIndex.BorderType)
+  END IF
 
-  SELECT CASE StGet%(stid%, StIndex.BorderType)
+  SELECT CASE bordertype%
  
     CASE 0:
       CtDrawBox0 ctid%
@@ -1554,7 +1371,7 @@ SUB CtDrawBox (ctid%)
       CtDrawBox2 ctid%
 
     CASE ELSE
-      AssertFail "CtDrawBox", "Unsupported border type"
+      DbFail "CtDrawBox", "Unsupported border type"
 
   END SELECT
 
@@ -1566,16 +1383,18 @@ SUB CtDrawBox0 (ctid%)
   DIM sx  AS INTEGER
   DIM sy  AS INTEGER
 
-  DIM stid%: stid% = CtGetStyle(ctid%)
-  DrawColor StGet%(stid%, StIndex.TextColor)
- 
-  FOR row = 1 TO CtGet%(ctid%, CtIndex.SizeY)
+  DIM stid%: stid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Style)
+  IF stid% > 0 THEN
+    DrawColor ObGet%(ObSchema.Style, stid%, StIndex.TextColor)
+  END IF
+
+  FOR row = 1 TO ObGet%(ObSchema.Control, ctid%, CtIndex.SizeY)
    
     sx = CtGetScreenX%(ctid%)
     sy = CtGetScreenY%(ctid%) + row - 1
 
     LOCATE sy, sx
-    PRINT STRING$(CtGet%(ctid%, CtIndex.SizeX), " ");
+    PRINT STRING$(ObGet%(ObSchema.Control, ctid%, CtIndex.SizeX), " ");
  
   NEXT
 
@@ -1602,20 +1421,22 @@ SUB CtDrawBox1 (ctid%)
   '
   ' Calculate screen coordinates
   '
-  sizeX = CtGet%(ctid%, CtIndex.SizeX)
+  sizeX = ObGet%(ObSchema.Control, ctid%, CtIndex.SizeX)
   sx1 = CtGetScreenX%(ctid%)
   sy1 = CtGetScreenY%(ctid%)
   sx2 = sx1 + sizeX - 1
-  sy2 = sy1 + CtGet%(ctid%, CtIndex.SizeY) - 1
+  sy2 = sy1 + ObGet%(ObSchema.Control, ctid%, CtIndex.SizeY) - 1
 
   DIM stid%
-  LET stid% = CtGetStyle(ctid%)
+  LET stid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Style)
 
   '
   ' Draw the top border
   '
   LOCATE sy1, sx1
-  DrawColor StGet%(stid%, StIndex.BorderColor)
+  IF stid% > 0 THEN
+    DrawColor ObGet%(ObSchema.Style, stid%, StIndex.BorderColor)
+  END IF
   PRINT upperLeft; STRING$(sizeX - 2, upperFlat); upperRight;
 
   '
@@ -1625,10 +1446,14 @@ SUB CtDrawBox1 (ctid%)
     LOCATE r, sx1
     PRINT sideLeft;
   
-    DrawColor StGet%(stid%, StIndex.TextColor)
+    IF stid% > 0 THEN
+      DrawColor ObGet%(ObSchema.Style, stid%, StIndex.TextColor)
+    END IF
     PRINT STRING$(sizeX - 2, " ");
   
-    DrawColor StGet%(stid%, StIndex.BorderColor)
+    IF stid% > 0 THEN
+      DrawColor ObGet%(ObSchema.Style, stid%, StIndex.BorderColor)
+    END IF
     PRINT sideRight;
   NEXT
  
@@ -1648,8 +1473,8 @@ SUB CtDrawBox2 (ctid%)
   DIM sizeX AS INTEGER
   DIM SizeY AS INTEGER
 
-  sizeX = CtGet%(ctid%, CtIndex.SizeX)
-  SizeY = CtGet%(ctid%, CtIndex.SizeY)
+  sizeX = ObGet%(ObSchema.Control, ctid%, CtIndex.SizeX)
+  SizeY = ObGet%(ObSchema.Control, ctid%, CtIndex.SizeY)
  
   '
   ' Calculate screen coordinates
@@ -1731,10 +1556,20 @@ SUB CtDrawBox2 (ctid%)
 
 END SUB
 
+SUB CtDrawContainer (ctid%)
+
+  DIM n%
+  FOR n% = 1 TO vwPerParent(ctid%, 0)
+    ' *** Optimize by checking dirty state of view
+    CtDraw vwPerParent(ctid%, n%)
+  NEXT
+
+END SUB
+
 SUB CtDrawFile (ctid%)
 
   DIM rsid%
-  LET rsid% = CtGet%(ctid%, CtIndex.Value)
+  LET rsid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Value)
   IF rsid% = 0 THEN
     EXIT SUB
   END IF
@@ -1761,11 +1596,11 @@ SUB CtDrawNebula (ctid%)
   DIM x     AS INTEGER
   DIM y     AS INTEGER
 
-  sizeX = CtGet%(ctid%, CtIndex.SizeX)
+  sizeX = ObGet%(ObSchema.Control, ctid%, CtIndex.SizeX)
 
   COLOR 7, 0
 
-  FOR y = 1 TO CtGet%(ctid%, CtIndex.SizeY)
+  FOR y = 1 TO ObGet%(ObSchema.Control, ctid%, CtIndex.SizeY)
  
     x = INT(RND * sizeX) + 1
     p = 1
@@ -1847,6 +1682,33 @@ SUB CtDrawNebula (ctid%)
 
 END SUB
 
+SUB CtDrawPopup (ctid%)
+
+  CtDrawText ctid%
+
+  DIM focused%
+  LET focused% = ObGet%(ObSchema.Control, ctid%, CtIndex.Focused)
+ 
+  IF focused% > 0 THEN
+    '
+    ' The poppup is opened, so draw child controls
+    '
+    DIM n%
+    FOR n% = 1 TO vwPerParent(ctid%, 0)
+     
+      DIM child%
+      LET child% = vwPerParent(ctid%, n%)
+
+      IF ObIs%(ObSchema.Control, child%) THEN
+        CtDraw vwPerParent(ctid%, n%)
+      END IF
+
+    NEXT
+
+  END IF
+
+END SUB
+
 SUB CtDrawSeparator (ctid%)
 
   DIM row   AS INTEGER
@@ -1856,15 +1718,17 @@ SUB CtDrawSeparator (ctid%)
   DIM sy    AS INTEGER
 
   DIM stid%
-  LET stid% = CtGetStyle(ctid%)
+  LET stid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Style)
  
-  sizeX = CtGet%(ctid%, CtIndex.SizeX)
-  SizeY = CtGet%(ctid%, CtIndex.SizeY)
+  sizeX = ObGet%(ObSchema.Control, ctid%, CtIndex.SizeX)
+  SizeY = ObGet%(ObSchema.Control, ctid%, CtIndex.SizeY)
   sx = CtGetScreenX%(ctid%)
   sy = CtGetScreenY%(ctid%)
 
   LOCATE sy, sx
-  DrawColor StGet%(stid%, StIndex.BorderColor)
+  IF stid% > 0 THEN
+    DrawColor ObGet%(ObSchema.Style, stid%, StIndex.BorderColor)
+  END IF
 
   IF sizeX > 0 THEN
     '
@@ -1932,90 +1796,339 @@ SUB CtDrawSeparator (ctid%)
 
 END SUB
 
-SUB CtDrawText (wid%, fid%)
-
-  DIM cnid%
-  LET cnid% = gwin(wid%, 0)
-
-  DIM fidctid%
-  LET fidctid% = gwin(wid%, fid%)
-
-  DIM size AS INTEGER
-  DIM sx   AS INTEGER
-  DIM sy   AS INTEGER
-  DIM text AS STRING
-
+SUB CtDrawText (ctid%)
   '
   ' Get field position
   '
-  sx = CtGetScreenX%(fidctid%)
-  sy = CtGetScreenY%(fidctid%)
-  LOCATE sy, sx
+  DIM sx%: sx% = CtGetScreenX%(ctid%)
+  DIM sy%: sy% = CtGetScreenY%(ctid%)
+  LOCATE sy%, sx%
 
   '
   ' Set style of text
   '
   DIM stid%
-  LET stid% = CtGetStyle(fidctid%)
-  IF CtGet%(cnid%, CtIndex.Selected) = fid% THEN
-    DrawColor StGet%(stid%, StIndex.SelectedColor)
-  ELSE
-    DrawColor StGet%(stid%, StIndex.TextColor)
+  LET stid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Style)
+  IF stid% > 0 THEN
+    IF ObGet%(ObSchema.Control, ctid%, CtIndex.Focused) <> 0 THEN
+      DrawColor ObGet%(ObSchema.Style, stid%, StIndex.SelectedColor)
+    ELSE
+      DrawColor ObGet%(ObSchema.Style, stid%, StIndex.TextColor)
+    END IF
   END IF
 
   '
   ' Print text clipped to size
   '
-  text = RsGet$(CtGet%(fidctid%, CtIndex.Text))
-  size = CtGet%(fidctid%, CtIndex.SizeX)
-  IF size < 1 THEN
-    PRINT text;
+  DIM text$: text$ = RsGet$(ObGet%(ObSchema.Control, ctid%, CtIndex.Text))
+  DIM size%: size% = ObGet%(ObSchema.Control, ctid%, CtIndex.SizeX)
+ 
+  IF size% < 1 THEN
+    PRINT text$;
   ELSE
-    PRINT LEFT$(text, size);
-    IF LEN(text) < size THEN
-      PRINT STRING$(size - LEN(text), " ");
+    PRINT LEFT$(text$, size%);
+    IF LEN(text$) < size% THEN
+      PRINT STRING$(size% - LEN(text$), " ");
     END IF
   END IF
 
 END SUB
 
+'
+' Ensures the control has focused if permitted
+'
 FUNCTION CtFocus% (ctid%)
-
-  IF NOT CtIs%(ctid%) THEN
-    '
-    ' This is not a control
-    '
-    CtFocus% = 0
+ 
+  DbPositive ctid%, "CtFocus%", "ctid%"
+  IF NOT CtCanFocus%(ctid%) THEN
     EXIT FUNCTION
   END IF
 
-  SELECT CASE CtGet%(ctid%, CtIndex.Kind)
-   
-    CASE CtKind.Boolean, CtKind.Button
-      CtSet ctid%, CtIndex.Selected, ctid%
-      CtFocus% = ctid%
+  DIM focused%
+  LET focused% = ObGet%(ObSchema.Control, ctid%, CtIndex.Focused)
 
-    CASE CtKind.Container
-      CtFocus% = CnFocus%(ctid%)
-
-    CASE ELSE
-      CtFocus% = 0
-
-  END SELECT
+  IF focused% = 0 THEN
+    CtFocus% = CtFocusFirst%(ctid%)
+  ELSE
+    CtFocus% = focused%
+  END IF
 
 END FUNCTION
 
-FUNCTION CtGet% (ctid%, ctix%)
-  CtGet% = ObGet%(ObSchema.Control, ctid%, ctix%)
+FUNCTION CtFocusBack% (ctid%)
+
+  DbPositive ctid%, "CtFocusBack%", "ctid%"
+  IF NOT CtCanFocus%(ctid%) THEN
+    EXIT FUNCTION
+  END IF
+
+  DIM child%
+  DIM first%
+  DIM found%
+  DIM n%
+  DIM new%
+  DIM old%
+
+  old% = ObGet%(ObSchema.Control, ctid%, CtIndex.Focused)
+
+  FOR n% = vwPerParent(ctid%, 0) TO 1 STEP -1
+     
+    child% = vwPerParent(ctid%, n%)
+    IF CtCanFocus%(child%) THEN
+  
+      IF first% = 0 THEN
+        '
+        ' Keep track of the first control that is focusable
+        '
+        first% = child%
+      END IF
+
+      IF new% > 0 THEN
+        '
+        ' A new control was selected earlier, this one can be unfocused
+        '
+        CtUnfocus child%
+
+      ELSEIF found% THEN
+        '
+        ' The old control was found earlier, so this is the new selection.
+        '
+        new% = child%
+
+      ELSEIF child% = old% THEN
+        '
+        ' This is the old control.
+        '
+        found% = True
+    
+      ELSE
+        '
+        ' New control not found, old control not found
+        '
+        CtUnfocus child%
+
+      END IF
+
+    END IF
+   
+  NEXT
+
+  IF new% = 0 THEN
+    '
+    ' A new one was not found, so wrap to the first focusable one
+    '
+    new% = first%
+  END IF
+
+  IF new% <> old% THEN
+   
+    IF old% > 0 THEN
+      CtUnfocus old%
+    END IF
+
+    IF new% > 0 THEN
+      DIM r%: r% = CtFocus%(new%)
+    END IF
+
+    ObSet ObSchema.Control, ctid%, CtIndex.Focused, new%
+ 
+  END IF
+
+  CtFocusBack% = new%
+
+END FUNCTION
+
+'
+' Sets focus to the first focusable child control or itself
+'
+FUNCTION CtFocusFirst% (ctid%)
+
+  DbPositive ctid%, "CtFocusFirst%", "ctid%"
+  IF NOT CtCanFocus%(ctid%) THEN
+    EXIT FUNCTION
+  END IF
+
+  DIM child%
+  DIM focused%
+  DIM n%
+
+  FOR n% = 1 TO vwPerParent(ctid%, 0)
+ 
+    child% = vwPerParent(ctid%, n%)
+    
+    IF CtCanFocus%(child%) THEN
+   
+      IF focused% = 0 THEN
+        '
+        ' A focusable control has not been found yet
+        '
+        IF CtFocus%(child%) > 0 THEN
+          focused% = child%
+        END IF
+
+      ELSE
+        '
+        ' A focusable control has already been found. Unfocus this one.
+        '
+        CtUnfocus child%
+      END IF
+
+    END IF
+
+  NEXT
+
+  IF focused% = 0 THEN
+    '
+    ' No child control was focused, so focus on itself
+    '
+    focused% = ctid%
+  END IF
+ 
+  ObSet ObSchema.Control, ctid%, CtIndex.Focused, focused%
+  CtFocusFirst% = focused%
+
+END FUNCTION
+
+FUNCTION CtFocusLast% (ctid%)
+
+  DbPositive ctid%, "CtFocusLast%", "ctid%"
+  IF NOT CtCanFocus%(ctid%) THEN
+    EXIT FUNCTION
+  END IF
+
+  DIM child%
+  DIM focused%
+  DIM n%
+
+  FOR n% = vwPerParent(ctid%, 0) TO 1 STEP -1
+
+    child% = vwPerParent(ctid%, n%)
+   
+    IF CtCanFocus%(child%) THEN
+  
+      IF focused% = 0 THEN
+        '
+        ' A focusable control has not been found yet
+        '
+        IF CtFocus%(child%) > 0 THEN
+          focused% = child%
+        END IF
+
+      ELSE
+        '
+        ' A focusable control has already been found. Unfocus this one.
+        '
+        CtUnfocus child%
+      END IF
+
+    END IF
+
+  NEXT
+
+  IF focused% = 0 THEN
+    '
+    ' No child control was focused, so focus on itself
+    '
+    focused% = ctid%
+  END IF
+
+  ObSet ObSchema.Control, ctid%, CtIndex.Focused, focused%
+  CtFocusLast% = focused%
+
+END FUNCTION
+
+FUNCTION CtFocusNext% (ctid%)
+
+  DbPositive ctid%, "CtFocusNext%", "ctid%"
+  IF NOT CtCanFocus%(ctid%) THEN
+    EXIT FUNCTION
+  END IF
+
+  DIM child%
+  DIM first%
+  DIM found%
+  DIM n%
+  DIM new%
+  DIM old%
+
+  old% = ObGet%(ObSchema.Control, ctid%, CtIndex.Focused)
+
+  FOR n% = 1 TO vwPerParent(ctid%, 0)
+      
+    child% = vwPerParent(ctid%, n%)
+    IF CtCanFocus%(child%) THEN
+   
+      IF first% = 0 THEN
+        '
+        ' Keep track of the first control that is focusable
+        '
+        first% = child%
+      END IF
+
+      IF new% > 0 THEN
+        '
+        ' A new control has already been focused; this one can be unfocused.
+        '
+        CtUnfocus child%
+
+      ELSEIF found% THEN
+        '
+        ' The old control was found earlier, so this is the new selection.
+        '
+        IF CtFocus%(child%) > 0 THEN
+          new% = child%
+        END IF
+
+      ELSEIF child% = old% THEN
+        '
+        ' This is the old control.
+        '
+        found% = True
+     
+      ELSE
+        '
+        ' New control not found, old control not found
+        '
+        CtUnfocus child%
+
+      END IF
+
+    END IF
+    
+  NEXT
+
+  IF new% = 0 THEN
+    '
+    ' A new one was not found, so wrap to the first focusable one
+    '
+    new% = first%
+  END IF
+
+  IF new% <> old% THEN
+  
+    IF old% > 0 THEN
+      CtUnfocus old%
+    END IF
+
+    IF new% > 0 THEN
+      DIM r%: r% = CtFocus%(new%)
+    END IF
+
+    ObSet ObSchema.Control, ctid%, CtIndex.Focused, new%
+
+  END IF
+
+  CtFocusNext% = new%
+
 END FUNCTION
 
 FUNCTION CtGetScreenX% (ctid%)
 
   DIM offsetx%
-  LET offsetx% = CtGet%(ctid%, CtIndex.OffsetX)
+  LET offsetx% = ObGet%(ObSchema.Control, ctid%, CtIndex.OffsetX)
 
   DIM parent%
-  LET parent% = CtGet%(ctid%, CtIndex.Parent)
+  LET parent% = ObGet%(ObSchema.Control, ctid%, CtIndex.Parent)
 
   IF parent% > 0 THEN
     IF ObGet%(0, parent%, ObIndex.Schema) = ObSchema.Control THEN
@@ -2031,10 +2144,10 @@ END FUNCTION
 FUNCTION CtGetScreenY% (ctid%)
 
   DIM offsety%
-  LET offsety% = CtGet%(ctid%, CtIndex.OffsetY)
+  LET offsety% = ObGet%(ObSchema.Control, ctid%, CtIndex.OffsetY)
  
   DIM parent%
-  LET parent% = CtGet%(ctid%, CtIndex.Parent)
+  LET parent% = ObGet%(ObSchema.Control, ctid%, CtIndex.Parent)
 
   IF parent% > 0 THEN
     IF ObGet%(0, parent%, ObIndex.Schema) = ObSchema.Control THEN
@@ -2047,51 +2160,39 @@ FUNCTION CtGetScreenY% (ctid%)
 
 END FUNCTION
 
-FUNCTION CtGetStyle% (ctid%)
-
-  AssertIsPositive ctid%, "CtGetStyle%", "ctid%"
-
-  DIM stid%
-  LET stid% = CtGet%(ctid%, CtIndex.Style)
- 
-  IF stid% = 0 THEN
-    '
-    ' Inherit from the parent control
-    '
-    DIM parent%
-    LET parent% = CtGet%(ctid%, CtIndex.Parent)
-
-    IF parent% > 0 THEN
-      IF ObGet%(0, parent%, ObIndex.Schema) = ObSchema.Control THEN
-        stid% = CtGetStyle%(parent%)
-      END IF
-    END IF
-
-  END IF
-
-  CtGetStyle% = stid%
-  
-END FUNCTION
-
-FUNCTION CtIs% (ctid%)
-  CtIs% = ObIs%(ObSchema.Control, ctid%)
-END FUNCTION
-
-SUB CtKey (ctid%, keypress$)
+FUNCTION CtKey% (ctid%, keypress$)
   '
-  ' Sends a keystroke to a field
+  ' The CtKey function sends a keystroke to a control
   '
  
-  SELECT CASE CtGet%(ctid%, CtIndex.Kind)
-  
+  DbPositive ctid%, "CtKey%", "ctid%"
+  DbPositive LEN(keypress$), "CtKey%", "len(keypress$)"
+ 
+  DIM kind%
+  LET kind% = ObGet%(ObSchema.Control, ctid%, CtIndex.Kind)
+    '
+    ' Gets the kind of control, e.g., button, lable, nebula, etc.
+    '
+
+  SELECT CASE kind%
+ 
     CASE CtKind.Boolean
-      CtKeyBoolean ctid%, keypress$
+      CtKey% = CtKeyBoolean%(ctid%, keypress$)
+
+    CASE CtKind.Button
+      CtKey% = CtKeyButton%(ctid%, keypress$)
+
+    CASE CtKind.Container
+      CtKey% = CtKeyContainer%(ctid%, keypress$)
+
+    CASE CtKind.Popup
+      CtKey% = CtKeyPopup%(ctid%, keypress$)
 
   END SELECT
 
-END SUB
+END FUNCTION
 
-SUB CtKeyBoolean (ctid%, keypress$)
+FUNCTION CtKeyBoolean% (ctid%, keypress$)
   '
   ' Sends a keystroke to a boolean field.
   '
@@ -2100,151 +2201,279 @@ SUB CtKeyBoolean (ctid%, keypress$)
   STATIC rsid.n%
   IF rsid.y% = 0 THEN rsid.y% = RsCreate%("Yes")
   IF rsid.n% = 0 THEN rsid.n% = RsCreate%("No")
-  AssertIsPositive rsid.y%, "CtKeyBoolean", "rsid.y%"
-  AssertIsPositive rsid.n%, "CtKeyBoolean", "rsid.n%"
+  DbPositive rsid.y%, "CtKeyBoolean%", "rsid.y%"
+  DbPositive rsid.n%, "CtKeyBoolean%", "rsid.n%"
 
-  DIM boolean%
-  LET boolean% = CtGet%(ctid%, CtIndex.Value)
-  Assert boolean% = True OR boolean% = False, "CtKeyBoolean", "boolean%"
+  DIM old%
+  LET old% = ObGet%(ObSchema.Control, ctid%, CtIndex.Value)
+
+  DIM new%
+  LET new% = old%
+
+  DIM action%
 
   SELECT CASE keypress$
 
     CASE " "
-      boolean% = NOT boolean%
+      new% = NOT new%
+      action% = CtAction.Handled
 
     CASE "n", "N"
-      boolean% = False
+      new% = False
+      action% = CtAction.Handled
 
     CASE "y", "Y"
-      boolean% = True
+      new% = True
+      action% = CtAction.Handled
 
   END SELECT
 
-  CtSet ctid%, CtIndex.Value, boolean%
-  IF boolean% THEN
-    CtSet ctid%, CtIndex.Text, rsid.y%
-  ELSE
-    CtSet ctid%, CtIndex.Text, rsid.n%
+  IF new% <> old% THEN
+    
+    ObSet ObSchema.Control, ctid%, CtIndex.Value, new%
+    IF new% THEN
+      ObSet ObSchema.Control, ctid%, CtIndex.Text, rsid.y%
+    ELSE
+      ObSet ObSchema.Control, ctid%, CtIndex.Text, rsid.n%
+    END IF
+
   END IF
 
-END SUB
+  CtKeyBoolean% = action%
 
-FUNCTION CtMap% (name$)
+END FUNCTION
 
-  SELECT CASE name$
+FUNCTION CtKeyButton% (ctid%, keypress$)
+
+  IF keypress$ <> KeyEnter$ THEN
+    '
+    ' A button only recognizes Enter keys
+    '
+    EXIT FUNCTION
+  END IF
+
+  '
+  ' Get the resoure ID of the command associated with the button.
+  '
+  DIM rsid%: rsid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Command)
  
-    CASE "ChildList"
-      CtMap% = CtIndex.ChildList
+  '
+  ' Return an action to execute the command specified by the resource ID.
+  '
+  CtKeyButton% = CtAction%(CtAction.Command, rsid%)
 
-    CASE "Command"
-      CtMap% = CtIndex.Command
+END FUNCTION
 
-    CASE "Kind"
-      CtMap% = CtIndex.Kind
+FUNCTION CtKeyContainer% (ctid%, keypress$)
 
-    CASE "Name"
-      CtMap% = CtIndex.Name
+  DbPositive ctid%, "CtKeyContainer%", "ctid%"
+ 
+  '
+  ' Get the control with focus, either a child control or this container
+  '
+  DIM focused%: focused% = ObGet%(ObSchema.Control, ctid%, CtIndex.Focused)
+ 
+  DIM action%
+  IF focused% > 0 AND focused% <> ctid% THEN
+    '
+    ' If a child control has focus, send the key to that control
+    '
+    action% = CtKey%(focused%, keypress$)
+    IF action% THEN
+      CtKeyContainer% = action%
+      EXIT FUNCTION
+    END IF
+  END IF
 
-    CASE "OffsetX"
-      CtMap% = CtIndex.OffsetX
+  '
+  ' The child control did not handle the key. See if this container can.
+  '
+  action% = CtAction.Handled
+  SELECT CASE keypress$
+ 
+    CASE KeyBackspace$
+      focused% = CtFocusBack%(ctid%)
 
-    CASE "OffsetY"
-      CtMap% = CtIndex.OffsetY
+    CASE KeyDown$
+      focused% = CtFocusNext%(ctid%)
 
-    CASE "Parent"
-      CtMap% = CtIndex.Parent
+    CASE KeyEnd$
+      focused% = CtFocusLast%(ctid%)
 
-    CASE "Popup"
-      CtMap% = CtIndex.Popup
+    CASE KeyHome$
+      focused% = CtFocusFirst%(ctid%)
 
-    CASE "Schema"
-      CtMap% = CtIndex.Schema
+    CASE KeyLeft$
+      focused% = CtFocusBack%(ctid%)
 
-    CASE "Selected"
-      CtMap% = CtIndex.Selected
+    CASE KeyPageDown$
+      focused% = CtFocusLast%(ctid%)
 
-    CASE "SizeX"
-      CtMap% = CtIndex.SizeX
+    CASE KeyPageUp$
+      focused% = CtFocusFirst%(ctid%)
 
-    CASE "SizeY"
-      CtMap% = CtIndex.SizeY
+    CASE KeyRight$
+      focused% = CtFocusNext%(ctid%)
 
-    CASE "Style"
-      CtMap% = CtIndex.Style
+    CASE KeySpace$
+      focused% = CtFocusNext%(ctid%)
 
-    CASE "Text"
-      CtMap% = CtIndex.Text
+    CASE KeyTab$
+      focused% = CtFocusNext%(ctid%)
 
-    CASE "Value"
-      CtMap% = CtIndex.Value
-
-    CASE "Window"
-      CtMap% = CtIndex.Window
+    CASE KeyUp$
+      focused% = CtFocusBack%(ctid%)
 
     CASE ELSE
-      CtMap% = ObIndex.Invalid
+      '
+      ' The key is not recognized by the container either.
+      '
+      action% = CtAction.None
+
+  END SELECT
+
+  CtKeyContainer% = action%
+
+END FUNCTION
+
+FUNCTION CtKeyPopup% (ctid%, keypress$)
+
+  DbPositive ctid%, "CtKeyPopup%", "ctid%"
+
+  SELECT CASE keypress$
+ 
+    CASE KeyDown$, KeyEnter$
+      DIM value%: value% = ObGet%(ObSchema.Control, ctid%, CtIndex.Value)
+      IF value% > 0 THEN
+        CtKeyPopup% = CtAction%(CtAction.Window, value%)
+      END IF
 
   END SELECT
 
 END FUNCTION
 
-FUNCTION CtRedirected% (ctid%, pid%)
-  CtRedirected% = gobj(ctid%, pid%).flags = ObBinding.Focused
-END FUNCTION
+SUB CtUnfocus (ctid%)
 
-FUNCTION CtSelectable% (ctid%)
-  '
-  ' Returns True or False depending on whether the specified
-  ' field is selectable (i.e., can receive focus for input or
-  ' selection).
-  '
-  IF (ctid% < 0) OR (ctid% > UBOUND(gobj, 1)) THEN
+  DIM child%
+  DIM n%
 
-    CtSelectable% = False
- 
-  ELSE
+  ObSet ObSchema.Control, ctid%, CtIndex.Focused, 0
 
-    SELECT CASE CtGet%(ctid%, CtIndex.Kind)
-      CASE CtKind.Button
-        CtSelectable% = True
+  FOR n% = 1 TO vwPerParent(ctid%, 0)
+    child% = vwPerParent(ctid%, n%)
+    IF CtCanFocus%(child%) THEN
+      CtUnfocus child%
+    END IF
+  NEXT
 
-      CASE CtKind.Boolean
-        CtSelectable% = True
-
-      CASE CtKind.Popup
-        CtSelectable% = True
-
-      CASE ELSE
-        CtSelectable% = False
-
-    END SELECT
-
-  END IF
-
-END FUNCTION
-
-SUB CtSet (ctid%, ctix%, value%)
-  ObSet ObSchema.Control, ctid%, ctix%, value%
 END SUB
 
-FUNCTION CtUnfocus% (ctid%)
+SUB DbAssert (truth AS INTEGER, where AS STRING, what AS STRING)
 
-  DIM unfocused%
-  LET unfocused% = CtGet%(cnid%, CtIndex.Selected)
-
-  IF unfocused% = ctid% THEN
-
-    CtSet ctid%, CtIndex.Selected, 0
- 
-  ELSEIF unfocused% > 0 THEN
-
-    unfocused% = CtUnfocus%(unfocused%)
+  IF NOT truth THEN
    
+    DIM message$
+    LET message$ = where + ": " + what
+
+    VdPush 0, 0
+    ShPrint "@X4F" + message$ + "@X07"
+    IF GetKey$ <> KeyEscape$ THEN
+      STOP
+    END IF
+    VdPop
+
   END IF
 
-  CtUnfocus% = unfocused%
+END SUB
+
+SUB DbBeginsWith (text$, prefix$, where$, what$)
+  IF LEFT$(text$, LEN(prefix$)) <> prefix$ THEN
+    DbFail where$, what$ + " must begin with " + prefix$
+  END IF
+END SUB
+
+SUB DbEquals (expected%, actual%, where$, what$)
+
+  IF expected% <> actual% THEN
+ 
+    DIM msg$
+    msg$ = what$ + " expected:" + STR$(expected%) + " actually:" + STR$(actual%)
+
+    DbFail where$, msg$
+
+  END IF
+
+END SUB
+
+SUB DbFail (where$, what$)
+  DbAssert 0, where$, what$
+END SUB
+
+'
+' Asserts whether the value is positive.
+'
+SUB DbPositive (value%, where$, what$)
+ 
+  IF value% <= 0 THEN
+    DIM msg$: msg$ = what$ + " must be > 0 but value =" + STR$(value%)
+    DbFail where$, msg$
+  END IF
+
+END SUB
+
+SUB DbSet (schema%, obid%, obix%, value%)
+
+  DIM text$
+  LET text$ = ObSchemaLabel$(schema%)
+
+  '
+  ' obid
+  '
+  DIM h$: h$ = HEX$(obid%)
+  SELECT CASE LEN(h$)
+    CASE 1:
+      text$ = text$ + ":000" + h$
+    CASE 2:
+      text$ = text$ + ":00" + h$
+    CASE 3:
+      text$ = text$ + ":0" + h$
+  END SELECT
+
+  '
+  ' obix
+  '
+  h$ = HEX$(obix%)
+  SELECT CASE LEN(h$)
+    CASE 1:
+      text$ = text$ + "[0" + h$ + "]="
+    CASE 2:
+      text$ = text$ + "[" + h$ + "]="
+  END SELECT
+
+  '
+  ' value
+  '
+  IF obix% = ObIndex.Schema THEN
+   
+    text$ = text$ + ObSchemaLabel$(value%)
   
-END FUNCTION
+  ELSE
+    h$ = HEX$(value%)
+    SELECT CASE LEN(h$)
+      CASE 1:
+        text$ = text$ + "0" + h$
+      CASE 2:
+        text$ = text$ + h$
+    END SELECT
+  END IF
+
+  ShPrint "@X08" + text$ + "@X07"
+
+END SUB
+
+SUB DbZero (value%, where$, what$)
+  DbAssert value% = 0, where$, what$ + " must be 0 but value =" + STR$(value%)
+END SUB
 
 FUNCTION DgGarble$ (text$, percent!)
 
@@ -2256,21 +2485,21 @@ FUNCTION DgGarble$ (text$, percent!)
   DIM c AS STRING * 1
   DIM g AS STRING
   DIM i AS INTEGER
-  DIM s AS INTEGER
+  DIM S AS INTEGER
 
   FOR i = 1 TO LEN(text$)
 
     c = MID$(text$, i, 1)
 
-    SELECT CASE s
+    SELECT CASE S
       CASE InSpaces
         IF c <> " " THEN
           IF RND <= percent! THEN
             g = g + "@X08" + CHR$(GarbleCode)
-            s = InGarble
+            S = InGarble
           ELSE
             g = g + c
-            s = InWord
+            S = InWord
           END IF
         ELSE
           g = g + " "
@@ -2278,14 +2507,14 @@ FUNCTION DgGarble$ (text$, percent!)
       CASE InWord
         IF c = " " THEN
           g = g + " "
-          s = InSpaces
+          S = InSpaces
         ELSE
           g = g + c
         END IF
       CASE InGarble
         IF c = " " THEN
           g = g + "@X07 "
-          s = InSpaces
+          S = InSpaces
         ELSE
           g = g + CHR$(GarbleCode)
         END IF
@@ -2303,7 +2532,6 @@ SUB DgNext (outprid%, outtext$)
   STATIC lines() AS STRING
 
   IF loaded = 0 THEN
-
     REDIM lines(1 TO 100) AS STRING
     handle = FREEFILE
     OPEN "EMPIRE.DLG" FOR INPUT ACCESS READ AS #handle
@@ -2315,23 +2543,28 @@ SUB DgNext (outprid%, outtext$)
   END IF
  
   outtext$ = lines(INT(RND * UBOUND(lines)) + 1)
-  outprid% = PrRandomly%
+
+  '
+  ' Select a random person
+  '
+  DIM n%: n% = INT(RND * vwPerSchema(ObSchema.Person, 0)) + 1
+  outprid% = vwPerSchema(ObSchema.Person, n%)
 
 END SUB
 
 SUB DgPrint (prid%, text$)
 
   DIM name$
-  LET name$ = RsGet$(PrGet%(prid%, PrIndex.Name))
+  LET name$ = RsGet$(ObGet%(ObSchema.Person, prid%, PrIndex.Name))
  
   DIM label$
-  LET label$ = RsGet$(PrGet%(prid%, PrIndex.Label))
+  LET label$ = RsGet$(ObGet%(ObSchema.Person, prid%, PrIndex.Label))
   IF label$ = "" THEN
     label$ = "@X1F " + name$ + " @X07"
   END IF
 
   IF LEFT$(text$, 1) = "(" THEN
-
+    ' *** fails when text too long
     ShPrint STRING$((80 - DrawLength(text$)) / 2, " ") + "@X04" + text$ + "@X07"
     ShPrint ""
 
@@ -2370,24 +2603,24 @@ END SUB
 
 SUB DgStart (hbid%)
  
-  IF hbid% <> listening THEN
+  IF hbid% <> dg.listening THEN
    
-    listening = 0
+    dg.listening = 0
 
     DIM startfile$
-    LET startfile$ = RsGet$(HbGet%(hbid%, HbIndex.StartFile))
+    LET startfile$ = RsGet$(ObGet%(ObSchema.Habitat, hbid%, HbIndex.StartFile))
     IF LEN(startfile$) > 0 THEN
       ShFile startfile$
     END IF
 
-    listening = hbid%
+    dg.listening = hbid%
 
   END IF
 
 END SUB
 
 SUB DgStop
-  listening = 0
+  dg.listening = 0
 END SUB
 
 SUB DgTimer
@@ -2451,16 +2684,16 @@ SUB DrawFile (filename$)
   '
   ' Draws a PCB file containing embedded color codes
   '
+  DbPositive LEN(filename$), "DrawFile", "LEN(filename$)"
 
   DIM text$
-  DIM handle%
  
-  handle% = FREEFILE
+  DIM handle%: handle% = FREEFILE
   OPEN filename$ FOR INPUT ACCESS READ AS #handle%
 
   DO WHILE NOT EOF(handle%)
     LINE INPUT #handle%, text$
-    DrawText text$ + CHR$(ASCII.Return)
+    DrawText text$ + KeyEnter$
   LOOP
 
   CLOSE #handle%
@@ -2610,32 +2843,25 @@ SUB DrawText (text$)
 
 END SUB
 
-FUNCTION EvCreate%
-  EvCreate% = ObCreate%(ObSchema.Event, 0) ' *** allow parents
-END FUNCTION
-
-FUNCTION EvFind% (name$)
-  EvFind% = ObFindString%(ObSchema.Event, EvIndex.Name, name$)
-END FUNCTION
-
 SUB EvFire (evid%)
 
   DIM n%
-  FOR n% = 1 TO per.schema(ObSchema.Trigger, 0)
+  FOR n% = 1 TO vwPerSchema(ObSchema.Trigger, 0)
    
-    DIM trid%: trid% = per.schema(ObSchema.Trigger, n%)
+    DIM trid%: trid% = vwPerSchema(ObSchema.Trigger, n%)
 
     '
     ' Match the event
     '
-    IF TrGet%(trid%, TrIndex.Event) = evid% THEN
+    IF ObGet%(ObSchema.Trigger, trid%, TrIndex.Event) = evid% THEN
     
       '
       ' Match the value
       '
-      IF TrGet%(trid%, TrIndex.Equals) = EvGet%(evid%, EvIndex.Value) THEN
-        DIM rsid%: rsid% = TrGet%(trid%, TrIndex.Command)
-        DIM result%: result% = ExecResource(rsid%)
+      DIM equals%: equals% = ObGet%(ObSchema.Trigger, trid%, TrIndex.Equals)
+      IF equals% = ObGet%(ObSchema.Event, evid%, EvIndex.Value) THEN
+        DIM rsid%: rsid% = ObGet%(ObSchema.Trigger, trid%, TrIndex.Command)
+        DIM result%: result% = ExRunResource(rsid%)
       END IF
 
     END IF
@@ -2644,13 +2870,9 @@ SUB EvFire (evid%)
  
 END SUB
 
-FUNCTION EvGet% (evid%, evix%)
-  EvGet% = ObGet%(ObSchema.Event, evid%, evix%)
-END FUNCTION
-
 SUB EvInc (name$)
  
-  DIM evid%: evid% = EvFind%(name$)
+  DIM evid%: evid% = ObFind%(ObSchema.Event, name$)
   IF evid% > 0 THEN
     ObInc ObSchema.Event, evid%, EvIndex.Value
     EvFire evid%
@@ -2658,537 +2880,722 @@ SUB EvInc (name$)
 
 END SUB
 
-FUNCTION EvMap% (name$)
+FUNCTION ExCmdListen% (token$(), count%)
 
-  SELECT CASE name$
-
-    CASE "Name"
-      EvMap% = EvIndex.Name
-
-    CASE "Parent"
-      EvMap% = EvIndex.Parent
-
-    CASE "Schema"
-      EvMap% = EvIndex.Schema
-
-    CASE "Value"
-      EvMap% = EvIndex.Value
-
-    CASE ELSE
-      EvMap% = ObIndex.Invalid
-
-  END SELECT
+  DIM hbid%: hbid% = VAL(token$(1))
+  IF hbid% = 0 THEN
+    DgStop
+  ELSE
+    UI.SetPage UIPage.Terminal
+    DgStart hbid%
+  END IF
 
 END FUNCTION
 
-SUB EvSet (evid%, evix%, value%)
-  ObSet ObSchema.Event, evid%, evix%, value%
-END SUB
-
-FUNCTION ExecCmd% (cmd$)
-
-  SHARED ctid%
-  SHARED evid%
-  SHARED hbid%
-  SHARED prid%
-  SHARED stid%
-  SHARED trid%
-  SHARED wnid%
-
-  'ShPrint cmd$
-  DIM result%
+FUNCTION ExCmdMail% (tokens$(), count%)
  
   '
-  ' Parse the command into tokens
+  ' Get the container that holds messages
   '
-  DIM stoken$(0 TO 5)
-  DIM ntoken%
-  LET ntoken% = Split(cmd$, stoken$())
-  IF ntoken% = 0 THEN
-    ExecCmd% = CmdResult.OK
+  DIM msgs%: msgs% = ObFind%(ObSchema.Control, "Messages")
+  IF msgs% = 0 THEN
+    DbPositive msgs%, "ExCmdMail%", "msgs%"
     EXIT FUNCTION
-  ELSE
-    '
-    ' Token #0 is the command name
-    '
-    stoken$(0) = LCASE$(stoken$(0))
   END IF
 
-  IF ctid% > 0 THEN
-    result% = ExecCmdCtid%(ntoken%, stoken$(), ctid%)
-  ELSEIF wnid% > 0 THEN
-    result% = ExecCmdWnid%(ntoken%, stoken$(), wnid%, ctid%)
-  ELSEIF evid% > 0 THEN
-    result% = ExecCmdEvid%(ntoken%, stoken$(), evid%)
-  ELSEIF hbid% > 0 THEN
-    result% = ExecCmdHbid%(ntoken%, stoken$(), hbid%)
-  ELSEIF prid% > 0 THEN
-    result% = ExecCmdPrid%(ntoken%, stoken$(), prid%)
-  ELSEIF stid% > 0 THEN
-    result% = ExecCmdStid%(ntoken%, stoken$(), stid%)
-  ELSEIF trid% > 0 THEN
-    result% = ExecCmdTrid%(ntoken%, stoken$(), trid%)
-  ELSE
-    result% = ExecCmdRoot%(ntoken%, stoken$(), evid%, hbid%, prid%, stid%, trid%, wnid%)
-  END IF
+  DIM countmail%: countmail% = vwPerParent(msgs%, 0)
 
-  Assert result% = CmdResult.OK, "ExecCmd", "Malformed: " + cmd$
+  '
+  ' Create a button for the message
+  '
+  DIM ctid%: ctid% = ObCreate%(ObSchema.Control, msgs%)
+  ObSet ObSchema.Control, ctid%, CtIndex.Kind, CtKind.Button
+  ObSet ObSchema.Control, ctid%, CtIndex.Command, 0
+  ObSet ObSchema.Control, ctid%, CtIndex.OffsetX, 0
+  ObSet ObSchema.Control, ctid%, CtIndex.OffsetY, countmail%
+  ObSet ObSchema.Control, ctid%, CtIndex.SizeX, 20
+  ObSet ObSchema.Control, ctid%, CtIndex.SizeY, 1
+  ObSet ObSchema.Control, ctid%, CtIndex.Text, RsCreate%(" " + tokens$(1))
+  ObSet ObSchema.Control, ctid%, CtIndex.Value, RsCreate%(tokens$(2))
 
-  ExecCmd% = result%
+  DIM f%: f% = CtFocusLast(msgs%)
 
-END FUNCTION
-
-FUNCTION ExecCmdCtid% (ntoken%, stoken$(), ctid%)
-
-  AssertIsPositive ctid%, "ExecCmdCtid%", "ctid%"
-
-  DIM endtag AS STRING
-  DIM kind%
-  LET kind% = CtGet%(ctid%, CtIndex.Kind)
-
-  SELECT CASE kind%
-    CASE CtKind.Button
-      endtag = "endbutton"
-    CASE CtKind.Box
-      endtag = "endbox"
-    CASE CtKind.File
-      endtag = "endfile"
-    CASE CtKind.Label
-      endtag = "endlabel"
-    CASE CtKind.Popup
-      endtag = "endpopup"
-    CASE CtKind.Separator
-      endtag = "endseparator"
-    CASE CtKind.Boolean
-      endtag = "endboolean"
-    CASE CtKind.Nebula
-      endtag = "endnebula"
-    CASE ELSE
-      AssertFail "ExecCmdCtid", "Unknown kind:" + STR$(kind%)
-  END SELECT
-
-  ExecCmdCtid% = CmdResult.OK
-
-  SELECT CASE stoken$(0)
-    
-    CASE endtag
-      ctid% = 0
-
-    CASE ".command"
-      CtSet ctid%, CtIndex.Command, RsCreate%(stoken$(1))
-
-    CASE ".offsetx"
-      CtSet ctid%, CtIndex.OffsetX, VAL(stoken$(1))
-
-    CASE ".offsety"
-      CtSet ctid%, CtIndex.OffsetY, VAL(stoken$(1))
-
-    CASE ".popup", ".child"
-      CtSet ctid%, CtIndex.Popup, WnFind%(stoken$(1))
-   
-    CASE ".sizex"
-      CtSet ctid%, CtIndex.SizeX, VAL(stoken$(1))
-      
-    CASE ".sizey"
-      CtSet ctid%, CtIndex.SizeY, VAL(stoken$(1))
-
-    CASE ".style"
-      CtSet ctid%, CtIndex.Style, StFind%(stoken$(1))
-
-    CASE ".text"
-      IF LCASE$(stoken$(1)) = "bind" THEN
-        ObBind ctid%, CtIndex.Text, stoken$(2)
-      ELSE
-        CtSet ctid%, CtIndex.Text, RsCreate%(stoken$(1))
-      END IF
-
-    CASE ".value"
-      IF LCASE$(stoken$(1)) = "bind" THEN
-        ObBind ctid%, CtIndex.Value, stoken$(2)
-      ELSE
-        CtSet ctid%, CtIndex.Value, RsCreate%(stoken$(1))
-      END IF
-
-    CASE ELSE
-      ExecCmdCtid% = CmdResult.Malformed
-
-  END SELECT
+  AtlasSetStatus "Mail arrived"
+  ShFile "NEWMAIL.PCB"
+  ExCmdMail% = True
 
 END FUNCTION
 
-FUNCTION ExecCmdEvid% (ntoken%, stoken$(), evid%)
-
-  AssertIsPositive evid%, "ExecCmdEvid%", "evid%"
-
-  ExecCmdEvid% = CmdResult.OK
-
-  SELECT CASE stoken$(0)
-   
-    CASE "endevent"
-      evid% = 0
-
-    CASE ".name"
-      EvSet evid%, EvIndex.Name, RsCreate%(stoken$(1))
-
-    CASE ".value"
-      EvSet evid%, EvIndex.Value, VAL(stoken$(1))
-
-    CASE ELSE
-      ExecCmdEvid% = CmdResult.Malformed
-
-  END SELECT
-
-END FUNCTION
-
-FUNCTION ExecCmdHbid% (ntoken%, stoken$(), hbid%)
-
-  AssertIsPositive hbid%, "ExecCmdHbid%", "hbid%"
-
-  ExecCmdHbid% = CmdResult.OK
-
-  SELECT CASE stoken$(0)
-
-    CASE ".backdrop"
-      HbSet hbid%, HbIndex.Backdrop, RsCreate%(stoken$(1))
-
-    CASE "endhabitat"
-      hbid% = 0
-
-    CASE ".label"
-      HbSet hbid%, HbIndex.Label, RsCreate%(stoken$(1))
-
-    CASE ".startfile"
-      HbSet hbid%, HbIndex.StartFile, RsCreate%(stoken$(1))
-
-    CASE ".name"
-      HbSet hbid%, HbIndex.Name, RsCreate%(stoken$(1))
-
-    CASE ".window"
-      HbSet hbid%, HbIndex.Window, WnFind%(stoken$(1))
-
-    CASE ELSE
-      ExecCmdHbid = CmdResult.Malformed
-
-  END SELECT
-
-END FUNCTION
-
-FUNCTION ExecCmdPrid% (ntoken%, stoken$(), prid%)
-
-  AssertIsPositive prid%, "ExecCmdPrid%", "prid%"
-
-  SELECT CASE stoken$(0)
-   
-    CASE "endperson"
-      prid% = 0
-
-    CASE ".label"
-      PrSet prid%, PrIndex.Label, RsCreate%(stoken$(1))
-
-    CASE ".name"
-      PrSet prid%, PrIndex.Name, RsCreate%(stoken$(1))
-
-  END SELECT
-  
-END FUNCTION
-
-FUNCTION ExecCmdRoot% (ntoken%, stoken$(), evid%, hbid%, prid%, stid%, trid%, wnid%)
-
-  AssertIsZero evid%, "ExecCmdRoot%", "evid%"
-  AssertIsZero hbid%, "ExecCmdRoot%", "hbid%"
-  AssertIsZero prid%, "ExecCmdRoot%", "prid%"
-  AssertIsZero stid%, "ExecCmdRoot%", "stid%"
-  AssertIsZero trid%, "ExecCmdRoot%", "trid%"
-  AssertIsZero wnid%, "ExecCmdRoot%", "wnid%"
-
-  ExecCmdRoot% = CmdResult.OK
-
-  SELECT CASE stoken$(0)
-
-    CASE "atlas"
-      UI.SetPage UIPage.Atlas
+FUNCTION ExCmdReplot% (tokens$(), count%)
+  '
+  ' Replot <band | cluster | manual | random>
+  '
+  'UI.SetPage UIPage.Atlas
  
-    CASE "chain"
-      CHAIN stoken$(1)
-
-    CASE "cls"
-      ShClear
-
-    CASE "terminal", "console"
-      UI.SetPage UIPage.Terminal
-
-    CASE "endgame"
-      END
-
-    CASE "event"
-      evid% = EvCreate%
-
-    CASE "habitat"
-      hbid% = HbCreate%
-
-    CASE "listen"
-      DIM listenhbid%
-      LET listenhbid% = VAL(stoken$(1))
-      IF listenhbid% = 0 THEN
-        DgStop
-      ELSE
-        UI.SetPage UIPage.Terminal
-        DgStart listenhbid%
-      END IF
-
-    CASE "mail"
-      InboxAdd stoken$(1), stoken$(2)
+  SELECT CASE LCASE$(tokens$(1))
    
-    CASE "newgame"
-      ExecFile "WORLD.CFG"
+    CASE "b", "band", "banded"
+      AtlasPlotBanded
+      ExCmdReplot% = True
 
-    CASE "person"
-      prid% = PrCreate%
+    CASE "c", "cluster", "clustered"
+      AtlasPlotClustered
+      ExCmdReplot% = True
 
-    CASE "print"
-      ShPrint stoken$(1)
+    CASE "m", "manual"
+      AtlasPlotManual
+      ExCmdReplot% = True
 
-    CASE "printfile"
-      ShFile stoken$(1)
-
-    CASE "replot"
-      '
-      ' Replot <band | cluster | manual | random>
-      '
-      UI.SetPage UIPage.Atlas
-      SELECT CASE LCASE$(stoken$(1))
-        CASE "b", "band"
-          AtlasPlotBanded
-        CASE "c", "cluster"
-          AtlasPlotClustered
-        CASE "m", "manual"
-          AtlasPlotManual
-        CASE "r", "random"
-          AtlasPlotRandom
-        CASE ELSE
-          ExecCmdRoot% = CmdResult.Malformed
-      END SELECT
-   
-    CASE "run"
-      ExecFile stoken$(1)
-   
-    CASE "spawn"
-      ' *** refactor out
-      DIM aid%
-      DIM shbid%
-      shbid% = HbFind%(stoken$(1))
-      IF shbid% > 0 THEN
-        SELECT CASE LCASE$(stoken$(2))
-         
-          CASE "at"
-            aid% = WorldAdd%(shbid%, VAL(stoken$(3)), VAL(stoken$(4)))
-         
-          CASE "b", "band", "banded"
-            WorldAddBanded shbid%, VAL(stoken$(3))
-         
-          CASE "c", "cluster", "clustered"
-            WorldAddCluster shbid%, VAL(stoken$(3))
-         
-          CASE "p", "player"
-            DIM pcx%: pcx% = VAL(stoken$(3)): IF pcx% = 0 THEN pcx% = 1
-            DIM pcy%: pcx% = VAL(stoken$(4)): IF pcy% = 0 THEN pcy% = 1
-            IF playeraid = 0 THEN
-              playeraid = WorldAdd%(shbid%, pcx%, pcy%)
-            ELSE
-              AtlasMoveItem AtlasIndexOf%(playeraid), pcx%, pcy%
-            END IF
-
-          CASE "r", "random"
-            WorldAddRandom shbid%, VAL(stoken$(3))
-        END SELECT
-      END IF
-
-    CASE "style"
-      stid% = StCreate%
-
-    CASE "trigger"
-      trid% = TrCreate%
-
-    CASE "window"
-      wnid% = WnCreate%
-
-    CASE "winrun"
-      WnRunName stoken$(1)
-
-    CASE ELSE
-      ExecCmdRoot% = CmdResult.Malformed
+    CASE "r", "random"
+      AtlasPlotRandom
+      ExCmdReplot% = True
 
   END SELECT
 
 END FUNCTION
 
-FUNCTION ExecCmdStid% (ntoken%, stoken$(), stid%)
+FUNCTION ExCmdSpawn% (tokens$(), count%)
+  '
+  ' Spawn <habitat> at <x>, <y>
+  ' Spawn <habitat> band <n>
+  ' Spawn <habitat> cluster <n>
+  ' Spawn <habitat> random <n>
+  ' Spawn <habitat> player <x>, <y>
+  '
 
-  AssertIsPositive stid%, "ExecCmdStid%", "stid%"
+  IF count% < 3 THEN
+    EXIT FUNCTION
+  END IF
 
-  ExecuteCommandStid% = CmdResult.OK
+  DIM hbid%: hbid% = ObFind%(ObSchema.Habitat, tokens$(1))
+  IF hbid% = 0 THEN
+    EXIT FUNCTION
+  END IF
 
-  SELECT CASE stoken$(0)
-   
-    CASE ".bordercolor"
-      StSet stid%, StIndex.BorderColor, VAL(stoken$(1))
-
-    CASE ".bordertype"
-      StSet stid%, StIndex.BorderType, VAL(stoken$(1))
-
-    CASE "endstyle"
-      stid% = 0
-
-    CASE ".name"
-      StSet stid%, StIndex.Name, RsCreate%(stoken$(1))
-  
-    CASE ".selectedcolor"
-      StSet stid%, StIndex.SelectedColor, VAL(stoken$(1))
-
-    CASE ".textcolor"
-      StSet stid%, StIndex.TextColor, VAL(stoken$(1))
-
-    CASE ELSE
-      ExecuteCommandStid% = CmdResult.Malformed
-
-  END SELECT
-  
-END FUNCTION
-
-FUNCTION ExecCmdTrid% (ntoken%, stoken$(), trid%)
-
-  AssertIsPositive trid%, "ExecCmdTrid%", "trid%"
-
-  SELECT CASE LCASE$(stoken$(0))
-
-    CASE "endtrigger"
-      trid% = 0
-
-    CASE ".event"
-      TrSet trid%, TrIndex.Event, EvFind%(stoken$(1))
-
-    CASE ".equals"
-      TrSet trid%, TrIndex.Equals, VAL(stoken$(1))
-
-    CASE ".command"
-      TrSet trid%, TrIndex.Command, RsCreate%(stoken$(1))
-
-    CASE ELSE
-      ExecCmdTrid% = CmdResult.Malformed
-
-  END SELECT
-
-END FUNCTION
-
-FUNCTION ExecCmdWnid% (ntoken%, stoken$(), wnid%, ctid%)
-
-  AssertIsPositive wnid%, "ExecCmdWid%", "wnid%"
-  AssertIsZero ctid%, "ExecCmdWid%", "ctid%"
-
-  ExecuteCommandWnid% = CmdResult.OK
-
-  IF ntoken% = 1 THEN
-
-    SELECT CASE stoken$(0)
+  SELECT CASE LCASE$(tokens$(2))
      
-      CASE "endwindow"
-        wnid% = 0
-        ctid% = 0
+    CASE "at"
+     
+      DIM aid%: aid% = WorldAdd%(hbid%, VAL(tokens$(3)), VAL(tokens$(4)))
+      ExCmdSpawn% = aid% > 0
 
-      CASE "boolean"
-        ctid% = WnAppend%(wnid%, CtKind.Boolean)
+    CASE "b", "band", "banded"
+     
+      WorldAddBanded hbid%, VAL(tokens$(3))
+      ExCmdSpawn% = True
 
-      CASE "box"
-        ctid% = WnAppend%(wnid%, CtKind.Box)
+    CASE "c", "cluster", "clustered"
+     
+      WorldAddCluster hbid%, VAL(tokens$(3))
+      ExCmdSpawn% = True
 
-      CASE "button"
-        ctid% = WnAppend%(wnid%, CtKind.Button)
+    CASE "p", "player"
+     
+      DIM cx%: cx% = VAL(tokens$(3)): IF cx% = 0 THEN cx% = 1
+      DIM cy%: cy% = VAL(tokens$(4)): IF cy% = 0 THEN cy% = 1
+     
+      IF playeraid = 0 THEN
+        playeraid = WorldAdd%(hbid%, cx%, cy%)
+      ELSE
+        AtlasMoveItem AtlasIndexOf%(playeraid), cx%, cy%
+      END IF
+      ExCmdSpawn% = True
+
+    CASE "r", "random"
+      WorldAddRandom hbid%, VAL(tokens$(3))
+      ExCmdSpawn% = True
+
+  END SELECT
+
+END FUNCTION
+
+FUNCTION ExMap% (schema%, propname$)
+  '
+  ' Maps a property name to a property index for the specified schema
+  '
+ 
+  DIM fixed$
+  IF LEFT$(propname$, 1) = "." THEN
+    fixed$ = RIGHT$(propname$, LEN(propname$) - 1)
+  ELSE
+    fixed$ = propname$
+  END IF
+
+  SELECT CASE schema%
    
-      CASE "file"
-        ctid% = WnAppend%(wnid%, CtKind.File)
+    CASE ObSchema.Control
+      ExMap% = ExScan%(CtHeader$(), fixed$)
 
-      CASE "label"
-        ctid% = WnAppend%(wnid%, CtKind.Label)
+    CASE ObSchema.Event
+      ExMap% = ExScan%(EvHeader$(), fixed$)
+
+    CASE ObSchema.Habitat
+      ExMap% = ExScan%(HbHeader$(), fixed$)
+
+    CASE ObSchema.Person
+      ExMap% = ExScan%(PrHeader$(), fixed$)
+
+    CASE ObSchema.Style
+      ExMap% = ExScan%(StHeader$(), fixed$)
+
+    CASE ObSchema.Trigger
+      ExMap% = ExScan%(TrHeader$(), fixed$)
+
+    CASE ObSchema.Window
+      ExMap% = ExScan%(WnHeader$(), fixed$)
    
-      CASE "nebula"
-        ctid% = WnAppend%(wnid%, CtKind.Nebula)
+    CASE ELSE
+      ExMap% = -1
 
-      CASE "popup"
-        ctid% = WnAppend%(wnid%, CtKind.Popup)
+  END SELECT
 
-      CASE "separator"
-        ctid% = WnAppend%(wnid%, CtKind.Separator)
+END FUNCTION
 
-      CASE ELSE
-        ExecuteCommandWnid% = CmdResult.Malformed
+FUNCTION ExParse% (text$, tokens$(), comment%)
+ 
+  CONST StateNone = 0
+  CONST StateToken = 1
+  CONST StateComment = 2
+
+  DIM char   AS STRING * 1
+  DIM count  AS INTEGER
+  DIM index  AS INTEGER
+  DIM lower  AS INTEGER
+  DIM offset AS INTEGER
+  DIM quote  AS STRING
+  DIM state  AS INTEGER
+
+  '
+  ' Calculate how to convert a count (1,2,3...) to an index element.
+  '
+  offset = LBOUND(tokens$) - 1
+
+  FOR index = 1 TO LEN(text$)
+
+    char = MID$(text$, index, 1)
+
+    SELECT CASE state
+      CASE StateNone:
+        '
+        ' No token being parsed
+        '
+        IF char = "," THEN
+          '
+          ' Empty token
+          '
+          count = count + 1
+          tokens$(count + offset) = ""
+
+        ELSEIF char = CHR$(34) THEN
+          '
+          ' Start quoted token (include quote in token)
+          '
+          count = count + 1
+          quote = char
+          tokens$(count + offset) = char
+          state = StateToken
+      
+        ELSEIF char = ";" THEN
+          '
+          ' Start comment
+          '
+          comment% = index
+          state = StateComment
+          EXIT FOR
+
+        ELSEIF char <> " " THEN
+          '
+          ' Start non-quoted token
+          '
+          count = count + 1
+          quote = ""
+          tokens$(count + offset) = char
+          state = StateToken
+        END IF
+
+      CASE StateToken:
+       
+        IF char = " " THEN
+          '
+          ' A space is allowed in a quote, otherwise the token is done.
+          '
+          IF LEN(quote) = 0 THEN
+            state = 0
+          ELSE
+            '
+            ' The token is part of a quote, the space is valid.
+            '
+            tokens$(count + offset) = tokens$(count + offset) + char
+          END IF
+       
+        ELSEIF char = quote THEN
+          '
+          ' This is the end of the quoted token
+          '
+          tokens$(count + offset) = tokens$(count + offset) + char
+          state = 0
+       
+        ELSE
+          '
+          ' If this token started as a number, ensure it is still a number.
+          '
+          tokens$(count + offset) = tokens$(count + offset) + char
+        END IF
 
     END SELECT
 
-    EXIT FUNCTION
-  END IF
+  NEXT
 
-  IF ntoken% <> 2 THEN
-    ExecuteCommandWid% = CmdResult.Malformed
-    EXIT FUNCTION
-  END IF
-
-  DIM cnid%
-  LET cnid% = WnGet%(wnid%, WnIndex.Container)
-  AssertIsPositive cnid%, "ExecCmdWnid", "cnid%"
-
-  SELECT CASE stoken$(0)
-
-    CASE ".arrowexit"
-      WnSet wnid%, WnIndex.ArrowExit, VAL(stoken$(1))
-
-    CASE ".name"
-      WnSet wnid%, WnIndex.Name, RsCreate%(stoken$(1))
- 
-    CASE ".offsetx"
-      CtSet cnid%, CtIndex.OffsetX, VAL(stoken$(1))
-
-    CASE ".offsety"
-      CtSet cnid%, CtIndex.OffsetY, VAL(stoken$(1))
-
-    CASE ".param"
-      WnSet wnid%, WnIndex.Param, VAL(stoken$(2))
-
-    CASE ".style"
-      CtSet cnid%, CtIndex.Style, StFind%(stoken$(1))
-
-    CASE ELSE
-      result = CmdResult.Malformed
-
-  END SELECT
+  ExParse% = count
 
 END FUNCTION
 
-SUB ExecFile (filename$)
+SUB ExPop
+ 
+  IF ex.depth = 0 THEN
+   
+    DbFail "ExPop", "Stack empty"
+ 
+  ELSE
+   
+    ex.stack(ex.depth) = 0
+    ex.depth = ex.depth - 1
+ 
+  END IF
 
-  DIM handle%
-  DIM result%
-  DIM text$
+END SUB
 
-  handle% = FREEFILE
+SUB ExPush (obid%)
+ 
+  DbPositive obid%, "ExPush", "obid%"
+  ex.depth = ex.depth + 1
+  ex.stack(ex.depth) = obid%
+
+END SUB
+
+FUNCTION ExRun% (rawcmd$)
+
+  DIM tokens$(0 TO 5)
+  DIM comment%
+
+  DIM cmd$
+  IF LEFT$(rawcmd$, 1) = "@" THEN
+    cmd$ = RIGHT$(rawcmd$, LEN(rawcmd$) - 1)
+  ELSE
+    cmd$ = rawcmd$
+    ShPrint cmd$
+  END IF
+
+  '
+  ' Parse the command into tokens
+  '
+  DIM count%: count% = ExParse%(cmd$, tokens$(), comment%)
+ 
+  IF count% = 0 THEN
+    '
+    ' Empty commands are OK
+    '
+    ExRun% = True
+
+  ELSEIF ExTryProperty%(tokens$(0), tokens$(1)) THEN
+    '
+    ' .Property
+    ' .Property #Name
+    ' .Property =Bind
+    ' .Property "String"
+    ' .Property ObSchema | CtKind
+    ' .Property number
+    '
+    ExRun% = True
+
+  ELSEIF ExTryControl%(tokens$(0)) THEN
+
+    ExRun% = True
+
+  ELSEIF ExTryEndControl%(tokens$(0)) THEN
+
+    ExRun% = True
+
+  ELSEIF ExTrySchema%(tokens$(0)) THEN
+
+    ExRun% = True
+
+  ELSEIF ExTryEndSchema%(tokens$(0)) THEN
+
+    ExRun% = True
+
+  ELSEIF ExTryCmd%(tokens$(), count%) THEN
+
+    ExRun% = True
+
+  END IF
+
+END FUNCTION
+
+SUB ExRunFile (filename$)
+
+  DIM handle%: handle% = FREEFILE
   OPEN filename$ FOR INPUT ACCESS READ AS #handle%
 
   DO WHILE NOT EOF(handle%)
+   
+    DIM text$
     LINE INPUT #handle%, text$
-    result% = ExecCmd%(text$)
+   
+    DIM result%: result% = ExRun%(text$)
+    IF NOT result% THEN
+      DbFail "ExRunFile", text$
+    END IF
+
+    '
+    ' Pause when the person presses a key
+    '
+    DIM keypress$: keypress$ = INKEY$
+    IF LEN(keypress$) THEN
+      ShPause
+    END IF
+
   LOOP
 
   CLOSE #handle%
 
 END SUB
 
-FUNCTION ExecResource% (rsid%)
+FUNCTION ExRunResource% (rsid%)
 
-  AssertIsPositive rsid%, "ExecResource%", "rsid%"
+  DbPositive rsid%, "ExRunResource%", "rsid%"
 
   DIM cmd$: cmd$ = RsGet$(rsid%)
 
   IF LEN(cmd$) > 0 THEN
-    ExecResource% = ExecCmd%(cmd$)
+    ExRunResource% = ExRun%(cmd$)
+  END IF
+
+END FUNCTION
+
+FUNCTION ExScan% (array$(), match$)
+  
+  DIM n%
+  FOR n% = LBOUND(array$) TO UBOUND(array$)
+    IF array$(n%) = match$ THEN
+      ExScan% = n%
+      EXIT FUNCTION
+    END IF
+  NEXT
+
+  ExScan% = LBOUND(array$) - 1
+
+END FUNCTION
+
+FUNCTION ExTop%
+  IF ex.depth > 0 THEN ExTop% = ex.stack(ex.depth)
+END FUNCTION
+
+FUNCTION ExTryCmd% (tokens$(), count%)
+
+  ExTryCmd% = True
+
+  DIM n%
+  FOR n% = LBOUND(tokens$) TO UBOUND(tokens$)
+    tokens$(n%) = ExUnquote$(tokens$(n%))
+  NEXT
+
+  SELECT CASE LCASE$(tokens$(0))
+
+    CASE "atlas"
+      UI.SetPage UIPage.Atlas
+
+    CASE "chain"
+      CHAIN tokens$(1)
+
+    CASE "cls"
+      ShClear
+
+    CASE "endgame"
+      END
+
+    CASE "listen"
+      ExTryCmd% = ExCmdListen%(tokens$(), count%)
+
+    CASE "mail"
+      ExTryCmd% = ExCmdMail%(tokens$(), count%)
+
+    CASE "newgame"
+      ExRunFile "WORLD.CFG"
+
+    CASE "pause"
+      ShPause
+
+    CASE "print"
+      ShPrint tokens$(1)
+
+    CASE "printfile"
+      ShFile tokens$(1)
+
+    CASE "replot"
+      ExTryCmd% = ExCmdReplot%(tokens$(), count%)
+
+    CASE "run"
+      ExRunFile tokens$(1)
+
+    CASE "shell"
+      UI.SetPage UIPage.Terminal
+
+    CASE "spawn"
+      ExTryCmd% = ExCmdSpawn%(tokens$(), count%)
+
+    CASE "stop"
+      STOP
+
+    CASE "wnrun"
+      WnRunName tokens$(1)
+
+    CASE ELSE
+      ExTryCmd% = False
+
+  END SELECT
+
+END FUNCTION
+
+FUNCTION ExTryControl% (name$)
+  '
+  ' Creates a new control based on kind name
+  '
+  IF LEN(name$) = 0 THEN
+    EXIT FUNCTION
+  END IF
+
+  DIM kind%: kind% = ExScan%(CtKindName$(), name$)
+  IF kind% = 0 THEN
+    EXIT FUNCTION
+  END IF
+
+  DIM obid%: obid% = ObCreate%(ObSchema.Control, ExTop%)
+  IF obid% = 0 THEN
+    DbPositive obid%, "ExTryControl%", "obid%"
+    EXIT FUNCTION
+  ELSE
+    ObSet ObSchema.Control, obid%, CtIndex.Kind, kind%
+  END IF
+
+  ExPush obid%
+  ExTryControl% = True
+
+END FUNCTION
+
+FUNCTION ExTryEndControl% (tag$)
+
+  DIM obid%: obid% = ExTop%
+  IF obid% = 0 THEN
+    EXIT FUNCTION
+  END IF
+
+  DIM schema%: schema% = ObGet%(0, obid%, ObIndex.Schema)
+  IF schema% <> ObSchema.Control THEN
+    EXIT FUNCTION
+  END IF
+
+  DIM kind%: kind% = ObGet%(ObSchema.Control, obid%, CtIndex.Kind)
+  IF kind% = 0 THEN
+    EXIT FUNCTION
+  END IF
+
+  DIM name$: name$ = CtKindName$(kind%)
+  IF LEN(name$) = 0 THEN
+    EXIT FUNCTION
+  END IF
+
+  IF tag$ = "End" + name$ THEN
+    ExPop
+    ExTryEndControl% = True
+  END IF
+
+END FUNCTION
+
+FUNCTION ExTryEndSchema% (tag$)
+
+  DIM obid%: obid% = ExTop%
+  IF obid% = 0 THEN
+    EXIT FUNCTION
+  END IF
+
+  DIM schema%: schema% = ObGet%(0, obid%, ObIndex.Schema)
+  IF schema% = 0 THEN
+    EXIT FUNCTION
+  END IF
+
+  DIM name$: name$ = ObSchemaName$(schema%)
+  IF LEN(name$) = 0 THEN
+    EXIT FUNCTION
+  END IF
+
+  IF tag$ = "End" + name$ THEN
+    ExPop
+    ExTryEndSchema% = True
+  END IF
+
+END FUNCTION
+
+FUNCTION ExTryProperty% (name$, value$)
+
+  IF LEFT$(name$, 1) <> "." THEN
+    '
+    ' Syntax requires a . prefix
+    '
+    EXIT FUNCTION
+  END IF
+
+  '
+  ' Get the top object in scope
+  '
+  DIM obid%: obid% = ExTop%
+  IF obid% = 0 THEN
+    DbPositive obid%, "ExTryProperty%", "obid%"
+    EXIT FUNCTION
+  END IF
+
+  '
+  ' Get the schema of the current object in scope
+  '
+  DIM schema%: schema% = ObGet%(0, obid%, ObIndex.Schema)
+  IF schema% = 0 THEN
+    DbPositive schema%, "ExTryProperty%", "schema%"
+    EXIT FUNCTION
+  END IF
+
+  '
+  ' Map the name to a property ID of the schema
+  '
+  DIM obix%: obix% = ExMap%(schema%, name$)
+  IF obix% < 0 THEN
+    DbFail "ExTryProperty%", "Invalid property: " + name$
+    EXIT FUNCTION
+  END IF
+
+  IF LEN(value$) = 0 THEN
+    '
+    ' .Property (change scope to object value)
+    '
+    DIM value%: value% = ObGet%(schema%, obid%, obix%)
+    IF value% > 0 THEN
+      ExPush value%
+      ExTryProperty% = True
+    END IF
+    EXIT FUNCTION
+  END IF
+
+  '
+  ' A prefix character indicates references and bindings
+  '
+  DIM prefix$: prefix$ = LEFT$(value$, 1)
+  SELECT CASE prefix$
+ 
+    CASE CHR$(34)
+      '
+      ' "Quoted"
+      '
+      DIM inner$: inner$ = ExUnquote$(value$)
+      DIM rsid%: rsid% = RsCreate%(inner$)
+      ObSet schema%, obid%, obix%, rsid%
+      ExTryProperty% = True
+
+    CASE "#"
+      '
+      ' #ObjectName
+      '
+      DIM find%: find% = ObFind%(0, RIGHT$(value$, LEN(value$) - 1))
+      IF find% > 0 THEN
+        ObSet schema%, obid%, obix%, find%
+        ExTryProperty% = True
+      END IF
+
+    CASE "="
+      '
+      ' =expression
+      '
+      ObSetEx schema%, obid%, obix%, RsCreate%(value$), ObBinding.Expression
+      ExTryProperty% = True
+
+    CASE "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "-", "&"
+      '
+      ' Numeric value including &Hxx
+      '
+      ObSet schema%, obid%, obix%, VAL(value$)
+      ExTryProperty% = True
+
+    CASE "^"
+      '
+      ' Inherit from parent
+      '
+      ObSetFlags schema%, obid%, obix%, ObBinding.Inherit
+      ExTryProperty% = True
+
+    CASE ELSE
+      '
+      ' If no prefix or quote, this should be a schema or control.
+      '
+      IF ExTryControl%(value$) THEN
+        '
+        ' Created control is on top of stack
+        '
+        ObSet schema%, obid%, obix%, ExTop%
+        ExTryProperty% = True
+     
+      ELSEIF ExTrySchema%(value$) THEN
+        '
+        ' Created object is on top of stack
+        '
+        ObSet schema%, obid%, obix%, ExTop%
+        ExTryProperty% = True
+      ELSE
+        DbFail "ExTryProperty%", "Invalid value: " + value$
+      END IF
+
+  END SELECT
+
+END FUNCTION
+
+FUNCTION ExTrySchema% (name$)
+ 
+  IF LEN(name$) = 0 THEN
+    EXIT FUNCTION
+  END IF
+
+  DIM schema%: schema% = ExScan%(ObSchemaName$(), name$)
+  IF schema% = 0 THEN
+    EXIT FUNCTION
+  END IF
+
+  DIM obid%: obid% = ObCreate%(schema%, ExTop%)
+  IF obid% = 0 THEN
+    EXIT FUNCTION
+  END IF
+
+  ExPush obid%
+  ExTrySchema% = True
+  
+END FUNCTION
+
+FUNCTION ExUnquote$ (text$)
+
+  DIM q AS STRING * 1
+  DIM u AS STRING
+
+  q = LEFT$(text$, 1)
+
+  IF q = CHR$(34) OR q = "'" THEN
+    
+    u = RIGHT$(text$, LEN(text$) - 1)
+    IF RIGHT$(u, 1) = q THEN
+      u = LEFT$(u, LEN(u) - 1)
+    END IF
+
+    ExUnquote$ = u
+
+  ELSE
+
+    ExUnquote$ = text$
+
   END IF
 
 END FUNCTION
@@ -3199,7 +3606,6 @@ SUB GameMoveOffset (offsetx%, offsety%)
   DIM cx      AS INTEGER
   DIM cy      AS INTEGER
   DIM idx     AS INTEGER
-  DIM wresult AS WnResultType
 
   '
   ' Get the index of the player avatar
@@ -3240,26 +3646,13 @@ SUB GameMoveOffset (offsetx%, offsety%)
     ' Run the window handling this habitat
     '
     DIM wnid%
-    LET wnid% = HbGet%(hbid%, HbIndex.Window)
+    LET wnid% = ObGet%(ObSchema.Habitat, hbid%, HbIndex.Window)
 
     IF wnid% > 0 THEN
      
       AtlasDrawSelect cx, cy, 1
-      WnSet wnid%, WnIndex.Param, hbid%
-      WnRun wnid%, wresult
-     
-      IF wresult.action = WnAction.Execute THEN
-        '
-        ' HACK: expand command parameter
-        '
-        DIM cmd$: cmd$ = RsGet$(wresult.cmdrsid)
-        DIM pdx%: pdx% = INSTR(cmd$, "{param.name}")
-        IF pdx% > 0 THEN
-          MID$(cmd$, pdx%) = STR$(hbid%) '** numeric habitat strings FYI
-        END IF
-        cresult = ExecCmd(cmd$)
-      END IF
-  
+      ObSet ObSchema.Window, wnid%, WnIndex.Param, hbid%
+      WnRun wnid%
       AtlasDrawUnselect cx, cy
 
     END IF
@@ -3270,91 +3663,43 @@ END SUB
 
 FUNCTION GetKey$
   '
-  ' Waits for a key to be pressed and returns the string representing
-  ' the character or the keystroke. This function is the same as INKEY$
-  ' except it does not return until a key is actually pressed.
+  ' Waits for a key to be pressed.
   '
-
-  DIM k AS STRING
+  DIM k$
+  DIM trap%
 
   DO
-    'SLEEP (0)
-    k = INKEY$
-  LOOP UNTIL LEN(k)
-
-  GetKey$ = k
-
-END FUNCTION
-
-FUNCTION HbCreate%
-  HbCreate% = ObCreate%(ObSchema.Habitat, 0) '*** allow parent
-END FUNCTION
-
-FUNCTION HbFind% (name$)
-  HbFind% = ObFindString%(ObSchema.Habitat, HbIndex.Name, name$)
-END FUNCTION
-
-FUNCTION HbGet% (hbid%, hbix%)
-  HbGet% = ObGet%(ObSchema.Habitat, hbid%, hbix%)
-END FUNCTION
-
-FUNCTION HbMap% (name$)
-
-  SELECT CASE name$
    
-    CASE "Backdrop"
-      HbMap% = HbIndex.Backdrop
+    k$ = INKEY$
+  
+    '
+    ' Press the ~ key and a second key to set a breakpoint trap.
+    '
+    IF k$ = "~" AND NOT trap% THEN
+      '
+      ' Set the trap
+      '
+      trap% = True
 
-    CASE "Label"
-      HbMap% = HbIndex.Label
+      '
+      ' Pretend ~ wasn't pressed
+      '
+      k$ = ""
+    END IF
 
-    CASE "Name"
-      HbMap% = HbIndex.Name
+  LOOP UNTIL LEN(k$)
 
-    CASE "Parent"
-      HbMap% = HbIndex.Parent
+  IF trap% OR k$ = CHR$(3) THEN
+    STOP
+    '
+    ' If you aren't sure what just happened, press F5 to resume.
+    ' Otherwise start pressing F8 to step through the code.
+    '
+  END IF
 
-    CASE "Schema"
-      HbMap% = HbIndex.Schema
-
-    CASE "StartFile"
-      HbMap% = HbIndex.StartFile
-
-    CASE "Window"
-      HbMap% = HbIndex.Window
-
-    CASE ELSE
-      HbMap% = ObIndex.Invalid
-
-  END SELECT
+  GetKey$ = k$
 
 END FUNCTION
-
-SUB HbSet (hbid%, hbix%, value%)
-  ObSet ObSchema.Habitat, hbid%, hbix%, value%
-END SUB
-
-SUB InboxAdd (subject$, filename$)
- 
-  SHARED count AS INTEGER
-  count = count + 1
-
-  DIM wnid%: wnid% = WnFind%("Inbox")
-  DIM ctid%: ctid% = WnAppend%(wnid%, CtKind.Button)
-
-  CtSet ctid%, CtIndex.Command, 0
-  CtSet ctid%, CtIndex.OffsetX, 1
-  CtSet ctid%, CtIndex.OffsetY, count%
-  CtSet ctid%, CtIndex.Popup, 0
-  CtSet ctid%, CtIndex.SizeX, 20
-  CtSet ctid%, CtIndex.SizeY, 1
-  CtSet ctid%, CtIndex.Text, RsCreate%(" " + subject$)
-  CtSet ctid%, CtIndex.Value, RsCreate%(filename$)
-
-  AtlasSetStatus "Mail arrived"
-  ShFile "NEWMAIL.PCB"
-
-END SUB
 
 FUNCTION NebulaLabel$ (energy AS INTEGER)
 
@@ -3399,8 +3744,8 @@ END FUNCTION
 
 FUNCTION NebulaLabelRsid% (energy AS INTEGER)
 
-  Assert energy >= 0, "NebulaLabelRsid", "energy must be 0 or greater"
-  Assert energy <= 3, "NebulaLabelRsid", "energy must be 3 or less"
+  DbAssert energy >= 0, "NebulaLabelRsid", "energy must be 0 or greater"
+  DbAssert energy <= 3, "NebulaLabelRsid", "energy must be 3 or less"
 
   STATIC created AS INTEGER
   STATIC lrsid() AS INTEGER
@@ -3416,81 +3761,56 @@ FUNCTION NebulaLabelRsid% (energy AS INTEGER)
 
 END FUNCTION
 
-SUB ObBind (obid%, obix%, expr$)
-  '
-  ' Binds a property to an expression in the form of ALIAS.PROPERTY,
-  ' where ALIAS refers to a control and PROPERTY specifies
-  ' a property of that control.
-  '
-  AssertIsPositive obid%, "ObBind", "obid%"
-  AssertIsPositive obix%, "ObBind", "obix%"
-
-  DIM period%
-  LET period% = INSTR(expr$, ".")
-
-  IF period% > 1 THEN
- 
-    SELECT CASE LCASE$(LEFT$(expr$, period%))
-
-      CASE "param."
-        gobj(obid%, obix%).flags = ObBinding.Param
-
-      CASE "focused.", "sel."
-        gobj(obid%, obix%).flags = ObBinding.Focused
-
-    END SELECT
-
-    RsSet gobj(obid%, obix%).value, MID$(expr$, period% + 1)
-
-  ELSE
-
-    gobj(obid%, obix%).flags = ObBinding.None
-    RsSet gobj(obid%, obix%).value, text$
-
-  END IF
- 
-END SUB
-
 FUNCTION ObCreate% (schema%, parent%)
   '
   ' Creates an object of the specified schema and parent.
   '
-  Assert gobids <= UBOUND(gobj, 1), "ObCreate%", "Out of object space"
+  DbAssert ob.count <= UBOUND(obj, 1), "ObCreate%", "Out of object space"
 
-  gobids = gobids + 1
+  ob.count = ob.count + 1
  
-  ObSet 0, gobids, ObIndex.Schema, schema%
-  ObSet 0, gobids, ObIndex.Parent, parent%
+  ObSet 0, ob.count, ObIndex.Schema, schema%
+  ObSet 0, ob.count, ObIndex.Parent, parent%
+  ObSet 0, ob.count, ObIndex.Dirty, True
 
-  ObCreate% = gobids
+  ObCreate% = ob.count
 
 END FUNCTION
 
-FUNCTION ObFindString% (schema%, obix%, value$)
-  '
-  ' Finds the first object where a property has the specified string
-  '
+SUB ObDirtyDown (obid%)
+
+  ObSet 0, obid%, ObIndex.Dirty, True
+
+  DIM n%
+  FOR n% = 1 TO vwPerParent(obid%, 0)
+    ObDirtyDown vwPerParent(obid%, n%)
+  NEXT
+
+END SUB
+
+FUNCTION ObFind% (schema%, name$)
+ 
   DIM obid%
-  FOR obid% = 1 TO UBOUND(gobj, 1)
+  FOR obid% = 1 TO UBOUND(obj, 1)
+   
+    IF schema% = 0 OR obj(obid%, ObIndex.Schema).value = schema% THEN
      
-    IF gobj(obid%, ObIndex.Schema).value = schema% THEN
-      
-      DIM rsid%: rsid% = ObGet%(0, obid%, obix%)
-      
+      DIM rsid%: rsid% = ObGet%(0, obid%, ObIndex.Name)
+     
       IF rsid% = 0 THEN
         '
         ' The property on this object does not have a resource.
         ' Treat it as an empty string "".
         '
-        IF LEN(value$) = 0 THEN
-          ObFindString% = obid%
+        IF LEN(name$) = 0 THEN
+          ObFind% = obid%
           EXIT FUNCTION
         END IF
 
       ELSE
 
-        IF value$ = RsGet$(rsid%) THEN
-          ObFindString% = obid%
+        IF name$ = RsGet$(rsid%) THEN
+          ObFind% = obid%
           EXIT FUNCTION
         END IF
 
@@ -3505,14 +3825,14 @@ END FUNCTION
 FUNCTION ObGet% (schema%, obid%, obix%)
 
   DIM flags%
-  LET flags% = gobj(obid%, obix%).flags
+  LET flags% = obj(obid%, obix%).flags
 
   DIM value%
-  LET value% = gobj(obid%, obix%).value
+  LET value% = obj(obid%, obix%).value
 
   IF schema% > 0 THEN
-    IF schema% <> gobj(obid%, ObIndex.Schema).value THEN
-      AssertFail "ObGet%", "schema mismatch"
+    IF schema% <> obj(obid%, ObIndex.Schema).value THEN
+      DbFail "ObGet%", "schema mismatch"
     END IF
   END IF
 
@@ -3521,14 +3841,35 @@ FUNCTION ObGet% (schema%, obid%, obix%)
     CASE 0:
       ObGet% = value%
 
-    CASE ObBinding.Focused
-      ObGet% = ObResolveFocused%(obid%, value%)
+    CASE ObBinding.Expression
+      ObGet% = ObResolve%(obid%, RsGet$(value%))
 
-    CASE ObBinding.Param
-      ObGet% = ObResolveParam%(obid%, value%)
+    CASE ObBinding.Inherit
+      '
+      ' This property inherits from the parent.
+      '
+      DIM parent%: parent% = ObGet%(schema%, obid%, ObIndex.Parent)
+      IF parent% > 0 THEN
+        '
+        ' But inherit only if the parent has same schema
+        '
+        DIM thisSchema%
+        IF schema% = 0 THEN
+          thisSchema% = ObGet%(0, obid%, ObIndex.Schema)
+        ELSE
+          thisSchema% = schema%
+        END IF
+
+        IF thisSchema% = ObGet%(0, parent%, ObIndex.Schema) THEN
+          value% = ObGet%(schema%, parent%, obix%)
+        END IF
+     
+      END IF
+     
+      ObGet% = value%
 
     CASE ELSE
-      AssertFail "ObGet%", "Unsupported binding"
+      DbFail "ObGet%", "Unsupported binding"
 
   END SELECT
 
@@ -3539,167 +3880,317 @@ SUB ObInc (schema%, obid%, obix%)
 END SUB
 
 FUNCTION ObIs% (schema%, obid%)
-  ObIs% = gobj(obid%, ObIndex.Schema).value = schema%
+  ObIs% = obj(obid%, ObIndex.Schema).value = schema%
 END FUNCTION
 
-FUNCTION ObMapSchema% (name$)
-  SELECT CASE name$
-  
-    CASE "Control"
-      ObMapSchema% = ObSchema.Control
+FUNCTION ObResolve% (obid%, expr$)
 
-    CASE "Habitat"
-      ObMapSchema% = ObSchema.Habitat
+  CONST SyntaxError = -1
+ 
+  CONST ExpectEqualSign = 0
+  CONST ExpectStart = 1
+  CONST ExpectNameStart = 2
+  CONST ExpectNameBuild = 3
+  CONST ExpectPropStart = 4
+  CONST ExpectPropBuild = 5
 
-    CASE "Person"
-      ObMapSchema% = ObSchema.Person
+  DIM build$
+  DIM char$(1)
+  DIM n%
+  DIM schema%
+  DIM state%
+  DIM targetobid%
+  DIM targetobix%
 
-    CASE "Style"
-      ObMapSchema% = ObSchema.Style
+  FOR n% = 1 TO LEN(expr$)
+ 
+    char$ = MID$(expr$, n%, 1)
+   
+    SELECT CASE state%
+   
+      CASE ExpectEqualSign
+        GOSUB ParseEqualSign
+      
+      CASE ExpectStart
+        GOSUB ParseStart
 
-    CASE "Window"
-      ObMapSchema% = ObSchema.Window
+      CASE ExpectNameStart
+        GOSUB ParseNameStart
+                                 
+      CASE ExpectNameBuild
+        GOSUB ParseNameBuild
+
+      CASE ExpectPropStart
+        GOSUB ParsePropStart
+
+      CASE ExpectPropBuild
+        GOSUB ParsePropBuild
+
+      CASE ELSE
+        state% = SyntaxError
+
+    END SELECT
+
+    IF state% = SyntaxError THEN
+      EXIT FOR
+    END IF
+
+  NEXT
+
+  '
+  ' Process pending state
+  '
+  SELECT CASE state%
+   
+    CASE ExpectNameBuild
+      '
+      ' Name was being built
+      '
+      targetobid% = ObFind%(0, build$)
+      IF targetobid% = 0 THEN
+        state% = SyntaxError
+      END IF
+     
+    CASE ExpectPropBuild
+      '
+      ' Prop name in progress
+      '
+      schema% = ObGet%(0, targetobid%, ObIndex.Schema)
+      targetobix% = ExMap%(schema%, build$)
+      IF targetobix% = 0 THEN
+        state% = SyntaxError
+      END IF
 
   END SELECT
-END FUNCTION
 
-FUNCTION ObResolveFocused% (obid%, value%)
-
-  DIM parent%
-  LET parent% = ObGet%(0, obid%, ObIndex.Parent)
-  AssertIsPositive parent%, "ObResolveFocused%", "parent%"
-
-  DIM wid%
-  LET wid% = CtGet%(parent%, CtIndex.ChildList)
-
-  DIM sel%
-  LET sel% = CtGet%(parent%, CtIndex.Selected)
-     
-  DIM selctid%
-  LET selctid% = gwin(wid%, sel%)
-
-  ObResolveFocused% = CtGet%(selctid%, CtIndex.Value)
-
-END FUNCTION
-
-FUNCTION ObResolveParam% (obid%, value%)
-
-  DIM wnid%: wnid% = CtGet%(obid%, CtIndex.Window)
-  AssertIsPositive wnid%, "ObResolveParam%", "wnid%"
-
-  DIM hbid%: hbid% = WnGet%(wnid%, WnIndex.Param)
-  AssertIsPositive hbid%, "ObResolveParam", "hbid%"
-
-  IF hbid% > 0 THEN
-    SELECT CASE RsGet$(value%)
-      CASE "backdrop"
-        ObResolveParam% = HbGet%(hbid%, HbIndex.Backdrop)
-      CASE "title"
-        ObResolveParam% = HbGet%(hbid%, HbIndex.Name)
-    END SELECT
+  IF state% = SyntaxError THEN
+    DIM msg$: msg$ = "Invalid @" + STR$(n%) + " (" + char$ + ") " + expr$
+    DbFail "ObResolve%", msg$
   END IF
+
+  IF targetobix% = 0 THEN
+    ObResolve% = targetobid%
+  ELSE
+    ObResolve% = ObGet%(0, targetobid%, targetobix%)
+  END IF
+  
+  EXIT FUNCTION
+
+ParseEqualSign:
+ 
+  SELECT CASE char$
+   
+    CASE "="
+      state% = ExpectStart
+
+    CASE " "
+    CASE ELSE
+      state% = SyntaxError
+
+  END SELECT
+  RETURN
+
+ParseStart:
+ 
+  SELECT CASE char$
+ 
+    CASE "#"
+      state% = ExpectNameStart
+
+    CASE "."
+      targetobid% = obid%
+      state% = ExpectPropStart
+
+    CASE " "
+    CASE ELSE
+      state% = SyntaxError
+     
+  END SELECT
+  RETURN
+
+ParseNameStart:
+
+  SELECT CASE char$
+    CASE "A" TO "Z", "a" TO "z"
+      state% = ExpectNameBuild
+      build$ = char$
+
+    CASE " "
+    CASE ELSE
+      state% = ExpectNameBuild
+  END SELECT
+  RETURN
+
+ParseNameBuild:
+ 
+  SELECT CASE char$
+   
+    CASE "A" TO "Z", "a" TO "z"
+      build$ = build$ + char$
+
+    CASE "."
+      targetobid% = ObFind%(0, build$)
+      IF targetobid% = 0 THEN
+        state% = SyntaxError
+      ELSE
+        state% = ExpectPropStart
+      END IF
+
+    CASE ELSE
+      state% = SyntaxError
+
+  END SELECT
+  RETURN
+
+ParsePropStart:
+ 
+  SELECT CASE char$
+   
+    CASE "A" TO "Z", "a" TO "z"
+      state% = ExpectPropBuild
+      build$ = char$
+
+    CASE " "
+    CASE ELSE
+      state% = SyntaxError
+
+  END SELECT
+  RETURN
+
+ParsePropBuild:
+  SELECT CASE char$
+    CASE "A" TO "Z", "a" TO "z"
+      build$ = build$ + char$
+    CASE "."
+      schema% = ObGet%(0, targetobid%, ObIndex.Schema)
+      targetobix% = ExMap%(schema%, build$)
+      IF targetobix% = 0 THEN
+        state% = SyntaxError
+      ELSE
+        targetobid% = ObGet%(0, targetobid%, targetobix%)
+        IF targetobid% = 0 THEN
+          ObResolve% = 0
+          EXIT FUNCTION
+        END IF
+        targetobix% = 0
+        state% = ExpectPropStart
+      END IF
+    CASE ELSE
+      state% = SyntaxError
+  END SELECT
+  RETURN
 
 END FUNCTION
 
 SUB ObSet (schema%, obid%, obix%, value%)
+  DIM flags%: flags% = obj(obid%, obix%).flags
+  ObSetEx schema%, obid%, obix%, value%, flags%
+END SUB
+
+SUB ObSetEx (schema%, obid%, obix%, value%, flags%)
  
   IF schema% > 0 THEN
-    IF schema% <> gobj(obid%, ObIndex.Schema).value THEN
-      AssertFail "ObSet", "schema mismatch"
+    '
+    ' Make sure the object has the specified schema
+    '
+    IF schema% <> obj(obid%, ObIndex.Schema).value THEN
+      DbFail "ObSet", "schema mismatch"
     END IF
   END IF
 
-  gobj(obid%, obix%).value = value%
+  IF obj(obid%, obix%).value = value% THEN
+    IF obj(obid%, obix%).flags = flags% THEN
+      '
+      ' No change
+      '
+      EXIT SUB
+    END IF
+  END IF
+
+  obj(obid%, obix%).value = value%
+  obj(obid%, obix%).flags = flags%
+
+  '
+  ' Determine whether this object was dirtied.
+  '
+  DIM dirtied%
+  IF obix% = ObIndex.Dirty THEN
+    '
+    ' Setting Dirty=False does not cause Dirty to become True.
+    '
+    dirtied% = value% <> 0
+  ELSE
+    dirtied% = True
+  END IF
+
+  IF dirtied% THEN
+
+    '
+    ' Mark this and parents as dirty
+    '
+    DIM obx%: obx% = obid%
+    DO
+   
+      '
+      ' If already dirty, no need to recurse further.
+      '
+      DIM already%: already% = obj(obx%, ObIndex.Dirty).value
+      IF already% THEN
+        EXIT DO
+      END IF
+
+      obj(obx%, ObIndex.Dirty).value = -1
+   
+      '
+      ' Get the parent object
+      '
+      obx% = obj(obx%, ObIndex.Parent).value
+      IF obx% = 0 THEN
+        EXIT DO
+      END IF
+   
+    LOOP
+   
+  END IF
 
   SELECT CASE obix%
    
     CASE ObIndex.Parent
       '
-      ' per.parent
+      ' vwPerParent
       '
       IF value% > 0 THEN
-        per.parent(value%, 0) = per.parent(value%, 0) + 1
-        per.parent(value%, per.parent(value%, 0)) = obid%
+        vwPerParent(value%, 0) = vwPerParent(value%, 0) + 1
+        vwPerParent(value%, vwPerParent(value%, 0)) = obid%
       END IF
 
     CASE ObIndex.Schema
       '
-      ' per.schema
+      ' vwPerSchema
       '
       IF value% > 0 THEN
-        per.schema(value%, 0) = per.schema(value%, 0) + 1
-        per.schema(value%, per.schema(value%, 0)) = obid%
+        vwPerSchema(value%, 0) = vwPerSchema(value%, 0) + 1
+        vwPerSchema(value%, vwPerSchema(value%, 0)) = obid%
       END IF
 
   END SELECT
 
+  IF db.debug THEN
+    DbSet schema%, obid%, obix%, value%
+  END IF
+
 END SUB
 
-FUNCTION PrCreate%
-  PrCreate% = ObCreate%(ObSchema.Person, 0) ' Allow parents
-END FUNCTION
-
-FUNCTION PrGet% (prid%, prix%)
-  PrGet% = ObGet%(ObSchema.Person, prid%, prix%)
-END FUNCTION
-
-FUNCTION PrMap% (name$)
- 
-  SELECT CASE name$
-  
-    CASE "Name"
-      PrMap% = PrIndex.Name
-
-    CASE "Label"
-      PrMap% = PrIndex.Label
-
-    CASE "Name"
-      PrMap% = PrIndex.Name
-
-    CASE "Parent"
-      PrMap% = PrIndex.Parent
-
-    CASE "Schema"
-      PrMap% = PrIndex.Schema
-
-    CASE ELSE
-      PrMap% = ObIndex.Invalid
-
-  END SELECT
-
-END FUNCTION
-
-FUNCTION PrRandomly%
-  '
-  ' Selects a person randomly
-  '
- 
-  DIM count%
-  DIM items%(1 TO 100)
-
-  FOR index% = LBOUND(gobj, 1) TO UBOUND(gobj, 1)
-    IF ObGet%(0, index%, ObIndex.Schema) = ObSchema.Person THEN
-      count% = count% + 1
-      items%(count%) = index%
-    END IF
-  NEXT
-
-  DIM prid%
-  LET prid% = items%(INT(RND * count%) + 1)
-
-  PrRandomly% = prid%
-
-END FUNCTION
-
-SUB PrSet (prid%, prix%, value%)
-  ObSet ObSchema.Person, prid%, prix%, value%
+SUB ObSetFlags (schema%, obid%, obix%, flags%)
+  DIM value%: value% = obj(obid%, obix%).value
+  ObSetEx schema%, obid%, obix%, value%, flags%
 END SUB
 
 FUNCTION RsCreate% (value$)
 
   IF resources = UBOUND(resource) THEN
    
-    AssertFail "RsCreate%", "Out of resource space"
+    DbFail "RsCreate%", "Out of resource space"
     RsCreate% = 0
 
   ELSEIF LEN(value$) = 0 THEN
@@ -3742,11 +4233,12 @@ END SUB
 SUB SetupGame
 
   SCREEN 0, 0, 0, 0: WIDTH 80: COLOR 7, 0: KEY OFF: RANDOMIZE TIMER
+  'db.debug = True
 
   '
   ' Load menus and windows
   '
-  ExecFile "EMPIRE.CFG"
+  ExRunFile "EMPIRE.CFG"
  
   ShPrint "String Space:" + STR$(FRE(""))
   ShPrint "Unused Stack Space:" + STR$(FRE(-2))
@@ -3755,27 +4247,19 @@ SUB SetupGame
   '
   ' Setup atlas
   '
-  atlaspage = VideoAlloc%
+  atlaspage = VdAlloc%
   AtlasDraw
 
   '
   ' Show starting window #1
   '
-  DIM cresult AS INTEGER
-  DIM wresult AS WnResultType
- 
-  WnRun WnFind%("Start"), wresult
- 
-  IF wresult.action = WnAction.Execute THEN
-    cresult = ExecResource%(wresult.cmdrsid)
-  END IF
-
+  WnRun ObFind%(ObSchema.Window, "Start")
   TIMER ON
 
 END SUB
 
 SUB ShBeginDraw
-  VideoPushActive 0
+  VdPushActive 0
 END SUB
 
 SUB ShClear
@@ -3785,7 +4269,7 @@ SUB ShClear
 END SUB
 
 SUB ShEndDraw
-  VideoPop
+  VdPop
 END SUB
 
 SUB ShFile (filename$)
@@ -3794,6 +4278,13 @@ SUB ShFile (filename$)
   DrawFile filename$
   PRINT
   ShEndDraw
+END SUB
+
+SUB ShPause
+  
+  ShPrint "@X08<@X0Fpaused@X08>@X07"
+  DIM d$: d$ = GetKey$
+
 END SUB
 
 SUB ShPrint (text$)
@@ -3813,194 +4304,61 @@ SUB ShPrint (text$)
 
 END SUB
 
-FUNCTION Split% (text AS STRING, tokens() AS STRING)
+SUB ShSerialize (obid%, indent%)
 
-  CONST StateNone = 0
-  CONST StateToken = 1
-  CONST StateComment = 2
+  DbPositive obid%, "ShSerialize", "obid%"
+ 
+  DIM schema%: schema% = ObGet%(0, obid%, ObIndex.Schema)
+  DIM title%: title% = ObGet%(schema%, obid%, ObIndex.Name)
+ 
+  IF title% > 0 THEN
+    ShPrint SPACE$(indent%) + "#" + RsGet$(title%)
+  ELSE
+    ShPrint SPACE$(indent%) + "#" + STR$(obid%)
+  END IF
 
-  DIM char  AS STRING * 1
-  DIM count AS INTEGER
-  DIM index AS INTEGER
-  DIM lower AS INTEGER
-  DIM quote AS STRING
-  DIM state AS INTEGER
-
-  '
-  ' Calculate how to convert a count (1,2,3...) to an index element.
-  '
-  DIM offset: offset = LBOUND(tokens) - 1
-
-  FOR index = 1 TO LEN(text)
-
-    char = MID$(text, index, 1)
-
-    SELECT CASE state
-      CASE StateNone:
-        '
-        ' No token being parsed
-        '
-        IF char = "," THEN
-          '
-          ' Empty token
-          '
-          count = count + 1
-          tokens(count + offset) = ""
-
-        ELSEIF char = CHR$(34) THEN
-          '
-          ' Start quoted token
-          '
-          count = count + 1
-          quote = char
-          tokens(count + offset) = ""
-          state = StateToken
-       
-        ELSEIF char = ";" THEN
-          '
-          ' Start comment
-          '
-          state = StateComment
-          EXIT FOR
-
-        ELSEIF char <> " " THEN
-          '
-          ' Start non-quoted token
-          '
-          count = count + 1
-          quote = ""
-          tokens(count + offset) = char
-          state = StateToken
-
-        END IF
-
-      CASE StateToken:
-        
-        IF char = " " THEN
-          IF quote = "" THEN
-            '
-            ' This is not a quoted token
-            '
-            state = 0
-          ELSE
-            tokens(count + offset) = tokens(count + offset) + char
-          END IF
-        ELSEIF char = quote THEN
-          state = 0
-        ELSE
-          tokens(count + offset) = tokens(count + offset) + char
-        END IF
-
+  DIM i%
+  FOR i% = LBOUND(obj, 2) TO UBOUND(obj, 2)
+   
+    DIM p$
+    SELECT CASE schema%
+      CASE ObSchema.Control
+        p$ = CtHeader$(i%)
+      CASE ObSchema.Window
+        p$ = WnHeader$(i%)
     END SELECT
+    IF LEN(p$) = 0 THEN
+      EXIT FOR
+    END IF
+
+    DIM value%: value% = ObGet%(0, obid%, i%)
+   
+    ShPrint SPACE$(indent% + 2) + "." + p$ + " " + STR$(value%)
 
   NEXT
 
-  Split% = count
+  ShPrint ";" + STR$(vwPerParent(obid%, 0)) + " children"
+  ShPause
 
-END FUNCTION
+  IF vwPerParent(obid%, 0) > 0 THEN
+    DIM j%
+    FOR j% = 1 TO vwPerParent(obid%, 0)
+      ShSerialize vwPerParent(obid%, j%), indent% + 2
+    NEXT
+  END IF
 
-FUNCTION StCreate%
-  StCreate% = ObCreate%(ObSchema.Style, 0) ' *** allow parents
-END FUNCTION
-
-FUNCTION StFind% (name$)
-  StFind% = ObFindString%(ObSchema.Style, StIndex.Name, name$)
-END FUNCTION
-
-FUNCTION StGet% (stid%, stix%)
-  StGet% = ObGet%(ObSchema.Style, stid%, stix%)
-END FUNCTION
-
-FUNCTION StMap% (name$)
-
-  SELECT CASE name$
-   
-    CASE "BorderColor"
-      StMap% = StIndex.BorderColor
-
-    CASE "BorderType"
-      StMap% = StIndex.BorderType
-
-    CASE "Name"
-      StMap% = StIndex.Name
-
-    CASE "Parent"
-      StMap% = StIndex.Parent
-
-    CASE "Schema"
-      StMap% = StIndex.Schema
-
-    CASE "SelectedColor"
-      StMap% = StIndex.SelectedColor
-
-    CASE "TextColor"
-      StMap% = StIndex.TextColor
-
-    CASE ELSE
-      StMap% = ObIndex.Invalid
-
-  END SELECT
-
-END FUNCTION
-
-SUB StSet (stid%, stix%, value%)
-  ObSet ObSchema.Style, stid%, stix%, value%
-END SUB
-
-FUNCTION TrCreate%
-  TrCreate% = ObCreate%(ObSchema.Trigger, 0)
-END FUNCTION
-
-FUNCTION TrGet% (trid%, trix%)
-  TrGet% = ObGet%(ObSchema.Trigger, trid%, trix%)
-END FUNCTION
-
-FUNCTION TrMap% (name$)
-
-  SELECT CASE name$
-   
-    CASE "Schema"
-      TrMap% = TrIndex.Schema
-   
-    CASE "Name"
-      TrMap% = TrIndex.Name
-
-    CASE "Parent"
-      TrMap% = TrIndex.Parent
-
-    CASE "Event"
-      TrMap% = TrIndex.Event
-
-    CASE "Match"
-      TrMap% = TrIndex.Match
-
-    CASE "Command"
-      TrMap% = TrIndex.Command
-
-    CASE ELSE
-      TrMap% = ObIndex.Invalid
-
-  END SELECT
-
-END FUNCTION
-
-SUB TrSet (trid%, trix%, value%)
-  ObSet ObSchema.Trigger, trid%, trix%, value%
 END SUB
 
 SUB UI.Run
- 
-  DIM menuwnid AS INTEGER
-  DIM cresult AS INTEGER
-  DIM wresult AS WnResultType
 
   UI.SetPage UIPage.Atlas
 
-  menuwnid = WnFind%("Menu")
+  DIM wnid%
+  LET wnid% = ObFind%(ObSchema.Window, "Menu")
 
   DO
     
-    Assert uiCurrentPage <> UIPage.None, "UI.Run", "UI page must be set"
+    DbAssert uiCurrentPage <> UIPage.None, "UI.Run", "UI page must be set"
 
     SELECT CASE uiCurrentPage
     
@@ -4012,10 +4370,7 @@ SUB UI.Run
 
     END SELECT
 
-    WnRun menuwnid, wresult
-    IF wresult.action = WnAction.Execute THEN
-      cresult = ExecResource%(wresult.cmdrsid)
-    END IF
+    WnRun wnid%
 
   LOOP
 
@@ -4023,7 +4378,7 @@ END SUB
 
 SUB UI.RunAtlas
  
-  Assert uiCurrentPage = UIPage.Atlas, "UI.RunAtlas", "Wrong UI page"
+  DbAssert uiCurrentPage = UIPage.Atlas, "UI.RunAtlas", "Wrong UI page"
 
   DIM pressed AS STRING
 
@@ -4033,19 +4388,19 @@ SUB UI.RunAtlas
 
     SELECT CASE pressed
      
-      CASE CHR$(ASCII.Escape)
+      CASE KeyEscape$
         EXIT SUB
 
-      CASE CHR$(0) + CHR$(ScanCode.Down)
+      CASE KeyDown$
         GameMoveOffset 0, 1
 
-      CASE CHR$(0) + CHR$(ScanCode.Left)
+      CASE KeyLeft$
         GameMoveOffset -1, 0
 
-      CASE CHR$(0) + CHR$(ScanCode.Right)
+      CASE KeyRight$
         GameMoveOffset 1, 0
 
-      CASE CHR$(0) + CHR$(ScanCode.Up)
+      CASE KeyUp$
         GameMoveOffset 0, -1
 
     END SELECT
@@ -4056,7 +4411,7 @@ END SUB
 
 SUB UI.RunTerminal
 
-  Assert uiCurrentPage = UIPage.Terminal, "UI.RunTerminal", "Wrong UI page"
+  DbAssert uiCurrentPage = UIPage.Terminal, "UI.RunTerminal", "Wrong UI page"
 
   DIM keypress$: keypress$ = GetKey$
 
@@ -4064,18 +4419,18 @@ END SUB
 
 SUB UI.SetPage (page AS INTEGER)
  
-  Assert page <> UIPage.None, "UI.SetPage", "page cannot be 0"
+  DbAssert page <> UIPage.None, "UI.SetPage", "page cannot be 0"
 
   SELECT CASE page
    
     CASE UIPage.Atlas
-      VideoScreen atlaspage, atlaspage
+      VdScreen atlaspage, atlaspage
 
     CASE UIPage.Terminal
-      VideoScreen 0, 0
+      VdScreen 0, 0
 
     CASE ELSE
-      VideoScreen 0, 0
+      VdScreen 0, 0
 
   END SELECT
 
@@ -4083,8 +4438,12 @@ SUB UI.SetPage (page AS INTEGER)
  
 END SUB
 
-FUNCTION VideoAlloc%
+FUNCTION VdActive%
+  VdActive = (vd.stack(vd.stacked) AND &HF0) / 16
+END FUNCTION
 
+FUNCTION VdAlloc%
+ 
   DIM bit  AS INTEGER
   DIM mask AS INTEGER
 
@@ -4092,47 +4451,34 @@ FUNCTION VideoAlloc%
    
     mask = 2 ^ bit
 
-    IF (vallocated AND mask) = 0 THEN
-      vallocated = vallocated OR mask
-      VideoAlloc% = bit
+    IF (vd.allocated AND mask) = 0 THEN
+      vd.allocated = vd.allocated OR mask
+      VdAlloc% = bit
       EXIT FUNCTION
     END IF
 
   NEXT
 
-  VideoAlloc% = 0
+  VdAlloc% = 0
 
 END FUNCTION
 
-SUB VideoFree (pagenum%)
-
-  DIM mask%
-  LET mask% = NOT (2 ^ pagenum%)
-  vallocated = vallocated AND mask%
-
+SUB VdFree (pagenum%)
+  DIM mask%: mask% = NOT (2 ^ pagenum%)
+  vd.allocated = vd.allocated AND mask%
 END SUB
 
-FUNCTION VideoGetActive%
+SUB VdPop
 
-  VideoGetActive = (vstack(vstacked) AND &HF0) / 16
-
-END FUNCTION
-
-FUNCTION VideoGetVisual%
-  VideoGetVisual% = vstack(vstacked) AND &HF
-END FUNCTION
-
-SUB VideoPop
-
-  IF vstacked = 0 THEN
+  IF vd.stacked = 0 THEN
    
-    AssertFail "VideoPop", "No page stack to pop"
+    DbFail "VdPop", "No page stack to pop"
 
   ELSE
 
-    vstacked = vstacked - 1
+    vd.stacked = vd.stacked - 1
    
-    DIM p%: p% = vstack(vstacked)
+    DIM p%: p% = vd.stack(vd.stacked)
 
     SCREEN , , (p% AND &HF0) / 16, (p% AND &HF)
 
@@ -4140,712 +4486,310 @@ SUB VideoPop
 
 END SUB
 
-SUB VideoPushActive (active%)
+SUB VdPush (active%, visual%)
+ 
+  DIM newpages%
+  LET newpages% = (visual% AND &HF) + (active% * 16)
+
+  vd.stacked = vd.stacked + 1
+  vd.stack(vd.stacked) = newpages%
+
+  SCREEN , , active%, visual%
+
+END SUB
+
+SUB VdPushActive (active%)
+  VdPush active%, vd.stack(vd.stacked) AND &HF
+  EXIT SUB
   '
   ' Use this to temporarily write to a specific video
-  ' page and then call VideoPop to restore the current
+  ' page and then call VdPop to restore the current
   ' active and display pages.
   '
-  DIM newpages AS INTEGER
+  DIM newpages%
+  LET newpages% = (vd.stack(vd.stacked) AND &HF) + (active% * 16)
  
-  newpages = (vstack(vstacked) AND &HF) + (active% * 16)
-  vstacked = vstacked + 1
-  vstack(vstacked) = newpages
+  vd.stacked = vd.stacked + 1
+  vd.stack(vd.stacked) = newpages%
 
-  SCREEN , , active%, vstack(vstacked) AND &HF
+  SCREEN , , active%, vd.stack(vd.stacked) AND &HF
 
 END SUB
 
-SUB VideoScreen (activepage%, visualpage%)
+SUB VdPushVisual (visual%)
+  DIM active%: active% = vd.stack(vd.stacked) AND &HF0
+  VdPush active% / 16, visual%
+END SUB
 
-  vstack(vstacked) = (activepage% * 16) + visualpage%
+SUB VdScreen (activepage%, visualpage%)
+  vd.stack(vd.stacked) = (activepage% * 16) + visualpage%
   SCREEN , , activepage%, visualpage%
-  
 END SUB
 
-FUNCTION WnAppend% (wnid%, kind%)
-   
-  DIM cnid%: cnid% = WnGet%(wnid%, WnIndex.Container)
-  DIM ctid%: ctid% = CtCreate%(kind%, cnid%)
-  CtSet ctid%, CtIndex.Window, wnid%
- 
-  '
-  ' Legacy
-  '
-  DIM wid%: wid% = WnGet%(wnid%, WnIndex.Wid)
-  DIM fid%: fid% = win(wid%).fields + 1
-  win(wid%).fields = fid%
-  gwin(wid%, fid%) = ctid%
-
-  WnAppend% = ctid%
-
+FUNCTION VdVisual%
+  VdVisual% = vd.stack(vd.stacked) AND &HF
 END FUNCTION
 
-SUB WnClose (wid%)
+SUB VdWatch (pagenum%)
+  VdPushVisual pagenum%
+  DIM k$: k$ = GetKey$
+  VdPop
+END SUB
 
-  AssertIsPositive wid%, "WnClose", "wid%"
+SUB WnClose (wnid%)
+ 
+  DbPositive wnid%, "WnClose", "wnid%"
 
-  IF winstacked = 0 THEN
+  IF wn.count = 0 THEN
   
-    AssertFail "WnClose", "No windows"
+    DbFail "WnClose", "No windows"
 
-  ELSEIF winstack(winstacked).wnid <> wid% THEN
+  ELSEIF wn.wnid(wn.count) <> wnid% THEN
 
-    AssertFail "WnClose", "Not supported; specify top window only"
+    DbFail "WnClose", "Not supported; specify top window only"
 
   ELSE
 
     '
     ' Change active and visual display to the backpage
     '
-    VideoScreen winstack(winstacked).backpage, winstack(winstacked).backpage
-    VideoFree winstack(winstacked).workpage
-    winstacked = winstacked - 1
+    VdScreen wn.backpage(wn.count), wn.backpage(wn.count)
+    VdFree wn.workpage(wn.count)
+    wn.count = wn.count - 1
 
   END IF
 
 END SUB
 
-FUNCTION WnCreate%
- 
-  DIM wnid%: wnid% = ObCreate%(ObSchema.Window, 0) ' *** allow parents
-  DIM cnid%: cnid% = CtCreate(CtKind.Container, wnid%)
- 
-  AssertIsPositive wnid%, "WnCreate%", "wnid%"
-  AssertIsPositive cnid%, "WnCreate%", "cnid%"
+'
+' Executes a command in the context of a window.
+'
+FUNCTION WnCmd% (wnid%, cmd$)
+
+  DbPositive wnid%, "WnEx%", "wnid%"
 
   '
-  ' Cross-link the window and container
+  ' HACK: expand command parameter ***
   '
-  WnSet wnid%, WnIndex.Container, cnid%
-  CtSet cnid%, CtIndex.Window, wnid%
+  DIM index%: index% = INSTR(cmd$, "[Window][Param]")
+  IF index% > 0 THEN
+    DIM param%: param% = ObGet%(ObSchema.Window, wnid%, WnIndex.Param)
+    MID$(cmd$, index%) = STR$(param%)
+  END IF
 
-  '
-  ' Legacy
-  '
-  gwid% = gwid% + 1
-  WnSet wnid%, WnIndex.Wid, gwid%
-  CtSet cnid%, CtIndex.ChildList, gwid%
-  gwin(gwid%, 0) = cnid%
-  WnCreate% = wnid%
+  WnEx% = ExRun%(cmd$)
 
 END FUNCTION
 
-SUB WnDraw (wid%)
-
-  AssertIsPositive wid%, "WnDraw", "wid"
-
-  DIM fid%
-  FOR fid% = 1 TO win(wid%).fields
-    CtDraw wid%, fid%
-  NEXT
-
+SUB WnDirty (wnid%)
+  DIM root%: root% = ObGet%(ObSchema.Window, wnid%, WnIndex.Root)
+  IF root% > 0 THEN ObDirtyDown root%
 END SUB
 
-FUNCTION WnFind% (name$)
-  WnFind% = ObFindString%(ObSchema.Window, WnIndex.Name, name$)
-END FUNCTION
-
-SUB WnFocusOn (wid%, fid%)
-  '
-  ' Sets focus to a field
-  '
-
-  AssertIsPositive wid%, "WnFocusOn", "wid%"
-  Assert fid% >= 0, "WnFocusOn", "fid cannot be negative"
-
-  DIM fidctid%
-  LET fidctid% = gwin(wid%, fid%)
-
-  DIM cnid%
-  LET cnid% = gwin(wid%, 0)
-
-  DIM old%
-  LET old% = CtGet%(cnid%, CtIndex.Selected)
-
-  IF old% = fid% THEN
-    '
-    ' Same field
-    '
-    EXIT SUB
-  END IF
-
-  CtSet cnid%, CtIndex.Selected, fid%
-
-  IF old% > 0 THEN
-    WnRefreshField wid%, old%
-  END IF
-
-  IF fid% > 0 THEN
-    WnRefreshField wid%, fid%
-  END IF
-
+SUB WnDraw (wnid%)
+  DIM root%: root% = ObGet%(ObSchema.Window, wnid%, WnIndex.Root)
+  IF root% > 0 THEN CtDraw root%
 END SUB
 
-SUB WnFocusOnFirst (wid%)
-  '
-  ' Selects the first selectable field
-  '
-
-  AssertIsPositive wid%, "WnFocusOnFirst", "wid%"
-
-  IF win(wid%).fields = 0 THEN
-    '
-    ' This window has no fields
-    '
-    WnFocusOn wid%, 0
-
-  ELSE
- 
-    DIM fid%
-    FOR fid% = 1 TO win(wid%).fields
-     
-      DIM ctid%
-      LET ctid% = gwin(wid%, fid%)
-
-      IF CtSelectable%(ctid%) THEN
-        WnFocusOn wid%, fid%
-        EXIT SUB
-      END IF
-    NEXT
-
-    '
-    ' None of the fields were selectable
-    '
-    WnFocusOn wid%, 0
-
-  END IF
-
-END SUB
-
-SUB WnFocusOnLast (wid%)
-  '
-  ' Selects the last selectable field
-  '
-
-  AssertIsPositive wid%, "WnFocusOnLast", "wid%"
-
-  IF win(wid%).fields = 0 THEN
-    '
-    ' This window has no fields
-    '
-    WnFocusOn wid%, 0
-
-  ELSE
-
-    DIM fid%
-    FOR fid% = win(wid%).fields TO 1 STEP -1
-     
-      DIM ctid%
-      LET ctid% = gwin(wid%, fid%)
-
-      IF CtSelectable%(ctid%) THEN
-        WnFocusOn wid%, fid%
-        EXIT SUB
-      END IF
-    NEXT
-
-    '
-    ' None of the fields were selectable
-    '
-    WnFocusOn wid%, 0
-
-  END IF
-
-END SUB
-
-SUB WnFocusOnNext (wid%)
-  '
-  ' Selects the next selectable field
-  '
-
-  AssertIsPositive wid%, "WnFocusOnNext", "wid%"
-
-  DIM cnid%
-  LET cnid% = gwin(wid%, 0)
-
-  DIM fid%
-  DIM firstFid%
-
-  IF win(wid%).fields = 0 THEN
-   
-    fid% = 0
- 
-  ELSE
-
-    '
-    ' Get the starting field
-    '
-    LET firstFid% = CtGet%(cnid%, CtIndex.Selected)
-    IF firstFid% = 0 THEN
-      firstFid% = 1
-    END IF
-
-    LET fid% = firstFid%
-
-    DO
-    
-      '
-      ' Move to the next field
-      '
-      fid% = fid% + 1
-      IF fid% > win(wid%).fields THEN
-        fid% = 1
-      END IF
-
-      DIM fidctid%
-      LET fidctid% = gwin(wid%, fid%)
-
-      IF CtSelectable%(fidctid%) THEN
-        EXIT DO
-      END IF
-
-      IF fid% = firstFid% THEN
-        '
-        ' We found ourself, but we are not selectable
-        '
-        fid% = 0
-        EXIT DO
-      END IF
-
-    LOOP
-
-  END IF
-
-  WnFocusOn wid%, fid%
-
-END SUB
-
-SUB WnFocusOnPrevious (wid%)
-  '
-  ' Selects the field before the current one (looping around)
-  '
-
-  AssertIsPositive wid%, "WnFocusOnPrevious", "wid%"
-
-  DIM cnid%
-  LET cnid% = gwin(wid%, 0)
-
-  DIM fid%
-  DIM startingFid%
-
-  IF win(wid%).fields = 0 THEN
-   
-    fid% = 0
-
-  ELSE
-
-    '
-    ' Get the starting field
-    '
-    LET startingFid% = CtGet%(cnid%, CtIndex.Selected)
-    IF startingFid% = 0 THEN
-      startingFid% = 1
-    END IF
-
-    LET fid% = startingFid%
-
-    '
-    ' Loop through each field and find the next selectable one
-    '
-    DO
-   
-      fid% = fid% - 1
-      IF fid% = 0 THEN
-        fid% = win(wid%).fields
-      END IF
-
-      DIM fidctid%
-      LET fidctid% = gwin(wid%, fid%)
-
-      IF CtSelectable%(fidctid%) THEN
-        EXIT DO
-      END IF
-
-      IF fid% = startingFid% THEN
-        '
-        ' We looped back to ourself, but we are not selectable.
-        '
-        fid% = 0
-        EXIT DO
-      END IF
-
-    LOOP
-
-  END IF
-
-  WnFocusOn wid%, fid%
-
-END SUB
-
-FUNCTION WnGet% (wnid%, wnix%)
-  WnGet% = ObGet%(ObSchema.Window, wnid%, wnix%)
-END FUNCTION
-
-FUNCTION WnMap% (name$)
-
-  SELECT CASE name$
+FUNCTION WnFocus% (wnid%)
   
-    CASE "ArrowExit"
-      WnMap% = WnIndex.ArrowExit
+  DbPositive wnid%, "WnFocus%", "wnid%"
 
-    CASE "Container"
-      WnMap% = WnIndex.Container
-
-    CASE "Focused"
-      WnMap% = WnIndex.Focused
-
-    CASE "Name"
-      WnMap% = WnIndex.Name
-
-    CASE "Param"
-      WnMap% = WnIndex.Param
-
-    CASE "Parent"
-      WnMap% = WnIndex.Parent
-
-    CASE "Schema"
-      WnMap% = WnIndex.Schema
-
-    CASE ELSE
-      WnMap% = ObIndex.Invalid
-
-  END SELECT
+  DIM root%: root% = ObGet%(ObSchema.Window, wnid%, WnIndex.Root)
+  IF root% > 0 THEN
+    root% = CtFocus%(root%)
+  END IF
 
 END FUNCTION
 
-FUNCTION WnMapKey% (wid%, pressed$)
-
-  DIM cnid%
-  LET cnid% = gwin(wid%, 0)
-
-  DIM wnid%
-  LET wnid% = CtGet%(cnid%, CtIndex.Window)
-
-  DIM popupctid    AS INTEGER
-  DIM cmdrsid      AS INTEGER
-  DIM selected     AS INTEGER
-  DIM selectedCtid AS INTEGER
-
-  '
-  ' Examine the field.
-  ' ArrowExit bit 0 means to exit when navigating left
-  ' ArrowExit bit 1 means to exit when nagivating right
-  '
-  DIM arrowexit%
-  LET arrowexit% = WnGet%(wnid%, WnIndex.ArrowExit)
-
-  DIM exitLeft%
-  LET exitLeft% = arrowexit% AND &H1
+FUNCTION WnKey% (wnid%, keypress$)
  
-  DIM exitRight%
-  LET exitRight% = arrowexit% AND &H2
- 
+  DbPositive wnid%, "WnKey%", "wnid%"
+
+  DIM action%
+  DIM focused%
+  DIM root%
+
   '
-  ' Get the index of the control with focus
+  ' Get the focused control and dispatch the key
   '
-  selected = CtGet%(cnid%, CtIndex.Selected)
-  IF selected > 0 THEN
-    selectedCtid = gwin(wid%, selected)
-    popupctid = CtGet%(selectedCtid, CtIndex.Popup)
-    cmdrsid = CtGet%(selectedCtid, CtIndex.Command)
+  root% = ObGet%(ObSchema.Window, wnid%, WnIndex.Root)
+  IF root% > 0 THEN
+    action% = CtKey%(root%, keypress$)
   END IF
 
-  SELECT CASE pressed$
+  IF action% = CtAction.None THEN
+   
+    SELECT CASE keypress$
+   
+      CASE KeyEscape$
+        action% = CtAction.Cancel
 
-    CASE CHR$(ASCII.Return)
-      IF popupctid > 0 THEN
-        WnMapKey% = WnAction.OpenPopup
-      ELSEIF cmdrsid > 0 THEN
-        WnMapKey% = WnAction.Execute
-      ELSE
-        WnMapKey% = WnAction.Complete
-      END IF
+      CASE "!"
+        '
+        ' Show the console page and wait for a key to be pressed
+        '
+        VdWatch 0
+        action% = CtAction.Handled
+   
+      CASE "?"
+        '
+        ' Show debug information about the window
+        '
+        VdPushVisual 0
+        ShSerialize wnid%, 0
+        VdPop
+        action% = CtAction.Handled
 
-    CASE CHR$(ASCII.Escape)
-      WnMapKey% = WnAction.Cancel
+    END SELECT
+  END IF
 
-    CASE CHR$(ASCII.Tab)
-      WnMapKey% = WnAction.SelectNext
-
-    CASE CHR$(0) + CHR$(ScanCode.Down)
-      IF popupctid > 0 THEN
-        WnMapKey% = WnAction.OpenPopup
-      ELSE
-        WnMapKey% = WnAction.SelectNext
-      END IF
-
-    CASE CHR$(0) + CHR$(ScanCode.End)
-      WnMapKey% = WnAction.SelectLast
-
-    CASE CHR$(0) + CHR$(ScanCode.Home)
-      WnMapKey% = WnAction.SelectFirst
-
-    CASE CHR$(0) + CHR$(ScanCode.Left)
-      IF exitLeft% THEN
-        WnMapKey% = WnAction.ExitLeft
-      ELSE
-        WnMapKey% = WnAction.SelectPrevious
-      END IF
-
-    CASE CHR$(0) + CHR$(ScanCode.PageDown)
-      WnMapKey% = WnAction.SelectLast
-
-    CASE CHR$(0) + CHR$(ScanCode.PageUp)
-      WnMapKey% = WnAction.SelectFirst
-
-    CASE CHR$(0) + CHR$(ScanCode.Right)
-      IF exitRight% THEN
-        WnMapKey% = WnAction.ExitRight
-      ELSE
-        WnMapKey% = WnAction.SelectNext
-      END IF
-
-    CASE CHR$(0) + CHR$(ScanCode.Up)
-      WnMapKey% = WnAction.SelectPrevious
-
-    CASE ELSE
-      WnMapKey% = WnAction.None
-
-  END SELECT
+  WnKey% = action%
 
 END FUNCTION
 
-SUB WnRefreshField (wid%, fid%)
-
-  DIM ctid%
-  DIM n AS INTEGER
-
-  IF winstacked > 0 THEN
-    IF winstack(winstacked).wnid = wid% THEN
-     
-      FOR n = 1 TO win(wid%).fields
-       
-        ctid% = gwin(wid%, n)
-
-        IF n = fid% THEN
-          CtDraw wid%, n
-        ELSEIF CtRedirected%(ctid%, CtIndex.Text) THEN
-          CtDraw wid%, n
-        ELSEIF CtRedirected%(ctid%, CtIndex.Value) THEN
-          CtDraw wid%, n
-        END IF
-      NEXT
-
-    END IF
-  END IF
-
-END SUB
-
-SUB WnRender (wnid%)
+SUB WnOpen (wnid%)
   '
   ' Displays the window and gives it focus
   '
-  
-  DIM cnid%: cnid% = WnGet%(wnid%, WnIndex.Container)
-  AssertIsPositive cnid%, "WnRender", "cnid%"
-
-  DIM wid%: wid% = WnGet%(wnid%, WnIndex.Wid)
-  AssertIsPositive wid%, "WnRender", "wid%"
-
-  DIM backpage AS INTEGER
-  DIM workpage AS INTEGER
+  DbPositive wnid%, "WnOpen", "wnid%"
 
   '
-  ' Allocate video page
+  ' Allocate working video page for drawing
   '
-  workpage = VideoAlloc%
-  IF winstacked = 0 THEN
-    backpage = VideoGetActive%
+  DIM workpage%: workpage% = VdAlloc%
+  DbPositive workpage%, "WnOpen", "workpage%"
+
+  DIM backpage%
+  IF wn.count = 0 THEN
+    backpage% = VdActive%
   ELSE
-    backpage = winstack(winstacked).workpage
+    backpage% = wn.workpage(wn.count)
   END IF
 
-  winstacked = winstacked + 1
- 
-  winstack(winstacked).wnid = wid%
-  winstack(winstacked).backpage = backpage
-  winstack(winstacked).workpage = workpage
+  wn.count = wn.count + 1
+  wn.wnid(wn.count) = wnid%
+  wn.backpage(wn.count) = backpage%
+  wn.workpage(wn.count) = workpage%
+
+  '
+  ' Mark the controls dirty
+  '
+  WnDirty wnid%
 
   '
   ' Draw the window
   '
-  VideoScreen workpage, backpage
-  PCOPY backpage, workpage
-  WnDraw wid%
+  VdScreen workpage%, backpage%
+  PCOPY backpage%, workpage%
+  WnDraw wnid%
   
-  '
-  ' Set focus to a field
-  '
-  IF CtGet%(cnid%, CtIndex.Selected) = 0 THEN
-    WnFocusOnFirst wid%
-  END IF
-
   '
   ' Set the working page as the visual page
   '
-  VideoScreen workpage, workpage
+  VdScreen workpage%, workpage%
 
 END SUB
 
-SUB WnRun (wnid%, result AS WnResultType)
+SUB WnRun (wnid%)
 
-  AssertIsPositive wnid%, "WnRun", "wnid%"
+  DbPositive wnid%, "WnRun", "wnid%"
+ 
+  '
+  ' Run the window UI and get the action to execute
+  '
+  DIM result%: result% = WnUI%(wnid%)
+  DIM action%: action% = result% AND &HF
+  DIM param%: param% = result% \ 16
 
-  DIM wid%: wid% = WnGet%(wnid%, WnIndex.Wid)
-  AssertIsPositive wid%, "WnRun", "wid%"
+  SELECT CASE action%
 
-  DIM cnid%: cnid% = WnGet%(wnid%, WnIndex.Container)
-  AssertIsPositive cnid%, "WnRun", "cnid%"
+    CASE CtAction.Cancel
+      '
+      ' The window was canceled
+      '
 
-  DIM nopopups AS INTEGER
-  DIM pressed  AS STRING
+    CASE CtAction.Command
+      result% = WnCmd%(wnid%, RsGet$(param%))
 
-  WnRender wnid%
-
-  DO
-
-    '
-    ' Determine if the selected field is a popup.
-    ' If so, that window needs to be displayed now.
-    '
-    DO
-
-      IF nopopups THEN
-        EXIT DO
-      ELSEIF CtGet%(cnid%, CtIndex.Selected) = 0 THEN
-        EXIT DO
-      END IF
-
-      DIM selectedCtid%
-      LET selectedCtid% = gwin(wid%, CtGet%(cnid%, CtIndex.Selected))
-
-      IF CtGet%(selectedCtid%, CtIndex.Kind) <> CtKind.Popup THEN
-       
-        EXIT DO
-
-      ELSEIF CtGet%(selectedCtid%, CtIndex.Popup) = 0 THEN
-       
-        EXIT DO
-
-      ELSE
-     
-        WnRun CtGet%(selectedCtid%, CtIndex.Popup), result
-       
-        SELECT CASE result.action
-         
-          CASE WnAction.Cancel
-            '
-            ' The user canceled the popup, so disable popups until
-            ' the user explicitly opens the popup window.
-            '
-            nopopups = True
-            EXIT DO
-
-          CASE WnAction.Execute
-            '
-            ' The user selected a command from the popup. The result
-            ' will be passed up via the output result parameter.
-            '
-            WnClose wid%
-            EXIT SUB
-         
-          CASE WnAction.ExitLeft
-            WnFocusOnPrevious wid%
-         
-          CASE WnAction.ExitRight
-            WnFocusOnNext wid%
-         
-          CASE ELSE
-            EXIT DO
-
-        END SELECT
-
-      END IF
-
-    LOOP
-
-    pressed = GetKey$
-   
-    SELECT CASE WnMapKey%(wid%, pressed)
-     
-      CASE WnAction.Cancel
-        result.action = WnAction.Cancel
-        result.canceled = True
-        result.cmdrsid = 0
-        result.selected = CtGet%(cnid%, CtIndex.Selected)
-        WnClose wid%
-        EXIT SUB
-
-      CASE WnAction.Complete
-        result.action = WnAction.Complete
-        result.canceled = False
-        result.cmdrsid = 0
-        result.selected = CtGet%(cnid%, CtIndex.Selected)
-        WnClose wid%
-        EXIT SUB
-
-      CASE WnAction.Execute
-        result.action = WnAction.Execute
-        result.canceled = False
-        result.selected = CtGet%(cnid%, CtIndex.Selected)
-        result.cmdrsid = CtGet%(gwin(wid%, result.selected), CtIndex.Command)
-        WnClose wid%
-        EXIT SUB
-
-      CASE WnAction.ExitLeft
-        result.action = WnAction.ExitLeft
-        result.canceled = True
-        result.cmdrsid = 0
-        result.selected = CtGet%(cnid%, CtIndex.Selected)
-        WnClose wid%
-        EXIT SUB
-
-      CASE WnAction.ExitRight
-        result.action = WnAction.ExitRight
-        result.canceled = True
-        result.cmdrsid = 0
-        result.selected = CtGet%(cnid%, CtIndex.Selected)
-        WnClose wid%
-        EXIT SUB
-
-      CASE WnAction.OpenPopup
-        nopopups = False
-
-      CASE WnAction.SelectFirst
-        WnFocusOnFirst wid%
-
-      CASE WnAction.SelectLast
-        WnFocusOnLast wid%
-
-      CASE WnAction.SelectNext
-        WnFocusOnNext wid%
-
-      CASE WnAction.SelectPrevious
-        WnFocusOnPrevious wid%
-
-      CASE ELSE
-        CtKey gwin(wid%, CtGet%(cnid%, CtIndex.Selected)), pressed
-        WnRefreshField wid%, CtGet%(cnid%, CtIndex.Selected)
-
-    END SELECT
-
-  LOOP
+  END SELECT
 
 END SUB
 
 SUB WnRunName (name$)
+  DIM wnid%: wnid% = ObFind%(ObSchema.Window, name$)
+  WnRun wnid%
+END SUB
+
+FUNCTION WnUI% (wnid%)
+
+  DbPositive wnid%, "WnUI%", "wnid%"
+  WnOpen wnid%
+
+  DO
+
+    '
+    ' Set focus, draw updates, wait for the next key.
+    '
+    DIM focused%: focused% = WnFocus%(wnid%)
+    WnDraw wnid%
+    DIM keypress$: keypress$ = GetKey$
  
-  DIM result AS WnResultType
-  DIM wnid%: wnid% = WnFind%(name$)
-  AssertIsPositive wnid%, "WnRunName", "wnid%"
-  WnRun wnid%, result
+    '
+    ' Dispatch the key
+    '
+    DIM result%: result% = WnKey%(wnid%, keypress$)
+   
+    '
+    ' The action is lower 4 bits, the param is upper bits
+    '
+    DIM action%: action% = result% AND &HF
+    DIM param%: param% = result% \ 16
 
-END SUB
+    SELECT CASE action%
+     
+      CASE CtAction.None, CtAction.Handled
+        '
+        ' Remain open
+        '
+     
+      CASE CtAction.Cancel, CtAction.Command
+        '
+        ' Close and let caller handle
+        '
+        WnClose wnid%
+        WnUI% = result%
+        EXIT FUNCTION
 
-SUB WnSet (wnid%, wnix%, value%)
-  ObSet ObSchema.Window, wnid%, wnix%, value%
-END SUB
+      CASE CtAction.Window
+        '
+        ' Stack another window
+        '
+        result% = WnUI%(param%)
+        SELECT CASE result% AND &HF
+          CASE CtAction.Cancel
+            '
+            ' Stacked window was canceled, but keep this one alive.
+            '
+
+          CASE CtAction.Command
+            '
+            ' Command selected, pass back to caller
+            '
+            WnUI% = result%
+            WnClose wnid%
+            EXIT FUNCTION
+            
+        END SELECT
+
+      CASE ELSE
+        DbFail "WnUI%", "Unsupported action:" + STR$(action%)
+
+    END SELECT
+
+  LOOP
+  
+END FUNCTION
 
 FUNCTION WorldAdd% (hbid%, cx%, cy%)
 
@@ -4856,7 +4800,7 @@ FUNCTION WorldAdd% (hbid%, cx%, cy%)
   area(aid%).hbid = hbid%
   area(aid%).energy = 3
 
-  AtlasAddItem cx%, cy%, aid%, HbGet%(hbid%, HbIndex.Label)
+  AtlasAddItem cx%, cy%, aid%, ObGet%(ObSchema.Habitat, hbid%, HbIndex.Label)
   WorldAdd% = aid%
 
 END FUNCTION
@@ -4905,7 +4849,7 @@ END SUB
 
 SUB WorldHarvest (aid%)
 
-  AssertIsPositive aid%, "WorldHarvest", "aid%"
+  DbPositive aid%, "WorldHarvest", "aid%"
 
   DIM energy%
   LET energy% = area(aid%).energy
@@ -4929,28 +4873,28 @@ FUNCTION WorldNextId%
 
   STATIC idx AS INTEGER
 
-  DIM try AS INTEGER
-  LET try = idx
+  DIM Try AS INTEGER
+  LET Try = idx
 
   DO
     '
     ' Try the next index
     '
-    try = try + 1
-    IF try > UBOUND(area) THEN
-      try = LBOUND(area)
+    Try = Try + 1
+    IF Try > UBOUND(area) THEN
+      Try = LBOUND(area)
     END IF
 
-    IF NOT area(try).allocated THEN
+    IF NOT area(Try).allocated THEN
       '
       ' An open slot was found - return its index
       '
-      idx = try
+      idx = Try
       WorldNextId% = idx
       EXIT FUNCTION
     END IF
 
-    IF try = idx THEN
+    IF Try = idx THEN
       '
       ' The loop went all the way around - no open slots
       '
@@ -4964,7 +4908,7 @@ END FUNCTION
 
 SUB WorldRemove (aid%)
 
-  AssertIsPositive aid%, "WorldRemove", "aid%"
+  DbPositive aid%, "WorldRemove", "aid%"
 
   IF area(aid%).allocated THEN
     area(aid%).allocated = False
@@ -4977,8 +4921,8 @@ SUB WorldSetLabel (aid%, labelrsid%)
   '
   ' Updates the label for the specified area
   '
-  AssertIsPositive aid%, "WorldSetLabel", "aid%"
-  AssertIsPositive labelrsid%, "WorldSetLabel", "labelrsid%"
+  DbPositive aid%, "WorldSetLabel", "aid%"
+  DbPositive labelrsid%, "WorldSetLabel", "labelrsid%"
 
   DIM idx AS INTEGER
  
