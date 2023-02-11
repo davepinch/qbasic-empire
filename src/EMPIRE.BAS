@@ -429,22 +429,22 @@ CONST ObSchema.Window = 7
 CONST ObSchemas = 7
 
 REDIM SHARED ObSchemaLabel(1 TO ObSchemas) AS STRING * 2
-ObSchemaLabel$(ObSchema.Control) = "CT"
-ObSchemaLabel$(ObSchema.Event) = "EV"
-ObSchemaLabel$(ObSchema.Habitat) = "HB"
-ObSchemaLabel$(ObSchema.Person) = "PR"
-ObSchemaLabel$(ObSchema.Style) = "ST"
-ObSchemaLabel$(ObSchema.Trigger) = "TR"
-ObSchemaLabel$(ObSchema.Window) = "WN"
+ObSchemaLabel$(1) = "CT"
+ObSchemaLabel$(2) = "EV"
+ObSchemaLabel$(3) = "HB"
+ObSchemaLabel$(4) = "PR"
+ObSchemaLabel$(5) = "ST"
+ObSchemaLabel$(6) = "TR"
+ObSchemaLabel$(7) = "WN"
 
 REDIM SHARED ObSchemaName$(1 TO ObSchemas)
-ObSchemaName$(ObSchema.Control) = "Control"
-ObSchemaName$(ObSchema.Event) = "Event"
-ObSchemaName$(ObSchema.Habitat) = "Habitat"
-ObSchemaName$(ObSchema.Person) = "Person"
-ObSchemaName$(ObSchema.Style) = "Style"
-ObSchemaName$(ObSchema.Trigger) = "Trigger"
-ObSchemaName$(ObSchema.Window) = "Window"
+ObSchemaName$(1) = "Control"
+ObSchemaName$(2) = "Event"
+ObSchemaName$(3) = "Habitat"
+ObSchemaName$(4) = "Person"
+ObSchemaName$(5) = "Style"
+ObSchemaName$(6) = "Trigger"
+ObSchemaName$(7) = "Window"
 
 '
 ' Person properties
