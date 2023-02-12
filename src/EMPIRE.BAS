@@ -276,7 +276,7 @@ CONST ObBinding.Expression = 1
 CONST ObBinding.Inherit = 3
 
 '
-' Object properties
+' Object property indexes
 '
 CONST ObIndex.Invalid = -1
 CONST ObIndex.Schema = 0
@@ -293,23 +293,27 @@ CONST ObSchema.Control = 1
 CONST ObSchema.Event = 2
 CONST ObSchema.Habitat = 3
 CONST ObSchema.Location = 4
-CONST ObSchema.Person = 5
-CONST ObSchema.Style = 6
-CONST ObSchema.Thing = 7
-CONST ObSchema.Trigger = 8
-CONST ObSchema.Window = 9
-CONST ObSchemas = 9
+CONST ObSchema.Style = 5
+CONST ObSchema.Thing = 6
+CONST ObSchema.Trigger = 7
+CONST ObSchema.Window = 8
+CONST ObSchemas = 8
 
+'
+' Object schema names
+'
 REDIM SHARED ObKind$(0 TO ObSchemas, 0 TO 15)
 ObKind$(0, 0) = "Object"
 
-REDIM SHARED ObProperty$(0 TO 15, -2 TO 15)
+'
+' Object property names
+'
+REDIM SHARED ObProperty$(0 TO 15, 0 TO 15)
 ObProperty$(0, ObIndex.Schema) = "Schema"
 ObProperty$(0, ObIndex.Dirty) = "Dirty"
 ObProperty$(0, ObIndex.Kind) = "Kind"
 ObProperty$(0, ObIndex.Name) = "Name"
 ObProperty$(0, ObIndex.Parent) = "Parent"
-
 
 '
 ' Control actions in response to input
@@ -336,18 +340,8 @@ CONST CtKind.Separator = 9
 CONST CtKinds = 9
 
 '
-' Control properties
+' Control kind names
 '
-CONST CtIndex.Command = 5
-CONST CtIndex.Focused = 6
-CONST CtIndex.OffsetX = 7
-CONST CtIndex.OffsetY = 8
-CONST CtIndex.SizeX = 9
-CONST CtIndex.SizeY = 10
-CONST CtIndex.Style = 11
-CONST CtIndex.Text = 12
-CONST CtIndex.Value = 13
-
 ObKind$(ObSchema.Control, CtKind.None) = "Control"
 ObKind$(ObSchema.Control, CtKind.Boolean) = "Boolean"
 ObKind$(ObSchema.Control, CtKind.Box) = "Box"
@@ -359,6 +353,22 @@ ObKind$(ObSchema.Control, CtKind.Nebula) = "Nebula"
 ObKind$(ObSchema.Control, CtKind.Popup) = "Popup"
 ObKind$(ObSchema.Control, CtKind.Separator) = "Separator"
 
+'
+' Control property indexes
+'
+CONST CtIndex.Command = 5
+CONST CtIndex.Focused = 6
+CONST CtIndex.OffsetX = 7
+CONST CtIndex.OffsetY = 8
+CONST CtIndex.SizeX = 9
+CONST CtIndex.SizeY = 10
+CONST CtIndex.Style = 11
+CONST CtIndex.Text = 12
+CONST CtIndex.Value = 13
+
+'
+' Control property names
+'
 ObProperty$(ObSchema.Control, CtIndex.Command) = "Command"
 ObProperty$(ObSchema.Control, CtIndex.Focused) = "Focused"
 ObProperty$(ObSchema.Control, CtIndex.OffsetX) = "OffsetX"
@@ -408,38 +418,75 @@ ObProperty$(ObSchema.Location, LcIndex.Energy) = "Energy"
 ObProperty$(ObSchema.Location, LcIndex.Habitat) = "Habitat"
 
 '
-' Person properties
+' Style kind names
 '
-CONST PrIndex.Label = 5
-ObKind$(ObSchema.Person, 0) = "Person"
-ObProperty$(ObSchema.Person, PrIndex.Label) = "Label"
+ObKind$(ObSchema.Style, 0) = "Style"
 
 '
-' Style properties
+' Style property indexes
 '
 CONST StIndex.BorderColor = 5
 CONST StIndex.BorderType = 6
 CONST StIndex.SelectedColor = 7
 CONST StIndex.TextColor = 8
-ObKind$(ObSchema.Style, 0) = "Style"
+
+'
+' Style property names
+'
 ObProperty$(ObSchema.Style, StIndex.BorderColor) = "BorderColor"
 ObProperty$(ObSchema.Style, StIndex.BorderType) = "BorderType"
 ObProperty$(ObSchema.Style, StIndex.SelectedColor) = "SelectedColor"
 ObProperty$(ObSchema.Style, StIndex.TextColor) = "TextColor"
 
 '
-' Thing Kinds
+' Thing kinds
 '
 CONST ThKind.None = 0
 CONST ThKind.Person = 1
+CONST ThKind.Place = 2
 
 '
-' Trigger properties
+' Thing kind names
+'
+ObKind$(ObSchema.Thing, ThKind.None) = "Thing"
+ObKind$(ObSchema.Thing, ThKind.Person) = "Person"
+ObKind$(ObSchema.Thing, ThKind.Place) = "Place"
+
+'
+' Thing property indexes
+'
+CONST ThIndex.Backdrop = 5
+CONST ThIndex.Energy = 6
+CONST ThIndex.Greeting = 7
+CONST ThIndex.Label = 8
+CONST ThIndex.Pin = 9
+CONST ThIndex.Window = 10
+
+'
+' Thing property names
+'
+ObProperty$(ObSchema.Thing, ThIndex.Backdrop) = "Backdrop"
+ObProperty$(ObSchema.Thing, ThIndex.Energy) = "Energy"
+ObProperty$(ObSchema.Thing, ThIndex.Greeting) = "Greeting"
+ObProperty$(ObSchema.Thing, ThIndex.Label) = "Label"
+ObProperty$(ObSchema.Thing, ThIndex.Pin) = "Pin"
+ObProperty$(ObSchema.Thing, ThIndex.Window) = "Window"
+
+'
+' Trigger kind names
+'
+ObKind$(ObSchema.Trigger, 0) = "Trigger"
+
+'
+' Trigger property indexes
 '
 CONST TrIndex.Event = 5
 CONST TrIndex.Equals = 6
 CONST TrIndex.Command = 7
-ObKind$(ObSchema.Trigger, 0) = "Trigger"
+
+'
+' Trigger property names
+'
 ObProperty$(ObSchema.Trigger, TrIndex.Event) = "Event"
 ObProperty$(ObSchema.Trigger, TrIndex.Equals) = "Equals"
 ObProperty$(ObSchema.Trigger, TrIndex.Command) = "Command"
@@ -452,11 +499,19 @@ CONST UIPage.Atlas = 1
 CONST UIPage.Terminal = 2
 
 '
-' Window properties
+' Window kind names
+'
+ObKind$(ObSchema.Window, 0) = "Window"
+
+'
+' Window property indexes
 '
 CONST WnIndex.Param = 5
 CONST WnIndex.Root = 6
-ObKind$(ObSchema.Window, 0) = "Window"
+
+'
+' Window property names
+'
 ObProperty$(ObSchema.Window, WnIndex.Param) = "Param"
 ObProperty$(ObSchema.Window, WnIndex.Root) = "Root"
 
@@ -2471,19 +2526,20 @@ SUB DgNext (outprid%, outtext$)
 
   '
   ' Select a random person
+  ' *** will fail when more than one thing kind is defined
   '
-  DIM n%: n% = INT(RND * vwPerSchema(ObSchema.Person, 0)) + 1
-  outprid% = vwPerSchema(ObSchema.Person, n%)
+  DIM n%: n% = INT(RND * vwPerSchema(ObSchema.Thing, 0)) + 1
+  outprid% = vwPerSchema(ObSchema.Thing, n%)
 
 END SUB
 
-SUB DgPrint (prid%, text$)
+SUB DgPrint (thid%, text$)
 
   DIM name$
-  LET name$ = RsGet$(ObGet%(ObSchema.Person, prid%, ObIndex.Name))
+  LET name$ = RsGet$(ObGet%(ObSchema.Thing, thid%, ObIndex.Name))
  
   DIM label$
-  LET label$ = RsGet$(ObGet%(ObSchema.Person, prid%, PrIndex.Label))
+  LET label$ = RsGet$(ObGet%(ObSchema.Thing, thid%, ThIndex.Label))
   IF label$ = "" THEN
     label$ = "@X1F " + name$ + " @X07"
   END IF
@@ -3156,7 +3212,7 @@ SUB ExRunFile (filename$)
     END IF
 
     '
-    ' Pause when the person presses a key
+    ' Pause when a key is pressed
     '
     DIM keypress$: keypress$ = INKEY$
     IF LEN(keypress$) THEN
