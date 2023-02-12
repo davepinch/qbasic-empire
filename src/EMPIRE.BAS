@@ -444,9 +444,10 @@ CONST ObSchema.Habitat = 3
 CONST ObSchema.Location = 4
 CONST ObSchema.Person = 5
 CONST ObSchema.Style = 6
-CONST ObSchema.Trigger = 7
-CONST ObSchema.Window = 8
-CONST ObSchemas = 8
+CONST ObSchema.Thing = 7
+CONST ObSchema.Trigger = 8
+CONST ObSchema.Window = 9
+CONST ObSchemas = 9
 
 REDIM SHARED ObSchemaLabel(1 TO ObSchemas) AS STRING * 2
 ObSchemaLabel$(1) = "CT"
@@ -455,8 +456,9 @@ ObSchemaLabel$(3) = "HB"
 ObSchemaLabel$(4) = "LC"
 ObSchemaLabel$(5) = "PR"
 ObSchemaLabel$(6) = "ST"
-ObSchemaLabel$(7) = "TR"
-ObSchemaLabel$(8) = "WN"
+ObSchemaLabel$(7) = "TH"
+ObSchemaLabel$(8) = "TR"
+ObSchemaLabel$(9) = "WN"
 
 REDIM SHARED ObSchemaName$(1 TO ObSchemas)
 ObSchemaName$(1) = "Control"
@@ -465,8 +467,9 @@ ObSchemaName$(3) = "Habitat"
 ObSchemaName$(4) = "Location"
 ObSchemaName$(5) = "Person"
 ObSchemaName$(6) = "Style"
-ObSchemaName$(7) = "Trigger"
-ObSchemaName$(8) = "Window"
+ObSchemaName$(7) = "Thing"
+ObSchemaName$(8) = "Trigger"
+ObSchemaName$(9) = "Window"
 
 '
 ' Person properties
@@ -509,6 +512,22 @@ StHeader$(5) = "BorderColor"
 StHeader$(6) = "BorderType"
 StHeader$(7) = "SelectedColor"
 StHeader$(8) = "TextColor"
+
+'
+' Thing properties
+'
+CONST ThIndex.Schema = 0
+CONST ThIndex.Dirty = 1
+CONST ThIndex.Kind = 2
+CONST ThIndex.Name = 3
+CONST ThIndex.Parent = 4
+
+REDIM SHARED ThHeader$(0 TO 15)
+ThHeader$(0) = "Schema"
+ThHeader$(1) = "Dirty"
+ThHeader$(2) = "Kind"
+ThHeader$(3) = "Name"
+ThHeader$(4) = "Parent"
 
 '
 ' Trigger properties
@@ -3070,6 +3089,9 @@ FUNCTION ExMap% (schema%, propname$)
 
     CASE ObSchema.Style
       ExMap% = ExScan%(StHeader$(), fixed$)
+
+    CASE ObSchema.Thing
+      ExMap% = ExScan%(ThHeader$(), fixed$)
 
     CASE ObSchema.Trigger
       ExMap% = ExScan%(TrHeader$(), fixed$)
