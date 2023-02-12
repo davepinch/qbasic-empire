@@ -311,11 +311,11 @@ CtKindName$(CtKind.Separator) = "Separator"
 '
 CONST CtIndex.Schema = 0
 CONST CtIndex.Dirty = 1
-CONST CtIndex.Name = 2
-CONST CtIndex.Parent = 3
-CONST CtIndex.Command = 4
-CONST CtIndex.Focused = 5
-CONST CtIndex.Kind = 6
+CONST CtIndex.Kind = 2
+CONST CtIndex.Name = 3
+CONST CtIndex.Parent = 4
+CONST CtIndex.Command = 5
+CONST CtIndex.Focused = 6
 CONST CtIndex.OffsetX = 7
 CONST CtIndex.OffsetY = 8
 CONST CtIndex.SizeX = 9
@@ -327,11 +327,11 @@ CONST CtIndex.Value = 13
 REDIM SHARED CtHeader$(0 TO 15)
 CtHeader$(0) = "Schema"
 CtHeader$(1) = "Dirty"
-CtHeader$(2) = "Name"
-CtHeader$(3) = "Parent"
-CtHeader$(4) = "Command"
-CtHeader$(5) = "Focused"
-CtHeader$(6) = "Kind"
+CtHeader$(2) = "Kind"
+CtHeader$(3) = "Name"
+CtHeader$(4) = "Parent"
+CtHeader$(5) = "Command"
+CtHeader$(6) = "Focused"
 CtHeader$(7) = "OffsetX"
 CtHeader$(8) = "OffsetY"
 CtHeader$(9) = "SizeX"
@@ -345,16 +345,18 @@ CtHeader$(13) = "Value"
 '
 CONST EvIndex.Schema = 0
 CONST EvIndex.Dirty = 1
-CONST EvIndex.Name = 2
-CONST EvIndex.Parent = 3
-CONST EvIndex.Value = 4
+CONST EvIndex.Kind = 2
+CONST EvIndex.Name = 3
+CONST EvIndex.Parent = 4
+CONST EvIndex.Value = 5
 
 REDIM SHARED EvHeader$(0 TO 15)
 EvHeader$(0) = "Schema"
 EvHeader$(1) = "Dirty"
-EvHeader$(2) = "Name"
-EvHeader$(3) = "Parent"
-EvHeader$(4) = "Value"
+EvHeader$(2) = "Kind"
+EvHeader$(3) = "Name"
+EvHeader$(4) = "Parent"
+EvHeader$(5) = "Value"
 
 '
 ' Execution token types
@@ -369,40 +371,44 @@ CONST ExTokenType.Unknown = 3
 '
 CONST HbIndex.Schema = 0
 CONST HbIndex.Dirty = 1
-CONST HbIndex.Name = 2
-CONST HbIndex.Parent = 3
-CONST HbIndex.Backdrop = 4
-CONST HbIndex.Label = 5
-CONST HbIndex.StartFile = 6
-CONST HbIndex.Window = 7
+CONST HbIndex.Kind = 2
+CONST HbIndex.Name = 3
+CONST HbIndex.Parent = 4
+CONST HbIndex.Backdrop = 5
+CONST HbIndex.Label = 6
+CONST HbIndex.StartFile = 7
+CONST HbIndex.Window = 8
 
 REDIM SHARED HbHeader$(0 TO 15)
 HbHeader$(0) = "Schema"
 HbHeader$(1) = "Dirty"
-HbHeader$(2) = "Name"
-HbHeader$(3) = "Parent"
-HbHeader$(4) = "Backdrop"
-HbHeader$(5) = "Label"
-HbHeader$(6) = "StartFile"
-HbHeader$(7) = "Window"
+HbHeader$(2) = "Kind"
+HbHeader$(3) = "Name"
+HbHeader$(4) = "Parent"
+HbHeader$(5) = "Backdrop"
+HbHeader$(6) = "Label"
+HbHeader$(7) = "StartFile"
+HbHeader$(8) = "Window"
 
 '
 ' Location properties
 '
 CONST LcIndex.Schema = 0
 CONST LcIndex.Dirty = 1
-CONST LcIndex.Name = 2
-CONST LcIndex.Parent = 3
-CONST LcIndex.Energy = 4
-CONST LcIndex.Habitat = 5
+CONST LcIndex.Kind = 2
+CONST LcIndex.Name = 3
+CONST LcIndex.Parent = 4
+CONST LcIndex.Energy = 5
+CONST LcIndex.Habitat = 6
 
 REDIM SHARED LcHeader$(0 TO 15)
 LcHeader$(0) = "Schema"
 LcHeader$(1) = "Dirty"
-LcHeader$(2) = "Name"
-LcHeader$(3) = "Parent"
-LcHeader$(4) = "Energy"
-LcHeader$(5) = "Habitat"
+LcHeader$(2) = "Kind"
+LcHeader$(3) = "Name"
+LcHeader$(4) = "Parent"
+LcHeader$(5) = "Energy"
+LcHeader$(6) = "Habitat"
 
 '
 ' Object bindings
@@ -417,14 +423,16 @@ CONST ObBinding.Inherit = 3
 CONST ObIndex.Invalid = -1
 CONST ObIndex.Schema = 0
 CONST ObIndex.Dirty = 1
-CONST ObIndex.Name = 2
-CONST ObIndex.Parent = 3
+CONST ObIndex.Kind = 2
+CONST ObIndex.Name = 3
+CONST ObIndex.Parent = 4
 
 REDIM SHARED ObHeader$(0 TO 15)
 ObHeader$(0) = "Schema"
 ObHeader$(1) = "Dirty"
-ObHeader$(2) = "Name"
-ObHeader$(3) = "Parent"
+ObHeader$(2) = "Kind"
+ObHeader$(3) = "Name"
+ObHeader$(4) = "Parent"
 
 '
 ' Object schemas
@@ -465,58 +473,64 @@ ObSchemaName$(8) = "Window"
 '
 CONST PrIndex.Schema = 0
 CONST PrIndex.Dirty = 1
-CONST PrIndex.Name = 2
-CONST PrIndex.Parent = 3
-CONST PrIndex.Label = 4
+CONST PrIndex.Kind = 2
+CONST PrIndex.Name = 3
+CONST PrIndex.Parent = 4
+CONST PrIndex.Label = 5
 
 REDIM SHARED PrHeader$(0 TO 15)
 PrHeader$(0) = "Schema"
 PrHeader$(1) = "Dirty"
-PrHeader$(2) = "Name"
-PrHeader$(3) = "Parent"
-PrHeader$(4) = "Label"
+PrHeader$(2) = "Kind"
+PrHeader$(3) = "Name"
+PrHeader$(4) = "Parent"
+PrHeader$(5) = "Label"
 
 '
 ' Style properties
 '
 CONST StIndex.Schema = 0
 CONST StIndex.Dirty = 1
-CONST StIndex.Name = 2
-CONST StIndex.Parent = 3
-CONST StIndex.BorderColor = 4
-CONST StIndex.BorderType = 5
-CONST StIndex.SelectedColor = 6
-CONST StIndex.TextColor = 7
+CONST StIndex.Kind = 2
+CONST StIndex.Name = 3
+CONST StIndex.Parent = 4
+CONST StIndex.BorderColor = 5
+CONST StIndex.BorderType = 6
+CONST StIndex.SelectedColor = 7
+CONST StIndex.TextColor = 8
 
 REDIM SHARED StHeader$(0 TO 15)
 StHeader$(0) = "Schema"
 StHeader$(1) = "Dirty"
-StHeader$(2) = "Name"
-StHeader$(3) = "Parent"
-StHeader$(4) = "BorderColor"
-StHeader$(5) = "BorderType"
-StHeader$(6) = "SelectedColor"
-StHeader$(7) = "TextColor"
+StHeader$(2) = "Kind"
+StHeader$(3) = "Name"
+StHeader$(4) = "Parent"
+StHeader$(5) = "BorderColor"
+StHeader$(6) = "BorderType"
+StHeader$(7) = "SelectedColor"
+StHeader$(8) = "TextColor"
 
 '
 ' Trigger properties
 '
 CONST TrIndex.Schema = 0
 CONST TrIndex.Dirty = 1
-CONST TrIndex.Name = 2
-CONST TrIndex.Parent = 3
-CONST TrIndex.Event = 4
-CONST TrIndex.Equals = 5
-CONST TrIndex.Command = 6
+CONST TrIndex.Kind = 2
+CONST TrIndex.Name = 3
+CONST TrIndex.Parent = 4
+CONST TrIndex.Event = 5
+CONST TrIndex.Equals = 6
+CONST TrIndex.Command = 7
 
 REDIM SHARED TrHeader$(0 TO 15)
 TrHeader$(0) = "Schema"
 TrHeader$(1) = "Dirty"
-TrHeader$(2) = "Name"
-TrHeader$(3) = "Parent"
-TrHeader$(4) = "Event"
-TrHeader$(5) = "Equals"
-TrHeader$(6) = "Command"
+TrHeader$(2) = "Kind"
+TrHeader$(3) = "Name"
+TrHeader$(4) = "Parent"
+TrHeader$(5) = "Event"
+TrHeader$(6) = "Equals"
+TrHeader$(7) = "Command"
 
 '
 ' UIPage.* constants
@@ -530,18 +544,20 @@ CONST UIPage.Terminal = 2
 '
 CONST WnIndex.Schema = 0
 CONST WnIndex.Dirty = 1
-CONST WnIndex.Name = 2
-CONST WnIndex.Parent = 3
-CONST WnIndex.Param = 4
-CONST WnIndex.Root = 5
+CONST WnIndex.Kind = 2
+CONST WnIndex.Name = 3
+CONST WnIndex.Parent = 4
+CONST WnIndex.Param = 5
+CONST WnIndex.Root = 6
 
 REDIM SHARED WnHeader$(0 TO 15)
 WnHeader$(0) = "Schema"
 WnHeader$(1) = "Dirty"
-WnHeader$(2) = "Name"
-WnHeader$(3) = "Parent"
-WnHeader$(4) = "Param"
-WnHeader$(5) = "Root"
+WnHeader$(2) = "Kind"
+WnHeader$(3) = "Name"
+WnHeader$(4) = "Parent"
+WnHeader$(5) = "Param"
+WnHeader$(6) = "Root"
 
 CONST MaxChildren = 20
 CONST MaxObjects = 200
