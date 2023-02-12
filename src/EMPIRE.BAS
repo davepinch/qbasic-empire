@@ -138,14 +138,11 @@ DECLARE FUNCTION ExMap% (schema%, propname$)
 DECLARE FUNCTION ExParse% (text$, tokens$(), comment%)
 DECLARE FUNCTION ExRun% (cmd$)
 DECLARE FUNCTION ExRunResource% (rsid%)
-DECLARE FUNCTION ExScan% (array$(), match$)
 DECLARE FUNCTION ExTop% ()
 DECLARE FUNCTION ExTryCmd% (tokens$(), count%)
-DECLARE FUNCTION ExTryControl% (name$)
-DECLARE FUNCTION ExTryEndControl% (tag$)
-DECLARE FUNCTION ExTryEndSchema% (tag$)
+DECLARE FUNCTION ExTryEndKind% (tag$)
+DECLARE FUNCTION ExTryKind% (name$)
 DECLARE FUNCTION ExTryProperty% (name$, value$)
-DECLARE FUNCTION ExTrySchema% (name$)
 DECLARE FUNCTION ExUnquote$ (text$)
 
 '
@@ -303,14 +300,16 @@ CONST ObSchema.Trigger = 8
 CONST ObSchema.Window = 9
 CONST ObSchemas = 9
 
-REDIM SHARED ObHeader$(0 TO 15, -2 TO 15)
-ObHeader$(0, -2) = "OB"
-ObHeader$(0, -1) = "Object"
-ObHeader$(0, ObIndex.Schema) = "Schema"
-ObHeader$(0, ObIndex.Dirty) = "Dirty"
-ObHeader$(0, ObIndex.Kind) = "Kind"
-ObHeader$(0, ObIndex.Name) = "Name"
-ObHeader$(0, ObIndex.Parent) = "Parent"
+REDIM SHARED ObKind$(0 TO ObSchemas, 0 TO 15)
+ObKind$(0, 0) = "Object"
+
+REDIM SHARED ObProperty$(0 TO 15, -2 TO 15)
+ObProperty$(0, ObIndex.Schema) = "Schema"
+ObProperty$(0, ObIndex.Dirty) = "Dirty"
+ObProperty$(0, ObIndex.Kind) = "Kind"
+ObProperty$(0, ObIndex.Name) = "Name"
+ObProperty$(0, ObIndex.Parent) = "Parent"
+
 
 '
 ' Control actions in response to input
@@ -336,17 +335,6 @@ CONST CtKind.Popup = 8
 CONST CtKind.Separator = 9
 CONST CtKinds = 9
 
-REDIM SHARED CtKindName$(1 TO CtKinds)
-CtKindName$(CtKind.Boolean) = "Boolean"
-CtKindName$(CtKind.Box) = "Box"
-CtKindName$(CtKind.Button) = "Button"
-CtKindName$(CtKind.Container) = "Container"
-CtKindName$(CtKind.File) = "File"
-CtKindName$(CtKind.Label) = "Label"
-CtKindName$(CtKind.Nebula) = "Nebula"
-CtKindName$(CtKind.Popup) = "Popup"
-CtKindName$(CtKind.Separator) = "Separator"
-
 '
 ' Control properties
 '
@@ -360,25 +348,33 @@ CONST CtIndex.Style = 11
 CONST CtIndex.Text = 12
 CONST CtIndex.Value = 13
 
-ObHeader$(ObSchema.Control, -2) = "CT"
-ObHeader$(ObSchema.Control, -1) = "Control"
-ObHeader$(ObSchema.Control, CtIndex.Command) = "Command"
-ObHeader$(ObSchema.Control, CtIndex.Focused) = "Focused"
-ObHeader$(ObSchema.Control, CtIndex.OffsetX) = "OffsetX"
-ObHeader$(ObSchema.Control, CtIndex.OffsetY) = "OffsetY"
-ObHeader$(ObSchema.Control, CtIndex.SizeX) = "SizeX"
-ObHeader$(ObSchema.Control, CtIndex.SizeY) = "SizeY"
-ObHeader$(ObSchema.Control, CtIndex.Style) = "Style"
-ObHeader$(ObSchema.Control, CtIndex.Text) = "Text"
-ObHeader$(ObSchema.Control, CtIndex.Value) = "Value"
+ObKind$(ObSchema.Control, CtKind.None) = "Control"
+ObKind$(ObSchema.Control, CtKind.Boolean) = "Boolean"
+ObKind$(ObSchema.Control, CtKind.Box) = "Box"
+ObKind$(ObSchema.Control, CtKind.Button) = "Button"
+ObKind$(ObSchema.Control, CtKind.Container) = "Container"
+ObKind$(ObSchema.Control, CtKind.File) = "File"
+ObKind$(ObSchema.Control, CtKind.Label) = "Label"
+ObKind$(ObSchema.Control, CtKind.Nebula) = "Nebula"
+ObKind$(ObSchema.Control, CtKind.Popup) = "Popup"
+ObKind$(ObSchema.Control, CtKind.Separator) = "Separator"
+
+ObProperty$(ObSchema.Control, CtIndex.Command) = "Command"
+ObProperty$(ObSchema.Control, CtIndex.Focused) = "Focused"
+ObProperty$(ObSchema.Control, CtIndex.OffsetX) = "OffsetX"
+ObProperty$(ObSchema.Control, CtIndex.OffsetY) = "OffsetY"
+ObProperty$(ObSchema.Control, CtIndex.SizeX) = "SizeX"
+ObProperty$(ObSchema.Control, CtIndex.SizeY) = "SizeY"
+ObProperty$(ObSchema.Control, CtIndex.Style) = "Style"
+ObProperty$(ObSchema.Control, CtIndex.Text) = "Text"
+ObProperty$(ObSchema.Control, CtIndex.Value) = "Value"
 
 '
 ' Event properties
 '
 CONST EvIndex.Value = 5
-ObHeader$(ObSchema.Event, -2) = "EV"
-ObHeader$(ObSchema.Event, -1) = "Event"
-ObHeader$(ObSchema.Event, EvIndex.Value) = "Value"
+ObKind$(ObSchema.Event, 0) = "Event"
+ObProperty$(ObSchema.Event, EvIndex.Value) = "Value"
 
 '
 ' Execution token types
@@ -396,31 +392,27 @@ CONST HbIndex.Label = 6
 CONST HbIndex.StartFile = 7
 CONST HbIndex.Window = 8
 
-ObHeader$(ObSchema.Habitat, -2) = "HB"
-ObHeader$(ObSchema.Habitat, -1) = "Habitat"
-ObHeader$(ObSchema.Habitat, HbIndex.Backdrop) = "Backdrop"
-ObHeader$(ObSchema.Habitat, HbIndex.Label) = "Label"
-ObHeader$(ObSchema.Habitat, HbIndex.StartFile) = "StartFile"
-ObHeader$(ObSchema.Habitat, HbIndex.Window) = "Window"
+ObKind$(ObSchema.Habitat, 0) = "Habitat"
+ObProperty$(ObSchema.Habitat, HbIndex.Backdrop) = "Backdrop"
+ObProperty$(ObSchema.Habitat, HbIndex.Label) = "Label"
+ObProperty$(ObSchema.Habitat, HbIndex.StartFile) = "StartFile"
+ObProperty$(ObSchema.Habitat, HbIndex.Window) = "Window"
 
 '
 ' Location properties
 '
 CONST LcIndex.Energy = 5
 CONST LcIndex.Habitat = 6
-ObHeader$(ObSchema.Location, -2) = "LC"
-ObHeader$(ObSchema.Location, -1) = "Location"
-ObHeader$(ObSchema.Location, LcIndex.Energy) = "Energy"
-ObHeader$(ObSchema.Location, LcIndex.Habitat) = "Habitat"
-
+ObKind$(ObSchema.Location, 0) = "Location"
+ObProperty$(ObSchema.Location, LcIndex.Energy) = "Energy"
+ObProperty$(ObSchema.Location, LcIndex.Habitat) = "Habitat"
 
 '
 ' Person properties
 '
 CONST PrIndex.Label = 5
-ObHeader$(ObSchema.Person, -2) = "PR"
-ObHeader$(ObSchema.Person, -1) = "Person"
-ObHeader$(ObSchema.Person, PrIndex.Label) = "Label"
+ObKind$(ObSchema.Person, 0) = "Person"
+ObProperty$(ObSchema.Person, PrIndex.Label) = "Label"
 
 '
 ' Style properties
@@ -429,12 +421,11 @@ CONST StIndex.BorderColor = 5
 CONST StIndex.BorderType = 6
 CONST StIndex.SelectedColor = 7
 CONST StIndex.TextColor = 8
-ObHeader$(ObSchema.Style, -2) = "ST"
-ObHeader$(ObSchema.Style, -1) = "Style"
-ObHeader$(ObSchema.Style, StIndex.BorderColor) = "BorderColor"
-ObHeader$(ObSchema.Style, StIndex.BorderType) = "BorderType"
-ObHeader$(ObSchema.Style, StIndex.SelectedColor) = "SelectedColor"
-ObHeader$(ObSchema.Style, StIndex.TextColor) = "TextColor"
+ObKind$(ObSchema.Style, 0) = "Style"
+ObProperty$(ObSchema.Style, StIndex.BorderColor) = "BorderColor"
+ObProperty$(ObSchema.Style, StIndex.BorderType) = "BorderType"
+ObProperty$(ObSchema.Style, StIndex.SelectedColor) = "SelectedColor"
+ObProperty$(ObSchema.Style, StIndex.TextColor) = "TextColor"
 
 '
 ' Thing Kinds
@@ -448,11 +439,10 @@ CONST ThKind.Person = 1
 CONST TrIndex.Event = 5
 CONST TrIndex.Equals = 6
 CONST TrIndex.Command = 7
-ObHeader$(ObSchema.Trigger, -2) = "TR"
-ObHeader$(ObSchema.Trigger, -1) = "Trigger"
-ObHeader$(ObSchema.Trigger, TrIndex.Event) = "Event"
-ObHeader$(ObSchema.Trigger, TrIndex.Equals) = "Equals"
-ObHeader$(ObSchema.Trigger, TrIndex.Command) = "Command"
+ObKind$(ObSchema.Trigger, 0) = "Trigger"
+ObProperty$(ObSchema.Trigger, TrIndex.Event) = "Event"
+ObProperty$(ObSchema.Trigger, TrIndex.Equals) = "Equals"
+ObProperty$(ObSchema.Trigger, TrIndex.Command) = "Command"
 
 '
 ' UIPage.* constants
@@ -466,10 +456,9 @@ CONST UIPage.Terminal = 2
 '
 CONST WnIndex.Param = 5
 CONST WnIndex.Root = 6
-ObHeader$(ObSchema.Window, -2) = "WN"
-ObHeader$(ObSchema.Window, -1) = "Window"
-ObHeader$(ObSchema.Window, WnIndex.Param) = "Param"
-ObHeader$(ObSchema.Window, WnIndex.Root) = "Root"
+ObKind$(ObSchema.Window, 0) = "Window"
+ObProperty$(ObSchema.Window, WnIndex.Param) = "Param"
+ObProperty$(ObSchema.Window, WnIndex.Root) = "Root"
 
 CONST MaxChildren = 20
 CONST MaxObjects = 200
@@ -2366,7 +2355,7 @@ END SUB
 SUB DbSet (schema%, obid%, obix%, value%)
 
   DIM text$
-  LET text$ = ObHeader$(schema%, -2)
+  LET text$ = ObKind$(schema%, 0)
 
   '
   ' obid
@@ -2395,19 +2384,13 @@ SUB DbSet (schema%, obid%, obix%, value%)
   '
   ' value
   '
-  IF obix% = ObIndex.Schema THEN
-   
-    text$ = text$ + ObHeader$(value%, -2)
-  
-  ELSE
-    h$ = HEX$(value%)
-    SELECT CASE LEN(h$)
-      CASE 1:
-        text$ = text$ + "0" + h$
-      CASE 2:
-        text$ = text$ + h$
-    END SELECT
-  END IF
+  h$ = HEX$(value%)
+  SELECT CASE LEN(h$)
+    CASE 1:
+      text$ = text$ + "0" + h$
+    CASE 2:
+      text$ = text$ + h$
+  END SELECT
 
   ShPrint "@X08" + text$ + "@X07"
 
@@ -2952,11 +2935,14 @@ FUNCTION ExCmdSpawn% (tokens$(), count%)
 END FUNCTION
 
 FUNCTION ExMap% (schema%, propname$)
+ 
+  DIM fixed$
+  DIM n%
+
   '
   ' Maps a property name to a property index for the specified schema
   '
  
-  DIM fixed$
   IF LEFT$(propname$, 1) = "." THEN
     fixed$ = RIGHT$(propname$, LEN(propname$) - 1)
   ELSE
@@ -2964,14 +2950,14 @@ FUNCTION ExMap% (schema%, propname$)
   END IF
 
   FOR n% = ObIndex.Schema TO ObIndex.Parent
-    IF fixed$ = ObHeader$(0, n%) THEN
+    IF fixed$ = ObProperty$(0, n%) THEN
       ExMap% = n%
       EXIT FUNCTION
     END IF
   NEXT
 
   FOR n% = ObIndex.Parent + 1 TO 15
-    IF fixed$ = ObHeader$(schema%, n%) THEN
+    IF fixed$ = ObProperty$(schema%, n%) THEN
       ExMap% = n%
       EXIT FUNCTION
     END IF
@@ -3138,19 +3124,11 @@ FUNCTION ExRun% (rawcmd$)
     '
     ExRun% = True
 
-  ELSEIF ExTryControl%(tokens$(0)) THEN
+  ELSEIF ExTryKind%(tokens$(0)) THEN
 
     ExRun% = True
 
-  ELSEIF ExTryEndControl%(tokens$(0)) THEN
-
-    ExRun% = True
-
-  ELSEIF ExTrySchema%(tokens$(0)) THEN
-
-    ExRun% = True
-
-  ELSEIF ExTryEndSchema%(tokens$(0)) THEN
+  ELSEIF ExTryEndKind%(tokens$(0)) THEN
 
     ExRun% = True
 
@@ -3200,20 +3178,6 @@ FUNCTION ExRunResource% (rsid%)
   IF LEN(cmd$) > 0 THEN
     ExRunResource% = ExRun%(cmd$)
   END IF
-
-END FUNCTION
-
-FUNCTION ExScan% (array$(), match$)
-  
-  DIM n%
-  FOR n% = LBOUND(array$) TO UBOUND(array$)
-    IF array$(n%) = match$ THEN
-      ExScan% = n%
-      EXIT FUNCTION
-    END IF
-  NEXT
-
-  ExScan% = LBOUND(array$) - 1
 
 END FUNCTION
 
@@ -3287,62 +3251,7 @@ FUNCTION ExTryCmd% (tokens$(), count%)
 
 END FUNCTION
 
-FUNCTION ExTryControl% (name$)
-  '
-  ' Creates a new control based on kind name
-  '
-  IF LEN(name$) = 0 THEN
-    EXIT FUNCTION
-  END IF
-
-  DIM kind%: kind% = ExScan%(CtKindName$(), name$)
-  IF kind% = 0 THEN
-    EXIT FUNCTION
-  END IF
-
-  DIM obid%: obid% = ObCreate%(ObSchema.Control, ExTop%)
-  IF obid% = 0 THEN
-    DbPositive obid%, "ExTryControl%", "obid%"
-    EXIT FUNCTION
-  ELSE
-    ObSet ObSchema.Control, obid%, ObIndex.Kind, kind%
-  END IF
-
-  ExPush obid%
-  ExTryControl% = True
-
-END FUNCTION
-
-FUNCTION ExTryEndControl% (tag$)
-
-  DIM obid%: obid% = ExTop%
-  IF obid% = 0 THEN
-    EXIT FUNCTION
-  END IF
-
-  DIM schema%: schema% = ObGet%(0, obid%, ObIndex.Schema)
-  IF schema% <> ObSchema.Control THEN
-    EXIT FUNCTION
-  END IF
-
-  DIM kind%: kind% = ObGet%(ObSchema.Control, obid%, ObIndex.Kind)
-  IF kind% = 0 THEN
-    EXIT FUNCTION
-  END IF
-
-  DIM name$: name$ = CtKindName$(kind%)
-  IF LEN(name$) = 0 THEN
-    EXIT FUNCTION
-  END IF
-
-  IF tag$ = "End" + name$ THEN
-    ExPop
-    ExTryEndControl% = True
-  END IF
-
-END FUNCTION
-
-FUNCTION ExTryEndSchema% (tag$)
+FUNCTION ExTryEndKind% (tag$)
 
   DIM obid%: obid% = ExTop%
   IF obid% = 0 THEN
@@ -3354,15 +3263,67 @@ FUNCTION ExTryEndSchema% (tag$)
     EXIT FUNCTION
   END IF
 
-  DIM name$: name$ = ObHeader$(schema%, -1)
+  DIM kind%: kind% = ObGet%(schema%, obid%, ObIndex.Kind)
+
+  DIM name$: name$ = ObKind$(schema%, kind%)
+  IF LEN(name$) = 0 THEN
+    name$ = ObKind$(schema%, 0)
+  END IF
   IF LEN(name$) = 0 THEN
     EXIT FUNCTION
   END IF
 
   IF tag$ = "End" + name$ THEN
     ExPop
-    ExTryEndSchema% = True
+    ExTryEndKind% = True
   END IF
+
+END FUNCTION
+
+FUNCTION ExTryKind% (name$)
+ 
+  IF LEN(name$) = 0 THEN
+    EXIT FUNCTION
+  END IF
+
+  DIM schema%
+  DIM kind%
+  DIM n$
+
+  FOR i% = 0 TO ObSchemas
+    FOR j% = 0 TO UBOUND(ObKind$, 2)
+     
+      n$ = ObKind$(i%, j%)
+      IF LEN(n$) = 0 THEN
+        EXIT FOR
+      ELSEIF n$ = name$ THEN
+        schema% = i%
+        kind% = j%
+        EXIT FOR
+      END IF
+
+    NEXT
+ 
+    IF schema% <> 0 THEN
+      EXIT FOR
+    END IF
+
+  NEXT
+
+  IF schema% = 0 THEN
+    EXIT FUNCTION
+  END IF
+
+  DIM obid%: obid% = ObCreate%(schema%, ExTop%)
+  IF obid% = 0 THEN
+    DbPositive obid%, "ExTryControl%", "obid%"
+    EXIT FUNCTION
+  ELSE
+    ObSet schema%, obid%, ObIndex.Kind, kind%
+  END IF
+
+  ExPush obid%
+  ExTryKind% = True
 
 END FUNCTION
 
@@ -3464,53 +3425,19 @@ FUNCTION ExTryProperty% (name$, value$)
       '
       ' If no prefix or quote, this should be a schema or control.
       '
-      IF ExTryControl%(value$) THEN
-        '
-        ' Created control is on top of stack
-        '
-        ObSet schema%, obid%, obix%, ExTop%
-        ExTryProperty% = True
-     
-      ELSEIF ExTrySchema%(value$) THEN
+      IF ExTryKind%(value$) THEN
         '
         ' Created object is on top of stack
         '
         ObSet schema%, obid%, obix%, ExTop%
         ExTryProperty% = True
+     
       ELSE
         DbFail "ExTryProperty%", "Invalid value: " + value$
       END IF
 
   END SELECT
 
-END FUNCTION
-
-FUNCTION ExTrySchema% (name$)
- 
-  IF LEN(name$) = 0 THEN
-    EXIT FUNCTION
-  END IF
-
-  DIM schema%
-  DIM n%
-  FOR n% = 1 TO ObSchemas
-    IF name$ = ObHeader$(n%, -1) THEN
-      schema% = n%
-      EXIT FOR
-    END IF
-  NEXT
-  IF schema% = 0 THEN
-    EXIT FUNCTION
-  END IF
-
-  DIM obid%: obid% = ObCreate%(schema%, ExTop%)
-  IF obid% = 0 THEN
-    EXIT FUNCTION
-  END IF
-
-  ExPush obid%
-  ExTrySchema% = True
-  
 END FUNCTION
 
 FUNCTION ExUnquote$ (text$)
@@ -4207,7 +4134,7 @@ END SUB
 SUB SetupGame
 
   SCREEN 0, 0, 0, 0: WIDTH 80: COLOR 7, 0: KEY OFF: RANDOMIZE TIMER
-  'db.debug = True
+  db.debug = False
 
   '
   ' Load menus and windows
@@ -4292,19 +4219,18 @@ SUB ShSerialize (obid%, indent%)
   END IF
 
   DIM i%
-  FOR i% = LBOUND(obj, 2) TO UBOUND(obj, 2)
+  FOR i% = 0 TO UBOUND(obj, 2)
    
     DIM p$
-    LET p$ = ObHeader$(schema%, i%)
+    LET p$ = ObProperty$(schema%, i%)
     IF LEN(p$) = 0 THEN
-      p$ = ObHeader$(0, i%)
+      p$ = ObProperty$(0, i%)
     END IF
     IF LEN(p$) = 0 THEN
       EXIT FOR
     END IF
 
     DIM value%: value% = ObGet%(0, obid%, i%)
-   
     ShPrint SPACE$(indent% + 2) + "." + p$ + " " + STR$(value%)
 
   NEXT
