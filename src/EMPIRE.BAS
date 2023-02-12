@@ -272,6 +272,47 @@ CONST True = -1
 CONST False = NOT True
 
 '
+' Object bindings
+'
+CONST ObBinding.None = 0
+CONST ObBinding.Expression = 1
+CONST ObBinding.Inherit = 3
+
+'
+' Object properties
+'
+CONST ObIndex.Invalid = -1
+CONST ObIndex.Schema = 0
+CONST ObIndex.Dirty = 1
+CONST ObIndex.Kind = 2
+CONST ObIndex.Name = 3
+CONST ObIndex.Parent = 4
+
+'
+' Object schemas
+'
+CONST ObSchema.None = 0
+CONST ObSchema.Control = 1
+CONST ObSchema.Event = 2
+CONST ObSchema.Habitat = 3
+CONST ObSchema.Location = 4
+CONST ObSchema.Person = 5
+CONST ObSchema.Style = 6
+CONST ObSchema.Thing = 7
+CONST ObSchema.Trigger = 8
+CONST ObSchema.Window = 9
+CONST ObSchemas = 9
+
+REDIM SHARED ObHeader$(0 TO 15, -2 TO 15)
+ObHeader$(0, -2) = "OB"
+ObHeader$(0, -1) = "Object"
+ObHeader$(0, ObIndex.Schema) = "Schema"
+ObHeader$(0, ObIndex.Dirty) = "Dirty"
+ObHeader$(0, ObIndex.Kind) = "Kind"
+ObHeader$(0, ObIndex.Name) = "Name"
+ObHeader$(0, ObIndex.Parent) = "Parent"
+
+'
 ' Control actions in response to input
 '
 CONST CtAction.None = 0
@@ -309,11 +350,6 @@ CtKindName$(CtKind.Separator) = "Separator"
 '
 ' Control properties
 '
-CONST CtIndex.Schema = 0
-CONST CtIndex.Dirty = 1
-CONST CtIndex.Kind = 2
-CONST CtIndex.Name = 3
-CONST CtIndex.Parent = 4
 CONST CtIndex.Command = 5
 CONST CtIndex.Focused = 6
 CONST CtIndex.OffsetX = 7
@@ -324,39 +360,25 @@ CONST CtIndex.Style = 11
 CONST CtIndex.Text = 12
 CONST CtIndex.Value = 13
 
-REDIM SHARED CtHeader$(0 TO 15)
-CtHeader$(0) = "Schema"
-CtHeader$(1) = "Dirty"
-CtHeader$(2) = "Kind"
-CtHeader$(3) = "Name"
-CtHeader$(4) = "Parent"
-CtHeader$(5) = "Command"
-CtHeader$(6) = "Focused"
-CtHeader$(7) = "OffsetX"
-CtHeader$(8) = "OffsetY"
-CtHeader$(9) = "SizeX"
-CtHeader$(10) = "SizeY"
-CtHeader$(11) = "Style"
-CtHeader$(12) = "Text"
-CtHeader$(13) = "Value"
+ObHeader$(ObSchema.Control, -2) = "CT"
+ObHeader$(ObSchema.Control, -1) = "Control"
+ObHeader$(ObSchema.Control, CtIndex.Command) = "Command"
+ObHeader$(ObSchema.Control, CtIndex.Focused) = "Focused"
+ObHeader$(ObSchema.Control, CtIndex.OffsetX) = "OffsetX"
+ObHeader$(ObSchema.Control, CtIndex.OffsetY) = "OffsetY"
+ObHeader$(ObSchema.Control, CtIndex.SizeX) = "SizeX"
+ObHeader$(ObSchema.Control, CtIndex.SizeY) = "SizeY"
+ObHeader$(ObSchema.Control, CtIndex.Style) = "Style"
+ObHeader$(ObSchema.Control, CtIndex.Text) = "Text"
+ObHeader$(ObSchema.Control, CtIndex.Value) = "Value"
 
 '
 ' Event properties
 '
-CONST EvIndex.Schema = 0
-CONST EvIndex.Dirty = 1
-CONST EvIndex.Kind = 2
-CONST EvIndex.Name = 3
-CONST EvIndex.Parent = 4
 CONST EvIndex.Value = 5
-
-REDIM SHARED EvHeader$(0 TO 15)
-EvHeader$(0) = "Schema"
-EvHeader$(1) = "Dirty"
-EvHeader$(2) = "Kind"
-EvHeader$(3) = "Name"
-EvHeader$(4) = "Parent"
-EvHeader$(5) = "Value"
+ObHeader$(ObSchema.Event, -2) = "EV"
+ObHeader$(ObSchema.Event, -1) = "Event"
+ObHeader$(ObSchema.Event, EvIndex.Value) = "Value"
 
 '
 ' Execution token types
@@ -369,187 +391,68 @@ CONST ExTokenType.Unknown = 3
 '
 ' Habitat properties
 '
-CONST HbIndex.Schema = 0
-CONST HbIndex.Dirty = 1
-CONST HbIndex.Kind = 2
-CONST HbIndex.Name = 3
-CONST HbIndex.Parent = 4
 CONST HbIndex.Backdrop = 5
 CONST HbIndex.Label = 6
 CONST HbIndex.StartFile = 7
 CONST HbIndex.Window = 8
 
-REDIM SHARED HbHeader$(0 TO 15)
-HbHeader$(0) = "Schema"
-HbHeader$(1) = "Dirty"
-HbHeader$(2) = "Kind"
-HbHeader$(3) = "Name"
-HbHeader$(4) = "Parent"
-HbHeader$(5) = "Backdrop"
-HbHeader$(6) = "Label"
-HbHeader$(7) = "StartFile"
-HbHeader$(8) = "Window"
+ObHeader$(ObSchema.Habitat, -2) = "HB"
+ObHeader$(ObSchema.Habitat, -1) = "Habitat"
+ObHeader$(ObSchema.Habitat, HbIndex.Backdrop) = "Backdrop"
+ObHeader$(ObSchema.Habitat, HbIndex.Label) = "Label"
+ObHeader$(ObSchema.Habitat, HbIndex.StartFile) = "StartFile"
+ObHeader$(ObSchema.Habitat, HbIndex.Window) = "Window"
 
 '
 ' Location properties
 '
-CONST LcIndex.Schema = 0
-CONST LcIndex.Dirty = 1
-CONST LcIndex.Kind = 2
-CONST LcIndex.Name = 3
-CONST LcIndex.Parent = 4
 CONST LcIndex.Energy = 5
 CONST LcIndex.Habitat = 6
+ObHeader$(ObSchema.Location, -2) = "LC"
+ObHeader$(ObSchema.Location, -1) = "Location"
+ObHeader$(ObSchema.Location, LcIndex.Energy) = "Energy"
+ObHeader$(ObSchema.Location, LcIndex.Habitat) = "Habitat"
 
-REDIM SHARED LcHeader$(0 TO 15)
-LcHeader$(0) = "Schema"
-LcHeader$(1) = "Dirty"
-LcHeader$(2) = "Kind"
-LcHeader$(3) = "Name"
-LcHeader$(4) = "Parent"
-LcHeader$(5) = "Energy"
-LcHeader$(6) = "Habitat"
-
-'
-' Object bindings
-'
-CONST ObBinding.None = 0
-CONST ObBinding.Expression = 1
-CONST ObBinding.Inherit = 3
-
-'
-' Object properties
-'
-CONST ObIndex.Invalid = -1
-CONST ObIndex.Schema = 0
-CONST ObIndex.Dirty = 1
-CONST ObIndex.Kind = 2
-CONST ObIndex.Name = 3
-CONST ObIndex.Parent = 4
-
-REDIM SHARED ObHeader$(0 TO 15)
-ObHeader$(0) = "Schema"
-ObHeader$(1) = "Dirty"
-ObHeader$(2) = "Kind"
-ObHeader$(3) = "Name"
-ObHeader$(4) = "Parent"
-
-'
-' Object schemas
-'
-CONST ObSchema.None = 0
-CONST ObSchema.Control = 1
-CONST ObSchema.Event = 2
-CONST ObSchema.Habitat = 3
-CONST ObSchema.Location = 4
-CONST ObSchema.Person = 5
-CONST ObSchema.Style = 6
-CONST ObSchema.Thing = 7
-CONST ObSchema.Trigger = 8
-CONST ObSchema.Window = 9
-CONST ObSchemas = 9
-
-REDIM SHARED ObSchemaLabel(1 TO ObSchemas) AS STRING * 2
-ObSchemaLabel$(1) = "CT"
-ObSchemaLabel$(2) = "EV"
-ObSchemaLabel$(3) = "HB"
-ObSchemaLabel$(4) = "LC"
-ObSchemaLabel$(5) = "PR"
-ObSchemaLabel$(6) = "ST"
-ObSchemaLabel$(7) = "TH"
-ObSchemaLabel$(8) = "TR"
-ObSchemaLabel$(9) = "WN"
-
-REDIM SHARED ObSchemaName$(1 TO ObSchemas)
-ObSchemaName$(1) = "Control"
-ObSchemaName$(2) = "Event"
-ObSchemaName$(3) = "Habitat"
-ObSchemaName$(4) = "Location"
-ObSchemaName$(5) = "Person"
-ObSchemaName$(6) = "Style"
-ObSchemaName$(7) = "Thing"
-ObSchemaName$(8) = "Trigger"
-ObSchemaName$(9) = "Window"
 
 '
 ' Person properties
 '
-CONST PrIndex.Schema = 0
-CONST PrIndex.Dirty = 1
-CONST PrIndex.Kind = 2
-CONST PrIndex.Name = 3
-CONST PrIndex.Parent = 4
 CONST PrIndex.Label = 5
-
-REDIM SHARED PrHeader$(0 TO 15)
-PrHeader$(0) = "Schema"
-PrHeader$(1) = "Dirty"
-PrHeader$(2) = "Kind"
-PrHeader$(3) = "Name"
-PrHeader$(4) = "Parent"
-PrHeader$(5) = "Label"
+ObHeader$(ObSchema.Person, -2) = "PR"
+ObHeader$(ObSchema.Person, -1) = "Person"
+ObHeader$(ObSchema.Person, PrIndex.Label) = "Label"
 
 '
 ' Style properties
 '
-CONST StIndex.Schema = 0
-CONST StIndex.Dirty = 1
-CONST StIndex.Kind = 2
-CONST StIndex.Name = 3
-CONST StIndex.Parent = 4
 CONST StIndex.BorderColor = 5
 CONST StIndex.BorderType = 6
 CONST StIndex.SelectedColor = 7
 CONST StIndex.TextColor = 8
-
-REDIM SHARED StHeader$(0 TO 15)
-StHeader$(0) = "Schema"
-StHeader$(1) = "Dirty"
-StHeader$(2) = "Kind"
-StHeader$(3) = "Name"
-StHeader$(4) = "Parent"
-StHeader$(5) = "BorderColor"
-StHeader$(6) = "BorderType"
-StHeader$(7) = "SelectedColor"
-StHeader$(8) = "TextColor"
+ObHeader$(ObSchema.Style, -2) = "ST"
+ObHeader$(ObSchema.Style, -1) = "Style"
+ObHeader$(ObSchema.Style, StIndex.BorderColor) = "BorderColor"
+ObHeader$(ObSchema.Style, StIndex.BorderType) = "BorderType"
+ObHeader$(ObSchema.Style, StIndex.SelectedColor) = "SelectedColor"
+ObHeader$(ObSchema.Style, StIndex.TextColor) = "TextColor"
 
 '
-' Thing properties
+' Thing Kinds
 '
-CONST ThIndex.Schema = 0
-CONST ThIndex.Dirty = 1
-CONST ThIndex.Kind = 2
-CONST ThIndex.Name = 3
-CONST ThIndex.Parent = 4
-
-REDIM SHARED ThHeader$(0 TO 15)
-ThHeader$(0) = "Schema"
-ThHeader$(1) = "Dirty"
-ThHeader$(2) = "Kind"
-ThHeader$(3) = "Name"
-ThHeader$(4) = "Parent"
+CONST ThKind.None = 0
+CONST ThKind.Person = 1
 
 '
 ' Trigger properties
 '
-CONST TrIndex.Schema = 0
-CONST TrIndex.Dirty = 1
-CONST TrIndex.Kind = 2
-CONST TrIndex.Name = 3
-CONST TrIndex.Parent = 4
 CONST TrIndex.Event = 5
 CONST TrIndex.Equals = 6
 CONST TrIndex.Command = 7
-
-REDIM SHARED TrHeader$(0 TO 15)
-TrHeader$(0) = "Schema"
-TrHeader$(1) = "Dirty"
-TrHeader$(2) = "Kind"
-TrHeader$(3) = "Name"
-TrHeader$(4) = "Parent"
-TrHeader$(5) = "Event"
-TrHeader$(6) = "Equals"
-TrHeader$(7) = "Command"
+ObHeader$(ObSchema.Trigger, -2) = "TR"
+ObHeader$(ObSchema.Trigger, -1) = "Trigger"
+ObHeader$(ObSchema.Trigger, TrIndex.Event) = "Event"
+ObHeader$(ObSchema.Trigger, TrIndex.Equals) = "Equals"
+ObHeader$(ObSchema.Trigger, TrIndex.Command) = "Command"
 
 '
 ' UIPage.* constants
@@ -561,22 +464,12 @@ CONST UIPage.Terminal = 2
 '
 ' Window properties
 '
-CONST WnIndex.Schema = 0
-CONST WnIndex.Dirty = 1
-CONST WnIndex.Kind = 2
-CONST WnIndex.Name = 3
-CONST WnIndex.Parent = 4
 CONST WnIndex.Param = 5
 CONST WnIndex.Root = 6
-
-REDIM SHARED WnHeader$(0 TO 15)
-WnHeader$(0) = "Schema"
-WnHeader$(1) = "Dirty"
-WnHeader$(2) = "Kind"
-WnHeader$(3) = "Name"
-WnHeader$(4) = "Parent"
-WnHeader$(5) = "Param"
-WnHeader$(6) = "Root"
+ObHeader$(ObSchema.Window, -2) = "WN"
+ObHeader$(ObSchema.Window, -1) = "Window"
+ObHeader$(ObSchema.Window, WnIndex.Param) = "Param"
+ObHeader$(ObSchema.Window, WnIndex.Root) = "Root"
 
 CONST MaxChildren = 20
 CONST MaxObjects = 200
@@ -1338,7 +1231,7 @@ FUNCTION CtCanFocus% (ctid%)
     EXIT FUNCTION
   END IF
 
-  DIM kind%: kind% = ObGet%(ObSchema.Control, ctid%, CtIndex.Kind)
+  DIM kind%: kind% = ObGet%(ObSchema.Control, ctid%, ObIndex.Kind)
 
   SELECT CASE kind%
    
@@ -1354,12 +1247,12 @@ END FUNCTION
 
 SUB CtDraw (ctid%)
 
-  DIM dirty%: dirty% = ObGet%(ObSchema.Control, ctid%, CtIndex.Dirty)
+  DIM dirty%: dirty% = ObGet%(ObSchema.Control, ctid%, ObIndex.Dirty)
   IF NOT dirty% THEN
     EXIT SUB
   END IF
 
-  DIM kind%: kind% = ObGet%(ObSchema.Control, ctid%, CtIndex.Kind)
+  DIM kind%: kind% = ObGet%(ObSchema.Control, ctid%, ObIndex.Kind)
 
   SELECT CASE kind%
    
@@ -1395,7 +1288,7 @@ SUB CtDraw (ctid%)
 
   END SELECT
 
-  ObSet ObSchema.Control, ctid%, CtIndex.Dirty, 0
+  ObSet ObSchema.Control, ctid%, ObIndex.Dirty, 0
 
 END SUB
 
@@ -2177,7 +2070,7 @@ FUNCTION CtGetScreenX% (ctid%)
   LET offsetx% = ObGet%(ObSchema.Control, ctid%, CtIndex.OffsetX)
 
   DIM parent%
-  LET parent% = ObGet%(ObSchema.Control, ctid%, CtIndex.Parent)
+  LET parent% = ObGet%(ObSchema.Control, ctid%, ObIndex.Parent)
 
   IF parent% > 0 THEN
     IF ObGet%(0, parent%, ObIndex.Schema) = ObSchema.Control THEN
@@ -2196,7 +2089,7 @@ FUNCTION CtGetScreenY% (ctid%)
   LET offsety% = ObGet%(ObSchema.Control, ctid%, CtIndex.OffsetY)
  
   DIM parent%
-  LET parent% = ObGet%(ObSchema.Control, ctid%, CtIndex.Parent)
+  LET parent% = ObGet%(ObSchema.Control, ctid%, ObIndex.Parent)
 
   IF parent% > 0 THEN
     IF ObGet%(0, parent%, ObIndex.Schema) = ObSchema.Control THEN
@@ -2218,7 +2111,7 @@ FUNCTION CtKey% (ctid%, keypress$)
   DbPositive LEN(keypress$), "CtKey%", "len(keypress$)"
  
   DIM kind%
-  LET kind% = ObGet%(ObSchema.Control, ctid%, CtIndex.Kind)
+  LET kind% = ObGet%(ObSchema.Control, ctid%, ObIndex.Kind)
     '
     ' Gets the kind of control, e.g., button, lable, nebula, etc.
     '
@@ -2473,7 +2366,7 @@ END SUB
 SUB DbSet (schema%, obid%, obix%, value%)
 
   DIM text$
-  LET text$ = ObSchemaLabel$(schema%)
+  LET text$ = ObHeader$(schema%, -2)
 
   '
   ' obid
@@ -2504,7 +2397,7 @@ SUB DbSet (schema%, obid%, obix%, value%)
   '
   IF obix% = ObIndex.Schema THEN
    
-    text$ = text$ + ObSchemaLabel$(value%)
+    text$ = text$ + ObHeader$(value%, -2)
   
   ELSE
     h$ = HEX$(value%)
@@ -2604,7 +2497,7 @@ END SUB
 SUB DgPrint (prid%, text$)
 
   DIM name$
-  LET name$ = RsGet$(ObGet%(ObSchema.Person, prid%, PrIndex.Name))
+  LET name$ = RsGet$(ObGet%(ObSchema.Person, prid%, ObIndex.Name))
  
   DIM label$
   LET label$ = RsGet$(ObGet%(ObSchema.Person, prid%, PrIndex.Label))
@@ -2958,7 +2851,7 @@ FUNCTION ExCmdMail% (tokens$(), count%)
   ' Create a button for the message
   '
   DIM ctid%: ctid% = ObCreate%(ObSchema.Control, msgs%)
-  ObSet ObSchema.Control, ctid%, CtIndex.Kind, CtKind.Button
+  ObSet ObSchema.Control, ctid%, ObIndex.Kind, CtKind.Button
   ObSet ObSchema.Control, ctid%, CtIndex.Command, 0
   ObSet ObSchema.Control, ctid%, CtIndex.OffsetX, 0
   ObSet ObSchema.Control, ctid%, CtIndex.OffsetY, countmail%
@@ -3070,39 +2963,21 @@ FUNCTION ExMap% (schema%, propname$)
     fixed$ = propname$
   END IF
 
-  SELECT CASE schema%
-   
-    CASE ObSchema.Control
-      ExMap% = ExScan%(CtHeader$(), fixed$)
+  FOR n% = ObIndex.Schema TO ObIndex.Parent
+    IF fixed$ = ObHeader$(0, n%) THEN
+      ExMap% = n%
+      EXIT FUNCTION
+    END IF
+  NEXT
 
-    CASE ObSchema.Event
-      ExMap% = ExScan%(EvHeader$(), fixed$)
+  FOR n% = ObIndex.Parent + 1 TO 15
+    IF fixed$ = ObHeader$(schema%, n%) THEN
+      ExMap% = n%
+      EXIT FUNCTION
+    END IF
+  NEXT
 
-    CASE ObSchema.Habitat
-      ExMap% = ExScan%(HbHeader$(), fixed$)
-
-    CASE ObSchema.Location
-      ExMap% = ExScan%(LcHeader$(), fixed$)
-
-    CASE ObSchema.Person
-      ExMap% = ExScan%(PrHeader$(), fixed$)
-
-    CASE ObSchema.Style
-      ExMap% = ExScan%(StHeader$(), fixed$)
-
-    CASE ObSchema.Thing
-      ExMap% = ExScan%(ThHeader$(), fixed$)
-
-    CASE ObSchema.Trigger
-      ExMap% = ExScan%(TrHeader$(), fixed$)
-
-    CASE ObSchema.Window
-      ExMap% = ExScan%(WnHeader$(), fixed$)
-   
-    CASE ELSE
-      ExMap% = -1
-
-  END SELECT
+  ExMap% = -1
 
 END FUNCTION
 
@@ -3430,7 +3305,7 @@ FUNCTION ExTryControl% (name$)
     DbPositive obid%, "ExTryControl%", "obid%"
     EXIT FUNCTION
   ELSE
-    ObSet ObSchema.Control, obid%, CtIndex.Kind, kind%
+    ObSet ObSchema.Control, obid%, ObIndex.Kind, kind%
   END IF
 
   ExPush obid%
@@ -3450,7 +3325,7 @@ FUNCTION ExTryEndControl% (tag$)
     EXIT FUNCTION
   END IF
 
-  DIM kind%: kind% = ObGet%(ObSchema.Control, obid%, CtIndex.Kind)
+  DIM kind%: kind% = ObGet%(ObSchema.Control, obid%, ObIndex.Kind)
   IF kind% = 0 THEN
     EXIT FUNCTION
   END IF
@@ -3479,7 +3354,7 @@ FUNCTION ExTryEndSchema% (tag$)
     EXIT FUNCTION
   END IF
 
-  DIM name$: name$ = ObSchemaName$(schema%)
+  DIM name$: name$ = ObHeader$(schema%, -1)
   IF LEN(name$) = 0 THEN
     EXIT FUNCTION
   END IF
@@ -3616,7 +3491,14 @@ FUNCTION ExTrySchema% (name$)
     EXIT FUNCTION
   END IF
 
-  DIM schema%: schema% = ExScan%(ObSchemaName$(), name$)
+  DIM schema%
+  DIM n%
+  FOR n% = 1 TO ObSchemas
+    IF name$ = ObHeader$(n%, -1) THEN
+      schema% = n%
+      EXIT FOR
+    END IF
+  NEXT
   IF schema% = 0 THEN
     EXIT FUNCTION
   END IF
@@ -4413,12 +4295,10 @@ SUB ShSerialize (obid%, indent%)
   FOR i% = LBOUND(obj, 2) TO UBOUND(obj, 2)
    
     DIM p$
-    SELECT CASE schema%
-      CASE ObSchema.Control
-        p$ = CtHeader$(i%)
-      CASE ObSchema.Window
-        p$ = WnHeader$(i%)
-    END SELECT
+    LET p$ = ObHeader$(schema%, i%)
+    IF LEN(p$) = 0 THEN
+      p$ = ObHeader$(0, i%)
+    END IF
     IF LEN(p$) = 0 THEN
       EXIT FOR
     END IF
