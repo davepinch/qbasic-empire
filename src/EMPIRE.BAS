@@ -81,8 +81,8 @@ DECLARE FUNCTION CtFocusNext% (ctid%)
 DECLARE FUNCTION CtGetScreenX% (ctid%)
 DECLARE FUNCTION CtGetScreenY% (ctid%)
 DECLARE FUNCTION CtKey% (ctid%, keypress$)
-DECLARE FUNCTION CtKeyBoolean% (ctid%, keypress$)
 DECLARE FUNCTION CtKeyButton% (ctid%, keypress$)
+DECLARE FUNCTION CtKeyCheckbox% (ctid%, keypress$)
 DECLARE FUNCTION CtKeyContainer% (ctid%, keypress$)
 DECLARE FUNCTION CtKeyPopup% (ctid%, keypress$)
 
@@ -328,9 +328,9 @@ CONST CtAction.Window = 4
 ' Control kinds
 '
 CONST CtKind.None = 0
-CONST CtKind.Boolean = 1
-CONST CtKind.Box = 2
-CONST CtKind.Button = 3
+CONST CtKind.Box = 1
+CONST CtKind.Button = 2
+CONST CtKind.Checkbox = 3
 CONST CtKind.Container = 4
 CONST CtKind.File = 5
 CONST CtKind.Label = 6
@@ -343,9 +343,9 @@ CONST CtKinds = 9
 ' Control kind names
 '
 ObKind$(ObSchema.Control, CtKind.None) = "Control"
-ObKind$(ObSchema.Control, CtKind.Boolean) = "Boolean"
 ObKind$(ObSchema.Control, CtKind.Box) = "Box"
 ObKind$(ObSchema.Control, CtKind.Button) = "Button"
+ObKind$(ObSchema.Control, CtKind.Checkbox) = "Checkbox"
 ObKind$(ObSchema.Control, CtKind.Container) = "Container"
 ObKind$(ObSchema.Control, CtKind.File) = "File"
 ObKind$(ObSchema.Control, CtKind.Label) = "Label"
@@ -1279,7 +1279,7 @@ FUNCTION CtCanFocus% (ctid%)
 
   SELECT CASE kind%
    
-    CASE CtKind.Boolean, CtKind.Button, CtKind.Container, CtKind.Popup
+    CASE CtKind.Button, CtKind.Checkbox, CtKind.Container, CtKind.Popup
       CtCanFocus% = True
    
     CASE ELSE
@@ -1324,7 +1324,7 @@ SUB CtDraw (ctid%)
     CASE CtKind.Nebula
       CtDrawNebula ctid%
 
-    CASE CtKind.Boolean
+    CASE CtKind.Checkbox
       CtDrawText ctid%
 
     CASE ELSE
@@ -2172,12 +2172,12 @@ FUNCTION CtKey% (ctid%, keypress$)
     '
 
   SELECT CASE kind%
- 
-    CASE CtKind.Boolean
-      CtKey% = CtKeyBoolean%(ctid%, keypress$)
 
     CASE CtKind.Button
       CtKey% = CtKeyButton%(ctid%, keypress$)
+
+    CASE CtKind.Checkbox
+      CtKey% = CtKeyCheckbox%(ctid%, keypress$)
 
     CASE CtKind.Container
       CtKey% = CtKeyContainer%(ctid%, keypress$)
@@ -2189,17 +2189,35 @@ FUNCTION CtKey% (ctid%, keypress$)
 
 END FUNCTION
 
-FUNCTION CtKeyBoolean% (ctid%, keypress$)
+FUNCTION CtKeyButton% (ctid%, keypress$)
+
+  IF keypress$ <> KeyEnter$ THEN
+    '
+    ' A button only recognizes Enter keys
+    '
+    EXIT FUNCTION
+  END IF
+
   '
-  ' Sends a keystroke to a boolean field.
+  ' Get the resoure ID of the command associated with the button.
   '
+  DIM rsid%: rsid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Command)
+ 
+  '
+  ' Return an action to execute the command specified by the resource ID.
+  '
+  CtKeyButton% = CtAction%(CtAction.Command, rsid%)
+
+END FUNCTION
+
+FUNCTION CtKeyCheckbox% (ctid%, keypress$)
  
   STATIC rsid.y%
   STATIC rsid.n%
   IF rsid.y% = 0 THEN rsid.y% = RsCreate%("Yes")
   IF rsid.n% = 0 THEN rsid.n% = RsCreate%("No")
-  DbPositive rsid.y%, "CtKeyBoolean%", "rsid.y%"
-  DbPositive rsid.n%, "CtKeyBoolean%", "rsid.n%"
+  DbPositive rsid.y%, "CtKeyCheckbox%", "rsid.y%"
+  DbPositive rsid.n%, "CtKeyCheckbox%", "rsid.n%"
 
   DIM old%
   LET old% = ObGet%(ObSchema.Control, ctid%, CtIndex.Value)
@@ -2236,28 +2254,7 @@ FUNCTION CtKeyBoolean% (ctid%, keypress$)
 
   END IF
 
-  CtKeyBoolean% = action%
-
-END FUNCTION
-
-FUNCTION CtKeyButton% (ctid%, keypress$)
-
-  IF keypress$ <> KeyEnter$ THEN
-    '
-    ' A button only recognizes Enter keys
-    '
-    EXIT FUNCTION
-  END IF
-
-  '
-  ' Get the resoure ID of the command associated with the button.
-  '
-  DIM rsid%: rsid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Command)
- 
-  '
-  ' Return an action to execute the command specified by the resource ID.
-  '
-  CtKeyButton% = CtAction%(CtAction.Command, rsid%)
+  CtKeyCheckbox% = action%
 
 END FUNCTION
 
