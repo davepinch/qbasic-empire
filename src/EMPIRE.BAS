@@ -1783,19 +1783,30 @@ SUB CtDrawSeparator (ctid%)
 END SUB
 
 SUB CtDrawText (ctid%)
+ 
+  DIM stid%
+  DIM sx%
+  DIM sy%
+
   '
   ' Get field position
   '
-  DIM sx%: sx% = CtGetScreenX%(ctid%)
-  DIM sy%: sy% = CtGetScreenY%(ctid%)
+  LET sx% = CtGetScreenX%(ctid%)
+  LET sy% = CtGetScreenY%(ctid%)
   LOCATE sy%, sx%
 
   '
   ' Set style of text
   '
-  DIM stid%
   LET stid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Style)
-  IF stid% > 0 THEN
+  IF stid% = 0 THEN
+    IF ObGet%(ObSchema.Control, ctid%, CtIndex.Focused) <> 0 THEN
+      ' *** track current color and push/pop
+      COLOR 0, 7
+    ELSE
+      COLOR 7, 0
+    END IF
+  ELSE
     IF ObGet%(ObSchema.Control, ctid%, CtIndex.Focused) <> 0 THEN
       DrawColor ObGet%(ObSchema.Style, stid%, StIndex.SelectedColor)
     ELSE
@@ -4193,6 +4204,12 @@ SUB SetupGame
   db.debug = False
 
   '
+  ' Setup atlas
+  '
+  atlaspage = VdAlloc%
+  AtlasDraw
+
+  '
   ' Load menus and windows
   '
   ExRunFile "EMPIRE.CFG"
@@ -4202,15 +4219,9 @@ SUB SetupGame
   ShPrint "Array Space:" + STR$(FRE(-1))
 
   '
-  ' Setup atlas
-  '
-  atlaspage = VdAlloc%
-  AtlasDraw
-
-  '
   ' Show starting window #1
   '
-  WnRun ObFind%(ObSchema.Window, "Start")
+  ' WnRun ObFind%(ObSchema.Window, "Start")
   TIMER ON
 
 END SUB
