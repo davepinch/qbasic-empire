@@ -283,10 +283,11 @@ CONST ObIndex.Invalid = -1
 CONST ObIndex.Schema = 0
 CONST ObIndex.Dirty = 1
 CONST ObIndex.Kind = 2
-CONST ObIndex.Name = 3
-CONST ObIndex.Parent = 4
-CONST ObIndex.Value = 5
-CONST ObIndex.MaxIndex = 5
+CONST ObIndex.Label = 3
+CONST ObIndex.Name = 4
+CONST ObIndex.Parent = 5
+CONST ObIndex.Value = 6
+CONST ObIndex.MaxIndex = 6
 
 '
 ' Object schemas
@@ -315,6 +316,7 @@ REDIM SHARED ObProperty$(0 TO 15, 0 TO 15)
 ObProperty$(0, ObIndex.Schema) = "Schema"
 ObProperty$(0, ObIndex.Dirty) = "Dirty"
 ObProperty$(0, ObIndex.Kind) = "Kind"
+ObProperty$(0, ObIndex.Label) = "Label"
 ObProperty$(0, ObIndex.Name) = "Name"
 ObProperty$(0, ObIndex.Parent) = "Parent"
 ObProperty$(0, ObIndex.Value) = "Value"
@@ -360,14 +362,14 @@ ObKind$(ObSchema.Control, CtKind.Separator) = "Separator"
 '
 ' Control property indexes
 '
-CONST CtIndex.Command = 6
-CONST CtIndex.Focused = 7
-CONST CtIndex.OffsetX = 8
-CONST CtIndex.OffsetY = 9
-CONST CtIndex.SizeX = 10
-CONST CtIndex.SizeY = 11
-CONST CtIndex.Style = 12
-CONST CtIndex.Text = 13
+CONST CtIndex.Command = 7
+CONST CtIndex.Focused = 8
+CONST CtIndex.OffsetX = 9
+CONST CtIndex.OffsetY = 10
+CONST CtIndex.SizeX = 11
+CONST CtIndex.SizeY = 12
+CONST CtIndex.Style = 13
+CONST CtIndex.Text = 14
 
 '
 ' Control property names
@@ -397,22 +399,20 @@ CONST ExTokenType.Unknown = 3
 '
 ' Habitat properties
 '
-CONST HbIndex.Backdrop = 6
-CONST HbIndex.Label = 7
+CONST HbIndex.Backdrop = 7
 CONST HbIndex.StartFile = 8
 CONST HbIndex.Window = 9
 
 ObKind$(ObSchema.Habitat, 0) = "Habitat"
 ObProperty$(ObSchema.Habitat, HbIndex.Backdrop) = "Backdrop"
-ObProperty$(ObSchema.Habitat, HbIndex.Label) = "Label"
 ObProperty$(ObSchema.Habitat, HbIndex.StartFile) = "StartFile"
 ObProperty$(ObSchema.Habitat, HbIndex.Window) = "Window"
 
 '
 ' Location properties
 '
-CONST LcIndex.Energy = 6
-CONST LcIndex.Habitat = 7
+CONST LcIndex.Energy = 7
+CONST LcIndex.Habitat = 8
 ObKind$(ObSchema.Location, 0) = "Location"
 ObProperty$(ObSchema.Location, LcIndex.Energy) = "Energy"
 ObProperty$(ObSchema.Location, LcIndex.Habitat) = "Habitat"
@@ -425,10 +425,10 @@ ObKind$(ObSchema.Style, 0) = "Style"
 '
 ' Style property indexes
 '
-CONST StIndex.BorderColor = 6
-CONST StIndex.BorderType = 7
-CONST StIndex.SelectedColor = 8
-CONST StIndex.TextColor = 9
+CONST StIndex.BorderColor = 7
+CONST StIndex.BorderType = 8
+CONST StIndex.SelectedColor = 9
+CONST StIndex.TextColor = 10
 
 '
 ' Style property names
@@ -455,10 +455,9 @@ ObKind$(ObSchema.Thing, ThKind.Place) = "Place"
 '
 ' Thing property indexes
 '
-CONST ThIndex.Backdrop = 6
-CONST ThIndex.Energy = 7
-CONST ThIndex.Greeting = 8
-CONST ThIndex.Label = 9
+CONST ThIndex.Backdrop = 7
+CONST ThIndex.Energy = 8
+CONST ThIndex.Greeting = 9
 CONST ThIndex.Pin = 10
 CONST ThIndex.Window = 11
 
@@ -468,7 +467,6 @@ CONST ThIndex.Window = 11
 ObProperty$(ObSchema.Thing, ThIndex.Backdrop) = "Backdrop"
 ObProperty$(ObSchema.Thing, ThIndex.Energy) = "Energy"
 ObProperty$(ObSchema.Thing, ThIndex.Greeting) = "Greeting"
-ObProperty$(ObSchema.Thing, ThIndex.Label) = "Label"
 ObProperty$(ObSchema.Thing, ThIndex.Pin) = "Pin"
 ObProperty$(ObSchema.Thing, ThIndex.Window) = "Window"
 
@@ -480,9 +478,9 @@ ObKind$(ObSchema.Trigger, 0) = "Trigger"
 '
 ' Trigger property indexes
 '
-CONST TrIndex.Event = 6
-CONST TrIndex.Equals = 7
-CONST TrIndex.Command = 8
+CONST TrIndex.Event = 7
+CONST TrIndex.Equals = 8
+CONST TrIndex.Command = 9
 
 '
 ' Trigger property names
@@ -506,8 +504,8 @@ ObKind$(ObSchema.Window, 0) = "Window"
 '
 ' Window property indexes
 '
-CONST WnIndex.Param = 6
-CONST WnIndex.Root = 7
+CONST WnIndex.Param = 7
+CONST WnIndex.Root = 8
 
 '
 ' Window property names
@@ -2597,7 +2595,7 @@ SUB DgPrint (thid%, text$)
   LET name$ = RsGet$(ObGet%(ObSchema.Thing, thid%, ObIndex.Name))
  
   DIM label$
-  LET label$ = RsGet$(ObGet%(ObSchema.Thing, thid%, ThIndex.Label))
+  LET label$ = RsGet$(ObGet%(ObSchema.Thing, thid%, ObIndex.Label))
   IF label$ = "" THEN
     label$ = "@X1F " + name$ + " @X07"
   END IF
@@ -4810,7 +4808,7 @@ FUNCTION WorldAdd% (hbid%, cx%, cy%)
   ObSet ObSchema.Location, lcid%, LcIndex.Habitat, hbid%
   ObSet ObSchema.Location, lcid%, LcIndex.Energy, 3
 
-  AtlasAddItem cx%, cy%, lcid%, ObGet%(ObSchema.Habitat, hbid%, HbIndex.Label)
+  AtlasAddItem cx%, cy%, lcid%, ObGet%(ObSchema.Habitat, hbid%, ObIndex.Label)
   WorldAdd% = lcid%
 
 END FUNCTION
