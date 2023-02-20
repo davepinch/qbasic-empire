@@ -288,8 +288,10 @@ CONST ObIndex.Name = 4
 CONST ObIndex.OffsetX = 5
 CONST ObIndex.OffsetY = 6
 CONST ObIndex.Parent = 7
-CONST ObIndex.Value = 8
-CONST ObIndex.MaxIndex = 8
+CONST ObIndex.SizeX = 8
+CONST ObIndex.SizeY = 9
+CONST ObIndex.Value = 10
+CONST ObIndex.MaxIndex = 10
 
 '
 ' Object schemas
@@ -323,6 +325,8 @@ ObProperty$(0, ObIndex.Name) = "Name"
 ObProperty$(0, ObIndex.OffsetX) = "OffsetX"
 ObProperty$(0, ObIndex.OffsetY) = "OffsetY"
 ObProperty$(0, ObIndex.Parent) = "Parent"
+ObProperty$(0, ObIndex.SizeX) = "SizeX"
+ObProperty$(0, ObIndex.SizeY) = "SizeY"
 ObProperty$(0, ObIndex.Value) = "Value"
 
 '
@@ -366,10 +370,8 @@ ObKind$(ObSchema.Control, CtKind.Separator) = "Separator"
 '
 ' Control property indexes
 '
-CONST CtIndex.Command = 9
-CONST CtIndex.Focused = 10
-CONST CtIndex.SizeX = 11
-CONST CtIndex.SizeY = 12
+CONST CtIndex.Command = 11
+CONST CtIndex.Focused = 12
 CONST CtIndex.Style = 13
 
 '
@@ -377,8 +379,6 @@ CONST CtIndex.Style = 13
 '
 ObProperty$(ObSchema.Control, CtIndex.Command) = "Command"
 ObProperty$(ObSchema.Control, CtIndex.Focused) = "Focused"
-ObProperty$(ObSchema.Control, CtIndex.SizeX) = "SizeX"
-ObProperty$(ObSchema.Control, CtIndex.SizeY) = "SizeY"
 ObProperty$(ObSchema.Control, CtIndex.Style) = "Style"
 
 '
@@ -397,9 +397,9 @@ CONST ExTokenType.Unknown = 3
 '
 ' Habitat properties
 '
-CONST HbIndex.Backdrop = 9
-CONST HbIndex.StartFile = 10
-CONST HbIndex.Window = 11
+CONST HbIndex.Backdrop = 11
+CONST HbIndex.StartFile = 12
+CONST HbIndex.Window = 13
 
 ObKind$(ObSchema.Habitat, 0) = "Habitat"
 ObProperty$(ObSchema.Habitat, HbIndex.Backdrop) = "Backdrop"
@@ -409,8 +409,8 @@ ObProperty$(ObSchema.Habitat, HbIndex.Window) = "Window"
 '
 ' Location properties
 '
-CONST LcIndex.Energy = 9
-CONST LcIndex.Habitat = 10
+CONST LcIndex.Energy = 11
+CONST LcIndex.Habitat = 12
 ObKind$(ObSchema.Location, 0) = "Location"
 ObProperty$(ObSchema.Location, LcIndex.Energy) = "Energy"
 ObProperty$(ObSchema.Location, LcIndex.Habitat) = "Habitat"
@@ -423,10 +423,10 @@ ObKind$(ObSchema.Style, 0) = "Style"
 '
 ' Style property indexes
 '
-CONST StIndex.BorderColor = 9
-CONST StIndex.BorderType = 10
-CONST StIndex.SelectedColor = 11
-CONST StIndex.TextColor = 12
+CONST StIndex.BorderColor = 11
+CONST StIndex.BorderType = 12
+CONST StIndex.SelectedColor = 13
+CONST StIndex.TextColor = 14
 
 '
 ' Style property names
@@ -453,11 +453,11 @@ ObKind$(ObSchema.Thing, ThKind.Place) = "Place"
 '
 ' Thing property indexes
 '
-CONST ThIndex.Backdrop = 9
-CONST ThIndex.Energy = 10
-CONST ThIndex.Greeting = 11
-CONST ThIndex.Pin = 12
-CONST ThIndex.Window = 13
+CONST ThIndex.Backdrop = 11
+CONST ThIndex.Energy = 12
+CONST ThIndex.Greeting = 13
+CONST ThIndex.Pin = 14
+CONST ThIndex.Window = 15
 
 '
 ' Thing property names
@@ -476,9 +476,9 @@ ObKind$(ObSchema.Trigger, 0) = "Trigger"
 '
 ' Trigger property indexes
 '
-CONST TrIndex.Event = 9
-CONST TrIndex.Equals = 10
-CONST TrIndex.Command = 11
+CONST TrIndex.Event = 11
+CONST TrIndex.Equals = 12
+CONST TrIndex.Command = 13
 
 '
 ' Trigger property names
@@ -502,8 +502,8 @@ ObKind$(ObSchema.Window, 0) = "Window"
 '
 ' Window property indexes
 '
-CONST WnIndex.Param = 9
-CONST WnIndex.Root = 10
+CONST WnIndex.Param = 11
+CONST WnIndex.Root = 12
 
 '
 ' Window property names
@@ -1370,13 +1370,13 @@ SUB CtDrawBox0 (ctid%)
     DrawColor ObGet%(ObSchema.Style, stid%, StIndex.TextColor)
   END IF
 
-  FOR row = 1 TO ObGet%(ObSchema.Control, ctid%, CtIndex.SizeY)
+  FOR row = 1 TO ObGet%(ObSchema.Control, ctid%, ObIndex.SizeY)
    
     sx = CtGetScreenX%(ctid%)
     sy = CtGetScreenY%(ctid%) + row - 1
 
     LOCATE sy, sx
-    PRINT STRING$(ObGet%(ObSchema.Control, ctid%, CtIndex.SizeX), " ");
+    PRINT STRING$(ObGet%(ObSchema.Control, ctid%, ObIndex.SizeX), " ");
  
   NEXT
 
@@ -1403,11 +1403,11 @@ SUB CtDrawBox1 (ctid%)
   '
   ' Calculate screen coordinates
   '
-  sizeX = ObGet%(ObSchema.Control, ctid%, CtIndex.SizeX)
+  sizeX = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeX)
   sx1 = CtGetScreenX%(ctid%)
   sy1 = CtGetScreenY%(ctid%)
   sx2 = sx1 + sizeX - 1
-  sy2 = sy1 + ObGet%(ObSchema.Control, ctid%, CtIndex.SizeY) - 1
+  sy2 = sy1 + ObGet%(ObSchema.Control, ctid%, ObIndex.SizeY) - 1
 
   DIM stid%
   LET stid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Style)
@@ -1455,8 +1455,8 @@ SUB CtDrawBox2 (ctid%)
   DIM sizeX AS INTEGER
   DIM SizeY AS INTEGER
 
-  sizeX = ObGet%(ObSchema.Control, ctid%, CtIndex.SizeX)
-  SizeY = ObGet%(ObSchema.Control, ctid%, CtIndex.SizeY)
+  sizeX = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeX)
+  SizeY = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeY)
  
   '
   ' Calculate screen coordinates
@@ -1663,7 +1663,7 @@ SUB CtDrawLabel (ctid%)
   ' Print text clipped to size
   '
   DIM text$: text$ = RsGet$(ObGet%(ObSchema.Control, ctid%, ObIndex.Label))
-  DIM size%: size% = ObGet%(ObSchema.Control, ctid%, CtIndex.SizeX)
+  DIM size%: size% = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeX)
  
   IF size% < 1 THEN
     PRINT text$;
@@ -1685,11 +1685,11 @@ SUB CtDrawNebula (ctid%)
   DIM x     AS INTEGER
   DIM y     AS INTEGER
 
-  sizeX = ObGet%(ObSchema.Control, ctid%, CtIndex.SizeX)
+  sizeX = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeX)
 
   COLOR 7, 0
 
-  FOR y = 1 TO ObGet%(ObSchema.Control, ctid%, CtIndex.SizeY)
+  FOR y = 1 TO ObGet%(ObSchema.Control, ctid%, ObIndex.SizeY)
  
     x = INT(RND * sizeX) + 1
     p = 1
@@ -1809,8 +1809,8 @@ SUB CtDrawSeparator (ctid%)
   DIM stid%
   LET stid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Style)
  
-  sizeX = ObGet%(ObSchema.Control, ctid%, CtIndex.SizeX)
-  SizeY = ObGet%(ObSchema.Control, ctid%, CtIndex.SizeY)
+  sizeX = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeX)
+  SizeY = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeY)
   sx = CtGetScreenX%(ctid%)
   sy = CtGetScreenY%(ctid%)
 
@@ -2946,8 +2946,8 @@ FUNCTION ExCmdMail% (tokens$(), count%)
   ObSet ObSchema.Control, ctid%, ObIndex.Label, RsCreate%(" " + tokens$(1))
   ObSet ObSchema.Control, ctid%, ObIndex.OffsetX, 0
   ObSet ObSchema.Control, ctid%, ObIndex.OffsetY, countmail%
-  ObSet ObSchema.Control, ctid%, CtIndex.SizeX, 20
-  ObSet ObSchema.Control, ctid%, CtIndex.SizeY, 1
+  ObSet ObSchema.Control, ctid%, ObIndex.SizeX, 20
+  ObSet ObSchema.Control, ctid%, ObIndex.SizeY, 1
   ObSet ObSchema.Control, ctid%, ObIndex.Value, RsCreate%(tokens$(2))
 
   DIM f%: f% = CtFocusLast(msgs%)
