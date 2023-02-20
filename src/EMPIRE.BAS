@@ -64,6 +64,7 @@ DECLARE SUB CtDrawBox (ctid%)
 DECLARE SUB CtDrawBox0 (ctid%)
 DECLARE SUB CtDrawBox1 (ctid%)
 DECLARE SUB CtDrawBox2 (ctid%)
+DECLARE SUB CtDrawCheckbox (ctid%)
 DECLARE SUB CtDrawContainer (ctid%)
 DECLARE SUB CtDrawFile (ctid%)
 DECLARE SUB CtDrawNebula (ctid%)
@@ -1306,6 +1307,9 @@ SUB CtDraw (ctid%)
     CASE CtKind.Box
       CtDrawBox ctid%
 
+    CASE CtKind.Checkbox
+      CtDrawCheckbox ctid%
+
     CASE CtKind.Container
       CtDrawContainer ctid%
 
@@ -1539,6 +1543,64 @@ SUB CtDrawBox2 (ctid%)
   PRINT CHR$(192);
   PRINT STRING$(sizeX - 2, 196);
   PRINT CHR$(223);
+
+END SUB
+
+SUB CtDrawCheckbox (ctid%)
+
+  DIM bordercolor%
+  DIM focused%
+  DIM selectedcolor%
+  DIM style%
+  DIM sx%
+  DIM sy%
+  DIM textcolor%
+  DIM value%
+
+  '
+  ' Get the value, 0=false, else=true
+  '
+  LET value% = ObGet%(ObSchema.Control, ctid%, CtIndex.Value)
+  LET focused% = ObGet%(ObSchema.Control, ctid%, CtIndex.Focused)
+
+  '
+  ' Get the style to set colors
+  '
+  LET style% = ObGet%(ObSchema.Control, ctid%, CtIndex.Style)
+  IF style% = 0 THEN
+    bordercolor% = 7
+    selectedcolor% = &H70
+    textcolor% = 7
+  ELSE
+    bordercolor% = ObGet%(ObSchema.Style, style%, StIndex.BorderColor)
+    selectedcolor% = ObGet%(ObSchema.Style, style%, StIndex.SelectedColor)
+    textcolor% = ObGet%(ObSchema.Style, style%, StIndex.TextColor)
+  END IF
+
+  '
+  ' Calculate screen coordinates
+  '
+  LET sx% = CtGetScreenX%(ctid%)
+  LET sy% = CtGetScreenY%(ctid%)
+  LOCATE sy%, sx%
+
+  '
+  ' Left side
+  '
+  DrawColor bordercolor%
+  PRINT "[";
+ 
+  '
+  ' Checkmark
+  '
+  IF focused% THEN DrawColor selectedcolor% ELSE DrawColor textcolor%
+  IF value% THEN PRINT "X";  ELSE PRINT " ";
+ 
+  '
+  ' Right side
+  '
+  DrawColor bordercolor%
+  PRINT "]";
 
 END SUB
 
@@ -2212,17 +2274,13 @@ END FUNCTION
 
 FUNCTION CtKeyCheckbox% (ctid%, keypress$)
  
-  STATIC rsid.y%
-  STATIC rsid.n%
-  IF rsid.y% = 0 THEN rsid.y% = RsCreate%("Yes")
-  IF rsid.n% = 0 THEN rsid.n% = RsCreate%("No")
-  DbPositive rsid.y%, "CtKeyCheckbox%", "rsid.y%"
-  DbPositive rsid.n%, "CtKeyCheckbox%", "rsid.n%"
-
-  DIM old%
-  LET old% = ObGet%(ObSchema.Control, ctid%, CtIndex.Value)
-
   DIM new%
+  DIM old%
+  
+  '
+  ' Get current value
+  '
+  LET old% = ObGet%(ObSchema.Control, ctid%, CtIndex.Value)
   LET new% = old%
 
   DIM action%
@@ -2244,14 +2302,7 @@ FUNCTION CtKeyCheckbox% (ctid%, keypress$)
   END SELECT
 
   IF new% <> old% THEN
-    
     ObSet ObSchema.Control, ctid%, CtIndex.Value, new%
-    IF new% THEN
-      ObSet ObSchema.Control, ctid%, CtIndex.Text, rsid.y%
-    ELSE
-      ObSet ObSchema.Control, ctid%, CtIndex.Text, rsid.n%
-    END IF
-
   END IF
 
   CtKeyCheckbox% = action%
