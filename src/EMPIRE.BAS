@@ -67,10 +67,10 @@ DECLARE SUB CtDrawBox2 (ctid%)
 DECLARE SUB CtDrawCheckbox (ctid%)
 DECLARE SUB CtDrawContainer (ctid%)
 DECLARE SUB CtDrawFile (ctid%)
+DECLARE SUB CtDrawLabel (ctid%)
 DECLARE SUB CtDrawNebula (ctid%)
 DECLARE SUB CtDrawPopup (ctid%)
 DECLARE SUB CtDrawSeparator (ctid%)
-DECLARE SUB CtDrawText (ctid%)
 DECLARE SUB CtUnfocus (ctid%)
 DECLARE FUNCTION CtAction% (action%, param%)
 DECLARE FUNCTION CtCanFocus% (ctid%)
@@ -285,9 +285,11 @@ CONST ObIndex.Dirty = 1
 CONST ObIndex.Kind = 2
 CONST ObIndex.Label = 3
 CONST ObIndex.Name = 4
-CONST ObIndex.Parent = 5
-CONST ObIndex.Value = 6
-CONST ObIndex.MaxIndex = 6
+CONST ObIndex.OffsetX = 5
+CONST ObIndex.OffsetY = 6
+CONST ObIndex.Parent = 7
+CONST ObIndex.Value = 8
+CONST ObIndex.MaxIndex = 8
 
 '
 ' Object schemas
@@ -318,6 +320,8 @@ ObProperty$(0, ObIndex.Dirty) = "Dirty"
 ObProperty$(0, ObIndex.Kind) = "Kind"
 ObProperty$(0, ObIndex.Label) = "Label"
 ObProperty$(0, ObIndex.Name) = "Name"
+ObProperty$(0, ObIndex.OffsetX) = "OffsetX"
+ObProperty$(0, ObIndex.OffsetY) = "OffsetY"
 ObProperty$(0, ObIndex.Parent) = "Parent"
 ObProperty$(0, ObIndex.Value) = "Value"
 
@@ -362,26 +366,20 @@ ObKind$(ObSchema.Control, CtKind.Separator) = "Separator"
 '
 ' Control property indexes
 '
-CONST CtIndex.Command = 7
-CONST CtIndex.Focused = 8
-CONST CtIndex.OffsetX = 9
-CONST CtIndex.OffsetY = 10
+CONST CtIndex.Command = 9
+CONST CtIndex.Focused = 10
 CONST CtIndex.SizeX = 11
 CONST CtIndex.SizeY = 12
 CONST CtIndex.Style = 13
-CONST CtIndex.Text = 14
 
 '
 ' Control property names
 '
 ObProperty$(ObSchema.Control, CtIndex.Command) = "Command"
 ObProperty$(ObSchema.Control, CtIndex.Focused) = "Focused"
-ObProperty$(ObSchema.Control, CtIndex.OffsetX) = "OffsetX"
-ObProperty$(ObSchema.Control, CtIndex.OffsetY) = "OffsetY"
 ObProperty$(ObSchema.Control, CtIndex.SizeX) = "SizeX"
 ObProperty$(ObSchema.Control, CtIndex.SizeY) = "SizeY"
 ObProperty$(ObSchema.Control, CtIndex.Style) = "Style"
-ObProperty$(ObSchema.Control, CtIndex.Text) = "Text"
 
 '
 ' Event kind names
@@ -399,9 +397,9 @@ CONST ExTokenType.Unknown = 3
 '
 ' Habitat properties
 '
-CONST HbIndex.Backdrop = 7
-CONST HbIndex.StartFile = 8
-CONST HbIndex.Window = 9
+CONST HbIndex.Backdrop = 9
+CONST HbIndex.StartFile = 10
+CONST HbIndex.Window = 11
 
 ObKind$(ObSchema.Habitat, 0) = "Habitat"
 ObProperty$(ObSchema.Habitat, HbIndex.Backdrop) = "Backdrop"
@@ -411,8 +409,8 @@ ObProperty$(ObSchema.Habitat, HbIndex.Window) = "Window"
 '
 ' Location properties
 '
-CONST LcIndex.Energy = 7
-CONST LcIndex.Habitat = 8
+CONST LcIndex.Energy = 9
+CONST LcIndex.Habitat = 10
 ObKind$(ObSchema.Location, 0) = "Location"
 ObProperty$(ObSchema.Location, LcIndex.Energy) = "Energy"
 ObProperty$(ObSchema.Location, LcIndex.Habitat) = "Habitat"
@@ -425,10 +423,10 @@ ObKind$(ObSchema.Style, 0) = "Style"
 '
 ' Style property indexes
 '
-CONST StIndex.BorderColor = 7
-CONST StIndex.BorderType = 8
-CONST StIndex.SelectedColor = 9
-CONST StIndex.TextColor = 10
+CONST StIndex.BorderColor = 9
+CONST StIndex.BorderType = 10
+CONST StIndex.SelectedColor = 11
+CONST StIndex.TextColor = 12
 
 '
 ' Style property names
@@ -455,11 +453,11 @@ ObKind$(ObSchema.Thing, ThKind.Place) = "Place"
 '
 ' Thing property indexes
 '
-CONST ThIndex.Backdrop = 7
-CONST ThIndex.Energy = 8
-CONST ThIndex.Greeting = 9
-CONST ThIndex.Pin = 10
-CONST ThIndex.Window = 11
+CONST ThIndex.Backdrop = 9
+CONST ThIndex.Energy = 10
+CONST ThIndex.Greeting = 11
+CONST ThIndex.Pin = 12
+CONST ThIndex.Window = 13
 
 '
 ' Thing property names
@@ -478,9 +476,9 @@ ObKind$(ObSchema.Trigger, 0) = "Trigger"
 '
 ' Trigger property indexes
 '
-CONST TrIndex.Event = 7
-CONST TrIndex.Equals = 8
-CONST TrIndex.Command = 9
+CONST TrIndex.Event = 9
+CONST TrIndex.Equals = 10
+CONST TrIndex.Command = 11
 
 '
 ' Trigger property names
@@ -504,8 +502,8 @@ ObKind$(ObSchema.Window, 0) = "Window"
 '
 ' Window property indexes
 '
-CONST WnIndex.Param = 7
-CONST WnIndex.Root = 8
+CONST WnIndex.Param = 9
+CONST WnIndex.Root = 10
 
 '
 ' Window property names
@@ -1299,7 +1297,7 @@ SUB CtDraw (ctid%)
   SELECT CASE kind%
    
     CASE CtKind.Button
-      CtDrawText ctid%
+      CtDrawLabel ctid%
 
     CASE CtKind.Box
       CtDrawBox ctid%
@@ -1311,7 +1309,7 @@ SUB CtDraw (ctid%)
       CtDrawContainer ctid%
 
     CASE CtKind.Label
-      CtDrawText ctid%
+      CtDrawLabel ctid%
 
     CASE CtKind.File
       CtDrawFile ctid%
@@ -1325,10 +1323,7 @@ SUB CtDraw (ctid%)
     CASE CtKind.Nebula
       CtDrawNebula ctid%
 
-    CASE CtKind.Checkbox
-      CtDrawText ctid%
-
-    CASE ELSE
+     CASE ELSE
       DbFail "CtDraw", "unsupported kind" + STR$(kind%)
 
   END SELECT
@@ -1632,6 +1627,55 @@ SUB CtDrawFile (ctid%)
 
 END SUB
 
+SUB CtDrawLabel (ctid%)
+ 
+  DIM stid%
+  DIM sx%
+  DIM sy%
+
+  '
+  ' Get field position
+  '
+  LET sx% = CtGetScreenX%(ctid%)
+  LET sy% = CtGetScreenY%(ctid%)
+  LOCATE sy%, sx%
+
+  '
+  ' Set style of text
+  '
+  LET stid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Style)
+  IF stid% = 0 THEN
+    IF ObGet%(ObSchema.Control, ctid%, CtIndex.Focused) <> 0 THEN
+      ' *** track current color and push/pop
+      COLOR 0, 7
+    ELSE
+      COLOR 7, 0
+    END IF
+  ELSE
+    IF ObGet%(ObSchema.Control, ctid%, CtIndex.Focused) <> 0 THEN
+      DrawColor ObGet%(ObSchema.Style, stid%, StIndex.SelectedColor)
+    ELSE
+      DrawColor ObGet%(ObSchema.Style, stid%, StIndex.TextColor)
+    END IF
+  END IF
+
+  '
+  ' Print text clipped to size
+  '
+  DIM text$: text$ = RsGet$(ObGet%(ObSchema.Control, ctid%, ObIndex.Label))
+  DIM size%: size% = ObGet%(ObSchema.Control, ctid%, CtIndex.SizeX)
+ 
+  IF size% < 1 THEN
+    PRINT text$;
+  ELSE
+    PRINT LEFT$(text$, size%);
+    IF LEN(text$) < size% THEN
+      PRINT STRING$(size% - LEN(text$), " ");
+    END IF
+  END IF
+
+END SUB
+
 SUB CtDrawNebula (ctid%)
 
   DIM p     AS INTEGER
@@ -1729,7 +1773,7 @@ END SUB
 
 SUB CtDrawPopup (ctid%)
 
-  CtDrawText ctid%
+  CtDrawLabel ctid%
 
   DIM focused%
   LET focused% = ObGet%(ObSchema.Control, ctid%, CtIndex.Focused)
@@ -1837,55 +1881,6 @@ SUB CtDrawSeparator (ctid%)
         PRINT CHR$(179);  ' ³
     END SELECT
 
-  END IF
-
-END SUB
-
-SUB CtDrawText (ctid%)
- 
-  DIM stid%
-  DIM sx%
-  DIM sy%
-
-  '
-  ' Get field position
-  '
-  LET sx% = CtGetScreenX%(ctid%)
-  LET sy% = CtGetScreenY%(ctid%)
-  LOCATE sy%, sx%
-
-  '
-  ' Set style of text
-  '
-  LET stid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Style)
-  IF stid% = 0 THEN
-    IF ObGet%(ObSchema.Control, ctid%, CtIndex.Focused) <> 0 THEN
-      ' *** track current color and push/pop
-      COLOR 0, 7
-    ELSE
-      COLOR 7, 0
-    END IF
-  ELSE
-    IF ObGet%(ObSchema.Control, ctid%, CtIndex.Focused) <> 0 THEN
-      DrawColor ObGet%(ObSchema.Style, stid%, StIndex.SelectedColor)
-    ELSE
-      DrawColor ObGet%(ObSchema.Style, stid%, StIndex.TextColor)
-    END IF
-  END IF
-
-  '
-  ' Print text clipped to size
-  '
-  DIM text$: text$ = RsGet$(ObGet%(ObSchema.Control, ctid%, CtIndex.Text))
-  DIM size%: size% = ObGet%(ObSchema.Control, ctid%, CtIndex.SizeX)
- 
-  IF size% < 1 THEN
-    PRINT text$;
-  ELSE
-    PRINT LEFT$(text$, size%);
-    IF LEN(text$) < size% THEN
-      PRINT STRING$(size% - LEN(text$), " ");
-    END IF
   END IF
 
 END SUB
@@ -2181,7 +2176,7 @@ END FUNCTION
 FUNCTION CtGetScreenX% (ctid%)
 
   DIM offsetx%
-  LET offsetx% = ObGet%(ObSchema.Control, ctid%, CtIndex.OffsetX)
+  LET offsetx% = ObGet%(ObSchema.Control, ctid%, ObIndex.OffsetX)
 
   DIM parent%
   LET parent% = ObGet%(ObSchema.Control, ctid%, ObIndex.Parent)
@@ -2200,7 +2195,7 @@ END FUNCTION
 FUNCTION CtGetScreenY% (ctid%)
 
   DIM offsety%
-  LET offsety% = ObGet%(ObSchema.Control, ctid%, CtIndex.OffsetY)
+  LET offsety% = ObGet%(ObSchema.Control, ctid%, ObIndex.OffsetY)
  
   DIM parent%
   LET parent% = ObGet%(ObSchema.Control, ctid%, ObIndex.Parent)
@@ -2948,11 +2943,11 @@ FUNCTION ExCmdMail% (tokens$(), count%)
   DIM ctid%: ctid% = ObCreate%(ObSchema.Control, msgs%)
   ObSet ObSchema.Control, ctid%, ObIndex.Kind, CtKind.Button
   ObSet ObSchema.Control, ctid%, CtIndex.Command, 0
-  ObSet ObSchema.Control, ctid%, CtIndex.OffsetX, 0
-  ObSet ObSchema.Control, ctid%, CtIndex.OffsetY, countmail%
+  ObSet ObSchema.Control, ctid%, ObIndex.Label, RsCreate%(" " + tokens$(1))
+  ObSet ObSchema.Control, ctid%, ObIndex.OffsetX, 0
+  ObSet ObSchema.Control, ctid%, ObIndex.OffsetY, countmail%
   ObSet ObSchema.Control, ctid%, CtIndex.SizeX, 20
   ObSet ObSchema.Control, ctid%, CtIndex.SizeY, 1
-  ObSet ObSchema.Control, ctid%, CtIndex.Text, RsCreate%(" " + tokens$(1))
   ObSet ObSchema.Control, ctid%, ObIndex.Value, RsCreate%(tokens$(2))
 
   DIM f%: f% = CtFocusLast(msgs%)
