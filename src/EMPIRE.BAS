@@ -283,16 +283,17 @@ CONST ObIndex.Invalid = -1
 CONST ObIndex.Schema = 0
 CONST ObIndex.Command = 1
 CONST ObIndex.Dirty = 2
-CONST ObIndex.Kind = 3
-CONST ObIndex.Label = 4
-CONST ObIndex.Name = 5
-CONST ObIndex.OffsetX = 6
-CONST ObIndex.OffsetY = 7
-CONST ObIndex.Parent = 8
-CONST ObIndex.SizeX = 9
-CONST ObIndex.SizeY = 10
-CONST ObIndex.Value = 11
-CONST ObIndex.MaxIndex = 11
+CONST ObIndex.Focused = 3
+CONST ObIndex.Kind = 4
+CONST ObIndex.Label = 5
+CONST ObIndex.Name = 6
+CONST ObIndex.OffsetX = 7
+CONST ObIndex.OffsetY = 8
+CONST ObIndex.Parent = 9
+CONST ObIndex.SizeX = 10
+CONST ObIndex.SizeY = 11
+CONST ObIndex.Value = 12
+CONST ObIndex.MaxIndex = 12
 
 '
 ' Object schemas
@@ -311,16 +312,17 @@ CONST ObSchemas = 8
 '
 ' Object schema names
 '
-REDIM SHARED ObKind$(0 TO ObSchemas, 0 TO 16)
+REDIM SHARED ObKind$(0 TO ObSchemas, 0 TO 17)
 ObKind$(0, 0) = "Object"
 
 '
 ' Object property names
 '
-REDIM SHARED ObProperty$(0 TO 15, 0 TO 16)
+REDIM SHARED ObProperty$(0 TO 15, 0 TO 17)
 ObProperty$(0, ObIndex.Schema) = "Schema"
 ObProperty$(0, ObIndex.Command) = "Command"
 ObProperty$(0, ObIndex.Dirty) = "Dirty"
+ObProperty$(0, ObIndex.Focused) = "Focused"
 ObProperty$(0, ObIndex.Kind) = "Kind"
 ObProperty$(0, ObIndex.Label) = "Label"
 ObProperty$(0, ObIndex.Name) = "Name"
@@ -372,13 +374,11 @@ ObKind$(ObSchema.Control, CtKind.Separator) = "Separator"
 '
 ' Control property indexes
 '
-CONST CtIndex.Focused = 12
 CONST CtIndex.Style = 13
 
 '
 ' Control property names
 '
-ObProperty$(ObSchema.Control, CtIndex.Focused) = "Focused"
 ObProperty$(ObSchema.Control, CtIndex.Style) = "Style"
 
 '
@@ -397,9 +397,9 @@ CONST ExTokenType.Unknown = 3
 '
 ' Habitat properties
 '
-CONST HbIndex.Backdrop = 12
-CONST HbIndex.StartFile = 13
-CONST HbIndex.Window = 14
+CONST HbIndex.Backdrop = 13
+CONST HbIndex.StartFile = 14
+CONST HbIndex.Window = 15
 
 ObKind$(ObSchema.Habitat, 0) = "Habitat"
 ObProperty$(ObSchema.Habitat, HbIndex.Backdrop) = "Backdrop"
@@ -409,8 +409,8 @@ ObProperty$(ObSchema.Habitat, HbIndex.Window) = "Window"
 '
 ' Location properties
 '
-CONST LcIndex.Energy = 12
-CONST LcIndex.Habitat = 13
+CONST LcIndex.Energy = 13
+CONST LcIndex.Habitat = 14
 ObKind$(ObSchema.Location, 0) = "Location"
 ObProperty$(ObSchema.Location, LcIndex.Energy) = "Energy"
 ObProperty$(ObSchema.Location, LcIndex.Habitat) = "Habitat"
@@ -423,10 +423,10 @@ ObKind$(ObSchema.Style, 0) = "Style"
 '
 ' Style property indexes
 '
-CONST StIndex.BorderColor = 12
-CONST StIndex.BorderType = 13
-CONST StIndex.SelectedColor = 14
-CONST StIndex.TextColor = 15
+CONST StIndex.BorderColor = 13
+CONST StIndex.BorderType = 14
+CONST StIndex.SelectedColor = 15
+CONST StIndex.TextColor = 16
 
 '
 ' Style property names
@@ -453,11 +453,11 @@ ObKind$(ObSchema.Thing, ThKind.Place) = "Place"
 '
 ' Thing property indexes
 '
-CONST ThIndex.Backdrop = 12
-CONST ThIndex.Energy = 13
-CONST ThIndex.Greeting = 14
-CONST ThIndex.Pin = 15
-CONST ThIndex.Window = 16
+CONST ThIndex.Backdrop = 13
+CONST ThIndex.Energy = 14
+CONST ThIndex.Greeting = 15
+CONST ThIndex.Pin = 16
+CONST ThIndex.Window = 17
 
 '
 ' Thing property names
@@ -476,8 +476,8 @@ ObKind$(ObSchema.Trigger, 0) = "Trigger"
 '
 ' Trigger property indexes
 '
-CONST TrIndex.Event = 12
-CONST TrIndex.Equals = 13
+CONST TrIndex.Event = 13
+CONST TrIndex.Equals = 14
 
 '
 ' Trigger property names
@@ -500,8 +500,8 @@ ObKind$(ObSchema.Window, 0) = "Window"
 '
 ' Window property indexes
 '
-CONST WnIndex.Param = 12
-CONST WnIndex.Root = 13
+CONST WnIndex.Param = 13
+CONST WnIndex.Root = 14
 
 '
 ' Window property names
@@ -537,7 +537,7 @@ DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS IN
 '
 ' Global object state
 '
-DIM SHARED obj(1 TO MaxObjects, 0 TO 16) AS PropType
+DIM SHARED obj(1 TO MaxObjects, 0 TO 17) AS PropType
 
 '
 ' Global runtime state
@@ -1551,7 +1551,7 @@ SUB CtDrawCheckbox (ctid%)
   ' Get the value, 0=false, else=true
   '
   LET value% = ObGet%(ObSchema.Control, ctid%, ObIndex.Value)
-  LET focused% = ObGet%(ObSchema.Control, ctid%, CtIndex.Focused)
+  LET focused% = ObGet%(ObSchema.Control, ctid%, ObIndex.Focused)
 
   '
   ' Get the style to set colors
@@ -1643,14 +1643,14 @@ SUB CtDrawLabel (ctid%)
   '
   LET stid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Style)
   IF stid% = 0 THEN
-    IF ObGet%(ObSchema.Control, ctid%, CtIndex.Focused) <> 0 THEN
+    IF ObGet%(ObSchema.Control, ctid%, ObIndex.Focused) <> 0 THEN
       ' *** track current color and push/pop
       COLOR 0, 7
     ELSE
       COLOR 7, 0
     END IF
   ELSE
-    IF ObGet%(ObSchema.Control, ctid%, CtIndex.Focused) <> 0 THEN
+    IF ObGet%(ObSchema.Control, ctid%, ObIndex.Focused) <> 0 THEN
       DrawColor ObGet%(ObSchema.Style, stid%, StIndex.SelectedColor)
     ELSE
       DrawColor ObGet%(ObSchema.Style, stid%, StIndex.TextColor)
@@ -1774,7 +1774,7 @@ SUB CtDrawPopup (ctid%)
   CtDrawLabel ctid%
 
   DIM focused%
-  LET focused% = ObGet%(ObSchema.Control, ctid%, CtIndex.Focused)
+  LET focused% = ObGet%(ObSchema.Control, ctid%, ObIndex.Focused)
  
   IF focused% > 0 THEN
     '
@@ -1894,7 +1894,7 @@ FUNCTION CtFocus% (ctid%)
   END IF
 
   DIM focused%
-  LET focused% = ObGet%(ObSchema.Control, ctid%, CtIndex.Focused)
+  LET focused% = ObGet%(ObSchema.Control, ctid%, ObIndex.Focused)
 
   IF focused% = 0 THEN
     CtFocus% = CtFocusFirst%(ctid%)
@@ -1918,7 +1918,7 @@ FUNCTION CtFocusBack% (ctid%)
   DIM new%
   DIM old%
 
-  old% = ObGet%(ObSchema.Control, ctid%, CtIndex.Focused)
+  old% = ObGet%(ObSchema.Control, ctid%, ObIndex.Focused)
 
   FOR n% = vwPerParent(ctid%, 0) TO 1 STEP -1
      
@@ -1979,7 +1979,7 @@ FUNCTION CtFocusBack% (ctid%)
       DIM r%: r% = CtFocus%(new%)
     END IF
 
-    ObSet ObSchema.Control, ctid%, CtIndex.Focused, new%
+    ObSet ObSchema.Control, ctid%, ObIndex.Focused, new%
  
   END IF
 
@@ -2033,7 +2033,7 @@ FUNCTION CtFocusFirst% (ctid%)
     focused% = ctid%
   END IF
  
-  ObSet ObSchema.Control, ctid%, CtIndex.Focused, focused%
+  ObSet ObSchema.Control, ctid%, ObIndex.Focused, focused%
   CtFocusFirst% = focused%
 
 END FUNCTION
@@ -2081,7 +2081,7 @@ FUNCTION CtFocusLast% (ctid%)
     focused% = ctid%
   END IF
 
-  ObSet ObSchema.Control, ctid%, CtIndex.Focused, focused%
+  ObSet ObSchema.Control, ctid%, ObIndex.Focused, focused%
   CtFocusLast% = focused%
 
 END FUNCTION
@@ -2100,7 +2100,7 @@ FUNCTION CtFocusNext% (ctid%)
   DIM new%
   DIM old%
 
-  old% = ObGet%(ObSchema.Control, ctid%, CtIndex.Focused)
+  old% = ObGet%(ObSchema.Control, ctid%, ObIndex.Focused)
 
   FOR n% = 1 TO vwPerParent(ctid%, 0)
       
@@ -2163,7 +2163,7 @@ FUNCTION CtFocusNext% (ctid%)
       DIM r%: r% = CtFocus%(new%)
     END IF
 
-    ObSet ObSchema.Control, ctid%, CtIndex.Focused, new%
+    ObSet ObSchema.Control, ctid%, ObIndex.Focused, new%
 
   END IF
 
@@ -2306,7 +2306,7 @@ FUNCTION CtKeyContainer% (ctid%, keypress$)
   '
   ' Get the control with focus, either a child control or this container
   '
-  DIM focused%: focused% = ObGet%(ObSchema.Control, ctid%, CtIndex.Focused)
+  DIM focused%: focused% = ObGet%(ObSchema.Control, ctid%, ObIndex.Focused)
  
   DIM action%
   IF focused% > 0 AND focused% <> ctid% THEN
@@ -2392,7 +2392,7 @@ SUB CtUnfocus (ctid%)
   DIM child%
   DIM n%
 
-  ObSet ObSchema.Control, ctid%, CtIndex.Focused, 0
+  ObSet ObSchema.Control, ctid%, ObIndex.Focused, 0
 
   FOR n% = 1 TO vwPerParent(ctid%, 0)
     child% = vwPerParent(ctid%, n%)
