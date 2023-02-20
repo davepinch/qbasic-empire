@@ -292,8 +292,11 @@ CONST ObIndex.OffsetY = 8
 CONST ObIndex.Parent = 9
 CONST ObIndex.SizeX = 10
 CONST ObIndex.SizeY = 11
-CONST ObIndex.Value = 12
-CONST ObIndex.MaxIndex = 12
+CONST ObIndex.Style = 12
+CONST ObIndex.Value = 13
+CONST ObIndex.MaxIndex = 13
+
+CONST ObIndex.UBound = 20
 
 '
 ' Object schemas
@@ -312,13 +315,13 @@ CONST ObSchemas = 8
 '
 ' Object schema names
 '
-REDIM SHARED ObKind$(0 TO ObSchemas, 0 TO 17)
+REDIM SHARED ObKind$(0 TO ObSchemas, 0 TO ObIndex.UBound)
 ObKind$(0, 0) = "Object"
 
 '
 ' Object property names
 '
-REDIM SHARED ObProperty$(0 TO 15, 0 TO 17)
+REDIM SHARED ObProperty$(0 TO 15, 0 TO ObIndex.UBound)
 ObProperty$(0, ObIndex.Schema) = "Schema"
 ObProperty$(0, ObIndex.Command) = "Command"
 ObProperty$(0, ObIndex.Dirty) = "Dirty"
@@ -331,6 +334,7 @@ ObProperty$(0, ObIndex.OffsetY) = "OffsetY"
 ObProperty$(0, ObIndex.Parent) = "Parent"
 ObProperty$(0, ObIndex.SizeX) = "SizeX"
 ObProperty$(0, ObIndex.SizeY) = "SizeY"
+ObProperty$(0, ObIndex.Style) = "Style"
 ObProperty$(0, ObIndex.Value) = "Value"
 
 '
@@ -372,16 +376,6 @@ ObKind$(ObSchema.Control, CtKind.Popup) = "Popup"
 ObKind$(ObSchema.Control, CtKind.Separator) = "Separator"
 
 '
-' Control property indexes
-'
-CONST CtIndex.Style = 13
-
-'
-' Control property names
-'
-ObProperty$(ObSchema.Control, CtIndex.Style) = "Style"
-
-'
 ' Event kind names
 '
 ObKind$(ObSchema.Event, 0) = "Event"
@@ -397,9 +391,9 @@ CONST ExTokenType.Unknown = 3
 '
 ' Habitat properties
 '
-CONST HbIndex.Backdrop = 13
-CONST HbIndex.StartFile = 14
-CONST HbIndex.Window = 15
+CONST HbIndex.Backdrop = 14
+CONST HbIndex.StartFile = 15
+CONST HbIndex.Window = 16
 
 ObKind$(ObSchema.Habitat, 0) = "Habitat"
 ObProperty$(ObSchema.Habitat, HbIndex.Backdrop) = "Backdrop"
@@ -409,8 +403,8 @@ ObProperty$(ObSchema.Habitat, HbIndex.Window) = "Window"
 '
 ' Location properties
 '
-CONST LcIndex.Energy = 13
-CONST LcIndex.Habitat = 14
+CONST LcIndex.Energy = 14
+CONST LcIndex.Habitat = 15
 ObKind$(ObSchema.Location, 0) = "Location"
 ObProperty$(ObSchema.Location, LcIndex.Energy) = "Energy"
 ObProperty$(ObSchema.Location, LcIndex.Habitat) = "Habitat"
@@ -423,10 +417,10 @@ ObKind$(ObSchema.Style, 0) = "Style"
 '
 ' Style property indexes
 '
-CONST StIndex.BorderColor = 13
-CONST StIndex.BorderType = 14
-CONST StIndex.SelectedColor = 15
-CONST StIndex.TextColor = 16
+CONST StIndex.BorderColor = 14
+CONST StIndex.BorderType = 15
+CONST StIndex.SelectedColor = 16
+CONST StIndex.TextColor = 17
 
 '
 ' Style property names
@@ -453,11 +447,11 @@ ObKind$(ObSchema.Thing, ThKind.Place) = "Place"
 '
 ' Thing property indexes
 '
-CONST ThIndex.Backdrop = 13
-CONST ThIndex.Energy = 14
-CONST ThIndex.Greeting = 15
-CONST ThIndex.Pin = 16
-CONST ThIndex.Window = 17
+CONST ThIndex.Backdrop = 14
+CONST ThIndex.Energy = 15
+CONST ThIndex.Greeting = 16
+CONST ThIndex.Pin = 17
+CONST ThIndex.Window = 18
 
 '
 ' Thing property names
@@ -476,8 +470,8 @@ ObKind$(ObSchema.Trigger, 0) = "Trigger"
 '
 ' Trigger property indexes
 '
-CONST TrIndex.Event = 13
-CONST TrIndex.Equals = 14
+CONST TrIndex.Event = 14
+CONST TrIndex.Equals = 15
 
 '
 ' Trigger property names
@@ -500,8 +494,8 @@ ObKind$(ObSchema.Window, 0) = "Window"
 '
 ' Window property indexes
 '
-CONST WnIndex.Param = 13
-CONST WnIndex.Root = 14
+CONST WnIndex.Param = 14
+CONST WnIndex.Root = 15
 
 '
 ' Window property names
@@ -537,7 +531,7 @@ DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS IN
 '
 ' Global object state
 '
-DIM SHARED obj(1 TO MaxObjects, 0 TO 17) AS PropType
+DIM SHARED obj(1 TO MaxObjects, 0 TO ObIndex.UBound) AS PropType
 
 '
 ' Global runtime state
@@ -1332,7 +1326,7 @@ END SUB
 
 SUB CtDrawBox (ctid%)
 
-  DIM stid%: stid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Style)
+  DIM stid%: stid% = ObGet%(ObSchema.Control, ctid%, ObIndex.Style)
  
   DIM bordertype%
   IF stid% > 0 THEN
@@ -1363,7 +1357,7 @@ SUB CtDrawBox0 (ctid%)
   DIM sx  AS INTEGER
   DIM sy  AS INTEGER
 
-  DIM stid%: stid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Style)
+  DIM stid%: stid% = ObGet%(ObSchema.Control, ctid%, ObIndex.Style)
   IF stid% > 0 THEN
     DrawColor ObGet%(ObSchema.Style, stid%, StIndex.TextColor)
   END IF
@@ -1408,7 +1402,7 @@ SUB CtDrawBox1 (ctid%)
   sy2 = sy1 + ObGet%(ObSchema.Control, ctid%, ObIndex.SizeY) - 1
 
   DIM stid%
-  LET stid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Style)
+  LET stid% = ObGet%(ObSchema.Control, ctid%, ObIndex.Style)
 
   '
   ' Draw the top border
@@ -1556,7 +1550,7 @@ SUB CtDrawCheckbox (ctid%)
   '
   ' Get the style to set colors
   '
-  LET style% = ObGet%(ObSchema.Control, ctid%, CtIndex.Style)
+  LET style% = ObGet%(ObSchema.Control, ctid%, ObIndex.Style)
   IF style% = 0 THEN
     bordercolor% = 7
     selectedcolor% = &H70
@@ -1641,7 +1635,7 @@ SUB CtDrawLabel (ctid%)
   '
   ' Set style of text
   '
-  LET stid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Style)
+  LET stid% = ObGet%(ObSchema.Control, ctid%, ObIndex.Style)
   IF stid% = 0 THEN
     IF ObGet%(ObSchema.Control, ctid%, ObIndex.Focused) <> 0 THEN
       ' *** track current color and push/pop
@@ -1805,7 +1799,7 @@ SUB CtDrawSeparator (ctid%)
   DIM sy    AS INTEGER
 
   DIM stid%
-  LET stid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Style)
+  LET stid% = ObGet%(ObSchema.Control, ctid%, ObIndex.Style)
  
   sizeX = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeX)
   SizeY = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeY)
