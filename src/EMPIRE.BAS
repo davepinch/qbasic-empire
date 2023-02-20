@@ -281,17 +281,18 @@ CONST ObBinding.Inherit = 3
 '
 CONST ObIndex.Invalid = -1
 CONST ObIndex.Schema = 0
-CONST ObIndex.Dirty = 1
-CONST ObIndex.Kind = 2
-CONST ObIndex.Label = 3
-CONST ObIndex.Name = 4
-CONST ObIndex.OffsetX = 5
-CONST ObIndex.OffsetY = 6
-CONST ObIndex.Parent = 7
-CONST ObIndex.SizeX = 8
-CONST ObIndex.SizeY = 9
-CONST ObIndex.Value = 10
-CONST ObIndex.MaxIndex = 10
+CONST ObIndex.Command = 1
+CONST ObIndex.Dirty = 2
+CONST ObIndex.Kind = 3
+CONST ObIndex.Label = 4
+CONST ObIndex.Name = 5
+CONST ObIndex.OffsetX = 6
+CONST ObIndex.OffsetY = 7
+CONST ObIndex.Parent = 8
+CONST ObIndex.SizeX = 9
+CONST ObIndex.SizeY = 10
+CONST ObIndex.Value = 11
+CONST ObIndex.MaxIndex = 11
 
 '
 ' Object schemas
@@ -310,14 +311,15 @@ CONST ObSchemas = 8
 '
 ' Object schema names
 '
-REDIM SHARED ObKind$(0 TO ObSchemas, 0 TO 15)
+REDIM SHARED ObKind$(0 TO ObSchemas, 0 TO 16)
 ObKind$(0, 0) = "Object"
 
 '
 ' Object property names
 '
-REDIM SHARED ObProperty$(0 TO 15, 0 TO 15)
+REDIM SHARED ObProperty$(0 TO 15, 0 TO 16)
 ObProperty$(0, ObIndex.Schema) = "Schema"
+ObProperty$(0, ObIndex.Command) = "Command"
 ObProperty$(0, ObIndex.Dirty) = "Dirty"
 ObProperty$(0, ObIndex.Kind) = "Kind"
 ObProperty$(0, ObIndex.Label) = "Label"
@@ -370,14 +372,12 @@ ObKind$(ObSchema.Control, CtKind.Separator) = "Separator"
 '
 ' Control property indexes
 '
-CONST CtIndex.Command = 11
 CONST CtIndex.Focused = 12
 CONST CtIndex.Style = 13
 
 '
 ' Control property names
 '
-ObProperty$(ObSchema.Control, CtIndex.Command) = "Command"
 ObProperty$(ObSchema.Control, CtIndex.Focused) = "Focused"
 ObProperty$(ObSchema.Control, CtIndex.Style) = "Style"
 
@@ -397,9 +397,9 @@ CONST ExTokenType.Unknown = 3
 '
 ' Habitat properties
 '
-CONST HbIndex.Backdrop = 11
-CONST HbIndex.StartFile = 12
-CONST HbIndex.Window = 13
+CONST HbIndex.Backdrop = 12
+CONST HbIndex.StartFile = 13
+CONST HbIndex.Window = 14
 
 ObKind$(ObSchema.Habitat, 0) = "Habitat"
 ObProperty$(ObSchema.Habitat, HbIndex.Backdrop) = "Backdrop"
@@ -409,8 +409,8 @@ ObProperty$(ObSchema.Habitat, HbIndex.Window) = "Window"
 '
 ' Location properties
 '
-CONST LcIndex.Energy = 11
-CONST LcIndex.Habitat = 12
+CONST LcIndex.Energy = 12
+CONST LcIndex.Habitat = 13
 ObKind$(ObSchema.Location, 0) = "Location"
 ObProperty$(ObSchema.Location, LcIndex.Energy) = "Energy"
 ObProperty$(ObSchema.Location, LcIndex.Habitat) = "Habitat"
@@ -423,10 +423,10 @@ ObKind$(ObSchema.Style, 0) = "Style"
 '
 ' Style property indexes
 '
-CONST StIndex.BorderColor = 11
-CONST StIndex.BorderType = 12
-CONST StIndex.SelectedColor = 13
-CONST StIndex.TextColor = 14
+CONST StIndex.BorderColor = 12
+CONST StIndex.BorderType = 13
+CONST StIndex.SelectedColor = 14
+CONST StIndex.TextColor = 15
 
 '
 ' Style property names
@@ -453,11 +453,11 @@ ObKind$(ObSchema.Thing, ThKind.Place) = "Place"
 '
 ' Thing property indexes
 '
-CONST ThIndex.Backdrop = 11
-CONST ThIndex.Energy = 12
-CONST ThIndex.Greeting = 13
-CONST ThIndex.Pin = 14
-CONST ThIndex.Window = 15
+CONST ThIndex.Backdrop = 12
+CONST ThIndex.Energy = 13
+CONST ThIndex.Greeting = 14
+CONST ThIndex.Pin = 15
+CONST ThIndex.Window = 16
 
 '
 ' Thing property names
@@ -476,16 +476,14 @@ ObKind$(ObSchema.Trigger, 0) = "Trigger"
 '
 ' Trigger property indexes
 '
-CONST TrIndex.Event = 11
-CONST TrIndex.Equals = 12
-CONST TrIndex.Command = 13
+CONST TrIndex.Event = 12
+CONST TrIndex.Equals = 13
 
 '
 ' Trigger property names
 '
 ObProperty$(ObSchema.Trigger, TrIndex.Event) = "Event"
 ObProperty$(ObSchema.Trigger, TrIndex.Equals) = "Equals"
-ObProperty$(ObSchema.Trigger, TrIndex.Command) = "Command"
 
 '
 ' UIPage.* constants
@@ -502,8 +500,8 @@ ObKind$(ObSchema.Window, 0) = "Window"
 '
 ' Window property indexes
 '
-CONST WnIndex.Param = 11
-CONST WnIndex.Root = 12
+CONST WnIndex.Param = 12
+CONST WnIndex.Root = 13
 
 '
 ' Window property names
@@ -539,7 +537,7 @@ DIM SHARED atlasGrid(1 TO AtlasStyle.GridSizeX, 1 TO AtlasStyle.GridSizeY) AS IN
 '
 ' Global object state
 '
-DIM SHARED obj(1 TO MaxObjects, 0 TO 15) AS PropType
+DIM SHARED obj(1 TO MaxObjects, 0 TO 16) AS PropType
 
 '
 ' Global runtime state
@@ -2255,7 +2253,7 @@ FUNCTION CtKeyButton% (ctid%, keypress$)
   '
   ' Get the resoure ID of the command associated with the button.
   '
-  DIM rsid%: rsid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Command)
+  DIM rsid%: rsid% = ObGet%(ObSchema.Control, ctid%, ObIndex.Command)
  
   '
   ' Return an action to execute the command specified by the resource ID.
@@ -2892,7 +2890,7 @@ SUB EvFire (evid%)
       '
       DIM equals%: equals% = ObGet%(ObSchema.Trigger, trid%, TrIndex.Equals)
       IF equals% = ObGet%(ObSchema.Event, evid%, ObIndex.Value) THEN
-        DIM rsid%: rsid% = ObGet%(ObSchema.Trigger, trid%, TrIndex.Command)
+        DIM rsid%: rsid% = ObGet%(ObSchema.Trigger, trid%, ObIndex.Command)
         DIM result%: result% = ExRunResource(rsid%)
       END IF
 
@@ -2942,7 +2940,7 @@ FUNCTION ExCmdMail% (tokens$(), count%)
   '
   DIM ctid%: ctid% = ObCreate%(ObSchema.Control, msgs%)
   ObSet ObSchema.Control, ctid%, ObIndex.Kind, CtKind.Button
-  ObSet ObSchema.Control, ctid%, CtIndex.Command, 0
+  ObSet ObSchema.Control, ctid%, ObIndex.Command, 0
   ObSet ObSchema.Control, ctid%, ObIndex.Label, RsCreate%(" " + tokens$(1))
   ObSet ObSchema.Control, ctid%, ObIndex.OffsetX, 0
   ObSet ObSchema.Control, ctid%, ObIndex.OffsetY, countmail%
@@ -3063,7 +3061,7 @@ FUNCTION ExMap% (schema%, propname$)
     END IF
   NEXT
 
-  FOR n% = ObIndex.Parent + 1 TO 15
+  FOR n% = ObIndex.MaxIndex + 1 TO UBOUND(obj, 2)
     IF fixed$ = ObProperty$(schema%, n%) THEN
       ExMap% = n%
       EXIT FUNCTION
