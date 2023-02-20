@@ -285,6 +285,8 @@ CONST ObIndex.Dirty = 1
 CONST ObIndex.Kind = 2
 CONST ObIndex.Name = 3
 CONST ObIndex.Parent = 4
+CONST ObIndex.Value = 5
+CONST ObIndex.MaxIndex = 5
 
 '
 ' Object schemas
@@ -315,6 +317,7 @@ ObProperty$(0, ObIndex.Dirty) = "Dirty"
 ObProperty$(0, ObIndex.Kind) = "Kind"
 ObProperty$(0, ObIndex.Name) = "Name"
 ObProperty$(0, ObIndex.Parent) = "Parent"
+ObProperty$(0, ObIndex.Value) = "Value"
 
 '
 ' Control actions in response to input
@@ -357,15 +360,14 @@ ObKind$(ObSchema.Control, CtKind.Separator) = "Separator"
 '
 ' Control property indexes
 '
-CONST CtIndex.Command = 5
-CONST CtIndex.Focused = 6
-CONST CtIndex.OffsetX = 7
-CONST CtIndex.OffsetY = 8
-CONST CtIndex.SizeX = 9
-CONST CtIndex.SizeY = 10
-CONST CtIndex.Style = 11
-CONST CtIndex.Text = 12
-CONST CtIndex.Value = 13
+CONST CtIndex.Command = 6
+CONST CtIndex.Focused = 7
+CONST CtIndex.OffsetX = 8
+CONST CtIndex.OffsetY = 9
+CONST CtIndex.SizeX = 10
+CONST CtIndex.SizeY = 11
+CONST CtIndex.Style = 12
+CONST CtIndex.Text = 13
 
 '
 ' Control property names
@@ -378,14 +380,11 @@ ObProperty$(ObSchema.Control, CtIndex.SizeX) = "SizeX"
 ObProperty$(ObSchema.Control, CtIndex.SizeY) = "SizeY"
 ObProperty$(ObSchema.Control, CtIndex.Style) = "Style"
 ObProperty$(ObSchema.Control, CtIndex.Text) = "Text"
-ObProperty$(ObSchema.Control, CtIndex.Value) = "Value"
 
 '
-' Event properties
+' Event kind names
 '
-CONST EvIndex.Value = 5
 ObKind$(ObSchema.Event, 0) = "Event"
-ObProperty$(ObSchema.Event, EvIndex.Value) = "Value"
 
 '
 ' Execution token types
@@ -398,10 +397,10 @@ CONST ExTokenType.Unknown = 3
 '
 ' Habitat properties
 '
-CONST HbIndex.Backdrop = 5
-CONST HbIndex.Label = 6
-CONST HbIndex.StartFile = 7
-CONST HbIndex.Window = 8
+CONST HbIndex.Backdrop = 6
+CONST HbIndex.Label = 7
+CONST HbIndex.StartFile = 8
+CONST HbIndex.Window = 9
 
 ObKind$(ObSchema.Habitat, 0) = "Habitat"
 ObProperty$(ObSchema.Habitat, HbIndex.Backdrop) = "Backdrop"
@@ -412,8 +411,8 @@ ObProperty$(ObSchema.Habitat, HbIndex.Window) = "Window"
 '
 ' Location properties
 '
-CONST LcIndex.Energy = 5
-CONST LcIndex.Habitat = 6
+CONST LcIndex.Energy = 6
+CONST LcIndex.Habitat = 7
 ObKind$(ObSchema.Location, 0) = "Location"
 ObProperty$(ObSchema.Location, LcIndex.Energy) = "Energy"
 ObProperty$(ObSchema.Location, LcIndex.Habitat) = "Habitat"
@@ -426,10 +425,10 @@ ObKind$(ObSchema.Style, 0) = "Style"
 '
 ' Style property indexes
 '
-CONST StIndex.BorderColor = 5
-CONST StIndex.BorderType = 6
-CONST StIndex.SelectedColor = 7
-CONST StIndex.TextColor = 8
+CONST StIndex.BorderColor = 6
+CONST StIndex.BorderType = 7
+CONST StIndex.SelectedColor = 8
+CONST StIndex.TextColor = 9
 
 '
 ' Style property names
@@ -456,12 +455,12 @@ ObKind$(ObSchema.Thing, ThKind.Place) = "Place"
 '
 ' Thing property indexes
 '
-CONST ThIndex.Backdrop = 5
-CONST ThIndex.Energy = 6
-CONST ThIndex.Greeting = 7
-CONST ThIndex.Label = 8
-CONST ThIndex.Pin = 9
-CONST ThIndex.Window = 10
+CONST ThIndex.Backdrop = 6
+CONST ThIndex.Energy = 7
+CONST ThIndex.Greeting = 8
+CONST ThIndex.Label = 9
+CONST ThIndex.Pin = 10
+CONST ThIndex.Window = 11
 
 '
 ' Thing property names
@@ -481,9 +480,9 @@ ObKind$(ObSchema.Trigger, 0) = "Trigger"
 '
 ' Trigger property indexes
 '
-CONST TrIndex.Event = 5
-CONST TrIndex.Equals = 6
-CONST TrIndex.Command = 7
+CONST TrIndex.Event = 6
+CONST TrIndex.Equals = 7
+CONST TrIndex.Command = 8
 
 '
 ' Trigger property names
@@ -507,8 +506,8 @@ ObKind$(ObSchema.Window, 0) = "Window"
 '
 ' Window property indexes
 '
-CONST WnIndex.Param = 5
-CONST WnIndex.Root = 6
+CONST WnIndex.Param = 6
+CONST WnIndex.Root = 7
 
 '
 ' Window property names
@@ -1560,7 +1559,7 @@ SUB CtDrawCheckbox (ctid%)
   '
   ' Get the value, 0=false, else=true
   '
-  LET value% = ObGet%(ObSchema.Control, ctid%, CtIndex.Value)
+  LET value% = ObGet%(ObSchema.Control, ctid%, ObIndex.Value)
   LET focused% = ObGet%(ObSchema.Control, ctid%, CtIndex.Focused)
 
   '
@@ -1617,7 +1616,7 @@ END SUB
 SUB CtDrawFile (ctid%)
 
   DIM rsid%
-  LET rsid% = ObGet%(ObSchema.Control, ctid%, CtIndex.Value)
+  LET rsid% = ObGet%(ObSchema.Control, ctid%, ObIndex.Value)
   IF rsid% = 0 THEN
     EXIT SUB
   END IF
@@ -2280,7 +2279,7 @@ FUNCTION CtKeyCheckbox% (ctid%, keypress$)
   '
   ' Get current value
   '
-  LET old% = ObGet%(ObSchema.Control, ctid%, CtIndex.Value)
+  LET old% = ObGet%(ObSchema.Control, ctid%, ObIndex.Value)
   LET new% = old%
 
   DIM action%
@@ -2302,7 +2301,7 @@ FUNCTION CtKeyCheckbox% (ctid%, keypress$)
   END SELECT
 
   IF new% <> old% THEN
-    ObSet ObSchema.Control, ctid%, CtIndex.Value, new%
+    ObSet ObSchema.Control, ctid%, ObIndex.Value, new%
   END IF
 
   CtKeyCheckbox% = action%
@@ -2388,7 +2387,7 @@ FUNCTION CtKeyPopup% (ctid%, keypress$)
   SELECT CASE keypress$
  
     CASE KeyDown$, KeyEnter$
-      DIM value%: value% = ObGet%(ObSchema.Control, ctid%, CtIndex.Value)
+      DIM value%: value% = ObGet%(ObSchema.Control, ctid%, ObIndex.Value)
       IF value% > 0 THEN
         CtKeyPopup% = CtAction%(CtAction.Window, value%)
       END IF
@@ -2899,7 +2898,7 @@ SUB EvFire (evid%)
       ' Match the value
       '
       DIM equals%: equals% = ObGet%(ObSchema.Trigger, trid%, TrIndex.Equals)
-      IF equals% = ObGet%(ObSchema.Event, evid%, EvIndex.Value) THEN
+      IF equals% = ObGet%(ObSchema.Event, evid%, ObIndex.Value) THEN
         DIM rsid%: rsid% = ObGet%(ObSchema.Trigger, trid%, TrIndex.Command)
         DIM result%: result% = ExRunResource(rsid%)
       END IF
@@ -2914,7 +2913,7 @@ SUB EvInc (name$)
  
   DIM evid%: evid% = ObFind%(ObSchema.Event, name$)
   IF evid% > 0 THEN
-    ObInc ObSchema.Event, evid%, EvIndex.Value
+    ObInc ObSchema.Event, evid%, ObIndex.Value
     EvFire evid%
   END IF
 
@@ -2956,7 +2955,7 @@ FUNCTION ExCmdMail% (tokens$(), count%)
   ObSet ObSchema.Control, ctid%, CtIndex.SizeX, 20
   ObSet ObSchema.Control, ctid%, CtIndex.SizeY, 1
   ObSet ObSchema.Control, ctid%, CtIndex.Text, RsCreate%(" " + tokens$(1))
-  ObSet ObSchema.Control, ctid%, CtIndex.Value, RsCreate%(tokens$(2))
+  ObSet ObSchema.Control, ctid%, ObIndex.Value, RsCreate%(tokens$(2))
 
   DIM f%: f% = CtFocusLast(msgs%)
 
@@ -3064,7 +3063,7 @@ FUNCTION ExMap% (schema%, propname$)
     fixed$ = propname$
   END IF
 
-  FOR n% = ObIndex.Schema TO ObIndex.Parent
+  FOR n% = ObIndex.Schema TO ObIndex.MaxIndex
     IF fixed$ = ObProperty$(0, n%) THEN
       ExMap% = n%
       EXIT FUNCTION
