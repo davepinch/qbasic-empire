@@ -1672,7 +1672,7 @@ SUB CtDrawNebula (ctid%, sx%, sy%)
     p = 1
 
     nx = sx% + x - 1
-    ny = sx% + y - 1
+    ny = sy% + y - 1
     LOCATE ny, nx
 
     DO
