@@ -59,18 +59,18 @@ DECLARE FUNCTION AtlasPrompt% (promptFor AS INTEGER, outcx AS INTEGER, outcy AS 
 '
 ' Control API
 '
-DECLARE SUB CtDraw (ctid%)
-DECLARE SUB CtDrawBox (ctid%)
-DECLARE SUB CtDrawBox0 (ctid%)
-DECLARE SUB CtDrawBox1 (ctid%)
-DECLARE SUB CtDrawBox2 (ctid%)
-DECLARE SUB CtDrawCheckbox (ctid%)
-DECLARE SUB CtDrawContainer (ctid%)
-DECLARE SUB CtDrawFile (ctid%)
-DECLARE SUB CtDrawLabel (ctid%)
-DECLARE SUB CtDrawNebula (ctid%)
-DECLARE SUB CtDrawPopup (ctid%)
-DECLARE SUB CtDrawSeparator (ctid%)
+DECLARE SUB CtDraw (ctid%, sx%, sy%)
+DECLARE SUB CtDrawBox (ctid%, sx%, sy%)
+DECLARE SUB CtDrawBox0 (ctid%, sx%, sy%)
+DECLARE SUB CtDrawBox1 (ctid%, sx%, sy%)
+DECLARE SUB CtDrawBox2 (ctid%, sx%, sy%)
+DECLARE SUB CtDrawCheckbox (ctid%, sx%, sy%)
+DECLARE SUB CtDrawContainer (ctid%, sx%, sy%)
+DECLARE SUB CtDrawFile (ctid%, sx%, sy%)
+DECLARE SUB CtDrawLabel (ctid%, sx%, sy%)
+DECLARE SUB CtDrawNebula (ctid%, sx%, sy%)
+DECLARE SUB CtDrawPopup (ctid%, sx%, sy%)
+DECLARE SUB CtDrawSeparator (ctid%, sx%, sy%)
 DECLARE SUB CtUnfocus (ctid%)
 DECLARE FUNCTION CtAction% (action%, param%)
 DECLARE FUNCTION CtCanFocus% (ctid%)
@@ -1277,7 +1277,7 @@ FUNCTION CtCanFocus% (ctid%)
 
 END FUNCTION
 
-SUB CtDraw (ctid%)
+SUB CtDraw (ctid%, sx%, sy%)
 
   DIM dirty%: dirty% = ObGet%(ObSchema.Control, ctid%, ObIndex.Dirty)
   IF NOT dirty% THEN
@@ -1289,31 +1289,31 @@ SUB CtDraw (ctid%)
   SELECT CASE kind%
    
     CASE CtKind.Button
-      CtDrawLabel ctid%
+      CtDrawLabel ctid%, sx%, sy%
 
     CASE CtKind.Box
-      CtDrawBox ctid%
+      CtDrawBox ctid%, sx%, sy%
 
     CASE CtKind.Checkbox
-      CtDrawCheckbox ctid%
+      CtDrawCheckbox ctid%, sx%, sy%
 
     CASE CtKind.Container
-      CtDrawContainer ctid%
+      CtDrawContainer ctid%, sx%, sy%
 
     CASE CtKind.Label
-      CtDrawLabel ctid%
+      CtDrawLabel ctid%, sx%, sy%
 
     CASE CtKind.File
-      CtDrawFile ctid%
+      CtDrawFile ctid%, sx%, sy%
 
     CASE CtKind.Popup
-      CtDrawPopup ctid%
+      CtDrawPopup ctid%, sx%, sy%
 
     CASE CtKind.Separator
-      CtDrawSeparator ctid%
+      CtDrawSeparator ctid%, sx%, sy%
 
     CASE CtKind.Nebula
-      CtDrawNebula ctid%
+      CtDrawNebula ctid%, sx%, sy%
 
      CASE ELSE
       DbFail "CtDraw", "unsupported kind" + STR$(kind%)
@@ -1324,7 +1324,7 @@ SUB CtDraw (ctid%)
 
 END SUB
 
-SUB CtDrawBox (ctid%)
+SUB CtDrawBox (ctid%, sx%, sy%)
 
   DIM stid%: stid% = ObGet%(ObSchema.Control, ctid%, ObIndex.Style)
  
@@ -1336,13 +1336,13 @@ SUB CtDrawBox (ctid%)
   SELECT CASE bordertype%
  
     CASE 0:
-      CtDrawBox0 ctid%
+      CtDrawBox0 ctid%, sx%, sy%
 
     CASE 1:
-      CtDrawBox1 ctid%
+      CtDrawBox1 ctid%, sx%, sy%
 
     CASE 2:
-      CtDrawBox2 ctid%
+      CtDrawBox2 ctid%, sx%, sy%
 
     CASE ELSE
       DbFail "CtDrawBox", "Unsupported border type"
@@ -1351,11 +1351,9 @@ SUB CtDrawBox (ctid%)
 
 END SUB
 
-SUB CtDrawBox0 (ctid%)
+SUB CtDrawBox0 (ctid%, sx%, sy%)
 
   DIM row AS INTEGER
-  DIM sx  AS INTEGER
-  DIM sy  AS INTEGER
 
   DIM stid%: stid% = ObGet%(ObSchema.Control, ctid%, ObIndex.Style)
   IF stid% > 0 THEN
@@ -1363,18 +1361,13 @@ SUB CtDrawBox0 (ctid%)
   END IF
 
   FOR row = 1 TO ObGet%(ObSchema.Control, ctid%, ObIndex.SizeY)
-   
-    sx = CtGetScreenX%(ctid%)
-    sy = CtGetScreenY%(ctid%) + row - 1
-
-    LOCATE sy, sx
+    LOCATE sy% + row - 1, sx%
     PRINT STRING$(ObGet%(ObSchema.Control, ctid%, ObIndex.SizeX), " ");
- 
   NEXT
 
 END SUB
 
-SUB CtDrawBox1 (ctid%)
+SUB CtDrawBox1 (ctid%, sx%, sy%)
 
   CONST lowerFlat = "Ä"   ' CHR$(196)
   CONST lowerLeft = "À"   ' CHR$(192)
@@ -1396,8 +1389,8 @@ SUB CtDrawBox1 (ctid%)
   ' Calculate screen coordinates
   '
   sizeX = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeX)
-  sx1 = CtGetScreenX%(ctid%)
-  sy1 = CtGetScreenY%(ctid%)
+  sx1 = sx%
+  sy1 = sy%
   sx2 = sx1 + sizeX - 1
   sy2 = sy1 + ObGet%(ObSchema.Control, ctid%, ObIndex.SizeY) - 1
 
@@ -1439,23 +1432,17 @@ SUB CtDrawBox1 (ctid%)
 
 END SUB
 
-SUB CtDrawBox2 (ctid%)
+SUB CtDrawBox2 (ctid%, sx%, sy%)
 
   DIM idx   AS INTEGER
   DIM row   AS INTEGER
  
   DIM sizeX AS INTEGER
-  DIM SizeY AS INTEGER
+  DIM sizeY AS INTEGER
 
   sizeX = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeX)
-  SizeY = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeY)
+  sizeY = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeY)
  
-  '
-  ' Calculate screen coordinates
-  '
-  DIM sx%: sx% = CtGetScreenX%(ctid%)
-  DIM sy%: sy% = CtGetScreenY%(ctid%)
-
   '
   ' Initialize special border characters
   '
@@ -1482,7 +1469,7 @@ SUB CtDrawBox2 (ctid%)
   PRINT STRING$(sizeX - 2, 196);
   PRINT CHR$(191);
 
-  FOR row = 1 TO SizeY - 2
+  FOR row = 1 TO sizeY - 2
 
     '
     ' Get the index of the left border character
@@ -1508,7 +1495,7 @@ SUB CtDrawBox2 (ctid%)
     '
     ' Get the index of the right border char
     '
-    idx = SizeY - row - 1
+    idx = sizeY - row - 1
     IF idx > UBOUND(ch) THEN idx = 0
 
     '
@@ -1522,7 +1509,7 @@ SUB CtDrawBox2 (ctid%)
   '
   ' Bottom border
   '
-  LOCATE sy% + SizeY% - 1, sx%
+  LOCATE sy% + sizeY% - 1, sx%
   COLOR fc(0), bc(0)
   PRINT CHR$(192);
   PRINT STRING$(sizeX - 2, 196);
@@ -1530,14 +1517,12 @@ SUB CtDrawBox2 (ctid%)
 
 END SUB
 
-SUB CtDrawCheckbox (ctid%)
+SUB CtDrawCheckbox (ctid%, sx%, sy%)
 
   DIM bordercolor%
   DIM focused%
   DIM selectedcolor%
   DIM style%
-  DIM sx%
-  DIM sy%
   DIM textcolor%
   DIM value%
 
@@ -1564,8 +1549,6 @@ SUB CtDrawCheckbox (ctid%)
   '
   ' Calculate screen coordinates
   '
-  LET sx% = CtGetScreenX%(ctid%)
-  LET sy% = CtGetScreenY%(ctid%)
   LOCATE sy%, sx%
 
   '
@@ -1588,17 +1571,26 @@ SUB CtDrawCheckbox (ctid%)
 
 END SUB
 
-SUB CtDrawContainer (ctid%)
+SUB CtDrawContainer (ctid%, sx%, sy%)
 
+  DIM child%
+  DIM childx%
+  DIM childy%
   DIM n%
+
   FOR n% = 1 TO vwPerParent(ctid%, 0)
-    ' *** Optimize by checking dirty state of view
-    CtDraw vwPerParent(ctid%, n%)
+   
+    child% = vwPerParent(ctid%, n%)
+
+    childx% = sx% + ObGet%(ObSchema.Control, child%, ObIndex.OffsetX)
+    childy% = sy% + ObGet%(ObSchema.Control, child%, ObIndex.OffsetY)
+    CtDraw child%, childx%, childy%
+ 
   NEXT
 
 END SUB
 
-SUB CtDrawFile (ctid%)
+SUB CtDrawFile (ctid%, sx%, sy%)
 
   DIM rsid%
   LET rsid% = ObGet%(ObSchema.Control, ctid%, ObIndex.Value)
@@ -1612,24 +1604,17 @@ SUB CtDrawFile (ctid%)
     EXIT SUB
   END IF
  
-  DIM sx%: sx% = CtGetScreenX%(ctid%)
-  DIM sy%: sy% = CtGetScreenY%(ctid%)
-
   DrawFileAt filename$, sx%, sy%
 
 END SUB
 
-SUB CtDrawLabel (ctid%)
+SUB CtDrawLabel (ctid%, sx%, sy%)
  
   DIM stid%
-  DIM sx%
-  DIM sy%
 
   '
   ' Get field position
   '
-  LET sx% = CtGetScreenX%(ctid%)
-  LET sy% = CtGetScreenY%(ctid%)
   LOCATE sy%, sx%
 
   '
@@ -1668,12 +1653,12 @@ SUB CtDrawLabel (ctid%)
 
 END SUB
 
-SUB CtDrawNebula (ctid%)
+SUB CtDrawNebula (ctid%, sx%, sy%)
 
   DIM p     AS INTEGER
   DIM sizeX AS INTEGER
-  DIM sx    AS INTEGER
-  DIM sy    AS INTEGER
+  DIM nx    AS INTEGER
+  DIM ny    AS INTEGER
   DIM x     AS INTEGER
   DIM y     AS INTEGER
 
@@ -1686,9 +1671,9 @@ SUB CtDrawNebula (ctid%)
     x = INT(RND * sizeX) + 1
     p = 1
 
-    sx = CtGetScreenX%(ctid%) + x - 1
-    sy = CtGetScreenY%(ctid%) + y - 1
-    LOCATE sy, sx
+    nx = sx% + x - 1
+    ny = sx% + y - 1
+    LOCATE ny, nx
 
     DO
     
@@ -1763,50 +1748,23 @@ SUB CtDrawNebula (ctid%)
 
 END SUB
 
-SUB CtDrawPopup (ctid%)
-
-  CtDrawLabel ctid%
-
-  DIM focused%
-  LET focused% = ObGet%(ObSchema.Control, ctid%, ObIndex.Focused)
- 
-  IF focused% > 0 THEN
-    '
-    ' The poppup is opened, so draw child controls
-    '
-    DIM n%
-    FOR n% = 1 TO vwPerParent(ctid%, 0)
-     
-      DIM child%
-      LET child% = vwPerParent(ctid%, n%)
-
-      IF ObIs%(ObSchema.Control, child%) THEN
-        CtDraw vwPerParent(ctid%, n%)
-      END IF
-
-    NEXT
-
-  END IF
-
+SUB CtDrawPopup (ctid%, sx%, sy%)
+  CtDrawLabel ctid%, sx%, sy%
 END SUB
 
-SUB CtDrawSeparator (ctid%)
+SUB CtDrawSeparator (ctid%, sx%, sy%)
 
   DIM row   AS INTEGER
   DIM sizeX AS INTEGER
-  DIM SizeY AS INTEGER
-  DIM sx    AS INTEGER
-  DIM sy    AS INTEGER
+  DIM sizeY AS INTEGER
 
   DIM stid%
   LET stid% = ObGet%(ObSchema.Control, ctid%, ObIndex.Style)
  
   sizeX = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeX)
-  SizeY = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeY)
-  sx = CtGetScreenX%(ctid%)
-  sy = CtGetScreenY%(ctid%)
+  sizeY = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeY)
 
-  LOCATE sy, sx
+  LOCATE sy%, sx%
   IF stid% > 0 THEN
     DrawColor ObGet%(ObSchema.Style, stid%, StIndex.BorderColor)
   END IF
@@ -1815,7 +1773,7 @@ SUB CtDrawSeparator (ctid%)
     '
     ' Left edge
     '
-    SELECT CASE SCREEN(sy, sx)
+    SELECT CASE SCREEN(sy%, sx%)
       CASE 179            ' ³
         PRINT CHR$(195);  ' Ã
       CASE 186            ' º
@@ -1832,7 +1790,7 @@ SUB CtDrawSeparator (ctid%)
     '
     ' Right edge
     '
-    SELECT CASE SCREEN(sy, sx + sizeX - 1)
+    SELECT CASE SCREEN(sy%, sx% + sizeX - 1)
       CASE 179            ' ³
         PRINT CHR$(180);  ' ´
       CASE 186            ' º
@@ -1841,12 +1799,12 @@ SUB CtDrawSeparator (ctid%)
         PRINT CHR$(196);  ' Ä
     END SELECT
 
-  ELSEIF SizeY > 0 THEN
+  ELSEIF sizeY > 0 THEN
    
     '
     ' Top edge
     '
-    SELECT CASE SCREEN(sy, sx)
+    SELECT CASE SCREEN(sy%, sx%)
       CASE 196            ' Ä
         PRINT CHR$(194);  ' Â
       CASE 205            ' Í
@@ -1855,16 +1813,16 @@ SUB CtDrawSeparator (ctid%)
         PRINT CHR$(179);  ' ³
     END SELECT
 
-    FOR row = sy + 1 TO sy + SizeY - 2
-      LOCATE row, sx
+    FOR row = sy% + 1 TO sy% + sizeY - 2
+      LOCATE row, sx%
       PRINT CHR$(179);
     NEXT
 
     '
     ' Bottom edge
     '
-    LOCATE sy + SizeY - 1, sx
-    SELECT CASE SCREEN(sy + SizeY - 1, sx)
+    LOCATE sy% + sizeY - 1, sx%
+    SELECT CASE SCREEN(sy% + sizeY - 1, sx%)
       CASE 196            ' Ä
         PRINT CHR$(193);  ' Á
       CASE 205            ' Í
@@ -4584,8 +4542,18 @@ SUB WnDirty (wnid%)
 END SUB
 
 SUB WnDraw (wnid%)
-  DIM root%: root% = ObGet%(ObSchema.Window, wnid%, WnIndex.Root)
-  IF root% > 0 THEN CtDraw root%
+ 
+  DIM offsetx%
+  DIM offsety%
+  DIM root%
+ 
+  root% = ObGet%(ObSchema.Window, wnid%, WnIndex.Root)
+  IF root% > 0 THEN
+    offsetx% = ObGet%(ObSchema.Control, root%, ObIndex.OffsetX)
+    offsety% = ObGet%(ObSchema.Control, root%, ObIndex.OffsetY)
+    CtDraw root%, offsetx% + 1, offsety% + 1
+  END IF
+
 END SUB
 
 FUNCTION WnFocus% (wnid%)
