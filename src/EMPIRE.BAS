@@ -287,12 +287,13 @@ CONST ObIndex.Label = 5
 CONST ObIndex.Name = 6
 CONST ObIndex.OffsetX = 7
 CONST ObIndex.OffsetY = 8
-CONST ObIndex.Parent = 9
-CONST ObIndex.SizeX = 10
-CONST ObIndex.SizeY = 11
-CONST ObIndex.Style = 12
-CONST ObIndex.Value = 13
-CONST ObIndex.MaxIndex = 13
+CONST ObIndex.Param = 9
+CONST ObIndex.Parent = 10
+CONST ObIndex.SizeX = 11
+CONST ObIndex.SizeY = 12
+CONST ObIndex.Style = 13
+CONST ObIndex.Value = 14
+CONST ObIndex.MaxIndex = 14
 
 CONST ObIndex.UBound = 20
 
@@ -329,6 +330,7 @@ ObProperty$(0, ObIndex.Label) = "Label"
 ObProperty$(0, ObIndex.Name) = "Name"
 ObProperty$(0, ObIndex.OffsetX) = "OffsetX"
 ObProperty$(0, ObIndex.OffsetY) = "OffsetY"
+ObProperty$(0, ObIndex.Param) = "Param"
 ObProperty$(0, ObIndex.Parent) = "Parent"
 ObProperty$(0, ObIndex.SizeX) = "SizeX"
 ObProperty$(0, ObIndex.SizeY) = "SizeY"
@@ -391,9 +393,9 @@ CONST ExTokenType.Unknown = 3
 '
 ' Habitat properties
 '
-CONST HbIndex.Backdrop = 14
-CONST HbIndex.StartFile = 15
-CONST HbIndex.Window = 16
+CONST HbIndex.Backdrop = 15
+CONST HbIndex.StartFile = 16
+CONST HbIndex.Window = 17
 
 ObKind$(ObSchema.Habitat, 0) = "Habitat"
 ObProperty$(ObSchema.Habitat, HbIndex.Backdrop) = "Backdrop"
@@ -403,8 +405,8 @@ ObProperty$(ObSchema.Habitat, HbIndex.Window) = "Window"
 '
 ' Location properties
 '
-CONST LcIndex.Energy = 14
-CONST LcIndex.Habitat = 15
+CONST LcIndex.Energy = 15
+CONST LcIndex.Habitat = 16
 ObKind$(ObSchema.Location, 0) = "Location"
 ObProperty$(ObSchema.Location, LcIndex.Energy) = "Energy"
 ObProperty$(ObSchema.Location, LcIndex.Habitat) = "Habitat"
@@ -417,10 +419,10 @@ ObKind$(ObSchema.Style, 0) = "Style"
 '
 ' Style property indexes
 '
-CONST StIndex.BorderColor = 14
-CONST StIndex.BorderType = 15
-CONST StIndex.SelectedColor = 16
-CONST StIndex.TextColor = 17
+CONST StIndex.BorderColor = 15
+CONST StIndex.BorderType = 16
+CONST StIndex.SelectedColor = 17
+CONST StIndex.TextColor = 18
 
 '
 ' Style property names
@@ -447,11 +449,11 @@ ObKind$(ObSchema.Thing, ThKind.Place) = "Place"
 '
 ' Thing property indexes
 '
-CONST ThIndex.Backdrop = 14
-CONST ThIndex.Energy = 15
-CONST ThIndex.Greeting = 16
-CONST ThIndex.Pin = 17
-CONST ThIndex.Window = 18
+CONST ThIndex.Backdrop = 15
+CONST ThIndex.Energy = 16
+CONST ThIndex.Greeting = 17
+CONST ThIndex.Pin = 18
+CONST ThIndex.Window = 19
 
 '
 ' Thing property names
@@ -470,8 +472,8 @@ ObKind$(ObSchema.Trigger, 0) = "Trigger"
 '
 ' Trigger property indexes
 '
-CONST TrIndex.Event = 14
-CONST TrIndex.Equals = 15
+CONST TrIndex.Event = 15
+CONST TrIndex.Equals = 16
 
 '
 ' Trigger property names
@@ -490,16 +492,6 @@ CONST UIPage.Terminal = 2
 ' Window kind names
 '
 ObKind$(ObSchema.Window, 0) = "Window"
-
-'
-' Window property indexes
-'
-CONST WnIndex.Param = 14
-
-'
-' Window property names
-'
-ObProperty$(ObSchema.Window, WnIndex.Param) = "Param"
 
 CONST MaxChildren = 20
 CONST MaxObjects = 200
@@ -3562,7 +3554,7 @@ SUB GameMoveOffset (offsetx%, offsety%)
     IF wnid% > 0 THEN
      
       AtlasDrawSelect cx, cy, 1
-      ObSet wnid%, WnIndex.Param, hbid%
+      ObSet wnid%, ObIndex.Param, hbid%
       WnRun wnid%
       AtlasDrawUnselect cx, cy
 
@@ -4500,7 +4492,7 @@ FUNCTION WnCmd% (wnid%, cmd$)
   '
   DIM index%: index% = INSTR(cmd$, "[Window][Param]")
   IF index% > 0 THEN
-    DIM param%: param% = ObGet%(wnid%, WnIndex.Param)
+    DIM param%: param% = ObGet%(wnid%, ObIndex.Param)
     MID$(cmd$, index%) = STR$(param%)
   END IF
 
