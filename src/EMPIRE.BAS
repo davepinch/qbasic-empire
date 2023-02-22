@@ -217,7 +217,6 @@ DECLARE FUNCTION VdVisual% ()
 ' Window API
 '
 DECLARE SUB WnClose (wnid%)
-DECLARE SUB WnDirty (wnid%)
 DECLARE SUB WnDraw (wnid%)
 DECLARE SUB WnOpen (wnid%)
 DECLARE SUB WnRun (wnid%)
@@ -4493,10 +4492,6 @@ FUNCTION WnCmd% (wnid%, cmd$)
 
 END FUNCTION
 
-SUB WnDirty (wnid%)
-  ObDirtyDown wnid%
-END SUB
-
 SUB WnDraw (wnid%)
  
   DIM sx%
@@ -4572,8 +4567,8 @@ SUB WnOpen (wnid%)
   '
   ' Mark the controls dirty
   '
-  WnDirty wnid%
-
+  ObDirtyDown wnid%
+ 
   '
   ' Draw the window
   '
