@@ -223,7 +223,6 @@ DECLARE SUB WnOpen (wnid%)
 DECLARE SUB WnRun (wnid%)
 DECLARE SUB WnRunName (name$)
 DECLARE FUNCTION WnCmd% (wnid%, cmd$)
-DECLARE FUNCTION WnFocus% (wnid%)
 DECLARE FUNCTION WnKey% (wnid%, keypress$)
 DECLARE FUNCTION WnUI% (wnid%)
 
@@ -4525,11 +4524,6 @@ SUB WnDraw (wnid%)
 
 END SUB
 
-FUNCTION WnFocus% (wnid%)
-  DIM focused%
-  LET focused% = CtFocus%(wnid%)
-END FUNCTION
-
 FUNCTION WnKey% (wnid%, keypress$)
  
   DbPositive wnid%, "WnKey%", "wnid%"
@@ -4649,7 +4643,7 @@ FUNCTION WnUI% (wnid%)
     '
     ' Set focus, draw updates, wait for the next key.
     '
-    DIM focused%: focused% = WnFocus%(wnid%)
+    DIM focused%: focused% = CtFocus%(wnid%)
     WnDraw wnid%
     DIM keypress$: keypress$ = GetKey$
  
