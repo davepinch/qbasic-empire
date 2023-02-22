@@ -312,8 +312,7 @@ CONST ObSchema.Location = 4
 CONST ObSchema.Style = 5
 CONST ObSchema.Thing = 6
 CONST ObSchema.Trigger = 7
-CONST ObSchema.Window = 8
-CONST ObSchemas = 8
+CONST ObSchemas = 7
 
 '
 ' Object schema names
@@ -364,7 +363,8 @@ CONST CtKind.Label = 7
 CONST CtKind.Nebula = 8
 CONST CtKind.Popup = 9
 CONST CtKind.Separator = 10
-CONST CtKinds = 10
+CONST CtKind.Window = 11
+CONST CtKinds = 11
 
 '
 ' Control kind names
@@ -379,6 +379,7 @@ ObKind$(ObSchema.Control, CtKind.Grid) = "Grid"
 ObKind$(ObSchema.Control, CtKind.Label) = "Label"
 ObKind$(ObSchema.Control, CtKind.Nebula) = "Nebula"
 ObKind$(ObSchema.Control, CtKind.Popup) = "Popup"
+ObKind$(ObSchema.Control, CtKind.Window) = "Window"
 ObKind$(ObSchema.Control, CtKind.Separator) = "Separator"
 
 '
@@ -491,11 +492,6 @@ ObProperty$(ObSchema.Trigger, TrIndex.Equals) = "Equals"
 CONST UIPage.None = 0
 CONST UIPage.Atlas = 1
 CONST UIPage.Terminal = 2
-
-'
-' Window kind names
-'
-ObKind$(ObSchema.Window, 0) = "Window"
 
 CONST MaxChildren = 20
 CONST MaxObjects = 200
@@ -1253,15 +1249,9 @@ FUNCTION CtCanFocus% (ctid%)
     EXIT FUNCTION
   END IF
 
-  SELECT CASE ObGet%(ctid%, ObIndex.Schema)
-    CASE ObSchema.Window
-      CtCanFocus% = True
-      EXIT FUNCTION
-    CASE ObSchema.Control
-      ' More checks below
-    CASE ELSE
-      EXIT FUNCTION
-  END SELECT
+  IF NOT ObIs%(ObSchema.Control, ctid%) THEN
+    EXIT FUNCTION
+  END IF
 
   DIM kind%: kind% = ObGet%(ctid%, ObIndex.Kind)
 
@@ -1270,6 +1260,9 @@ FUNCTION CtCanFocus% (ctid%)
     CASE CtKind.Button, CtKind.Checkbox, CtKind.Container, CtKind.Popup
       CtCanFocus% = True
    
+    CASE CtKind.Window
+      CtCanFocus% = True
+
     CASE ELSE
       CtCanFocus% = False
  
@@ -4176,10 +4169,6 @@ SUB SetupGame
   ShPrint "Unused Stack Space:" + STR$(FRE(-2))
   ShPrint "Array Space:" + STR$(FRE(-1))
 
-  '
-  ' Show starting window #1
-  '
-  ' WnRun ObFind%(ObSchema.Window, "Start")
   TIMER ON
 
 END SUB
@@ -4277,7 +4266,7 @@ SUB UI.Run
   UI.SetPage UIPage.Atlas
 
   DIM wnid%
-  LET wnid% = ObFind%(ObSchema.Window, "Menu")
+  LET wnid% = ObFind%(ObSchema.Control, "Menu")
 
   DO
     
@@ -4625,7 +4614,7 @@ SUB WnRun (wnid%)
 END SUB
 
 SUB WnRunName (name$)
-  DIM wnid%: wnid% = ObFind%(ObSchema.Window, name$)
+  DIM wnid%: wnid% = ObFind%(ObSchema.Control, name$)
   WnRun wnid%
 END SUB
 
