@@ -496,13 +496,11 @@ ObKind$(ObSchema.Window, 0) = "Window"
 ' Window property indexes
 '
 CONST WnIndex.Param = 14
-CONST WnIndex.Root = 15
 
 '
 ' Window property names
 '
 ObProperty$(ObSchema.Window, WnIndex.Param) = "Param"
-ObProperty$(ObSchema.Window, WnIndex.Root) = "Root"
 
 CONST MaxChildren = 20
 CONST MaxObjects = 200
@@ -1260,9 +1258,15 @@ FUNCTION CtCanFocus% (ctid%)
     EXIT FUNCTION
   END IF
 
-  IF NOT ObIs%(ObSchema.Control, ctid%) THEN
-    EXIT FUNCTION
-  END IF
+  SELECT CASE ObGet%(ctid%, ObIndex.Schema)
+    CASE ObSchema.Window
+      CtCanFocus% = True
+      EXIT FUNCTION
+    CASE ObSchema.Control
+      ' More checks below
+    CASE ELSE
+      EXIT FUNCTION
+  END SELECT
 
   DIM kind%: kind% = ObGet%(ctid%, ObIndex.Kind)
 
@@ -4506,34 +4510,24 @@ FUNCTION WnCmd% (wnid%, cmd$)
 END FUNCTION
 
 SUB WnDirty (wnid%)
-  DIM root%: root% = ObGet%(wnid%, WnIndex.Root)
-  IF root% > 0 THEN ObDirtyDown root%
+  ObDirtyDown wnid%
 END SUB
 
 SUB WnDraw (wnid%)
  
-  DIM offsetx%
-  DIM offsety%
-  DIM root%
- 
-  root% = ObGet%(wnid%, WnIndex.Root)
-  IF root% > 0 THEN
-    offsetx% = ObGet%(root%, ObIndex.OffsetX)
-    offsety% = ObGet%(root%, ObIndex.OffsetY)
-    CtDraw root%, offsetx% + 1, offsety% + 1
-  END IF
+  DIM sx%
+  DIM sy%
+
+  LET sx% = ObGet%(wnid%, ObIndex.OffsetX) + 1
+  LET sy% = ObGet%(wnid%, ObIndex.OffsetY) + 1
+
+  CtDrawContainer wnid%, sx%, sy%
 
 END SUB
 
 FUNCTION WnFocus% (wnid%)
-  
-  DbPositive wnid%, "WnFocus%", "wnid%"
-
-  DIM root%: root% = ObGet%(wnid%, WnIndex.Root)
-  IF root% > 0 THEN
-    root% = CtFocus%(root%)
-  END IF
-
+  DIM focused%
+  LET focused% = CtFocus%(wnid%)
 END FUNCTION
 
 FUNCTION WnKey% (wnid%, keypress$)
@@ -4541,17 +4535,7 @@ FUNCTION WnKey% (wnid%, keypress$)
   DbPositive wnid%, "WnKey%", "wnid%"
 
   DIM action%
-  DIM focused%
-  DIM root%
-
-  '
-  ' Get the focused control and dispatch the key
-  '
-  root% = ObGet%(wnid%, WnIndex.Root)
-  IF root% > 0 THEN
-    action% = CtKey%(root%, keypress$)
-  END IF
-
+  LET action% = CtKeyContainer%(wnid%, keypress$)
   IF action% = CtAction.None THEN
    
     SELECT CASE keypress$
