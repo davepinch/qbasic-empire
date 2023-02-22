@@ -293,8 +293,12 @@ CONST ObIndex.SizeX = 11
 CONST ObIndex.SizeY = 12
 CONST ObIndex.Style = 13
 CONST ObIndex.Value = 14
+CONST ObIndex.Custom1 = 15
+CONST ObIndex.Custom2 = 16
+CONST ObIndex.Custom3 = 17
+CONST ObIndex.Custom4 = 18
+CONST ObIndex.Custom5 = 19
 CONST ObIndex.MaxIndex = 14
-
 CONST ObIndex.UBound = 20
 
 '
@@ -393,9 +397,9 @@ CONST ExTokenType.Unknown = 3
 '
 ' Habitat properties
 '
-CONST HbIndex.Backdrop = 15
-CONST HbIndex.StartFile = 16
-CONST HbIndex.Window = 17
+CONST HbIndex.Backdrop = ObIndex.Custom1
+CONST HbIndex.StartFile = ObIndex.Custom2
+CONST HbIndex.Window = ObIndex.Custom3
 
 ObKind$(ObSchema.Habitat, 0) = "Habitat"
 ObProperty$(ObSchema.Habitat, HbIndex.Backdrop) = "Backdrop"
@@ -405,8 +409,8 @@ ObProperty$(ObSchema.Habitat, HbIndex.Window) = "Window"
 '
 ' Location properties
 '
-CONST LcIndex.Energy = 15
-CONST LcIndex.Habitat = 16
+CONST LcIndex.Energy = ObIndex.Custom1
+CONST LcIndex.Habitat = ObIndex.Custom2
 ObKind$(ObSchema.Location, 0) = "Location"
 ObProperty$(ObSchema.Location, LcIndex.Energy) = "Energy"
 ObProperty$(ObSchema.Location, LcIndex.Habitat) = "Habitat"
@@ -419,10 +423,10 @@ ObKind$(ObSchema.Style, 0) = "Style"
 '
 ' Style property indexes
 '
-CONST StIndex.BorderColor = 15
-CONST StIndex.BorderType = 16
-CONST StIndex.SelectedColor = 17
-CONST StIndex.TextColor = 18
+CONST StIndex.BorderColor = ObIndex.Custom1
+CONST StIndex.BorderType = ObIndex.Custom2
+CONST StIndex.SelectedColor = ObIndex.Custom3
+CONST StIndex.TextColor = ObIndex.Custom4
 
 '
 ' Style property names
@@ -449,11 +453,11 @@ ObKind$(ObSchema.Thing, ThKind.Place) = "Place"
 '
 ' Thing property indexes
 '
-CONST ThIndex.Backdrop = 15
-CONST ThIndex.Energy = 16
-CONST ThIndex.Greeting = 17
-CONST ThIndex.Pin = 18
-CONST ThIndex.Window = 19
+CONST ThIndex.Backdrop = ObIndex.Custom1
+CONST ThIndex.Energy = ObIndex.Custom2
+CONST ThIndex.Greeting = ObIndex.Custom3
+CONST ThIndex.Pin = ObIndex.Custom4
+CONST ThIndex.Window = ObIndex.Custom5
 
 '
 ' Thing property names
@@ -472,8 +476,8 @@ ObKind$(ObSchema.Trigger, 0) = "Trigger"
 '
 ' Trigger property indexes
 '
-CONST TrIndex.Event = 15
-CONST TrIndex.Equals = 16
+CONST TrIndex.Event = ObIndex.Custom1
+CONST TrIndex.Equals = ObIndex.Custom2
 
 '
 ' Trigger property names
