@@ -94,7 +94,7 @@ DECLARE SUB DbBeginsWith (text$, prefix$, where$, what$)
 DECLARE SUB DbEquals (expected%, actual%, where$, what$)
 DECLARE SUB DbFail (where$, what$)
 DECLARE SUB DbPositive (value%, where$, what$)
-DECLARE SUB DbSet (schema%, obid%, obix%, value%)
+DECLARE SUB DbSet (obid%, obix%, value%)
 DECLARE SUB DbZero (value%, where$, what$)
 
 '
@@ -169,9 +169,9 @@ DECLARE FUNCTION ObResolve% (obid%, expr$)
 DECLARE SUB ObDelete (obid%)
 DECLARE SUB ObDirtyDown (obid%)
 DECLARE SUB ObInc (schema%, obid%, obix%)
-DECLARE SUB ObSet (schema%, obid%, obix%, value%)
-DECLARE SUB ObSetEx (schema%, obid%, obix%, value%, flags%)
-DECLARE SUB ObSetFlags (schema%, obid%, obix%, flags%)
+DECLARE SUB ObSet (obid%, obix%, value%)
+DECLARE SUB ObSetEx (obid%, obix%, value%, flags%)
+DECLARE SUB ObSetFlags (obid%, obix%, flags%)
 
 '
 ' Resource API
@@ -1324,7 +1324,7 @@ SUB CtDraw (ctid%, sx%, sy%)
 
   END SELECT
 
-  ObSet 0, ctid%, ObIndex.Dirty, 0
+  ObSet ctid%, ObIndex.Dirty, 0
 
 END SUB
 
@@ -1958,7 +1958,7 @@ FUNCTION CtFocusBack% (ctid%)
       DIM r%: r% = CtFocus%(new%)
     END IF
 
-    ObSet ObSchema.Control, ctid%, ObIndex.Focused, new%
+    ObSet ctid%, ObIndex.Focused, new%
  
   END IF
 
@@ -2012,7 +2012,7 @@ FUNCTION CtFocusFirst% (ctid%)
     focused% = ctid%
   END IF
  
-  ObSet ObSchema.Control, ctid%, ObIndex.Focused, focused%
+  ObSet ctid%, ObIndex.Focused, focused%
   CtFocusFirst% = focused%
 
 END FUNCTION
@@ -2060,7 +2060,7 @@ FUNCTION CtFocusLast% (ctid%)
     focused% = ctid%
   END IF
 
-  ObSet ObSchema.Control, ctid%, ObIndex.Focused, focused%
+  ObSet ctid%, ObIndex.Focused, focused%
   CtFocusLast% = focused%
 
 END FUNCTION
@@ -2142,7 +2142,7 @@ FUNCTION CtFocusNext% (ctid%)
       DIM r%: r% = CtFocus%(new%)
     END IF
 
-    ObSet ObSchema.Control, ctid%, ObIndex.Focused, new%
+    ObSet ctid%, ObIndex.Focused, new%
 
   END IF
 
@@ -2233,7 +2233,7 @@ FUNCTION CtKeyCheckbox% (ctid%, keypress$)
   END SELECT
 
   IF new% <> old% THEN
-    ObSet ObSchema.Control, ctid%, ObIndex.Value, new%
+    ObSet ctid%, ObIndex.Value, new%
   END IF
 
   CtKeyCheckbox% = action%
@@ -2333,7 +2333,7 @@ SUB CtUnfocus (ctid%)
   DIM child%
   DIM n%
 
-  ObSet ObSchema.Control, ctid%, ObIndex.Focused, 0
+  ObSet ctid%, ObIndex.Focused, 0
 
   FOR n% = 1 TO vwPerParent(ctid%, 0)
     child% = vwPerParent(ctid%, n%)
@@ -2397,10 +2397,9 @@ SUB DbPositive (value%, where$, what$)
 
 END SUB
 
-SUB DbSet (schema%, obid%, obix%, value%)
+SUB DbSet (obid%, obix%, value%)
 
   DIM text$
-  LET text$ = ObKind$(schema%, 0)
 
   '
   ' obid
@@ -2408,11 +2407,11 @@ SUB DbSet (schema%, obid%, obix%, value%)
   DIM h$: h$ = HEX$(obid%)
   SELECT CASE LEN(h$)
     CASE 1:
-      text$ = text$ + ":000" + h$
+      text$ = ":000" + h$
     CASE 2:
-      text$ = text$ + ":00" + h$
+      text$ = ":00" + h$
     CASE 3:
-      text$ = text$ + ":0" + h$
+      text$ = ":0" + h$
   END SELECT
 
   '
@@ -2880,14 +2879,14 @@ FUNCTION ExCmdMail% (tokens$(), count%)
   ' Create a button for the message
   '
   DIM ctid%: ctid% = ObCreate%(ObSchema.Control, msgs%)
-  ObSet ObSchema.Control, ctid%, ObIndex.Kind, CtKind.Button
-  ObSet ObSchema.Control, ctid%, ObIndex.Command, 0
-  ObSet ObSchema.Control, ctid%, ObIndex.Label, RsCreate%(" " + tokens$(1))
-  ObSet ObSchema.Control, ctid%, ObIndex.OffsetX, 0
-  ObSet ObSchema.Control, ctid%, ObIndex.OffsetY, countmail%
-  ObSet ObSchema.Control, ctid%, ObIndex.SizeX, 20
-  ObSet ObSchema.Control, ctid%, ObIndex.SizeY, 1
-  ObSet ObSchema.Control, ctid%, ObIndex.Value, RsCreate%(tokens$(2))
+  ObSet ctid%, ObIndex.Kind, CtKind.Button
+  ObSet ctid%, ObIndex.Command, 0
+  ObSet ctid%, ObIndex.Label, RsCreate%(" " + tokens$(1))
+  ObSet ctid%, ObIndex.OffsetX, 0
+  ObSet ctid%, ObIndex.OffsetY, countmail%
+  ObSet ctid%, ObIndex.SizeX, 20
+  ObSet ctid%, ObIndex.SizeY, 1
+  ObSet ctid%, ObIndex.Value, RsCreate%(tokens$(2))
 
   DIM f%: f% = CtFocusLast(msgs%)
 
@@ -3365,7 +3364,7 @@ FUNCTION ExTryKind% (name$)
     DbPositive obid%, "ExTryControl%", "obid%"
     EXIT FUNCTION
   ELSE
-    ObSet schema%, obid%, ObIndex.Kind, kind%
+    ObSet obid%, ObIndex.Kind, kind%
   END IF
 
   ExPush obid%
@@ -3433,7 +3432,7 @@ FUNCTION ExTryProperty% (name$, value$)
       '
       DIM inner$: inner$ = ExUnquote$(value$)
       DIM rsid%: rsid% = RsCreate%(inner$)
-      ObSet schema%, obid%, obix%, rsid%
+      ObSet obid%, obix%, rsid%
       ExTryProperty% = True
 
     CASE "#"
@@ -3442,7 +3441,7 @@ FUNCTION ExTryProperty% (name$, value$)
       '
       DIM find%: find% = ObFind%(0, RIGHT$(value$, LEN(value$) - 1))
       IF find% > 0 THEN
-        ObSet schema%, obid%, obix%, find%
+        ObSet obid%, obix%, find%
         ExTryProperty% = True
       END IF
 
@@ -3450,21 +3449,21 @@ FUNCTION ExTryProperty% (name$, value$)
       '
       ' =expression
       '
-      ObSetEx schema%, obid%, obix%, RsCreate%(value$), ObBinding.Expression
+      ObSetEx obid%, obix%, RsCreate%(value$), ObBinding.Expression
       ExTryProperty% = True
 
     CASE "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "-", "&"
       '
       ' Numeric value including &Hxx
       '
-      ObSet schema%, obid%, obix%, VAL(value$)
+      ObSet obid%, obix%, VAL(value$)
       ExTryProperty% = True
 
     CASE "^"
       '
       ' Inherit from parent
       '
-      ObSetFlags schema%, obid%, obix%, ObBinding.Inherit
+      ObSetFlags obid%, obix%, ObBinding.Inherit
       ExTryProperty% = True
 
     CASE ELSE
@@ -3475,7 +3474,7 @@ FUNCTION ExTryProperty% (name$, value$)
         '
         ' Created object is on top of stack
         '
-        ObSet schema%, obid%, obix%, ExTop%
+        ObSet obid%, obix%, ExTop%
         ExTryProperty% = True
      
       ELSE
@@ -3560,7 +3559,7 @@ SUB GameMoveOffset (offsetx%, offsety%)
     IF wnid% > 0 THEN
      
       AtlasDrawSelect cx, cy, 1
-      ObSet ObSchema.Window, wnid%, WnIndex.Param, hbid%
+      ObSet wnid%, WnIndex.Param, hbid%
       WnRun wnid%
       AtlasDrawUnselect cx, cy
 
@@ -3678,9 +3677,9 @@ FUNCTION ObCreate% (schema%, parent%)
 
   ob.count = ob.count + 1
  
-  ObSet 0, ob.count, ObIndex.Schema, schema%
-  ObSet 0, ob.count, ObIndex.Parent, parent%
-  ObSet 0, ob.count, ObIndex.Dirty, True
+  ObSet ob.count, ObIndex.Schema, schema%
+  ObSet ob.count, ObIndex.Parent, parent%
+  ObSet ob.count, ObIndex.Dirty, True
 
   ObCreate% = ob.count
 
@@ -3726,7 +3725,7 @@ END SUB
 
 SUB ObDirtyDown (obid%)
 
-  ObSet 0, obid%, ObIndex.Dirty, True
+  ObSet obid%, ObIndex.Dirty, True
 
   DIM n%
   FOR n% = 1 TO vwPerParent(obid%, 0)
@@ -3823,7 +3822,7 @@ FUNCTION ObGet% (schema%, obid%, obix%)
 END FUNCTION
 
 SUB ObInc (schema%, obid%, obix%)
-  ObSet schema%, obid%, obix%, ObGet%(0, obid%, obix%) + 1
+  ObSet obid%, obix%, ObGet%(0, obid%, obix%) + 1
 END SUB
 
 FUNCTION ObIs% (schema%, obid%)
@@ -4029,22 +4028,13 @@ ParsePropBuild:
 
 END FUNCTION
 
-SUB ObSet (schema%, obid%, obix%, value%)
+SUB ObSet (obid%, obix%, value%)
   DIM flags%: flags% = obj(obid%, obix%).flags
-  ObSetEx schema%, obid%, obix%, value%, flags%
+  ObSetEx obid%, obix%, value%, flags%
 END SUB
 
-SUB ObSetEx (schema%, obid%, obix%, value%, flags%)
+SUB ObSetEx (obid%, obix%, value%, flags%)
  
-  IF schema% > 0 THEN
-    '
-    ' Make sure the object has the specified schema
-    '
-    IF schema% <> obj(obid%, ObIndex.Schema).value THEN
-      DbFail "ObSet", "schema mismatch"
-    END IF
-  END IF
-
   IF obj(obid%, obix%).value = value% THEN
     IF obj(obid%, obix%).flags = flags% THEN
       '
@@ -4123,14 +4113,14 @@ SUB ObSetEx (schema%, obid%, obix%, value%, flags%)
   END SELECT
 
   IF db.debug THEN
-    DbSet schema%, obid%, obix%, value%
+    DbSet obid%, obix%, value%
   END IF
 
 END SUB
 
-SUB ObSetFlags (schema%, obid%, obix%, flags%)
+SUB ObSetFlags (obid%, obix%, flags%)
   DIM value%: value% = obj(obid%, obix%).value
-  ObSetEx schema%, obid%, obix%, value%, flags%
+  ObSetEx obid%, obix%, value%, flags%
 END SUB
 
 FUNCTION RsCreate% (value$)
@@ -4749,8 +4739,8 @@ FUNCTION WorldAdd% (hbid%, cx%, cy%)
 
   DIM lcid%: lcid% = ObCreate%(ObSchema.Location, 0)
 
-  ObSet ObSchema.Location, lcid%, LcIndex.Habitat, hbid%
-  ObSet ObSchema.Location, lcid%, LcIndex.Energy, 3
+  ObSet lcid%, LcIndex.Habitat, hbid%
+  ObSet lcid%, LcIndex.Energy, 3
 
   AtlasAddItem cx%, cy%, lcid%, ObGet%(ObSchema.Habitat, hbid%, ObIndex.Label)
   WorldAdd% = lcid%
@@ -4807,7 +4797,7 @@ SUB WorldHarvest (lcid%)
 
   IF energy% > 0 THEN
     energy% = energy% - 1
-    ObSet ObSchema.Location, lcid%, LcIndex.Energy, energy%
+    ObSet lcid%, LcIndex.Energy, energy%
   END IF
 
   IF energy% = 0 THEN
