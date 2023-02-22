@@ -67,6 +67,7 @@ DECLARE SUB CtDrawBox2 (ctid%, sx%, sy%)
 DECLARE SUB CtDrawCheckbox (ctid%, sx%, sy%)
 DECLARE SUB CtDrawContainer (ctid%, sx%, sy%)
 DECLARE SUB CtDrawFile (ctid%, sx%, sy%)
+DECLARE SUB CtDrawGrid (ctid%, sx%, sy%)
 DECLARE SUB CtDrawLabel (ctid%, sx%, sy%)
 DECLARE SUB CtDrawNebula (ctid%, sx%, sy%)
 DECLARE SUB CtDrawPopup (ctid%, sx%, sy%)
@@ -79,8 +80,6 @@ DECLARE FUNCTION CtFocusBack% (ctid%)
 DECLARE FUNCTION CtFocusFirst% (ctid%)
 DECLARE FUNCTION CtFocusLast% (ctid%)
 DECLARE FUNCTION CtFocusNext% (ctid%)
-DECLARE FUNCTION CtGetScreenX% (ctid%)
-DECLARE FUNCTION CtGetScreenY% (ctid%)
 DECLARE FUNCTION CtKey% (ctid%, keypress$)
 DECLARE FUNCTION CtKeyButton% (ctid%, keypress$)
 DECLARE FUNCTION CtKeyCheckbox% (ctid%, keypress$)
@@ -355,11 +354,12 @@ CONST CtKind.Button = 2
 CONST CtKind.Checkbox = 3
 CONST CtKind.Container = 4
 CONST CtKind.File = 5
-CONST CtKind.Label = 6
-CONST CtKind.Nebula = 7
-CONST CtKind.Popup = 8
-CONST CtKind.Separator = 9
-CONST CtKinds = 9
+CONST CtKind.Grid = 6
+CONST CtKind.Label = 7
+CONST CtKind.Nebula = 8
+CONST CtKind.Popup = 9
+CONST CtKind.Separator = 10
+CONST CtKinds = 10
 
 '
 ' Control kind names
@@ -370,6 +370,7 @@ ObKind$(ObSchema.Control, CtKind.Button) = "Button"
 ObKind$(ObSchema.Control, CtKind.Checkbox) = "Checkbox"
 ObKind$(ObSchema.Control, CtKind.Container) = "Container"
 ObKind$(ObSchema.Control, CtKind.File) = "File"
+ObKind$(ObSchema.Control, CtKind.Grid) = "Grid"
 ObKind$(ObSchema.Control, CtKind.Label) = "Label"
 ObKind$(ObSchema.Control, CtKind.Nebula) = "Nebula"
 ObKind$(ObSchema.Control, CtKind.Popup) = "Popup"
@@ -1279,12 +1280,12 @@ END FUNCTION
 
 SUB CtDraw (ctid%, sx%, sy%)
 
-  DIM dirty%: dirty% = ObGet%(ObSchema.Control, ctid%, ObIndex.Dirty)
+  DIM dirty%: dirty% = ObGet%(0, ctid%, ObIndex.Dirty)
   IF NOT dirty% THEN
     EXIT SUB
   END IF
 
-  DIM kind%: kind% = ObGet%(ObSchema.Control, ctid%, ObIndex.Kind)
+  DIM kind%: kind% = ObGet%(0, ctid%, ObIndex.Kind)
 
   SELECT CASE kind%
    
@@ -1306,6 +1307,9 @@ SUB CtDraw (ctid%, sx%, sy%)
     CASE CtKind.File
       CtDrawFile ctid%, sx%, sy%
 
+    CASE CtKind.Grid
+      CtDrawGrid ctid%, sx%, sy%
+
     CASE CtKind.Popup
       CtDrawPopup ctid%, sx%, sy%
 
@@ -1316,11 +1320,11 @@ SUB CtDraw (ctid%, sx%, sy%)
       CtDrawNebula ctid%, sx%, sy%
 
      CASE ELSE
-      DbFail "CtDraw", "unsupported kind" + STR$(kind%)
+      CtDrawLabel ctid%, sx%, sy%
 
   END SELECT
 
-  ObSet ObSchema.Control, ctid%, ObIndex.Dirty, 0
+  ObSet 0, ctid%, ObIndex.Dirty, 0
 
 END SUB
 
@@ -1582,8 +1586,8 @@ SUB CtDrawContainer (ctid%, sx%, sy%)
    
     child% = vwPerParent(ctid%, n%)
 
-    childx% = sx% + ObGet%(ObSchema.Control, child%, ObIndex.OffsetX)
-    childy% = sy% + ObGet%(ObSchema.Control, child%, ObIndex.OffsetY)
+    childx% = sx% + ObGet%(0, child%, ObIndex.OffsetX)
+    childy% = sy% + ObGet%(0, child%, ObIndex.OffsetY)
     CtDraw child%, childx%, childy%
  
   NEXT
@@ -1608,6 +1612,29 @@ SUB CtDrawFile (ctid%, sx%, sy%)
 
 END SUB
 
+SUB CtDrawGrid (ctid%, sx%, sy%)
+
+  DIM child%
+  DIM offsetx%
+  DIM offsety%
+  DIM n%
+
+  FOR n% = 1 TO vwPerParent(ctid%, 0)
+  
+    child% = vwPerParent(ctid%, n%)
+
+    offsetx% = ObGet%(0, child%, ObIndex.OffsetX)
+    offsety% = ObGet%(0, child%, ObIndex.OffsetY)
+   
+    offsetx% = offsetx% * 5 + 1
+    offsety% = offsety% * 2 + 1
+
+    CtDraw child%, sx% + offsetx%, sy% + offsety%
+
+  NEXT
+
+END SUB
+
 SUB CtDrawLabel (ctid%, sx%, sy%)
  
   DIM stid%
@@ -1620,16 +1647,16 @@ SUB CtDrawLabel (ctid%, sx%, sy%)
   '
   ' Set style of text
   '
-  LET stid% = ObGet%(ObSchema.Control, ctid%, ObIndex.Style)
+  LET stid% = ObGet%(0, ctid%, ObIndex.Style)
   IF stid% = 0 THEN
-    IF ObGet%(ObSchema.Control, ctid%, ObIndex.Focused) <> 0 THEN
+    IF ObGet%(0, ctid%, ObIndex.Focused) <> 0 THEN
       ' *** track current color and push/pop
       COLOR 0, 7
     ELSE
       COLOR 7, 0
     END IF
   ELSE
-    IF ObGet%(ObSchema.Control, ctid%, ObIndex.Focused) <> 0 THEN
+    IF ObGet%(0, ctid%, ObIndex.Focused) <> 0 THEN
       DrawColor ObGet%(ObSchema.Style, stid%, StIndex.SelectedColor)
     ELSE
       DrawColor ObGet%(ObSchema.Style, stid%, StIndex.TextColor)
@@ -1639,11 +1666,11 @@ SUB CtDrawLabel (ctid%, sx%, sy%)
   '
   ' Print text clipped to size
   '
-  DIM text$: text$ = RsGet$(ObGet%(ObSchema.Control, ctid%, ObIndex.Label))
-  DIM size%: size% = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeX)
+  DIM text$: text$ = RsGet$(ObGet%(0, ctid%, ObIndex.Label))
+  DIM size%: size% = ObGet%(0, ctid%, ObIndex.SizeX)
  
   IF size% < 1 THEN
-    PRINT text$;
+    DrawText text$
   ELSE
     PRINT LEFT$(text$, size%);
     IF LEN(text$) < size% THEN
@@ -2120,44 +2147,6 @@ FUNCTION CtFocusNext% (ctid%)
   END IF
 
   CtFocusNext% = new%
-
-END FUNCTION
-
-FUNCTION CtGetScreenX% (ctid%)
-
-  DIM offsetx%
-  LET offsetx% = ObGet%(ObSchema.Control, ctid%, ObIndex.OffsetX)
-
-  DIM parent%
-  LET parent% = ObGet%(ObSchema.Control, ctid%, ObIndex.Parent)
-
-  IF parent% > 0 THEN
-    IF ObGet%(0, parent%, ObIndex.Schema) = ObSchema.Control THEN
-      CtGetScreenX% = offsetx% + CtGetScreenX%(parent%)
-      EXIT FUNCTION
-    END IF
-  END IF
- 
-  CtGetScreenX% = offsetx% + 1
-
-END FUNCTION
-
-FUNCTION CtGetScreenY% (ctid%)
-
-  DIM offsety%
-  LET offsety% = ObGet%(ObSchema.Control, ctid%, ObIndex.OffsetY)
- 
-  DIM parent%
-  LET parent% = ObGet%(ObSchema.Control, ctid%, ObIndex.Parent)
-
-  IF parent% > 0 THEN
-    IF ObGet%(0, parent%, ObIndex.Schema) = ObSchema.Control THEN
-      CtGetScreenY% = offsety% + CtGetScreenY%(parent%)
-      EXIT FUNCTION
-    END IF
-  END IF
- 
-  CtGetScreenY% = offsety% + 1
 
 END FUNCTION
 
