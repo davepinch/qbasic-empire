@@ -168,7 +168,7 @@ DECLARE FUNCTION ObRecurse% (schema%, obid%, obix%, nullvalue%)
 DECLARE FUNCTION ObResolve% (obid%, expr$)
 DECLARE SUB ObDelete (obid%)
 DECLARE SUB ObDirtyDown (obid%)
-DECLARE SUB ObInc (schema%, obid%, obix%)
+DECLARE SUB ObInc (obid%, obix%)
 DECLARE SUB ObSet (obid%, obix%, value%)
 DECLARE SUB ObSetEx (obid%, obix%, value%, flags%)
 DECLARE SUB ObSetFlags (obid%, obix%, flags%)
@@ -2844,7 +2844,7 @@ SUB EvInc (name$)
  
   DIM evid%: evid% = ObFind%(ObSchema.Event, name$)
   IF evid% > 0 THEN
-    ObInc ObSchema.Event, evid%, ObIndex.Value
+    ObInc evid%, ObIndex.Value
     EvFire evid%
   END IF
 
@@ -3821,7 +3821,7 @@ FUNCTION ObGet% (schema%, obid%, obix%)
 
 END FUNCTION
 
-SUB ObInc (schema%, obid%, obix%)
+SUB ObInc (obid%, obix%)
   ObSet obid%, obix%, ObGet%(0, obid%, obix%) + 1
 END SUB
 
