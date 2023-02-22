@@ -162,7 +162,7 @@ DECLARE FUNCTION NebulaLabelRsid% (energy AS INTEGER)
 '
 DECLARE FUNCTION ObCreate% (schema%, parent%)
 DECLARE FUNCTION ObFind% (schema%, name$)
-DECLARE FUNCTION ObGet% (schema%, obid%, obix%)
+DECLARE FUNCTION ObGet% (obid%, obix%)
 DECLARE FUNCTION ObIs% (schema%, obid%)
 DECLARE FUNCTION ObRecurse% (schema%, obid%, obix%, nullvalue%)
 DECLARE FUNCTION ObResolve% (obid%, expr$)
@@ -1264,7 +1264,7 @@ FUNCTION CtCanFocus% (ctid%)
     EXIT FUNCTION
   END IF
 
-  DIM kind%: kind% = ObGet%(ObSchema.Control, ctid%, ObIndex.Kind)
+  DIM kind%: kind% = ObGet%(ctid%, ObIndex.Kind)
 
   SELECT CASE kind%
    
@@ -1280,12 +1280,12 @@ END FUNCTION
 
 SUB CtDraw (ctid%, sx%, sy%)
 
-  DIM dirty%: dirty% = ObGet%(0, ctid%, ObIndex.Dirty)
+  DIM dirty%: dirty% = ObGet%(ctid%, ObIndex.Dirty)
   IF NOT dirty% THEN
     EXIT SUB
   END IF
 
-  DIM kind%: kind% = ObGet%(0, ctid%, ObIndex.Kind)
+  DIM kind%: kind% = ObGet%(ctid%, ObIndex.Kind)
 
   SELECT CASE kind%
    
@@ -1330,11 +1330,11 @@ END SUB
 
 SUB CtDrawBox (ctid%, sx%, sy%)
 
-  DIM stid%: stid% = ObGet%(ObSchema.Control, ctid%, ObIndex.Style)
+  DIM stid%: stid% = ObGet%(ctid%, ObIndex.Style)
  
   DIM bordertype%
   IF stid% > 0 THEN
-    bordertype% = ObGet%(ObSchema.Style, stid%, StIndex.BorderType)
+    bordertype% = ObGet%(stid%, StIndex.BorderType)
   END IF
 
   SELECT CASE bordertype%
@@ -1359,14 +1359,14 @@ SUB CtDrawBox0 (ctid%, sx%, sy%)
 
   DIM row AS INTEGER
 
-  DIM stid%: stid% = ObGet%(ObSchema.Control, ctid%, ObIndex.Style)
+  DIM stid%: stid% = ObGet%(ctid%, ObIndex.Style)
   IF stid% > 0 THEN
-    DrawColor ObGet%(ObSchema.Style, stid%, StIndex.TextColor)
+    DrawColor ObGet%(stid%, StIndex.TextColor)
   END IF
 
-  FOR row = 1 TO ObGet%(ObSchema.Control, ctid%, ObIndex.SizeY)
+  FOR row = 1 TO ObGet%(ctid%, ObIndex.SizeY)
     LOCATE sy% + row - 1, sx%
-    PRINT STRING$(ObGet%(ObSchema.Control, ctid%, ObIndex.SizeX), " ");
+    PRINT STRING$(ObGet%(ctid%, ObIndex.SizeX), " ");
   NEXT
 
 END SUB
@@ -1392,21 +1392,21 @@ SUB CtDrawBox1 (ctid%, sx%, sy%)
   '
   ' Calculate screen coordinates
   '
-  sizeX = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeX)
+  sizeX = ObGet%(ctid%, ObIndex.SizeX)
   sx1 = sx%
   sy1 = sy%
   sx2 = sx1 + sizeX - 1
-  sy2 = sy1 + ObGet%(ObSchema.Control, ctid%, ObIndex.SizeY) - 1
+  sy2 = sy1 + ObGet%(ctid%, ObIndex.SizeY) - 1
 
   DIM stid%
-  LET stid% = ObGet%(ObSchema.Control, ctid%, ObIndex.Style)
+  LET stid% = ObGet%(ctid%, ObIndex.Style)
 
   '
   ' Draw the top border
   '
   LOCATE sy1, sx1
   IF stid% > 0 THEN
-    DrawColor ObGet%(ObSchema.Style, stid%, StIndex.BorderColor)
+    DrawColor ObGet%(stid%, StIndex.BorderColor)
   END IF
   PRINT upperLeft; STRING$(sizeX - 2, upperFlat); upperRight;
 
@@ -1418,12 +1418,12 @@ SUB CtDrawBox1 (ctid%, sx%, sy%)
     PRINT sideLeft;
   
     IF stid% > 0 THEN
-      DrawColor ObGet%(ObSchema.Style, stid%, StIndex.TextColor)
+      DrawColor ObGet%(stid%, StIndex.TextColor)
     END IF
     PRINT STRING$(sizeX - 2, " ");
   
     IF stid% > 0 THEN
-      DrawColor ObGet%(ObSchema.Style, stid%, StIndex.BorderColor)
+      DrawColor ObGet%(stid%, StIndex.BorderColor)
     END IF
     PRINT sideRight;
   NEXT
@@ -1444,8 +1444,8 @@ SUB CtDrawBox2 (ctid%, sx%, sy%)
   DIM sizeX AS INTEGER
   DIM sizeY AS INTEGER
 
-  sizeX = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeX)
-  sizeY = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeY)
+  sizeX = ObGet%(ctid%, ObIndex.SizeX)
+  sizeY = ObGet%(ctid%, ObIndex.SizeY)
  
   '
   ' Initialize special border characters
@@ -1533,21 +1533,21 @@ SUB CtDrawCheckbox (ctid%, sx%, sy%)
   '
   ' Get the value, 0=false, else=true
   '
-  LET value% = ObGet%(ObSchema.Control, ctid%, ObIndex.Value)
-  LET focused% = ObGet%(ObSchema.Control, ctid%, ObIndex.Focused)
+  LET value% = ObGet%(ctid%, ObIndex.Value)
+  LET focused% = ObGet%(ctid%, ObIndex.Focused)
 
   '
   ' Get the style to set colors
   '
-  LET style% = ObGet%(ObSchema.Control, ctid%, ObIndex.Style)
+  LET style% = ObGet%(ctid%, ObIndex.Style)
   IF style% = 0 THEN
     bordercolor% = 7
     selectedcolor% = &H70
     textcolor% = 7
   ELSE
-    bordercolor% = ObGet%(ObSchema.Style, style%, StIndex.BorderColor)
-    selectedcolor% = ObGet%(ObSchema.Style, style%, StIndex.SelectedColor)
-    textcolor% = ObGet%(ObSchema.Style, style%, StIndex.TextColor)
+    bordercolor% = ObGet%(style%, StIndex.BorderColor)
+    selectedcolor% = ObGet%(style%, StIndex.SelectedColor)
+    textcolor% = ObGet%(style%, StIndex.TextColor)
   END IF
 
   '
@@ -1586,8 +1586,8 @@ SUB CtDrawContainer (ctid%, sx%, sy%)
    
     child% = vwPerParent(ctid%, n%)
 
-    childx% = sx% + ObGet%(0, child%, ObIndex.OffsetX)
-    childy% = sy% + ObGet%(0, child%, ObIndex.OffsetY)
+    childx% = sx% + ObGet%(child%, ObIndex.OffsetX)
+    childy% = sy% + ObGet%(child%, ObIndex.OffsetY)
     CtDraw child%, childx%, childy%
  
   NEXT
@@ -1597,7 +1597,7 @@ END SUB
 SUB CtDrawFile (ctid%, sx%, sy%)
 
   DIM rsid%
-  LET rsid% = ObGet%(ObSchema.Control, ctid%, ObIndex.Value)
+  LET rsid% = ObGet%(ctid%, ObIndex.Value)
   IF rsid% = 0 THEN
     EXIT SUB
   END IF
@@ -1623,8 +1623,8 @@ SUB CtDrawGrid (ctid%, sx%, sy%)
   
     child% = vwPerParent(ctid%, n%)
 
-    offsetx% = ObGet%(0, child%, ObIndex.OffsetX)
-    offsety% = ObGet%(0, child%, ObIndex.OffsetY)
+    offsetx% = ObGet%(child%, ObIndex.OffsetX)
+    offsety% = ObGet%(child%, ObIndex.OffsetY)
    
     offsetx% = offsetx% * 5 + 1
     offsety% = offsety% * 2 + 1
@@ -1647,27 +1647,27 @@ SUB CtDrawLabel (ctid%, sx%, sy%)
   '
   ' Set style of text
   '
-  LET stid% = ObGet%(0, ctid%, ObIndex.Style)
+  LET stid% = ObGet%(ctid%, ObIndex.Style)
   IF stid% = 0 THEN
-    IF ObGet%(0, ctid%, ObIndex.Focused) <> 0 THEN
+    IF ObGet%(ctid%, ObIndex.Focused) <> 0 THEN
       ' *** track current color and push/pop
       COLOR 0, 7
     ELSE
       COLOR 7, 0
     END IF
   ELSE
-    IF ObGet%(0, ctid%, ObIndex.Focused) <> 0 THEN
-      DrawColor ObGet%(ObSchema.Style, stid%, StIndex.SelectedColor)
+    IF ObGet%(ctid%, ObIndex.Focused) <> 0 THEN
+      DrawColor ObGet%(stid%, StIndex.SelectedColor)
     ELSE
-      DrawColor ObGet%(ObSchema.Style, stid%, StIndex.TextColor)
+      DrawColor ObGet%(stid%, StIndex.TextColor)
     END IF
   END IF
 
   '
   ' Print text clipped to size
   '
-  DIM text$: text$ = RsGet$(ObGet%(0, ctid%, ObIndex.Label))
-  DIM size%: size% = ObGet%(0, ctid%, ObIndex.SizeX)
+  DIM text$: text$ = RsGet$(ObGet%(ctid%, ObIndex.Label))
+  DIM size%: size% = ObGet%(ctid%, ObIndex.SizeX)
  
   IF size% < 1 THEN
     DrawText text$
@@ -1689,11 +1689,11 @@ SUB CtDrawNebula (ctid%, sx%, sy%)
   DIM x     AS INTEGER
   DIM y     AS INTEGER
 
-  sizeX = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeX)
+  sizeX = ObGet%(ctid%, ObIndex.SizeX)
 
   COLOR 7, 0
 
-  FOR y = 1 TO ObGet%(ObSchema.Control, ctid%, ObIndex.SizeY)
+  FOR y = 1 TO ObGet%(ctid%, ObIndex.SizeY)
  
     x = INT(RND * sizeX) + 1
     p = 1
@@ -1786,14 +1786,14 @@ SUB CtDrawSeparator (ctid%, sx%, sy%)
   DIM sizeY AS INTEGER
 
   DIM stid%
-  LET stid% = ObGet%(ObSchema.Control, ctid%, ObIndex.Style)
+  LET stid% = ObGet%(ctid%, ObIndex.Style)
  
-  sizeX = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeX)
-  sizeY = ObGet%(ObSchema.Control, ctid%, ObIndex.SizeY)
+  sizeX = ObGet%(ctid%, ObIndex.SizeX)
+  sizeY = ObGet%(ctid%, ObIndex.SizeY)
 
   LOCATE sy%, sx%
   IF stid% > 0 THEN
-    DrawColor ObGet%(ObSchema.Style, stid%, StIndex.BorderColor)
+    DrawColor ObGet%(stid%, StIndex.BorderColor)
   END IF
 
   IF sizeX > 0 THEN
@@ -1873,7 +1873,7 @@ FUNCTION CtFocus% (ctid%)
   END IF
 
   DIM focused%
-  LET focused% = ObGet%(ObSchema.Control, ctid%, ObIndex.Focused)
+  LET focused% = ObGet%(ctid%, ObIndex.Focused)
 
   IF focused% = 0 THEN
     CtFocus% = CtFocusFirst%(ctid%)
@@ -1897,7 +1897,7 @@ FUNCTION CtFocusBack% (ctid%)
   DIM new%
   DIM old%
 
-  old% = ObGet%(ObSchema.Control, ctid%, ObIndex.Focused)
+  old% = ObGet%(ctid%, ObIndex.Focused)
 
   FOR n% = vwPerParent(ctid%, 0) TO 1 STEP -1
      
@@ -2079,7 +2079,7 @@ FUNCTION CtFocusNext% (ctid%)
   DIM new%
   DIM old%
 
-  old% = ObGet%(ObSchema.Control, ctid%, ObIndex.Focused)
+  old% = ObGet%(ctid%, ObIndex.Focused)
 
   FOR n% = 1 TO vwPerParent(ctid%, 0)
       
@@ -2159,7 +2159,7 @@ FUNCTION CtKey% (ctid%, keypress$)
   DbPositive LEN(keypress$), "CtKey%", "len(keypress$)"
  
   DIM kind%
-  LET kind% = ObGet%(ObSchema.Control, ctid%, ObIndex.Kind)
+  LET kind% = ObGet%(ctid%, ObIndex.Kind)
     '
     ' Gets the kind of control, e.g., button, lable, nebula, etc.
     '
@@ -2194,7 +2194,7 @@ FUNCTION CtKeyButton% (ctid%, keypress$)
   '
   ' Get the resoure ID of the command associated with the button.
   '
-  DIM rsid%: rsid% = ObGet%(ObSchema.Control, ctid%, ObIndex.Command)
+  DIM rsid%: rsid% = ObGet%(ctid%, ObIndex.Command)
  
   '
   ' Return an action to execute the command specified by the resource ID.
@@ -2211,7 +2211,7 @@ FUNCTION CtKeyCheckbox% (ctid%, keypress$)
   '
   ' Get current value
   '
-  LET old% = ObGet%(ObSchema.Control, ctid%, ObIndex.Value)
+  LET old% = ObGet%(ctid%, ObIndex.Value)
   LET new% = old%
 
   DIM action%
@@ -2247,7 +2247,7 @@ FUNCTION CtKeyContainer% (ctid%, keypress$)
   '
   ' Get the control with focus, either a child control or this container
   '
-  DIM focused%: focused% = ObGet%(ObSchema.Control, ctid%, ObIndex.Focused)
+  DIM focused%: focused% = ObGet%(ctid%, ObIndex.Focused)
  
   DIM action%
   IF focused% > 0 AND focused% <> ctid% THEN
@@ -2319,7 +2319,7 @@ FUNCTION CtKeyPopup% (ctid%, keypress$)
   SELECT CASE keypress$
  
     CASE KeyDown$, KeyEnter$
-      DIM value%: value% = ObGet%(ObSchema.Control, ctid%, ObIndex.Value)
+      DIM value%: value% = ObGet%(ctid%, ObIndex.Value)
       IF value% > 0 THEN
         CtKeyPopup% = CtAction%(CtAction.Window, value%)
       END IF
@@ -2525,10 +2525,10 @@ END SUB
 SUB DgPrint (thid%, text$)
 
   DIM name$
-  LET name$ = RsGet$(ObGet%(ObSchema.Thing, thid%, ObIndex.Name))
+  LET name$ = RsGet$(ObGet%(thid%, ObIndex.Name))
  
   DIM label$
-  LET label$ = RsGet$(ObGet%(ObSchema.Thing, thid%, ObIndex.Label))
+  LET label$ = RsGet$(ObGet%(thid%, ObIndex.Label))
   IF label$ = "" THEN
     label$ = "@X1F " + name$ + " @X07"
   END IF
@@ -2578,7 +2578,7 @@ SUB DgStart (hbid%)
     dg.listening = 0
 
     DIM startfile$
-    LET startfile$ = RsGet$(ObGet%(ObSchema.Habitat, hbid%, HbIndex.StartFile))
+    LET startfile$ = RsGet$(ObGet%(hbid%, HbIndex.StartFile))
     IF LEN(startfile$) > 0 THEN
       ShFile startfile$
     END IF
@@ -2823,14 +2823,14 @@ SUB EvFire (evid%)
     '
     ' Match the event
     '
-    IF ObGet%(ObSchema.Trigger, trid%, TrIndex.Event) = evid% THEN
+    IF ObGet%(trid%, TrIndex.Event) = evid% THEN
     
       '
       ' Match the value
       '
-      DIM equals%: equals% = ObGet%(ObSchema.Trigger, trid%, TrIndex.Equals)
-      IF equals% = ObGet%(ObSchema.Event, evid%, ObIndex.Value) THEN
-        DIM rsid%: rsid% = ObGet%(ObSchema.Trigger, trid%, ObIndex.Command)
+      DIM equals%: equals% = ObGet%(trid%, TrIndex.Equals)
+      IF equals% = ObGet%(evid%, ObIndex.Value) THEN
+        DIM rsid%: rsid% = ObGet%(trid%, ObIndex.Command)
         DIM result%: result% = ExRunResource(rsid%)
       END IF
 
@@ -3303,12 +3303,12 @@ FUNCTION ExTryEndKind% (tag$)
     EXIT FUNCTION
   END IF
 
-  DIM schema%: schema% = ObGet%(0, obid%, ObIndex.Schema)
+  DIM schema%: schema% = ObGet%(obid%, ObIndex.Schema)
   IF schema% = 0 THEN
     EXIT FUNCTION
   END IF
 
-  DIM kind%: kind% = ObGet%(schema%, obid%, ObIndex.Kind)
+  DIM kind%: kind% = ObGet%(obid%, ObIndex.Kind)
 
   DIM name$: name$ = ObKind$(schema%, kind%)
   IF LEN(name$) = 0 THEN
@@ -3393,7 +3393,7 @@ FUNCTION ExTryProperty% (name$, value$)
   '
   ' Get the schema of the current object in scope
   '
-  DIM schema%: schema% = ObGet%(0, obid%, ObIndex.Schema)
+  DIM schema%: schema% = ObGet%(obid%, ObIndex.Schema)
   IF schema% = 0 THEN
     DbPositive schema%, "ExTryProperty%", "schema%"
     EXIT FUNCTION
@@ -3412,7 +3412,7 @@ FUNCTION ExTryProperty% (name$, value$)
     '
     ' .Property (change scope to object value)
     '
-    DIM value%: value% = ObGet%(schema%, obid%, obix%)
+    DIM value%: value% = ObGet%(obid%, obix%)
     IF value% > 0 THEN
       ExPush value%
       ExTryProperty% = True
@@ -3548,13 +3548,13 @@ SUB GameMoveOffset (offsetx%, offsety%)
   ELSE
 
     DIM hbid%
-    LET hbid% = ObGet%(ObSchema.Location, lcid%, LcIndex.Habitat)
+    LET hbid% = ObGet%(lcid%, LcIndex.Habitat)
       
     '
     ' Run the window handling this habitat
     '
     DIM wnid%
-    LET wnid% = ObGet%(ObSchema.Habitat, hbid%, HbIndex.Window)
+    LET wnid% = ObGet%(hbid%, HbIndex.Window)
 
     IF wnid% > 0 THEN
      
@@ -3699,7 +3699,7 @@ SUB ObDelete (obid%)
   '
   ' vwPerSchema
   '
-  DIM schema%: schema% = ObGet%(0, obid%, ObIndex.Schema)
+  DIM schema%: schema% = ObGet%(obid%, ObIndex.Schema)
   DIM count%: count% = vwPerSchema(schema%, count%)
   DIM found%
 
@@ -3741,7 +3741,7 @@ FUNCTION ObFind% (schema%, name$)
    
     IF schema% = 0 OR obj(obid%, ObIndex.Schema).value = schema% THEN
      
-      DIM rsid%: rsid% = ObGet%(0, obid%, ObIndex.Name)
+      DIM rsid%: rsid% = ObGet%(obid%, ObIndex.Name)
      
       IF rsid% = 0 THEN
         '
@@ -3768,19 +3768,13 @@ FUNCTION ObFind% (schema%, name$)
 
 END FUNCTION
 
-FUNCTION ObGet% (schema%, obid%, obix%)
+FUNCTION ObGet% (obid%, obix%)
 
   DIM flags%
   LET flags% = obj(obid%, obix%).flags
 
   DIM value%
   LET value% = obj(obid%, obix%).value
-
-  IF schema% > 0 THEN
-    IF schema% <> obj(obid%, ObIndex.Schema).value THEN
-      DbFail "ObGet%", "schema mismatch"
-    END IF
-  END IF
 
   SELECT CASE flags%
 
@@ -3794,20 +3788,16 @@ FUNCTION ObGet% (schema%, obid%, obix%)
       '
       ' This property inherits from the parent.
       '
-      DIM parent%: parent% = ObGet%(schema%, obid%, ObIndex.Parent)
+      DIM parent%: parent% = ObGet%(obid%, ObIndex.Parent)
       IF parent% > 0 THEN
         '
-        ' But inherit only if the parent has same schema
+        ' Inherit only if same schema
         '
         DIM thisSchema%
-        IF schema% = 0 THEN
-          thisSchema% = ObGet%(0, obid%, ObIndex.Schema)
-        ELSE
-          thisSchema% = schema%
-        END IF
+        LET thisSchema% = ObGet%(obid%, ObIndex.Schema)
 
-        IF thisSchema% = ObGet%(0, parent%, ObIndex.Schema) THEN
-          value% = ObGet%(schema%, parent%, obix%)
+        IF thisSchema% = ObGet%(parent%, ObIndex.Schema) THEN
+          value% = ObGet%(parent%, obix%)
         END IF
      
       END IF
@@ -3822,7 +3812,7 @@ FUNCTION ObGet% (schema%, obid%, obix%)
 END FUNCTION
 
 SUB ObInc (obid%, obix%)
-  ObSet obid%, obix%, ObGet%(0, obid%, obix%) + 1
+  ObSet obid%, obix%, ObGet%(obid%, obix%) + 1
 END SUB
 
 FUNCTION ObIs% (schema%, obid%)
@@ -3901,7 +3891,7 @@ FUNCTION ObResolve% (obid%, expr$)
       '
       ' Prop name in progress
       '
-      schema% = ObGet%(0, targetobid%, ObIndex.Schema)
+      schema% = ObGet%(targetobid%, ObIndex.Schema)
       targetobix% = ExMap%(schema%, build$)
       IF targetobix% = 0 THEN
         state% = SyntaxError
@@ -3917,7 +3907,7 @@ FUNCTION ObResolve% (obid%, expr$)
   IF targetobix% = 0 THEN
     ObResolve% = targetobid%
   ELSE
-    ObResolve% = ObGet%(0, targetobid%, targetobix%)
+    ObResolve% = ObGet%(targetobid%, targetobix%)
   END IF
   
   EXIT FUNCTION
@@ -4008,12 +3998,12 @@ ParsePropBuild:
     CASE "A" TO "Z", "a" TO "z"
       build$ = build$ + char$
     CASE "."
-      schema% = ObGet%(0, targetobid%, ObIndex.Schema)
+      schema% = ObGet%(targetobid%, ObIndex.Schema)
       targetobix% = ExMap%(schema%, build$)
       IF targetobix% = 0 THEN
         state% = SyntaxError
       ELSE
-        targetobid% = ObGet%(0, targetobid%, targetobix%)
+        targetobid% = ObGet%(targetobid%, targetobix%)
         IF targetobid% = 0 THEN
           ObResolve% = 0
           EXIT FUNCTION
@@ -4245,8 +4235,8 @@ SUB ShSerialize (obid%, indent%)
 
   DbPositive obid%, "ShSerialize", "obid%"
  
-  DIM schema%: schema% = ObGet%(0, obid%, ObIndex.Schema)
-  DIM title%: title% = ObGet%(schema%, obid%, ObIndex.Name)
+  DIM schema%: schema% = ObGet%(obid%, ObIndex.Schema)
+  DIM title%: title% = ObGet%(obid%, ObIndex.Name)
  
   IF title% > 0 THEN
     ShPrint SPACE$(indent%) + "#" + RsGet$(title%)
@@ -4266,7 +4256,7 @@ SUB ShSerialize (obid%, indent%)
       EXIT FOR
     END IF
 
-    DIM value%: value% = ObGet%(0, obid%, i%)
+    DIM value%: value% = ObGet%(obid%, i%)
     ShPrint SPACE$(indent% + 2) + "." + p$ + " " + STR$(value%)
 
   NEXT
@@ -4507,7 +4497,7 @@ FUNCTION WnCmd% (wnid%, cmd$)
   '
   DIM index%: index% = INSTR(cmd$, "[Window][Param]")
   IF index% > 0 THEN
-    DIM param%: param% = ObGet%(ObSchema.Window, wnid%, WnIndex.Param)
+    DIM param%: param% = ObGet%(wnid%, WnIndex.Param)
     MID$(cmd$, index%) = STR$(param%)
   END IF
 
@@ -4516,7 +4506,7 @@ FUNCTION WnCmd% (wnid%, cmd$)
 END FUNCTION
 
 SUB WnDirty (wnid%)
-  DIM root%: root% = ObGet%(ObSchema.Window, wnid%, WnIndex.Root)
+  DIM root%: root% = ObGet%(wnid%, WnIndex.Root)
   IF root% > 0 THEN ObDirtyDown root%
 END SUB
 
@@ -4526,10 +4516,10 @@ SUB WnDraw (wnid%)
   DIM offsety%
   DIM root%
  
-  root% = ObGet%(ObSchema.Window, wnid%, WnIndex.Root)
+  root% = ObGet%(wnid%, WnIndex.Root)
   IF root% > 0 THEN
-    offsetx% = ObGet%(ObSchema.Control, root%, ObIndex.OffsetX)
-    offsety% = ObGet%(ObSchema.Control, root%, ObIndex.OffsetY)
+    offsetx% = ObGet%(root%, ObIndex.OffsetX)
+    offsety% = ObGet%(root%, ObIndex.OffsetY)
     CtDraw root%, offsetx% + 1, offsety% + 1
   END IF
 
@@ -4539,7 +4529,7 @@ FUNCTION WnFocus% (wnid%)
   
   DbPositive wnid%, "WnFocus%", "wnid%"
 
-  DIM root%: root% = ObGet%(ObSchema.Window, wnid%, WnIndex.Root)
+  DIM root%: root% = ObGet%(wnid%, WnIndex.Root)
   IF root% > 0 THEN
     root% = CtFocus%(root%)
   END IF
@@ -4557,7 +4547,7 @@ FUNCTION WnKey% (wnid%, keypress$)
   '
   ' Get the focused control and dispatch the key
   '
-  root% = ObGet%(ObSchema.Window, wnid%, WnIndex.Root)
+  root% = ObGet%(wnid%, WnIndex.Root)
   IF root% > 0 THEN
     action% = CtKey%(root%, keypress$)
   END IF
@@ -4742,7 +4732,7 @@ FUNCTION WorldAdd% (hbid%, cx%, cy%)
   ObSet lcid%, LcIndex.Habitat, hbid%
   ObSet lcid%, LcIndex.Energy, 3
 
-  AtlasAddItem cx%, cy%, lcid%, ObGet%(ObSchema.Habitat, hbid%, ObIndex.Label)
+  AtlasAddItem cx%, cy%, lcid%, ObGet%(hbid%, ObIndex.Label)
   WorldAdd% = lcid%
 
 END FUNCTION
@@ -4793,7 +4783,7 @@ SUB WorldHarvest (lcid%)
 
   DbPositive lcid%, "WorldHarvest", "lcid%"
 
-  DIM energy%: energy% = ObGet%(ObSchema.Location, lcid%, LcIndex.Energy)
+  DIM energy%: energy% = ObGet%(lcid%, LcIndex.Energy)
 
   IF energy% > 0 THEN
     energy% = energy% - 1
