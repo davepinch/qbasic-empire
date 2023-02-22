@@ -20,8 +20,6 @@ if "%1" == "per"      goto :configPersons
 if "%1" == "person"   goto :configPersons
 if "%1" == "persons"  goto :configPersons
 if "%1" == "people"   goto :configPersons
-if "%1" == "w"        goto :configWorld
-if "%1" == "world"    goto :configWorld
 if "%1" == "*"        goto :dirCFG
 if "%1" == "dir"      goto :dirCFG
 
@@ -47,10 +45,6 @@ if "%1" == "dir"      goto :dirCFG
 
 :configPersons
   qbasic /editor persons.cfg
-  goto :done
-
-:configWorld
-  qbasic /editor world.cfg
   goto :done
 
 :dirCFG
